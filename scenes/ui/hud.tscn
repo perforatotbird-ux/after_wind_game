@@ -92,7 +92,7 @@ anchors_preset = 0
 offset_left = 20.0
 offset_top = 20.0
 offset_right = 260.0
-offset_bottom = 160.0
+offset_bottom = 188.0
 
 [node name="Panel" type="PanelContainer" parent="TopLeftUI"]
 layout_mode = 1
@@ -204,6 +204,13 @@ text = "Влажность 0%"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="ClassButton" type="Button" parent="TopLeftUI/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "⛏️ Класс: Шахтёр [C]"
+flat = true
+
 [node name="TopRightUI" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 1
@@ -212,7 +219,7 @@ anchor_right = 1.0
 offset_left = -220.0
 offset_top = 20.0
 offset_right = -20.0
-offset_bottom = 145.0
+offset_bottom = 170.0
 grow_horizontal = 0
 
 [node name="Panel" type="PanelContainer" parent="TopRightUI"]
@@ -256,6 +263,12 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.45, 0.9, 0.6, 1)
 theme_override_font_sizes/font_size = 12
 text = "⚡ Сеть: 30% (+2.0 кВт)"
+
+[node name="SaveLoadLabel" type="Label" parent="TopRightUI/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 0.85)
+theme_override_font_sizes/font_size = 10
+text = "💾 [F5] Сохранить | 📂 [F9] Загрузить"
 
 [node name="ResourceBarUI" type="Control" parent="."]
 layout_mode = 3
@@ -804,4 +817,63 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.65, 0.72, 0.8, 1)
 theme_override_font_sizes/font_size = 11
 text = "Выполнение контрактов приносит повышенные выплаты кредитов."
+
+[node name="ClassSelectWindow" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -220.0
+offset_right = 300.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inv_window")
+
+[node name="Margin" type="MarginContainer" parent="ClassSelectWindow"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="ClassSelectWindow/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderHBox" type="HBoxContainer" parent="ClassSelectWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="ClassSelectWindow/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 16
+text = "👤 Специализация персонажа"
+
+[node name="CloseButton" type="Button" parent="ClassSelectWindow/Margin/VBox/HeaderHBox"]
+custom_minimum_size = Vector2(30, 26)
+layout_mode = 2
+text = "✕"
+
+[node name="HSeparator" type="HSeparator" parent="ClassSelectWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="ClassSelectWindow/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ClassesList" type="VBoxContainer" parent="ClassSelectWindow/Margin/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="FooterLabel" type="Label" parent="ClassSelectWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.72, 0.8, 1)
+theme_override_font_sizes/font_size = 11
+text = "Специализация даёт уникальные постоянные бонусы к добыче, агрономии или технологиям."
 

@@ -88,13 +88,20 @@ func start_recipe(recipe_id: String, player: Node) -> bool:
 	
 	# Списание энергии игрока за запуск оборудования
 	var energy_cost: float = recipe.get("energy_cost", 2.0)
+	var duration: float = recipe.get("duration", 6.0)
+	
+	# Бонус специализации Учёный (Этап 12)
+	if player and "character_class" in player and player.character_class == "scientist":
+		energy_cost *= 0.50
+		duration /= 1.40
+	
 	if player.has_method("consume_energy"):
 		player.consume_energy(energy_cost)
 	
 	# Запуск процесса
 	active_recipe = recipe
 	process_timer = 0.0
-	process_duration = recipe.get("duration", 6.0)
+	process_duration = duration
 	is_machine_running = true
 	_last_user = player
 	

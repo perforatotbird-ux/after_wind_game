@@ -10,6 +10,13 @@ extends "res://scripts/interaction/interactable.gd"
 
 var _current_stored: float = 30.0
 
+var stored_energy: float:
+	get:
+		return _current_stored
+	set(val):
+		_current_stored = val
+		update_charge_display(_current_stored, capacity, 0.0)
+
 func _ready() -> void:
 	super._ready()
 	add_to_group("power_batteries")

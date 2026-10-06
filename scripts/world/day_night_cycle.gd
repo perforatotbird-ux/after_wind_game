@@ -98,6 +98,19 @@ func get_ambient_temperature() -> int:
 		"Вечер": return 18
 		_: return 14
 
+func set_time(day: int, hour: float) -> void:
+	current_day = max(1, day)
+	current_hour = clamp(hour, 0.0, 24.0)
+	_last_reported_minute = -1
+	current_phase = get_current_phase()
+	_update_lighting_and_sky(true)
+	var hour_int: int = int(current_hour)
+	var minute_int: int = int((current_hour - hour_int) * 60.0)
+	time_changed.emit(current_day, hour_int, minute_int, get_time_string(), current_phase)
+
+func set_time_manually(target_hour: float) -> void:
+	set_time(current_day, target_hour)
+
 func skip_to_morning(target_hour: float = 6.0) -> void:
 	current_day += 1
 	current_hour = target_hour

@@ -104,6 +104,12 @@ func _on_interacted(player: Node) -> void:
 		hit_power = 2
 		bonus_yield = 1
 	
+	# Бонус специализации Шахтёр (Этап 12)
+	var is_mining_node: bool = (required_tool == "pickaxe" or resource_id in ["stone", "metal_scrap"])
+	if player and "character_class" in player and player.character_class == "miner" and is_mining_node:
+		bonus_yield += 1
+		final_energy_cost *= 0.80
+	
 	# Трата энергии
 	if player.has_method("consume_energy"):
 		player.consume_energy(final_energy_cost)

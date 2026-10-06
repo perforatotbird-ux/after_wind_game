@@ -46,6 +46,7 @@ var _mat_tilled_wet: StandardMaterial3D = null
 
 func _ready() -> void:
 	super._ready()
+	add_to_group("farmland_plots")
 	object_name = "Грядка"
 	prompt_action = "Осмотреть"
 	soil_state = initial_state
@@ -101,6 +102,11 @@ func _process(delta: float) -> void:
 		
 		if is_fertilized:
 			speed_mult *= 2.0 # удобрение ускоряет вегетацию вдвое
+		
+		# Бонус специализации Фермер (Этап 12)
+		var player_node: Node = get_tree().root.find_child("Player", true, false)
+		if player_node and "character_class" in player_node and player_node.character_class == "farmer":
+			speed_mult *= 1.35
 		
 		var step: float = (100.0 / growth_time_total) * speed_mult * delta
 		growth_progress = min(100.0, growth_progress + step)

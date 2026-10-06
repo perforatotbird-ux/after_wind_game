@@ -7,6 +7,8 @@ signal thirst_changed(current: float, max_val: float)
 signal hunger_changed(current: float, max_val: float)
 signal wetness_changed(current: float, max_val: float)
 signal inventory_toggle_requested()
+signal class_select_toggle_requested()
+signal character_class_changed(class_id: String, c_name: String)
 
 @export_group("Movement")
 @export var walk_speed: float = 4.5
@@ -23,8 +25,13 @@ signal inventory_toggle_requested()
 @export var hunger_decay_rate: float = 0.15
 @export var max_wetness: float = 100.0
 
+@export_group("Specialization")
+@export var character_class: String = "miner"
+
 const InventoryScript = preload("res://scripts/inventory/inventory.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
+const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
+const SaveManager = preload("res://scripts/core/save_manager.gd")
 
 @export_group("References")
 @onready var visual_root: Node3D = $Visuals
@@ -90,6 +97,44 @@ func _unhandled_input(event: InputEvent) -> void:
 				eat_from_inventory()
 			KEY_TAB, KEY_I:
 				inventory_toggle_requested.emit()
+			KEY_C:
+				class_select_toggle_requested.emit()
+			KEY_F5:
+				quick_save()
+			KEY_F9:
+				quick_load()
+
+func set_character_class(new_class_id: String, grant_starting_bonus: bool = false) -> bool:
+	var c_data: Dictionary = CharacterClassDB.get_class_data(new_class_id)
+	if c_data.is_empty():
+		return false
+	character_class = new_class_id
+	var c_name: String = c_data.get("name", new_class_id)
+	var c_icon: String = c_data.get("icon", "👤")
+	
+	if grant_starting_bonus and inventory:
+		var items: Dictionary = c_data.get("starting_items", {})
+		for it_id in items.keys():
+			inventory.add_item(it_id, items[it_id])
+		var creds: int = c_data.get("starting_credits", 0)
+		if creds > 0:
+			inventory.add_credits(creds)
+	
+	character_class_changed.emit(character_class, c_name)
+	notify("%s Выбрана специализация: %s (%s)!" % [c_icon, c_name, c_data.get("title", "")])
+	return true
+
+func quick_save() -> bool:
+	var world = get_tree().root.find_child("World", true, false)
+	if world:
+		return SaveManager.save_game(world)
+	return false
+
+func quick_load() -> bool:
+	var world = get_tree().root.find_child("World", true, false)
+	if world:
+		return SaveManager.load_game(world)
+	return false
 
 func equip_slot(slot_index: int) -> void:
 	if inventory:
@@ -177,6 +222,8 @@ func _handle_thirst(delta: float) -> void:
 
 func _handle_hunger(delta: float) -> void:
 	var drain_rate: float = hunger_decay_rate
+	var c_data: Dictionary = CharacterClassDB.get_class_data(character_class)
+	drain_rate *= c_data.get("hunger_decay_mult", 1.0)
 	var sprint_active: bool = Input.is_action_pressed("sprint") and can_sprint() and velocity.length_squared() > 1.0
 	if sprint_active:
 		drain_rate *= 1.4

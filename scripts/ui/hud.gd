@@ -3,12 +3,18 @@ extends CanvasLayer
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
 const ContractDB = preload("res://scripts/economy/contract_db.gd")
+const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
 
 @onready var prompt_container: PanelContainer = $PromptContainer
 @onready var prompt_label: Label = $PromptContainer/MarginContainer/PromptLabel
 @onready var notification_container: PanelContainer = $NotificationContainer
 @onready var notification_label: Label = $NotificationContainer/MarginContainer/NotificationLabel
 @onready var notification_timer: Timer = $NotificationTimer
+
+@onready var class_button: Button = get_node_or_null("TopLeftUI/Panel/Margin/VBox/ClassButton")
+@onready var class_window: PanelContainer = get_node_or_null("ClassSelectWindow")
+@onready var class_close_button: Button = get_node_or_null("ClassSelectWindow/Margin/VBox/HeaderHBox/CloseButton")
+@onready var classes_list: VBoxContainer = get_node_or_null("ClassSelectWindow/Margin/VBox/ScrollContainer/ClassesList")
 
 @onready var health_bar: ProgressBar = $TopLeftUI/Panel/Margin/VBox/HealthBar
 @onready var health_label: Label = $TopLeftUI/Panel/Margin/VBox/HealthBar/Label
@@ -129,13 +135,20 @@ func _ready() -> void:
 		repair_sleep_button.pressed.connect(_on_building_sleep_pressed)
 	if contract_close_button:
 		contract_close_button.pressed.connect(close_contract_window)
+	if class_close_button:
+		class_close_button.pressed.connect(close_class_window)
+	if class_button:
+		class_button.pressed.connect(toggle_class_window)
 	
 	_init_styles()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
-			if contract_window and contract_window.visible:
+			if class_window and class_window.visible:
+				close_class_window()
+				get_viewport().set_input_as_handled()
+			elif contract_window and contract_window.visible:
 				close_contract_window()
 				get_viewport().set_input_as_handled()
 			elif repair_window and repair_window.visible:
@@ -197,6 +210,13 @@ func bind_player(player: Node) -> void:
 		player.wetness_changed.connect(_on_wetness_changed)
 	if "wetness" in player and "max_wetness" in player:
 		_on_wetness_changed(player.wetness, player.max_wetness)
+	
+	if player.has_signal("class_select_toggle_requested"):
+		player.class_select_toggle_requested.connect(toggle_class_window)
+	if player.has_signal("character_class_changed"):
+		player.character_class_changed.connect(_on_character_class_changed)
+	if "character_class" in player:
+		_on_character_class_changed(player.character_class, CharacterClassDB.get_class_display_name(player.character_class))
 	
 	if "inventory" in player and player.inventory:
 		var inv = player.inventory
@@ -993,3 +1013,89 @@ func _on_fulfill_contract_pressed(contract_id: String) -> void:
 	var ok: bool = ContractDB.fulfill_contract(contract_id, _bound_player)
 	if ok:
 		_refresh_contract_window()
+
+# --- Выбор специализации персонажа (Этап 12) ---
+func _on_character_class_changed(class_id: String, c_name: String) -> void:
+	if class_button:
+		var c_icon: String = CharacterClassDB.get_class_icon(class_id)
+		class_button.text = "%s Класс: %s [C]" % [c_icon, c_name]
+
+func toggle_class_window() -> void:
+	if not class_window:
+		return
+	class_window.visible = not class_window.visible
+	if class_window.visible:
+		_populate_class_cards()
+
+func close_class_window() -> void:
+	if class_window:
+		class_window.visible = false
+
+func _populate_class_cards() -> void:
+	if not classes_list:
+		return
+	for c in classes_list.get_children():
+		c.queue_free()
+	
+	var all_classes = CharacterClassDB.get_all_classes()
+	var current_class: String = _bound_player.character_class if (_bound_player and "character_class" in _bound_player) else "miner"
+	
+	for c_data in all_classes:
+		var card: PanelContainer = PanelContainer.new()
+		var card_style = StyleBoxFlat.new()
+		var is_selected: bool = (c_data.id == current_class)
+		card_style.bg_color = Color(0.18, 0.22, 0.28, 0.95) if is_selected else Color(0.12, 0.14, 0.18, 0.9)
+		card_style.border_color = Color(1.0, 0.85, 0.3) if is_selected else Color(0.35, 0.4, 0.45, 0.5)
+		card_style.set_border_width_all(2 if is_selected else 1)
+		card_style.set_corner_radius_all(6)
+		card.add_theme_stylebox_override("panel", card_style)
+		
+		var m: MarginContainer = MarginContainer.new()
+		m.add_theme_constant_override("margin_left", 12)
+		m.add_theme_constant_override("margin_top", 10)
+		m.add_theme_constant_override("margin_right", 12)
+		m.add_theme_constant_override("margin_bottom", 10)
+		card.add_child(m)
+		
+		var vbox: VBoxContainer = VBoxContainer.new()
+		vbox.add_theme_constant_override("separation", 6)
+		m.add_child(vbox)
+		
+		var title: Label = Label.new()
+		title.text = "%s %s — %s" % [c_data.icon, c_data.name, c_data.title]
+		title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45) if is_selected else Color(0.9, 0.9, 0.9))
+		title.add_theme_font_size_override("font_size", 14)
+		vbox.add_child(title)
+		
+		var desc: Label = Label.new()
+		desc.text = c_data.description
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc.add_theme_color_override("font_color", Color(0.75, 0.8, 0.85))
+		desc.add_theme_font_size_override("font_size", 11)
+		vbox.add_child(desc)
+		
+		var perks_label: Label = Label.new()
+		var perks_text: String = ""
+		for p in c_data.perks:
+			perks_text += "• " + p + "\n"
+		perks_label.text = perks_text.strip_edges()
+		perks_label.add_theme_color_override("font_color", Color(0.45, 0.9, 0.6))
+		perks_label.add_theme_font_size_override("font_size", 11)
+		vbox.add_child(perks_label)
+		
+		var btn: Button = Button.new()
+		btn.custom_minimum_size = Vector2(0, 28)
+		if is_selected:
+			btn.text = "✓ Текущая специализация"
+			btn.disabled = true
+		else:
+			btn.text = "Выбрать: %s %s" % [c_data.icon, c_data.name]
+			var sel_id = c_data.id
+			btn.pressed.connect(func():
+				if _bound_player and _bound_player.has_method("set_character_class"):
+					_bound_player.set_character_class(sel_id)
+					_populate_class_cards()
+			)
+		vbox.add_child(btn)
+		
+		classes_list.add_child(card)

@@ -319,3 +319,9 @@ func sleep(player: Node) -> void:
 				player.energy_changed.emit(player.energy, player.max_energy)
 			if player.has_method("notify"):
 				player.notify("💤 Вы отлично выспались в отремонтированном доме! Энергия 100%.")
+	
+	# Автосохранение при сне в доме (Этап 12)
+	var world = get_tree().root.find_child("World", true, false)
+	if world:
+		const SaveManagerClass = preload("res://scripts/core/save_manager.gd")
+		SaveManagerClass.save_game(world)
