@@ -5,12 +5,13 @@ extends Node3D
 @onready var hud: CanvasLayer = $HUD
 @onready var day_night_cycle: Node = $DayNightCycle
 @onready var weather_manager: Node = $WeatherManager
+@onready var power_grid: Node = $PowerGrid
 
 func _ready() -> void:
 	if player and hud and hud.has_method("bind_player"):
 		hud.bind_player(player)
 		if hud.has_method("show_notification"):
-			hud.show_notification("«После бури» [Этап 9 — Погода]: Динамическая погода, дождь наполняет грядки и цистерны, укрывайтесь от ливня в доме!")
+			hud.show_notification("«После бури» [Этап 10 — Электрификация]: Ветрогенератор вырабатывает ток, аккумуляторы заряжаются, фонари освещают базу!")
 	
 	if camera and player and "target_node" in camera:
 		camera.target_node = player
@@ -24,6 +25,10 @@ func _ready() -> void:
 	if weather_manager and hud and hud.has_method("update_weather_display"):
 		weather_manager.weather_changed.connect(hud.update_weather_display)
 		hud.update_weather_display(weather_manager.current_weather, weather_manager.get_weather_name(), weather_manager.get_weather_icon())
+	
+	if power_grid and hud and hud.has_method("update_power_display"):
+		power_grid.grid_updated.connect(hud.update_power_display)
+		hud.update_power_display(power_grid.current_stored, power_grid.max_capacity, power_grid.current_generation, power_grid.current_consumption, power_grid.has_power)
 	
 	_connect_interactive_stations()
 

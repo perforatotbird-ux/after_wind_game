@@ -322,6 +322,58 @@ const ITEMS: Dictionary = {
 		"max_stack": 30,
 		"sell_price": 16,
 		"description": "Смесь компоста, глины и золы. Ускоряет созревание культур на грядке в 2 раза."
+	},
+
+	# --- Электрогенерация и освещение (Этап 10, разделы 54, 57, 84) ---
+	"copper_wire": {
+		"id": "copper_wire",
+		"name": "Медный провод",
+		"icon": "🔌",
+		"category": "component",
+		"weight": 0.1,
+		"max_stack": 40,
+		"sell_price": 18,
+		"description": "Изолированная витая медная жила для прокладки линий электропередач и проводки."
+	},
+	"iron_plate": {
+		"id": "iron_plate",
+		"name": "Металлическая пластина",
+		"icon": "🛡️",
+		"category": "component",
+		"weight": 0.8,
+		"max_stack": 25,
+		"sell_price": 28,
+		"description": "Прочный прокатанный лист железа для корпусов приборов и каркасов лопастей."
+	},
+	"gear": {
+		"id": "gear",
+		"name": "Механическая шестерня",
+		"icon": "⚙️",
+		"category": "component",
+		"weight": 0.5,
+		"max_stack": 30,
+		"sell_price": 34,
+		"description": "Точно выточенное зубчатое колесо редуктора для передачи вращения ротора ветряка."
+	},
+	"battery_cell": {
+		"id": "battery_cell",
+		"name": "Аккумуляторный элемент",
+		"icon": "🔋",
+		"category": "component",
+		"weight": 1.2,
+		"max_stack": 15,
+		"sell_price": 55,
+		"description": "Электрохимическая ячейка высокой емкости для накопления избыточной энергии ветрогенератора."
+	},
+	"street_lamp_item": {
+		"id": "street_lamp_item",
+		"name": "Комплект уличного фонаря",
+		"icon": "🏮",
+		"category": "building",
+		"weight": 3.5,
+		"max_stack": 5,
+		"sell_price": 85,
+		"description": "Готовый к установке уличный фонарный столб с плафоном, патроном и проводкой."
 	}
 }
 

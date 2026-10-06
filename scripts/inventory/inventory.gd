@@ -44,8 +44,18 @@ var items: Dictionary = {
 	"potato": 0,
 	"wheat": 0,
 	"bread": 0,
-	"fertilizer": 0
+	"fertilizer": 0,
+	"copper_wire": 0,
+	"iron_plate": 0,
+	"gear": 0,
+	"battery_cell": 0,
+	"street_lamp_item": 0
 }
+
+func clear() -> void:
+	for k in items.keys():
+		items[k] = 0
+	inventory_updated.emit()
 
 func _ready() -> void:
 	# Начальный инструмент по умолчанию

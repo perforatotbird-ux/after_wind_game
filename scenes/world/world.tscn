@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://c53v4j8v7x2ka"]
+[gd_scene load_steps=31 format=3 uid="uid://c53v4j8v7x2ka"]
 
 [ext_resource type="Script" path="res://scripts/world/world.gd" id="1_world"]
 [ext_resource type="Script" path="res://scripts/world/isometric_camera.gd" id="2_cam"]
@@ -24,6 +24,10 @@
 [ext_resource type="PackedScene" path="res://scenes/buildings/contract_board.tscn" id="22_board"]
 [ext_resource type="PackedScene" path="res://scenes/farming/farmland_plot.tscn" id="23_farmland"]
 [ext_resource type="PackedScene" path="res://scenes/world/weather_manager.tscn" id="24_weather"]
+[ext_resource type="Script" path="res://scripts/energy/power_grid.gd" id="25_grid"]
+[ext_resource type="PackedScene" path="res://scenes/energy/wind_turbine.tscn" id="26_turbine"]
+[ext_resource type="PackedScene" path="res://scenes/energy/battery_bank.tscn" id="27_battery"]
+[ext_resource type="PackedScene" path="res://scenes/energy/street_lamp.tscn" id="28_lamp"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.36, 0.54, 0.75, 1)
@@ -86,6 +90,9 @@ shadow_enabled = true
 script = ExtResource("16_cycle")
 
 [node name="WeatherManager" parent="." instance=ExtResource("24_weather")]
+
+[node name="PowerGrid" type="Node" parent="." groups=["power_grid"]]
+script = ExtResource("25_grid")
 
 [node name="Ground" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
@@ -151,6 +158,18 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.6, 0, 0.8)
 
 [node name="FarmlandPlot2" parent="Props" instance=ExtResource("23_farmland")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.2, 0, 0.8)
+
+[node name="WindTurbine" parent="Props" instance=ExtResource("26_turbine")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 0, -8.0)
+
+[node name="BatteryBank" parent="Props" instance=ExtResource("27_battery")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.8, 0, -6.5)
+
+[node name="StreetLamp1" parent="Props" instance=ExtResource("28_lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2, 0, -1.0)
+
+[node name="StreetLamp2" parent="Props" instance=ExtResource("28_lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0, 0, 2.5)
 
 [node name="Resources" type="Node3D" parent="."]
 

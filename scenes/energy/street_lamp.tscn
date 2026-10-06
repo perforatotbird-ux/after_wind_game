@@ -1,0 +1,60 @@
+[gd_scene load_steps=9 format=3 uid="uid://dm20bkl521ya"]
+
+[ext_resource type="Script" path="res://scripts/energy/street_lamp.gd" id="1_lamp"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_col"]
+height = 3.8
+radius = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_post"]
+albedo_color = Color(0.2, 0.22, 0.24, 1)
+metallic = 0.6
+roughness = 0.6
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_post"]
+material = SubResource("StandardMaterial3D_post")
+top_radius = 0.08
+bottom_radius = 0.12
+height = 3.6
+
+[sub_resource type="BoxMesh" id="BoxMesh_arm"]
+material = SubResource("StandardMaterial3D_post")
+size = Vector3(0.08, 0.08, 0.65)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bulb"]
+albedo_color = Color(1, 0.95, 0.8, 1)
+emission_enabled = true
+emission = Color(1, 0.88, 0.6, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_bulb"]
+material = SubResource("StandardMaterial3D_bulb")
+radius = 0.12
+height = 0.24
+
+[node name="StreetLamp" type="Area3D"]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_lamp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9, 0)
+shape = SubResource("CylinderShape3D_col")
+
+[node name="Post" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+mesh = SubResource("CylinderMesh_post")
+
+[node name="Arm" type="MeshInstance3D" parent="Post"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0.3)
+mesh = SubResource("BoxMesh_arm")
+
+[node name="Bulb" type="MeshInstance3D" parent="Post/Arm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0.25)
+mesh = SubResource("SphereMesh_bulb")
+
+[node name="LampLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.35, 0.55)
+light_color = Color(1, 0.88, 0.65, 1)
+light_energy = 1.6
+omni_range = 10.0

@@ -154,6 +154,58 @@ const RECIPES: Dictionary = {
 		"duration": 6.0,
 		"energy_cost": 2.5,
 		"description": "Замес теста из молотой пшеницы и чистой воды с последующей выпечкой подового хлеба в печи."
+	},
+
+	# --- Электрогенерация и освещение (Этап 10) ---
+	"craft_copper_wire": {
+		"id": "craft_copper_wire",
+		"name": "Прокатка: Медный провод (x2)",
+		"machine": "workbench",
+		"inputs": {"metal_scrap": 1},
+		"outputs": {"copper_wire": 2},
+		"duration": 3.0,
+		"energy_cost": 1.0,
+		"description": "Вытяжка и изоляция медной электропроводки из цветных обрезков лома на верстаке."
+	},
+	"craft_iron_plate": {
+		"id": "craft_iron_plate",
+		"name": "Ковка: Металлическая пластина (x2)",
+		"machine": "workbench",
+		"inputs": {"iron_ingot": 1},
+		"outputs": {"iron_plate": 2},
+		"duration": 3.5,
+		"energy_cost": 1.5,
+		"description": "Холодная ковка и прокатка железного слитка в две плоские конструкционные пластины."
+	},
+	"craft_gear": {
+		"id": "craft_gear",
+		"name": "Выточка: Шестерня редуктора (x2)",
+		"machine": "workbench",
+		"inputs": {"iron_ingot": 1, "metal_scrap": 1},
+		"outputs": {"gear": 2},
+		"duration": 4.0,
+		"energy_cost": 2.0,
+		"description": "Выпиливание и шлифовка прочных зубчатых колес для поворотного механизма и вала ветряка."
+	},
+	"craft_battery_cell": {
+		"id": "craft_battery_cell",
+		"name": "Сборка: Аккумуляторный элемент (x1)",
+		"machine": "workbench",
+		"inputs": {"iron_plate": 1, "copper_wire": 2, "clay": 1},
+		"outputs": {"battery_cell": 1},
+		"duration": 4.5,
+		"energy_cost": 2.0,
+		"description": "Электролитная ячейка в герметичном металлическом корпусе с глиняным сепаратором и клеммами."
+	},
+	"craft_street_lamp": {
+		"id": "craft_street_lamp",
+		"name": "Сборка: Уличный фонарь (x1)",
+		"machine": "workbench",
+		"inputs": {"wood": 2, "glass": 1, "copper_wire": 1, "iron_plate": 1},
+		"outputs": {"street_lamp_item": 1},
+		"duration": 5.0,
+		"energy_cost": 2.5,
+		"description": "Изготовление уличного фонарного столба с защитным стеклянным плафоном и проводкой."
 	}
 }
 

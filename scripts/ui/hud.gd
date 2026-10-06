@@ -24,6 +24,7 @@ const ContractDB = preload("res://scripts/economy/contract_db.gd")
 @onready var time_label: Label = $TopRightUI/Panel/Margin/VBox/TimeLabel
 @onready var weather_label: Label = $TopRightUI/Panel/Margin/VBox/WeatherLabel
 @onready var money_label: Label = $TopRightUI/Panel/Margin/VBox/MoneyLabel
+@onready var power_label: Label = $TopRightUI/Panel/Margin/VBox/PowerLabel
 
 # Быстрый счетчик ресурсов
 @onready var wood_label: Label = $ResourceBarUI/Panel/Margin/HBox/WoodCount
@@ -340,6 +341,26 @@ func update_weather_display(_new_type: int = 0, w_name: String = "", icon: Strin
 		var temp_offset: int = weather_mgr.get_temperature_offset() if (weather_mgr and weather_mgr.has_method("get_temperature_offset")) else 0
 		var final_temp: int = max(4, base_temp + temp_offset)
 		weather_label.text = "%s %s (+%d°C)" % [icon, w_name, final_temp]
+
+func update_power_display(stored: float, capacity: float, generation: float, consumption: float, has_power: bool) -> void:
+	if not power_label:
+		power_label = get_node_or_null("TopRightUI/Panel/Margin/VBox/PowerLabel")
+	if not power_label:
+		return
+	
+	var net: float = generation - consumption
+	var pct: int = int((stored / capacity) * 100.0) if capacity > 0 else 0
+	var sign_str: String = "+" if net >= 0 else ""
+	
+	if not has_power:
+		power_label.text = "⚡ Сеть: Обесточена (0%)"
+		power_label.add_theme_color_override("font_color", Color(0.95, 0.3, 0.3))
+	elif net >= 0:
+		power_label.text = "⚡ Сеть: %d%% (%s%.1f кВт)" % [pct, sign_str, net]
+		power_label.add_theme_color_override("font_color", Color(0.45, 0.9, 0.6))
+	else:
+		power_label.text = "⚡ Сеть: %d%% (%.1f кВт)" % [pct, net]
+		power_label.add_theme_color_override("font_color", Color(0.95, 0.8, 0.3))
 
 func _on_inventory_updated() -> void:
 	_update_resource_counters()
