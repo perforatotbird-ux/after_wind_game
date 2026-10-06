@@ -1,0 +1,23 @@
+{
+  "name": "obsidian-mind",
+  "version": "1.0.0",
+  "description": "🌐 [English](README.md) | [日本語](README.ja.md) | **中文** | [한국어](README.ko.md)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/breferrari/obsidian-mind.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/breferrari/obsidian-mind/issues"
+  },
+  "homepage": "https://github.com/breferrari/obsidian-mind#readme",
+  "dependencies": {
+    "@tobilu/qmd": "^2.5.3"
+  }
+}
