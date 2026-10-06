@@ -52,8 +52,8 @@ func _run_tests() -> void:
 	# 1. Проверка конфигурации печи и рецептов
 	if smelter.machine_type != "furnace": _fail("machine_type печи != furnace")
 	var furnace_recipes = RecipeDB.get_recipes_for_machine("furnace")
-	if furnace_recipes.size() != 3: _fail("Ожидалось 3 рецепта печи, получено: %d" % furnace_recipes.size())
-	print("✅ Рецепты печи-плавильни загружены (всего 3: обжиг кирпича, плавка стекла, переплавка железа).")
+	if furnace_recipes.size() < 3: _fail("Ожидалось как минимум 3 рецепта печи, получено: %d" % furnace_recipes.size())
+	print("✅ Рецепты печи-плавильни загружены (всего %d: обжиг кирпича, плавка стекла, переплавка железа и выпечка)." % furnace_recipes.size())
 	
 	var inv = player.inventory
 	if not inv: _fail("Инвентарь игрока недоступен")

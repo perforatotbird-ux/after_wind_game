@@ -1,0 +1,312 @@
+[gd_scene load_steps=22 format=3 uid="uid://cx82mflk5780a"]
+
+[ext_resource type="Script" path="res://scripts/farming/farmland_plot.gd" id="1_plot"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_collision"]
+size = Vector3(2.6, 1.2, 1.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_timber"]
+albedo_color = Color(0.35, 0.24, 0.16, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_timber_long"]
+material = SubResource("StandardMaterial3D_timber")
+size = Vector3(2.4, 0.26, 0.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_timber_short"]
+material = SubResource("StandardMaterial3D_timber")
+size = Vector3(0.1, 0.26, 1.3)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_post"]
+material = SubResource("StandardMaterial3D_timber")
+top_radius = 0.08
+bottom_radius = 0.08
+height = 0.35
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_untilled"]
+albedo_color = Color(0.42, 0.36, 0.28, 1)
+roughness = 0.95
+
+[sub_resource type="BoxMesh" id="BoxMesh_untilled"]
+material = SubResource("StandardMaterial3D_untilled")
+size = Vector3(2.2, 0.16, 1.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_weed"]
+albedo_color = Color(0.32, 0.38, 0.22, 1)
+roughness = 0.9
+
+[sub_resource type="PrismMesh" id="PrismMesh_weed"]
+material = SubResource("StandardMaterial3D_weed")
+size = Vector3(0.18, 0.22, 0.18)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tilled"]
+albedo_color = Color(0.48, 0.33, 0.2, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_tilled"]
+material = SubResource("StandardMaterial3D_tilled")
+size = Vector3(2.2, 0.18, 1.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sprout"]
+albedo_color = Color(0.35, 0.72, 0.25, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_sprout"]
+material = SubResource("StandardMaterial3D_sprout")
+top_radius = 0.04
+bottom_radius = 0.02
+height = 0.18
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_veg"]
+albedo_color = Color(0.2, 0.55, 0.18, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_veg"]
+material = SubResource("StandardMaterial3D_veg")
+radius = 0.18
+height = 0.28
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_carrot_orange"]
+albedo_color = Color(0.95, 0.42, 0.05, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_carrot_orange"]
+material = SubResource("StandardMaterial3D_carrot_orange")
+top_radius = 0.08
+bottom_radius = 0.03
+height = 0.22
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_potato_flower"]
+albedo_color = Color(0.98, 0.95, 0.8, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wheat_gold"]
+albedo_color = Color(0.92, 0.75, 0.24, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_wheat_gold"]
+material = SubResource("StandardMaterial3D_wheat_gold")
+top_radius = 0.04
+bottom_radius = 0.02
+height = 0.65
+
+[node name="FarmlandPlot" type="Area3D"]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_plot")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+shape = SubResource("BoxShape3D_collision")
+
+[node name="Visuals" type="Node3D" parent="."]
+
+[node name="WoodenBorder" type="Node3D" parent="Visuals"]
+
+[node name="PlankNorth" type="MeshInstance3D" parent="Visuals/WoodenBorder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.13, -0.65)
+mesh = SubResource("BoxMesh_timber_long")
+
+[node name="PlankSouth" type="MeshInstance3D" parent="Visuals/WoodenBorder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.13, 0.65)
+mesh = SubResource("BoxMesh_timber_long")
+
+[node name="PlankWest" type="MeshInstance3D" parent="Visuals/WoodenBorder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.15, 0.13, 0)
+mesh = SubResource("BoxMesh_timber_short")
+
+[node name="PlankEast" type="MeshInstance3D" parent="Visuals/WoodenBorder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.15, 0.13, 0)
+mesh = SubResource("BoxMesh_timber_short")
+
+[node name="PostNW" type="MeshInstance3D" parent="Visuals/WoodenBorder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.15, 0.17, -0.65)
+mesh = SubResource("CylinderMesh_post")
+
+[node name="PostNE" type="MeshInstance3D" parent="Visuals/WoodenBorder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.15, 0.17, -0.65)
+mesh = SubResource("CylinderMesh_post")
+
+[node name="PostSW" type="MeshInstance3D" parent="Visuals/WoodenBorder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.15, 0.17, 0.65)
+mesh = SubResource("CylinderMesh_post")
+
+[node name="PostSE" type="MeshInstance3D" parent="Visuals/WoodenBorder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.15, 0.17, 0.65)
+mesh = SubResource("CylinderMesh_post")
+
+[node name="UntilledBed" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
+mesh = SubResource("BoxMesh_untilled")
+
+[node name="Weed1" type="MeshInstance3D" parent="Visuals/UntilledBed"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0.12, -0.25)
+mesh = SubResource("PrismMesh_weed")
+
+[node name="Weed2" type="MeshInstance3D" parent="Visuals/UntilledBed"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.12, 0.2)
+mesh = SubResource("PrismMesh_weed")
+
+[node name="Weed3" type="MeshInstance3D" parent="Visuals/UntilledBed"]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, -0.1, 0.12, 0.1)
+mesh = SubResource("PrismMesh_weed")
+
+[node name="TilledBed" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09, 0)
+visible = false
+mesh = SubResource("BoxMesh_tilled")
+
+[node name="Crops" type="Node3D" parent="Visuals"]
+
+[node name="Sprouts" type="Node3D" parent="Visuals/Crops"]
+visible = false
+
+[node name="Shoot1" type="MeshInstance3D" parent="Visuals/Crops/Sprouts"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.2, -0.28)
+mesh = SubResource("CylinderMesh_sprout")
+
+[node name="Shoot2" type="MeshInstance3D" parent="Visuals/Crops/Sprouts"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, 0.2, -0.28)
+mesh = SubResource("CylinderMesh_sprout")
+
+[node name="Shoot3" type="MeshInstance3D" parent="Visuals/Crops/Sprouts"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, 0.2, -0.28)
+mesh = SubResource("CylinderMesh_sprout")
+
+[node name="Shoot4" type="MeshInstance3D" parent="Visuals/Crops/Sprouts"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 0.2, -0.28)
+mesh = SubResource("CylinderMesh_sprout")
+
+[node name="Shoot5" type="MeshInstance3D" parent="Visuals/Crops/Sprouts"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.2, 0.28)
+mesh = SubResource("CylinderMesh_sprout")
+
+[node name="Shoot6" type="MeshInstance3D" parent="Visuals/Crops/Sprouts"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, 0.2, 0.28)
+mesh = SubResource("CylinderMesh_sprout")
+
+[node name="Shoot7" type="MeshInstance3D" parent="Visuals/Crops/Sprouts"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, 0.2, 0.28)
+mesh = SubResource("CylinderMesh_sprout")
+
+[node name="Shoot8" type="MeshInstance3D" parent="Visuals/Crops/Sprouts"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 0.2, 0.28)
+mesh = SubResource("CylinderMesh_sprout")
+
+[node name="Growing" type="Node3D" parent="Visuals/Crops"]
+visible = false
+
+[node name="Bush1" type="MeshInstance3D" parent="Visuals/Crops/Growing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7, 0.26, -0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="Bush2" type="MeshInstance3D" parent="Visuals/Crops/Growing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.26, -0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="Bush3" type="MeshInstance3D" parent="Visuals/Crops/Growing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 0.26, -0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="Bush4" type="MeshInstance3D" parent="Visuals/Crops/Growing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7, 0.26, 0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="Bush5" type="MeshInstance3D" parent="Visuals/Crops/Growing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.26, 0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="Bush6" type="MeshInstance3D" parent="Visuals/Crops/Growing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 0.26, 0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="Mature" type="Node3D" parent="Visuals/Crops"]
+visible = false
+
+[node name="CarrotGroup" type="Node3D" parent="Visuals/Crops/Mature"]
+
+[node name="Carrot1" type="MeshInstance3D" parent="Visuals/Crops/Mature/CarrotGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7, 0.24, -0.26)
+mesh = SubResource("CylinderMesh_carrot_orange")
+
+[node name="Carrot2" type="MeshInstance3D" parent="Visuals/Crops/Mature/CarrotGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.24, -0.26)
+mesh = SubResource("CylinderMesh_carrot_orange")
+
+[node name="Carrot3" type="MeshInstance3D" parent="Visuals/Crops/Mature/CarrotGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 0.24, -0.26)
+mesh = SubResource("CylinderMesh_carrot_orange")
+
+[node name="Carrot4" type="MeshInstance3D" parent="Visuals/Crops/Mature/CarrotGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7, 0.24, 0.26)
+mesh = SubResource("CylinderMesh_carrot_orange")
+
+[node name="Carrot5" type="MeshInstance3D" parent="Visuals/Crops/Mature/CarrotGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.24, 0.26)
+mesh = SubResource("CylinderMesh_carrot_orange")
+
+[node name="Carrot6" type="MeshInstance3D" parent="Visuals/Crops/Mature/CarrotGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 0.24, 0.26)
+mesh = SubResource("CylinderMesh_carrot_orange")
+
+[node name="PotatoGroup" type="Node3D" parent="Visuals/Crops/Mature"]
+
+[node name="PotatoBush1" type="MeshInstance3D" parent="Visuals/Crops/Mature/PotatoGroup"]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -0.7, 0.28, -0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="PotatoBush2" type="MeshInstance3D" parent="Visuals/Crops/Mature/PotatoGroup"]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0.0, 0.28, -0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="PotatoBush3" type="MeshInstance3D" parent="Visuals/Crops/Mature/PotatoGroup"]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0.7, 0.28, -0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="PotatoBush4" type="MeshInstance3D" parent="Visuals/Crops/Mature/PotatoGroup"]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -0.7, 0.28, 0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="PotatoBush5" type="MeshInstance3D" parent="Visuals/Crops/Mature/PotatoGroup"]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0.0, 0.28, 0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="PotatoBush6" type="MeshInstance3D" parent="Visuals/Crops/Mature/PotatoGroup"]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0.7, 0.28, 0.26)
+mesh = SubResource("SphereMesh_veg")
+
+[node name="WheatGroup" type="Node3D" parent="Visuals/Crops/Mature"]
+
+[node name="WheatStalk1" type="MeshInstance3D" parent="Visuals/Crops/Mature/WheatGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.42, -0.28)
+mesh = SubResource("CylinderMesh_wheat_gold")
+
+[node name="WheatStalk2" type="MeshInstance3D" parent="Visuals/Crops/Mature/WheatGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, 0.42, -0.28)
+mesh = SubResource("CylinderMesh_wheat_gold")
+
+[node name="WheatStalk3" type="MeshInstance3D" parent="Visuals/Crops/Mature/WheatGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, 0.42, -0.28)
+mesh = SubResource("CylinderMesh_wheat_gold")
+
+[node name="WheatStalk4" type="MeshInstance3D" parent="Visuals/Crops/Mature/WheatGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 0.42, -0.28)
+mesh = SubResource("CylinderMesh_wheat_gold")
+
+[node name="WheatStalk5" type="MeshInstance3D" parent="Visuals/Crops/Mature/WheatGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.42, 0.28)
+mesh = SubResource("CylinderMesh_wheat_gold")
+
+[node name="WheatStalk6" type="MeshInstance3D" parent="Visuals/Crops/Mature/WheatGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, 0.42, 0.28)
+mesh = SubResource("CylinderMesh_wheat_gold")
+
+[node name="WheatStalk7" type="MeshInstance3D" parent="Visuals/Crops/Mature/WheatGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, 0.42, 0.28)
+mesh = SubResource("CylinderMesh_wheat_gold")
+
+[node name="WheatStalk8" type="MeshInstance3D" parent="Visuals/Crops/Mature/WheatGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 0.42, 0.28)
+mesh = SubResource("CylinderMesh_wheat_gold")
+
+[node name="HarvestLight" type="OmniLight3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+visible = false
+light_color = Color(1, 0.88, 0.45, 1)
+light_energy = 0.9
+omni_range = 2.8

@@ -16,6 +16,8 @@ const ContractDB = preload("res://scripts/economy/contract_db.gd")
 @onready var energy_label: Label = $TopLeftUI/Panel/Margin/VBox/EnergyBar/Label
 @onready var thirst_bar: ProgressBar = $TopLeftUI/Panel/Margin/VBox/ThirstBar
 @onready var thirst_label: Label = $TopLeftUI/Panel/Margin/VBox/ThirstBar/Label
+@onready var hunger_bar: ProgressBar = $TopLeftUI/Panel/Margin/VBox/HungerBar
+@onready var hunger_label: Label = $TopLeftUI/Panel/Margin/VBox/HungerBar/Label
 
 @onready var time_label: Label = $TopRightUI/Panel/Margin/VBox/TimeLabel
 @onready var weather_label: Label = $TopRightUI/Panel/Margin/VBox/WeatherLabel
@@ -184,6 +186,10 @@ func bind_player(player: Node) -> void:
 		player.thirst_changed.connect(_on_thirst_changed)
 	if "thirst" in player and "max_thirst" in player:
 		_on_thirst_changed(player.thirst, player.max_thirst)
+	if player.has_signal("hunger_changed"):
+		player.hunger_changed.connect(_on_hunger_changed)
+	if "hunger" in player and "max_hunger" in player:
+		_on_hunger_changed(player.hunger, player.max_hunger)
 	
 	if "inventory" in player and player.inventory:
 		var inv = player.inventory
@@ -256,6 +262,21 @@ func _on_thirst_changed(curr: float, max_v: float) -> void:
 		else:
 			thirst_label.text = "💧 Жажда %d%%" % pct
 			thirst_label.add_theme_color_override("font_color", Color(0.7, 0.9, 1.0))
+
+func _on_hunger_changed(curr: float, max_v: float) -> void:
+	if hunger_bar:
+		hunger_bar.value = (curr / max_v) * 100.0
+	if hunger_label:
+		var pct: int = int((curr / max_v) * 100.0)
+		if pct <= 15:
+			hunger_label.text = "🍞 Сытость %d%% (Голод!)" % pct
+			hunger_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+		elif pct <= 40:
+			hunger_label.text = "🍞 Сытость %d%%" % pct
+			hunger_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3))
+		else:
+			hunger_label.text = "🍞 Сытость %d%%" % pct
+			hunger_label.add_theme_color_override("font_color", Color(0.9, 1.0, 0.8))
 
 func update_time_display(day: int, hour: int, minute: int, formatted: String, phase: String) -> void:
 	if time_label:
@@ -378,6 +399,14 @@ func _refresh_inventory_window() -> void:
 				btn_drink.pressed.connect(_on_inventory_drink_pressed.bind(item_id))
 				row.add_child(btn_drink)
 			
+			if ItemDB.is_edible(item_id):
+				var btn_eat: Button = Button.new()
+				btn_eat.text = "🍎 Есть"
+				btn_eat.custom_minimum_size = Vector2(65, 26)
+				btn_eat.add_theme_font_size_override("font_size", 11)
+				btn_eat.pressed.connect(_on_inventory_eat_pressed.bind(item_id))
+				row.add_child(btn_eat)
+			
 			items_list.add_child(row)
 	
 	if not has_items:
@@ -399,6 +428,11 @@ func _refresh_inventory_window() -> void:
 func _on_inventory_drink_pressed(item_id: String) -> void:
 	if _bound_player and _bound_player.has_method("drink_from_inventory"):
 		_bound_player.drink_from_inventory(item_id)
+		_refresh_inventory_window()
+
+func _on_inventory_eat_pressed(item_id: String) -> void:
+	if _bound_player and _bound_player.has_method("eat_food"):
+		_bound_player.eat_food(item_id)
 		_refresh_inventory_window()
 
 # --- Окно Производственной Машины (Дробилка / Верстак) ---
@@ -618,13 +652,13 @@ func _on_quick_sell_pressed() -> void:
 		return
 	
 	var to_sell: Dictionary = {}
-	for product_id in ["poor_brick", "fuel_briquette", "fired_brick", "glass", "iron_ingot", "clean_water", "bottled_water"]:
+	for product_id in ["poor_brick", "fuel_briquette", "fired_brick", "glass", "iron_ingot", "clean_water", "bottled_water", "carrot", "potato", "wheat", "bread"]:
 		var c: int = inv.get_item_count(product_id)
 		if c > 0:
 			to_sell[product_id] = c
 	
 	if to_sell.is_empty():
-		show_notification("ℹ️ В рюкзаке нет готовой продукции (кирпичи, брикеты, стекло, слитки) для отправки.")
+		show_notification("ℹ️ В рюкзаке нет готовой продукции (материалы, вода, выращенные овощи, хлеб) для отправки.")
 		return
 	
 	_current_active_station.sell_goods(to_sell, _bound_player)

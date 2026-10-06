@@ -104,6 +104,56 @@ const RECIPES: Dictionary = {
 		"duration": 3.0,
 		"energy_cost": 1.0,
 		"description": "Розлив фильтрованной воды в герметичные стеклянные бутылки для длительного хранения и продажи."
+	},
+	"craft_fertilizer": {
+		"id": "craft_fertilizer",
+		"name": "Смешивание: Био-удобрение (x2)",
+		"machine": "workbench",
+		"inputs": {"clay": 1, "sawdust": 2, "water": 1},
+		"outputs": {"fertilizer": 2},
+		"duration": 4.0,
+		"energy_cost": 2.0,
+		"description": "Смешивание обогащенной глины, органических опилок и воды в стимулирующее био-удобрение."
+	},
+	"extract_carrot_seeds": {
+		"id": "extract_carrot_seeds",
+		"name": "Селекция: Семена моркови (x2)",
+		"machine": "workbench",
+		"inputs": {"carrot": 1},
+		"outputs": {"seeds_carrot": 2},
+		"duration": 3.0,
+		"energy_cost": 1.0,
+		"description": "Сбор и сушка отборных сортовых семян из выращенной моркови для повторного посева."
+	},
+	"extract_potato_seeds": {
+		"id": "extract_potato_seeds",
+		"name": "Подготовка: Семенной картофель (x2)",
+		"machine": "workbench",
+		"inputs": {"potato": 1},
+		"outputs": {"seeds_potato": 2},
+		"duration": 3.0,
+		"energy_cost": 1.0,
+		"description": "Отбор и деление клубней картофеля на пророщенный посадочный материал."
+	},
+	"extract_wheat_seeds": {
+		"id": "extract_wheat_seeds",
+		"name": "Обмолот: Семена пшеницы (x3)",
+		"machine": "workbench",
+		"inputs": {"wheat": 1},
+		"outputs": {"seeds_wheat": 3},
+		"duration": 3.0,
+		"energy_cost": 1.0,
+		"description": "Ручной обмолот пшеничного снопа для получения чистого посевного зерна."
+	},
+	"bake_bread": {
+		"id": "bake_bread",
+		"name": "Выпечка: Домашний хлеб (x2)",
+		"machine": "furnace",
+		"inputs": {"wheat": 2, "clean_water": 1, "fuel_briquette": 1},
+		"outputs": {"bread": 2},
+		"duration": 6.0,
+		"energy_cost": 2.5,
+		"description": "Замес теста из молотой пшеницы и чистой воды с последующей выпечкой подового хлеба в печи."
 	}
 }
 

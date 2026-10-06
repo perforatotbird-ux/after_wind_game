@@ -226,6 +226,102 @@ const ITEMS: Dictionary = {
 		"thirst_recovery": 85.0,
 		"energy_bonus": 15.0,
 		"description": "Премиальная родниковая вода в герметичной стеклянной бутылке (+85% жажды, +15 энергии, высокая цена сбыта)."
+	},
+
+	# --- Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33) ---
+	"seeds_carrot": {
+		"id": "seeds_carrot",
+		"name": "Семена моркови",
+		"icon": "🥕",
+		"category": "seeds",
+		"crop_type": "carrot",
+		"weight": 0.1,
+		"max_stack": 30,
+		"sell_price": 5,
+		"description": "Пакет сортовых семян сочной моркови для посева во влажные борозды."
+	},
+	"seeds_potato": {
+		"id": "seeds_potato",
+		"name": "Семенной картофель",
+		"icon": "🥔",
+		"category": "seeds",
+		"crop_type": "potato",
+		"weight": 0.2,
+		"max_stack": 30,
+		"sell_price": 6,
+		"description": "Пророщенные клубни картофеля для посадки во взрыхлённую землю."
+	},
+	"seeds_wheat": {
+		"id": "seeds_wheat",
+		"name": "Семена пшеницы",
+		"icon": "🌾",
+		"category": "seeds",
+		"crop_type": "wheat",
+		"weight": 0.1,
+		"max_stack": 30,
+		"sell_price": 4,
+		"description": "Отборные яровые зерна пшеницы для засева пахотной грядки."
+	},
+	"carrot": {
+		"id": "carrot",
+		"name": "Свежая морковь",
+		"icon": "🥕",
+		"category": "food",
+		"weight": 0.3,
+		"max_stack": 30,
+		"sell_price": 14,
+		"is_edible": true,
+		"hunger_recovery": 28.0,
+		"thirst_recovery": 12.0,
+		"energy_bonus": 10.0,
+		"description": "Хрустящая сладкая морковь прямо с грядки (+28% сытости, +12% жажды, +10 энергии)."
+	},
+	"potato": {
+		"id": "potato",
+		"name": "Картофель",
+		"icon": "🥔",
+		"category": "food",
+		"weight": 0.4,
+		"max_stack": 30,
+		"sell_price": 18,
+		"is_edible": true,
+		"hunger_recovery": 42.0,
+		"thirst_recovery": 5.0,
+		"energy_bonus": 15.0,
+		"description": "Питательные плотные клубни картофеля (+42% сытости, +15 энергии)."
+	},
+	"wheat": {
+		"id": "wheat",
+		"name": "Сноп пшеницы",
+		"icon": "🌾",
+		"category": "crop",
+		"weight": 0.5,
+		"max_stack": 40,
+		"sell_price": 12,
+		"description": "Золотистые созревшие колосья пшеницы. Сырье для помола муки и выпечки."
+	},
+	"bread": {
+		"id": "bread",
+		"name": "Свежий хлеб",
+		"icon": "🍞",
+		"category": "food",
+		"weight": 0.5,
+		"max_stack": 20,
+		"sell_price": 48,
+		"is_edible": true,
+		"hunger_recovery": 65.0,
+		"energy_bonus": 25.0,
+		"description": "Ароматный домашний хлеб из печи (+65% сытости, +25 энергии)."
+	},
+	"fertilizer": {
+		"id": "fertilizer",
+		"name": "Био-удобрение",
+		"icon": "🧪",
+		"category": "farming",
+		"weight": 0.5,
+		"max_stack": 30,
+		"sell_price": 16,
+		"description": "Смесь компоста, глины и золы. Ускоряет созревание культур на грядке в 2 раза."
 	}
 }
 
@@ -254,12 +350,33 @@ static func is_drinkable(item_id: String) -> bool:
 		return ITEMS[item_id].get("is_drinkable", false)
 	return false
 
+static func is_edible(item_id: String) -> bool:
+	if ITEMS.has(item_id):
+		return ITEMS[item_id].get("is_edible", false)
+	return false
+
 static func get_thirst_recovery(item_id: String) -> float:
 	if ITEMS.has(item_id):
 		return ITEMS[item_id].get("thirst_recovery", 0.0)
+	return 0.0
+
+static func get_hunger_recovery(item_id: String) -> float:
+	if ITEMS.has(item_id):
+		return ITEMS[item_id].get("hunger_recovery", 0.0)
 	return 0.0
 
 static func get_energy_bonus(item_id: String) -> float:
 	if ITEMS.has(item_id):
 		return ITEMS[item_id].get("energy_bonus", 0.0)
 	return 0.0
+
+static func is_seed(item_id: String) -> bool:
+	if ITEMS.has(item_id):
+		return ITEMS[item_id].get("category", "") == "seeds"
+	return false
+
+static func get_crop_type(item_id: String) -> String:
+	if ITEMS.has(item_id):
+		return ITEMS[item_id].get("crop_type", "")
+	return ""
+

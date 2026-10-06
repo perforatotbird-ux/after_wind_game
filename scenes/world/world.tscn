@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://c53v4j8v7x2ka"]
+[gd_scene load_steps=26 format=3 uid="uid://c53v4j8v7x2ka"]
 
 [ext_resource type="Script" path="res://scripts/world/world.gd" id="1_world"]
 [ext_resource type="Script" path="res://scripts/world/isometric_camera.gd" id="2_cam"]
@@ -22,6 +22,7 @@
 [ext_resource type="PackedScene" path="res://scenes/buildings/water_reservoir.tscn" id="20_reservoir"]
 [ext_resource type="PackedScene" path="res://scenes/npc/trader_npc.tscn" id="21_npc"]
 [ext_resource type="PackedScene" path="res://scenes/buildings/contract_board.tscn" id="22_board"]
+[ext_resource type="PackedScene" path="res://scenes/farming/farmland_plot.tscn" id="23_farmland"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.36, 0.54, 0.75, 1)
@@ -141,6 +142,12 @@ transform = Transform3D(0.866025, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866025, 7.2, 0, -3
 
 [node name="ContractBoard" parent="Props" instance=ExtResource("22_board")]
 transform = Transform3D(0.965926, 0, -0.258819, 0, 1, 0, 0.258819, 0, 0.965926, 5.0, 0, -2.0)
+
+[node name="FarmlandPlot1" parent="Props" instance=ExtResource("23_farmland")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.6, 0, 0.8)
+
+[node name="FarmlandPlot2" parent="Props" instance=ExtResource("23_farmland")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.2, 0, 0.8)
 
 [node name="Resources" type="Node3D" parent="."]
 

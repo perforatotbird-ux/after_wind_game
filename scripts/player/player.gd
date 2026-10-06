@@ -4,6 +4,7 @@ signal focused_interactable_changed(interactable: Area3D)
 signal notification_received(text: String)
 signal energy_changed(current: float, max_val: float)
 signal thirst_changed(current: float, max_val: float)
+signal hunger_changed(current: float, max_val: float)
 signal inventory_toggle_requested()
 
 @export_group("Movement")
@@ -17,6 +18,8 @@ signal inventory_toggle_requested()
 @export var energy_recovery_rate: float = 2.0
 @export var max_thirst: float = 100.0
 @export var thirst_decay_rate: float = 0.2
+@export var max_hunger: float = 100.0
+@export var hunger_decay_rate: float = 0.15
 
 const InventoryScript = preload("res://scripts/inventory/inventory.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
@@ -28,6 +31,7 @@ const ItemDB = preload("res://scripts/inventory/item_db.gd")
 
 var energy: float = 100.0
 var thirst: float = 100.0
+var hunger: float = 100.0
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 var nearby_interactables: Array[Area3D] = []
 var current_interactable: Area3D = null
@@ -45,14 +49,17 @@ func _ready() -> void:
 	
 	energy = max_energy
 	thirst = max_thirst
+	hunger = max_hunger
 	energy_changed.emit(energy, max_energy)
 	thirst_changed.emit(thirst, max_thirst)
+	hunger_changed.emit(hunger, max_hunger)
 
 func _physics_process(delta: float) -> void:
 	_handle_gravity(delta)
 	_handle_movement(delta)
 	_handle_energy_regen(delta)
 	_handle_thirst(delta)
+	_handle_hunger(delta)
 	_update_best_interactable()
 	_handle_interaction_input()
 	move_and_slide()
@@ -73,6 +80,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				equip_slot(4)
 			KEY_U:
 				drink_from_inventory()
+			KEY_Y:
+				eat_from_inventory()
 			KEY_TAB, KEY_I:
 				inventory_toggle_requested.emit()
 
@@ -104,10 +113,20 @@ func get_speed_multiplier() -> float:
 	else:
 		t_mult = 0.55
 
-	return e_mult * t_mult
+	var h_mult: float = 1.0
+	if hunger >= 40.0:
+		h_mult = 1.0
+	elif hunger >= 15.0:
+		h_mult = 0.90
+	elif hunger > 0.0:
+		h_mult = 0.75
+	else:
+		h_mult = 0.60
+
+	return e_mult * t_mult * h_mult
 
 func can_sprint() -> bool:
-	return energy >= 20.0 and thirst > 10.0
+	return energy >= 20.0 and thirst > 10.0 and hunger > 10.0
 
 func _handle_energy_regen(delta: float) -> void:
 	var sprint_active: bool = Input.is_action_pressed("sprint") and can_sprint() and velocity.length_squared() > 1.0
@@ -140,6 +159,17 @@ func _handle_thirst(delta: float) -> void:
 	thirst = max(0.0, thirst - drain_rate * delta)
 	if abs(old_thirst - thirst) > 0.01:
 		thirst_changed.emit(thirst, max_thirst)
+
+func _handle_hunger(delta: float) -> void:
+	var drain_rate: float = hunger_decay_rate
+	var sprint_active: bool = Input.is_action_pressed("sprint") and can_sprint() and velocity.length_squared() > 1.0
+	if sprint_active:
+		drain_rate *= 1.4
+
+	var old_hunger: float = hunger
+	hunger = max(0.0, hunger - drain_rate * delta)
+	if abs(old_hunger - hunger) > 0.01:
+		hunger_changed.emit(hunger, max_hunger)
 
 func consume_energy(amount: float) -> void:
 	energy = max(0.0, energy - amount)
@@ -191,12 +221,66 @@ func drink_from_inventory(preferred_item_id: String = "") -> bool:
 	drink_water(rec, is_clean, e_bon)
 	return true
 
+func eat_food(food_item_id: String) -> bool:
+	if not inventory:
+		return false
+	if inventory.get_item_count(food_item_id) <= 0:
+		notify("ℹ️ У вас нет этого продукта!")
+		return false
+	
+	if hunger >= max_hunger and energy >= max_energy:
+		notify("🍽️ Вы не голодны и полны сил (Сытость 100%).")
+		return false
+	
+	var item_data: Dictionary = ItemDB.get_item(food_item_id)
+	var h_rec: float = item_data.get("hunger_recovery", 25.0)
+	var e_rec: float = item_data.get("energy_bonus", 10.0)
+	var t_rec: float = item_data.get("thirst_recovery", 0.0)
+	var item_name: String = item_data.get("name", food_item_id)
+	var item_icon: String = item_data.get("icon", "🍎")
+
+	inventory.remove_item(food_item_id, 1)
+
+	hunger = min(max_hunger, hunger + h_rec)
+	hunger_changed.emit(hunger, max_hunger)
+
+	if e_rec > 0.0:
+		energy = min(max_energy, energy + e_rec)
+		energy_changed.emit(energy, max_energy)
+
+	if t_rec > 0.0:
+		thirst = min(max_thirst, thirst + t_rec)
+		thirst_changed.emit(thirst, max_thirst)
+
+	notify("%s Вы съели %s! (+%d%% сытости, текущая: %d%%)" % [item_icon, item_name, int(h_rec), int(hunger)])
+	return true
+
+func eat_from_inventory(preferred_item_id: String = "") -> bool:
+	if not inventory:
+		return false
+	
+	var target_item: String = preferred_item_id
+	if target_item == "" or inventory.get_item_count(target_item) <= 0:
+		for it_id in ["bread", "potato", "carrot"]:
+			if inventory.get_item_count(it_id) > 0:
+				target_item = it_id
+				break
+	
+	if target_item == "" or inventory.get_item_count(target_item) <= 0:
+		notify("ℹ️ В рюкзаке нет готовой еды для перекуса!")
+		return false
+	
+	return eat_food(target_item)
+
 func rest_in_bed(new_day: int = -1) -> void:
 	energy = max_energy
 	energy_changed.emit(energy, max_energy)
 	if thirst < 35.0:
 		thirst = 35.0
 		thirst_changed.emit(thirst, max_thirst)
+	if hunger < 35.0:
+		hunger = 35.0
+		hunger_changed.emit(hunger, max_hunger)
 	if new_day > 0:
 		notify("💤 Вы отлично выспались в тепле! Наступил День %d. Энергия 100%%." % new_day)
 	else:

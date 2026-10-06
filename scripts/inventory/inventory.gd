@@ -36,7 +36,15 @@ var items: Dictionary = {
 	"metal_scrap": 0,
 	"iron_ingot": 0,
 	"clean_water": 0,
-	"bottled_water": 0
+	"bottled_water": 0,
+	"seeds_carrot": 0,
+	"seeds_potato": 0,
+	"seeds_wheat": 0,
+	"carrot": 0,
+	"potato": 0,
+	"wheat": 0,
+	"bread": 0,
+	"fertilizer": 0
 }
 
 func _ready() -> void:
