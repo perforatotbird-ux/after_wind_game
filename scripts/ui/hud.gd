@@ -2,6 +2,7 @@ extends CanvasLayer
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
+const ContractDB = preload("res://scripts/economy/contract_db.gd")
 
 @onready var prompt_container: PanelContainer = $PromptContainer
 @onready var prompt_label: Label = $PromptContainer/MarginContainer/PromptLabel
@@ -68,10 +69,18 @@ const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
 @onready var repair_upgrade_button: Button = $RepairWindow/Margin/VBox/UpgradeButton
 @onready var repair_sleep_button: Button = $RepairWindow/Margin/VBox/SleepButton
 
+# Окно контрактов и NPC
+@onready var contract_window: PanelContainer = $ContractWindow
+@onready var contract_title_label: Label = $ContractWindow/Margin/VBox/HeaderHBox/TitleLabel
+@onready var contract_close_button: Button = $ContractWindow/Margin/VBox/HeaderHBox/CloseButton
+@onready var contract_dialogue_label: Label = $ContractWindow/Margin/VBox/DialogueBox/DialogueMargin/DialogueLabel
+@onready var contracts_list: VBoxContainer = $ContractWindow/Margin/VBox/ScrollContainer/ContractsList
+
 var _bound_player: Node = null
 var _current_active_machine: Node = null
 var _current_active_station: Node = null
 var _current_active_building: Node = null
+var _current_active_npc: Node = null
 
 var style_slot_active: StyleBoxFlat = null
 var style_slot_normal: StyleBoxFlat = null
@@ -87,6 +96,8 @@ func _ready() -> void:
 		sales_window.visible = false
 	if repair_window:
 		repair_window.visible = false
+	if contract_window:
+		contract_window.visible = false
 	
 	if notification_timer:
 		notification_timer.timeout.connect(_on_notification_timeout)
@@ -111,13 +122,18 @@ func _ready() -> void:
 		repair_upgrade_button.pressed.connect(_on_upgrade_building_pressed)
 	if repair_sleep_button:
 		repair_sleep_button.pressed.connect(_on_building_sleep_pressed)
+	if contract_close_button:
+		contract_close_button.pressed.connect(close_contract_window)
 	
 	_init_styles()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
-			if repair_window and repair_window.visible:
+			if contract_window and contract_window.visible:
+				close_contract_window()
+				get_viewport().set_input_as_handled()
+			elif repair_window and repair_window.visible:
 				close_repair_window()
 				get_viewport().set_input_as_handled()
 			elif machine_window and machine_window.visible:
@@ -272,6 +288,8 @@ func _on_inventory_updated() -> void:
 		_refresh_sales_window()
 	if repair_window and repair_window.visible and _current_active_building:
 		_refresh_repair_window()
+	if contract_window and contract_window.visible:
+		_refresh_contract_window()
 
 func _update_resource_counters() -> void:
 	if not _bound_player or not ("inventory" in _bound_player):
@@ -741,3 +759,130 @@ func _on_notification_timeout() -> void:
 func set_credits(amount: int) -> void:
 	if money_label:
 		money_label.text = "💰 Кредиты: %d" % amount
+
+# --- Окно Контрактов и NPC ---
+func open_contract_window(source_node: Node = null) -> void:
+	_current_active_npc = source_node
+	if not contract_window:
+		return
+	if inventory_window: inventory_window.visible = false
+	if machine_window: machine_window.visible = false
+	if sales_window: sales_window.visible = false
+	if repair_window: repair_window.visible = false
+	
+	contract_window.visible = true
+	_refresh_contract_window()
+
+func close_contract_window() -> void:
+	if contract_window:
+		contract_window.visible = false
+	_current_active_npc = null
+
+func _refresh_contract_window() -> void:
+	if not contract_window or not contracts_list:
+		return
+	
+	if _current_active_npc and "greeting_text" in _current_active_npc:
+		var n_name: String = _current_active_npc.npc_name if "npc_name" in _current_active_npc else "Степан (Снабженец)"
+		contract_title_label.text = "👨‍🌾 " + n_name
+		contract_dialogue_label.text = _current_active_npc.greeting_text
+	else:
+		contract_title_label.text = "📜 Доска заказов и контрактов"
+		contract_dialogue_label.text = "Срочные поставки стройматериалов и снабжения для окрестных жителей. Оплата производится сразу при сдаче партии!"
+	
+	for child in contracts_list.get_children():
+		contracts_list.remove_child(child)
+		child.queue_free()
+	
+	var inv = _bound_player.get("inventory") if _bound_player else null
+	var all_contracts = ContractDB.get_all_contracts()
+	
+	for contract in all_contracts:
+		var c_id: String = contract.get("id", "")
+		var is_done: bool = ContractDB.is_completed(c_id)
+		var can_do: bool = ContractDB.can_fulfill(contract, inv)
+		
+		var card: PanelContainer = PanelContainer.new()
+		var card_style: StyleBoxFlat = StyleBoxFlat.new()
+		card_style.bg_color = Color(0.14, 0.17, 0.22, 0.95) if not is_done else Color(0.11, 0.13, 0.15, 0.7)
+		card_style.border_color = Color(0.3, 0.75, 0.45, 1.0) if can_do else (Color(0.28, 0.45, 0.65, 0.8) if not is_done else Color(0.3, 0.35, 0.4, 0.5))
+		card_style.set_border_width_all(1)
+		card_style.set_corner_radius_all(6)
+		card.add_theme_stylebox_override("panel", card_style)
+		
+		var m_box: MarginContainer = MarginContainer.new()
+		m_box.add_theme_constant_override("margin_left", 12)
+		m_box.add_theme_constant_override("margin_top", 10)
+		m_box.add_theme_constant_override("margin_right", 12)
+		m_box.add_theme_constant_override("margin_bottom", 10)
+		card.add_child(m_box)
+		
+		var vbox: VBoxContainer = VBoxContainer.new()
+		vbox.add_theme_constant_override("separation", 6)
+		m_box.add_child(vbox)
+		
+		# Заголовок и награда
+		var h_title: HBoxContainer = HBoxContainer.new()
+		var lbl_title: Label = Label.new()
+		lbl_title.text = contract.get("title", "Заказ")
+		lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lbl_title.add_theme_font_size_override("font_size", 14)
+		lbl_title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45) if not is_done else Color(0.65, 0.7, 0.75))
+		h_title.add_child(lbl_title)
+		
+		var lbl_reward: Label = Label.new()
+		lbl_reward.text = "💰 +%d кр." % contract.get("reward_credits", 0)
+		lbl_reward.add_theme_font_size_override("font_size", 13)
+		lbl_reward.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5) if not is_done else Color(0.6, 0.7, 0.6))
+		h_title.add_child(lbl_reward)
+		vbox.add_child(h_title)
+		
+		# Клиент и описание
+		var lbl_desc: Label = Label.new()
+		lbl_desc.text = "Заказчик: %s — %s" % [contract.get("client", "Округа"), contract.get("description", "")]
+		lbl_desc.add_theme_font_size_override("font_size", 11)
+		lbl_desc.add_theme_color_override("font_color", Color(0.75, 0.8, 0.85))
+		lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		vbox.add_child(lbl_desc)
+		
+		# Требования к ресурсам
+		var reqs: Dictionary = contract.get("requirements", {})
+		var h_reqs: HBoxContainer = HBoxContainer.new()
+		for item_id in reqs.keys():
+			var needed: int = reqs[item_id]
+			var count: int = inv.get_item_count(item_id) if inv else 0
+			var icon: String = ItemDB.get_item_icon(item_id)
+			var item_name: String = ItemDB.get_item_name(item_id)
+			
+			var lbl_item: Label = Label.new()
+			lbl_item.text = "%s %s: %d/%d" % [icon, item_name, count, needed]
+			lbl_item.add_theme_font_size_override("font_size", 11)
+			if count >= needed:
+				lbl_item.add_theme_color_override("font_color", Color(0.4, 0.95, 0.4))
+			else:
+				lbl_item.add_theme_color_override("font_color", Color(0.95, 0.5, 0.4))
+			h_reqs.add_child(lbl_item)
+		vbox.add_child(h_reqs)
+		
+		# Кнопка сдачи
+		var btn: Button = Button.new()
+		btn.custom_minimum_size = Vector2(0, 30)
+		if is_done:
+			btn.text = "Заказ выполнен ✅"
+			btn.disabled = true
+		elif can_do:
+			btn.text = "Сдать партию материалов (💰 +%d кр.)" % contract.get("reward_credits", 0)
+			btn.pressed.connect(_on_fulfill_contract_pressed.bind(c_id))
+		else:
+			btn.text = "Недостаточно товаров в рюкзаке"
+			btn.disabled = true
+		vbox.add_child(btn)
+		
+		contracts_list.add_child(card)
+
+func _on_fulfill_contract_pressed(contract_id: String) -> void:
+	if not _bound_player:
+		return
+	var ok: bool = ContractDB.fulfill_contract(contract_id, _bound_player)
+	if ok:
+		_refresh_contract_window()

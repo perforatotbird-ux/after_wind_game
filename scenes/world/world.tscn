@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://c53v4j8v7x2ka"]
+[gd_scene load_steps=25 format=3 uid="uid://c53v4j8v7x2ka"]
 
 [ext_resource type="Script" path="res://scripts/world/world.gd" id="1_world"]
 [ext_resource type="Script" path="res://scripts/world/isometric_camera.gd" id="2_cam"]
@@ -20,6 +20,8 @@
 [ext_resource type="PackedScene" path="res://scenes/resources/scrap_node.tscn" id="18_scrap"]
 [ext_resource type="PackedScene" path="res://scenes/machines/water_filter.tscn" id="19_filter"]
 [ext_resource type="PackedScene" path="res://scenes/buildings/water_reservoir.tscn" id="20_reservoir"]
+[ext_resource type="PackedScene" path="res://scenes/npc/trader_npc.tscn" id="21_npc"]
+[ext_resource type="PackedScene" path="res://scenes/buildings/contract_board.tscn" id="22_board"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.36, 0.54, 0.75, 1)
@@ -133,6 +135,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8, 0, 1.2)
 
 [node name="WaterReservoir" parent="Props" instance=ExtResource("20_reservoir")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 0, 3.8)
+
+[node name="TraderNPC" parent="Props" instance=ExtResource("21_npc")]
+transform = Transform3D(0.866025, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866025, 7.2, 0, -3.2)
+
+[node name="ContractBoard" parent="Props" instance=ExtResource("22_board")]
+transform = Transform3D(0.965926, 0, -0.258819, 0, 1, 0, 0.258819, 0, 0.965926, 5.0, 0, -2.0)
 
 [node name="Resources" type="Node3D" parent="."]
 

@@ -9,7 +9,7 @@ func _ready() -> void:
 	if player and hud and hud.has_method("bind_player"):
 		hud.bind_player(player)
 		if hud.has_method("show_notification"):
-			hud.show_notification("«После бури» [Этап 6 — Водный контур и фильтрация]: Очищайте воду в фильтре, следите за шкалой жажды и пейте воду!")
+			hud.show_notification("«После бури» [Этап 7 — NPC и заказы]: Поговорите со снабженцем Степаном и сдавайте выгодные строительные контракты!")
 	
 	if camera and player and "target_node" in camera:
 		camera.target_node = player
@@ -26,7 +26,7 @@ func _connect_interactive_stations() -> void:
 	if not hud:
 		return
 	
-	# Автоматическое подключение всех производственных машин, станций и восстанавливаемых зданий к окнам HUD
+	# Автоматическое подключение всех производственных машин, станций, зданий и NPC к окнам HUD
 	for child in find_children("*", "Area3D", true, false):
 		if child.has_signal("machine_opened") and hud.has_method("open_machine_window"):
 			child.machine_opened.connect(hud.open_machine_window)
@@ -34,3 +34,7 @@ func _connect_interactive_stations() -> void:
 			child.station_opened.connect(hud.open_sales_window)
 		elif child.has_signal("building_opened") and hud.has_method("open_repair_window"):
 			child.building_opened.connect(hud.open_repair_window)
+		elif child.has_signal("dialogue_opened") and hud.has_method("open_contract_window"):
+			child.dialogue_opened.connect(hud.open_contract_window)
+		elif child.has_signal("board_opened") and hud.has_method("open_contract_window"):
+			child.board_opened.connect(hud.open_contract_window)
