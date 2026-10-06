@@ -6,6 +6,7 @@ extends "res://scripts/interaction/interactable.gd"
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
+const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 
 signal machine_opened(machine: Node)
 signal process_started(recipe_id: String, duration: float)
@@ -106,6 +107,7 @@ func start_recipe(recipe_id: String, player: Node) -> bool:
 	_last_user = player
 	
 	process_started.emit(recipe_id, process_duration)
+	AudioManager.play("machine_start")
 	
 	if player.has_method("notify"):
 		player.notify("⚙️ Запущено: %s (время: %.0f сек)" % [recipe.get("name"), process_duration])
@@ -132,6 +134,7 @@ func _complete_process() -> void:
 				if _last_user.has_method("notify"):
 					_last_user.notify("✅ Готово! %s %s +%d" % [item_icon, item_name, amount])
 	
+	AudioManager.play("harvest", 1.25)
 	process_completed.emit(active_recipe.get("id", ""), outputs)
 	active_recipe = {}
 

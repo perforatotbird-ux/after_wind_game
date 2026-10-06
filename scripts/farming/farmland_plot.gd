@@ -5,6 +5,7 @@ extends "res://scripts/interaction/interactable.gd"
 ## Поддерживает вскопку лопатой, посадку культур, полив, внесение удобрений и сбор урожая
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
+const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 
 signal plot_tilled()
 signal crop_planted(crop_type: String)
@@ -215,6 +216,7 @@ func till_soil(player: Node) -> bool:
 	
 	soil_state = SoilState.TILLED
 	plot_tilled.emit()
+	AudioManager.play("till_soil")
 	_update_visuals()
 	_play_dig_bounce()
 	
@@ -270,6 +272,7 @@ func water_plot(amount: float = 50.0, player: Node = null) -> bool:
 	
 	moisture = min(max_moisture, moisture + amount)
 	plot_watered.emit(moisture)
+	AudioManager.play("water_splash")
 	_update_soil_material()
 	_play_water_ripple()
 	
@@ -320,6 +323,7 @@ func harvest_crop(player: Node) -> Dictionary:
 		inv.add_item(crop_type, base_yield)
 		inv.add_item("seeds_" + crop_type, seed_yield)
 	
+	AudioManager.play("harvest")
 	var harvested_crop_name: String = ItemDB.get_item_name(crop_type)
 	crop_harvested.emit(crop_type, base_yield, seed_yield)
 	

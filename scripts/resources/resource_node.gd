@@ -4,6 +4,7 @@ extends "res://scripts/interaction/interactable.gd"
 ## Интерактивный узел добычи ресурса (Этап 1, разделы 16, 17, 66)
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
+const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 
 signal resource_gathered(resource_id: String, amount: int)
 signal node_depleted()
@@ -113,6 +114,12 @@ func _on_interacted(player: Node) -> void:
 	# Трата энергии
 	if player.has_method("consume_energy"):
 		player.consume_energy(final_energy_cost)
+	
+	# Звук удара (Game Feel)
+	if required_tool == "axe" or resource_id == "wood":
+		AudioManager.play("hit_wood", randf_range(0.95, 1.05))
+	else:
+		AudioManager.play("hit_stone", randf_range(0.95, 1.05))
 	
 	# Визуальный отклик (shake tween)
 	_play_hit_effect()

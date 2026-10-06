@@ -164,6 +164,9 @@ static func fulfill_contract(contract_id: String, player: Node) -> bool:
 	
 	completed_contracts[contract_id] = true
 	
+	const AudioManager = preload("res://scripts/audio/audio_manager.gd")
+	AudioManager.play("coins")
+	
 	if player.has_method("notify"):
 		var title: String = contract.get("title", "Заказ")
 		player.notify("📜 Контракт «%s» выполнен! Получено +%d кредитов!" % [title, reward])
@@ -172,3 +175,6 @@ static func fulfill_contract(contract_id: String, player: Node) -> bool:
 
 static func reset_completed() -> void:
 	completed_contracts.clear()
+
+static func get_completed_count() -> int:
+	return completed_contracts.size()

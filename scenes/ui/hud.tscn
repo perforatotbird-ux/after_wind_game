@@ -84,6 +84,7 @@ corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
 [node name="HUD" type="CanvasLayer"]
+process_mode = 3
 script = ExtResource("1_hud")
 
 [node name="TopLeftUI" type="Control" parent="."]
@@ -219,7 +220,7 @@ anchor_right = 1.0
 offset_left = -220.0
 offset_top = 20.0
 offset_right = -20.0
-offset_bottom = 170.0
+offset_bottom = 196.0
 grow_horizontal = 0
 
 [node name="Panel" type="PanelContainer" parent="TopRightUI"]
@@ -269,6 +270,13 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 0.85)
 theme_override_font_sizes/font_size = 10
 text = "💾 [F5] Сохранить | 📂 [F9] Загрузить"
+
+[node name="PauseButton" type="Button" parent="TopRightUI/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "⏸️ Меню / Пауза [ESC]"
+flat = true
 
 [node name="ResourceBarUI" type="Control" parent="."]
 layout_mode = 3
@@ -876,4 +884,181 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.65, 0.72, 0.8, 1)
 theme_override_font_sizes/font_size = 11
 text = "Специализация даёт уникальные постоянные бонусы к добыче, агрономии или технологиям."
+
+[node name="PauseWindow" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -240.0
+offset_right = 260.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inv_window")
+
+[node name="Margin" type="MarginContainer" parent="PauseWindow"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 18
+
+[node name="VBox" type="VBoxContainer" parent="PauseWindow/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="PauseWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 18
+text = "⏸️ МЕНЮ ПАУЗЫ"
+horizontal_alignment = 1
+
+[node name="BaseProgressLabel" type="Label" parent="PauseWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.9, 0.65, 1)
+theme_override_font_sizes/font_size = 13
+text = "🏆 Восстановление базы: 0/8 вех (0%)"
+horizontal_alignment = 1
+
+[node name="TasksScroll" type="ScrollContainer" parent="PauseWindow/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 110)
+
+[node name="TasksList" type="VBoxContainer" parent="PauseWindow/Margin/VBox/TasksScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="HSeparator1" type="HSeparator" parent="PauseWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="AudioLabel" type="Label" parent="PauseWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "🔊 Настройки звука (Game Feel):"
+
+[node name="SfxHBox" type="HBoxContainer" parent="PauseWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="SfxText" type="Label" parent="PauseWindow/Margin/VBox/SfxHBox"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Эффекты (SFX):"
+
+[node name="SfxSlider" type="HSlider" parent="PauseWindow/Margin/VBox/SfxHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 0.8
+
+[node name="AmbHBox" type="HBoxContainer" parent="PauseWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="AmbText" type="Label" parent="PauseWindow/Margin/VBox/AmbHBox"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Окружение (Ветер/Дождь):"
+
+[node name="AmbSlider" type="HSlider" parent="PauseWindow/Margin/VBox/AmbHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 0.6
+
+[node name="HSeparator2" type="HSeparator" parent="PauseWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="ResumeButton" type="Button" parent="PauseWindow/Margin/VBox"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+text = "▶️ Продолжить игру [ESC]"
+
+[node name="SaveLoadHBox" type="HBoxContainer" parent="PauseWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SaveButton" type="Button" parent="PauseWindow/Margin/VBox/SaveLoadHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "💾 Сохранить [F5]"
+
+[node name="LoadButton" type="Button" parent="PauseWindow/Margin/VBox/SaveLoadHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "📂 Загрузить [F9]"
+
+[node name="QuitButton" type="Button" parent="PauseWindow/Margin/VBox"]
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+text = "🚪 Выход из игры"
+
+[node name="VictoryWindow" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -200.0
+offset_right = 280.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inv_window")
+
+[node name="Margin" type="MarginContainer" parent="VictoryWindow"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="VictoryWindow/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BannerLabel" type="Label" parent="VictoryWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
+theme_override_font_sizes/font_size = 20
+text = "🎉 БАЗА ВОССТАНОВЛЕНА! / BASE RESTORED 🎉"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="VictoryWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.95, 0.65, 1)
+theme_override_font_sizes/font_size = 14
+text = "«Всё было разрушено. Но теперь это моё. И я сам это восстановил»"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="VictoryWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 0.95, 1)
+theme_override_font_sizes/font_size = 12
+text = "Поздравляем! Основные руины расчищены, дом и склад обновлены, дробилка, верстак и плавильня запущены, ферма дает урожай, а поселок снабжен ресурсами. Финальная цель первого этапа достигнута!"
+autowrap_mode = 3
+
+[node name="StatsLabel" type="Label" parent="VictoryWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 12
+text = "Статистика: ..."
+horizontal_alignment = 1
+
+[node name="ContinueButton" type="Button" parent="VictoryWindow/Margin/VBox"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "⭐ Продолжить свободную игру (Песочница)"
 

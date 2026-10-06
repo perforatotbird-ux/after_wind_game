@@ -4,6 +4,8 @@ const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
 const ContractDB = preload("res://scripts/economy/contract_db.gd")
 const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
+const AudioManager = preload("res://scripts/audio/audio_manager.gd")
+const VictoryManager = preload("res://scripts/core/victory_manager.gd")
 
 @onready var prompt_container: PanelContainer = $PromptContainer
 @onready var prompt_label: Label = $PromptContainer/MarginContainer/PromptLabel
@@ -15,6 +17,25 @@ const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd
 @onready var class_window: PanelContainer = get_node_or_null("ClassSelectWindow")
 @onready var class_close_button: Button = get_node_or_null("ClassSelectWindow/Margin/VBox/HeaderHBox/CloseButton")
 @onready var classes_list: VBoxContainer = get_node_or_null("ClassSelectWindow/Margin/VBox/ScrollContainer/ClassesList")
+
+# Меню паузы и звука
+@onready var pause_button: Button = get_node_or_null("TopRightUI/Panel/Margin/VBox/PauseButton")
+@onready var pause_window: PanelContainer = get_node_or_null("PauseWindow")
+@onready var base_progress_label: Label = get_node_or_null("PauseWindow/Margin/VBox/BaseProgressLabel")
+@onready var pause_tasks_list: VBoxContainer = get_node_or_null("PauseWindow/Margin/VBox/TasksScroll/TasksList")
+@onready var sfx_slider: HSlider = get_node_or_null("PauseWindow/Margin/VBox/SfxHBox/SfxSlider")
+@onready var amb_slider: HSlider = get_node_or_null("PauseWindow/Margin/VBox/AmbHBox/AmbSlider")
+@onready var pause_resume_button: Button = get_node_or_null("PauseWindow/Margin/VBox/ResumeButton")
+@onready var pause_save_button: Button = get_node_or_null("PauseWindow/Margin/VBox/SaveLoadHBox/SaveButton")
+@onready var pause_load_button: Button = get_node_or_null("PauseWindow/Margin/VBox/SaveLoadHBox/LoadButton")
+@onready var pause_quit_button: Button = get_node_or_null("PauseWindow/Margin/VBox/QuitButton")
+
+# Окно завершения первой главы (Base Restored)
+@onready var victory_window: PanelContainer = get_node_or_null("VictoryWindow")
+@onready var victory_stats_label: Label = get_node_or_null("VictoryWindow/Margin/VBox/StatsLabel")
+@onready var victory_continue_button: Button = get_node_or_null("VictoryWindow/Margin/VBox/ContinueButton")
+
+var _victory_shown: bool = false
 
 @onready var health_bar: ProgressBar = $TopLeftUI/Panel/Margin/VBox/HealthBar
 @onready var health_label: Label = $TopLeftUI/Panel/Margin/VBox/HealthBar/Label
@@ -140,12 +161,35 @@ func _ready() -> void:
 	if class_button:
 		class_button.pressed.connect(toggle_class_window)
 	
+	if pause_button:
+		pause_button.pressed.connect(toggle_pause_menu)
+	if pause_resume_button:
+		pause_resume_button.pressed.connect(close_pause_menu)
+	if pause_save_button:
+		pause_save_button.pressed.connect(_on_pause_save_pressed)
+	if pause_load_button:
+		pause_load_button.pressed.connect(_on_pause_load_pressed)
+	if pause_quit_button:
+		pause_quit_button.pressed.connect(func(): get_tree().quit())
+	if sfx_slider:
+		sfx_slider.value_changed.connect(_on_sfx_slider_changed)
+	if amb_slider:
+		amb_slider.value_changed.connect(_on_amb_slider_changed)
+	if victory_continue_button:
+		victory_continue_button.pressed.connect(close_victory_window)
+	
 	_init_styles()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
-			if class_window and class_window.visible:
+			if victory_window and victory_window.visible:
+				close_victory_window()
+				get_viewport().set_input_as_handled()
+			elif pause_window and pause_window.visible:
+				close_pause_menu()
+				get_viewport().set_input_as_handled()
+			elif class_window and class_window.visible:
 				close_class_window()
 				get_viewport().set_input_as_handled()
 			elif contract_window and contract_window.visible:
@@ -162,6 +206,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 			elif inventory_window and inventory_window.visible:
 				toggle_inventory()
+				get_viewport().set_input_as_handled()
+			else:
+				toggle_pause_menu()
 				get_viewport().set_input_as_handled()
 
 func _process(_delta: float) -> void:
@@ -1099,3 +1146,107 @@ func _populate_class_cards() -> void:
 		vbox.add_child(btn)
 		
 		classes_list.add_child(card)
+
+# --- Меню паузы и звука (Этап 13) ---
+func toggle_pause_menu() -> void:
+	if not pause_window:
+		return
+	AudioManager.play("ui_click")
+	pause_window.visible = not pause_window.visible
+	get_tree().paused = pause_window.visible
+	if pause_window.visible:
+		_refresh_pause_menu()
+
+func close_pause_menu() -> void:
+	if pause_window and pause_window.visible:
+		AudioManager.play("ui_click")
+		pause_window.visible = false
+		get_tree().paused = false
+
+func _refresh_pause_menu() -> void:
+	var world = get_tree().root.find_child("World", true, false)
+	if not world:
+		return
+	var v_data: Dictionary = VictoryManager.evaluate_base_restored(world)
+	if base_progress_label:
+		base_progress_label.text = "🏆 Восстановление базы: %d/%d вех (%d%%)" % [
+			v_data.get("completed_count", 0), v_data.get("total_count", 0), v_data.get("progress_pct", 0)
+		]
+	
+	if pause_tasks_list:
+		for c in pause_tasks_list.get_children():
+			c.queue_free()
+		for t in v_data.get("tasks", []):
+			var l: Label = Label.new()
+			var status_str = "[ГОТОВО]" if t.done else "[в процессе]"
+			l.text = "%s %s: %s" % [t.icon, t.title, status_str]
+			l.add_theme_font_size_override("font_size", 11)
+			if t.done:
+				l.add_theme_color_override("font_color", Color(0.4, 0.9, 0.55))
+			else:
+				l.add_theme_color_override("font_color", Color(0.75, 0.8, 0.85))
+			pause_tasks_list.add_child(l)
+	
+	if sfx_slider and AudioManager.instance:
+		sfx_slider.value = AudioManager.instance.sfx_volume
+	if amb_slider and AudioManager.instance:
+		amb_slider.value = AudioManager.instance.ambient_volume
+
+func _on_pause_save_pressed() -> void:
+	AudioManager.play("ui_click")
+	if _bound_player and _bound_player.has_method("quick_save"):
+		_bound_player.quick_save()
+	show_notification("💾 Игра успешно сохранена [F5]!")
+
+func _on_pause_load_pressed() -> void:
+	AudioManager.play("ui_click")
+	if _bound_player and _bound_player.has_method("quick_load"):
+		_bound_player.quick_load()
+	close_pause_menu()
+	show_notification("📂 Сохранение успешно загружено [F9]!")
+
+func _on_sfx_slider_changed(val: float) -> void:
+	if AudioManager.instance:
+		AudioManager.instance.set_sfx_vol(val)
+	AudioManager.play("ui_click")
+
+func _on_amb_slider_changed(val: float) -> void:
+	if AudioManager.instance:
+		AudioManager.instance.set_ambient_vol(val)
+
+# --- Торжественный финал Первой главы «Base Restored» (Этап 13) ---
+func check_and_show_victory_if_earned() -> bool:
+	if _victory_shown:
+		return false
+	var world = get_tree().root.find_child("World", true, false)
+	if not world:
+		return false
+	var v_data: Dictionary = VictoryManager.evaluate_base_restored(world)
+	if v_data.get("is_victory", false):
+		_victory_shown = true
+		show_victory_window(v_data)
+		return true
+	return false
+
+func show_victory_window(v_data: Dictionary) -> void:
+	if not victory_window:
+		return
+	close_pause_menu()
+	victory_window.visible = true
+	get_tree().paused = true
+	AudioManager.play("victory_fanfare")
+	
+	if victory_stats_label:
+		var days: int = 1
+		var day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
+		if day_cycle and "current_day" in day_cycle:
+			days = day_cycle.current_day
+		var creds: int = _bound_player.inventory.credits if (_bound_player and _bound_player.inventory) else 0
+		var c_count: int = ContractDB.get_completed_count()
+		victory_stats_label.text = "Прожито суток: %d | Накоплено кредитов: %d | Сдано заказов: %d" % [days, creds, c_count]
+
+func close_victory_window() -> void:
+	if victory_window:
+		AudioManager.play("ui_click")
+		victory_window.visible = false
+		get_tree().paused = false
