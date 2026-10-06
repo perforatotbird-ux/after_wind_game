@@ -41,11 +41,14 @@ func _on_interacted(player: Node) -> void:
 			# Если игрок не хочет пить, проверяем может ли он набрать воду в инвентарь при наличии ведра
 			var inv = player.get("inventory") if "inventory" in player else null
 			if inv and inv.has_method("add_item"):
-				current_water -= 1
-				inv.add_item("clean_water", 1)
+				var bucket_lvl: int = inv.get_tool_level("bucket") if inv.has_method("get_tool_level") else 1
+				var amount_to_draw: int = 2 if bucket_lvl >= 2 else 1
+				amount_to_draw = mini(amount_to_draw, current_water)
+				current_water -= amount_to_draw
+				inv.add_item("clean_water", amount_to_draw)
 				water_level_changed.emit(current_water, max_capacity)
 				if player.has_method("notify"):
-					player.notify("💧 Вы набрали 1 л чистой воды в рюкзак (Остаток: %d/%d л)." % [current_water, max_capacity])
+					player.notify("💧 Вы набрали %d л чистой воды в рюкзак (Остаток: %d/%d л)." % [amount_to_draw, current_water, max_capacity])
 				return
 			
 			if player.has_method("notify"):

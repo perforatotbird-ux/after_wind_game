@@ -374,6 +374,113 @@ const ITEMS: Dictionary = {
 		"max_stack": 5,
 		"sell_price": 85,
 		"description": "Готовый к установке уличный фонарный столб с плафоном, патроном и проводкой."
+	},
+
+	# --- Оснастка и инструменты Lv.2 (Этап 11, разделы 54, 55) ---
+	"wooden_handle": {
+		"id": "wooden_handle",
+		"name": "Деревянная ручка",
+		"icon": "🪵",
+		"category": "component",
+		"weight": 0.2,
+		"max_stack": 30,
+		"sell_price": 8,
+		"description": "Обструганное и отшлифованное деревянное топорище для монтажа ручного инструмента."
+	},
+	"bolt": {
+		"id": "bolt",
+		"name": "Металлический болт",
+		"icon": "🔩",
+		"category": "component",
+		"weight": 0.05,
+		"max_stack": 50,
+		"sell_price": 12,
+		"description": "Прочный крепежный болт с гайкой из переплавленного металлолома для сборки узлов и инструментов."
+	},
+	"fabric": {
+		"id": "fabric",
+		"name": "Плотная ткань",
+		"icon": "🧵",
+		"category": "component",
+		"weight": 0.3,
+		"max_stack": 30,
+		"sell_price": 22,
+		"description": "Сотканное парусиновое полотно из растительных волокон для защитной экипировки и рюкзаков."
+	},
+	"leather_strap": {
+		"id": "leather_strap",
+		"name": "Усиленный ремень",
+		"icon": "🎗️",
+		"category": "component",
+		"weight": 0.2,
+		"max_stack": 25,
+		"sell_price": 18,
+		"description": "Прочная плетеная крепежная стропа для ремней рюкзака и подвески снаряжения."
+	},
+	"iron_axe": {
+		"id": "iron_axe",
+		"name": "Железный топор",
+		"icon": "🪓",
+		"category": "tool",
+		"tool_type": "axe",
+		"level": 2,
+		"power": 2.0,
+		"weight": 1.5,
+		"max_stack": 1,
+		"sell_price": 95,
+		"description": "Кованый топор с лезвием из закалённого железа. Рубит деревья вдвое быстрее, снижает усталость и даёт +1 древесину."
+	},
+	"iron_pickaxe": {
+		"id": "iron_pickaxe",
+		"name": "Железная кирка",
+		"icon": "⛏️",
+		"category": "tool",
+		"tool_type": "pickaxe",
+		"level": 2,
+		"power": 2.0,
+		"weight": 1.8,
+		"max_stack": 1,
+		"sell_price": 95,
+		"description": "Закалённая металлическая кирка. Раскалывает камни за 2 удара вместо 3, снижает трату энергии и даёт +1 ресурс."
+	},
+	"iron_shovel": {
+		"id": "iron_shovel",
+		"name": "Железная лопата",
+		"icon": "🪚",
+		"category": "tool",
+		"tool_type": "shovel",
+		"level": 2,
+		"power": 2.0,
+		"weight": 1.2,
+		"max_stack": 1,
+		"sell_price": 95,
+		"description": "Острое стальное полотно лопаты. Вскапывает грядки вдвое легче (-50% энергии) и ускоряет сбор глины и песка."
+	},
+	"reinforced_bucket": {
+		"id": "reinforced_bucket",
+		"name": "Усиленное ведро",
+		"icon": "🪣",
+		"category": "tool",
+		"tool_type": "bucket",
+		"level": 2,
+		"power": 2.0,
+		"weight": 1.2,
+		"max_stack": 1,
+		"sell_price": 110,
+		"description": "Окованное герметичное ведро со стальными обручами. Черпает сразу двойную порцию чистой воды."
+	},
+	"large_backpack": {
+		"id": "large_backpack",
+		"name": "Большой рюкзак",
+		"icon": "🎒",
+		"category": "equipment",
+		"tool_type": "backpack",
+		"level": 2,
+		"slots": 20,
+		"weight": 0.8,
+		"max_stack": 1,
+		"sell_price": 140,
+		"description": "Экспедиционный рюкзак с боковыми карманами (20 слотов) и усиленными лямками (грузоподъемность: 75 кг)."
 	}
 }
 

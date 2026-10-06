@@ -49,7 +49,17 @@ var items: Dictionary = {
 	"iron_plate": 0,
 	"gear": 0,
 	"battery_cell": 0,
-	"street_lamp_item": 0
+	"street_lamp_item": 0,
+	# --- Компоненты и инструменты Lv.2 (Этап 11) ---
+	"wooden_handle": 0,
+	"bolt": 0,
+	"fabric": 0,
+	"leather_strap": 0,
+	"iron_axe": 0,
+	"iron_pickaxe": 0,
+	"iron_shovel": 0,
+	"reinforced_bucket": 0,
+	"large_backpack": 0
 }
 
 func clear() -> void:
@@ -79,11 +89,77 @@ func equip_slot(slot_index: int) -> void:
 	if slot_index >= 0 and slot_index < tools.size():
 		equip_tool(tools[slot_index])
 
-func is_tool_equipped(tool_id: String) -> bool:
-	return equipped_tool == tool_id
+func is_tool_equipped(tool_id_or_type: String) -> bool:
+	if equipped_tool == tool_id_or_type:
+		return true
+	var tool_data: Dictionary = ItemDB.get_item(equipped_tool)
+	return tool_data.get("tool_type", "") == tool_id_or_type
 
 func get_equipped_tool() -> String:
 	return equipped_tool
+
+func get_tool_level(tool_type: String = "") -> int:
+	if tool_type.is_empty():
+		var data: Dictionary = ItemDB.get_item(equipped_tool)
+		return data.get("level", 1)
+	
+	# Сначала проверяем текущий экипированный инструмент
+	var eq_data: Dictionary = ItemDB.get_item(equipped_tool)
+	if eq_data.get("tool_type", "") == tool_type:
+		return eq_data.get("level", 1)
+	
+	# Ищем наивысший уровень среди инструментов в поясе
+	var max_lvl: int = 1
+	for t in tools:
+		var d: Dictionary = ItemDB.get_item(t)
+		if d.get("tool_type", "") == tool_type:
+			max_lvl = maxi(max_lvl, d.get("level", 1))
+	return max_lvl
+
+func upgrade_tool(tool_id: String) -> bool:
+	var item_data: Dictionary = ItemDB.get_item(tool_id)
+	if item_data.is_empty():
+		return false
+	
+	var t_type: String = item_data.get("tool_type", "")
+	if t_type.is_empty():
+		return false
+	
+	if t_type == "backpack":
+		max_slots = item_data.get("slots", 20)
+		max_weight = 75.0
+		var b_idx: int = tools.find("backpack")
+		if b_idx != -1:
+			tools[b_idx] = tool_id
+		elif not tools.has(tool_id):
+			tools.append(tool_id)
+		if equipped_tool == "backpack":
+			equipped_tool = tool_id
+		inventory_updated.emit()
+		_notify_tool_changed()
+		return true
+	
+	# Замена в списке инструментов
+	var found_idx: int = -1
+	for i in range(tools.size()):
+		var cur_tool: String = tools[i]
+		if cur_tool == t_type or ItemDB.get_item(cur_tool).get("tool_type", "") == t_type:
+			found_idx = i
+			break
+	
+	if found_idx != -1:
+		tools[found_idx] = tool_id
+	else:
+		tools.append(tool_id)
+	
+	# Если сейчас в руках старый инструмент того же типа, автоматически переключаем
+	var cur_data: Dictionary = ItemDB.get_item(equipped_tool)
+	if equipped_tool == t_type or cur_data.get("tool_type", "") == t_type:
+		equipped_tool = tool_id
+		_notify_tool_changed()
+	
+	inventory_updated.emit()
+	return true
 
 func add_item(item_id: String, amount: int) -> bool:
 	if amount <= 0:
@@ -97,6 +173,11 @@ func add_item(item_id: String, amount: int) -> bool:
 	var current: int = items.get(item_id, 0)
 	var new_amount: int = current + amount
 	items[item_id] = new_amount
+	
+	# Если получен инструмент или снаряжение — автоматически активируем оснастку/улучшение
+	var cat: String = item_data.get("category", "")
+	if cat in ["tool", "equipment"]:
+		upgrade_tool(item_id)
 	
 	item_added.emit(item_id, amount, new_amount)
 	inventory_updated.emit()

@@ -186,17 +186,26 @@ func _on_interacted(player: Node) -> void:
 func till_soil(player: Node) -> bool:
 	var inv = player.get("inventory") if player else null
 	var has_shovel: bool = false
+	var shovel_level: int = 1
 	if inv:
-		if inv.equipped_tool == "shovel" or inv.tools.has("shovel") or inv.get_item_count("shovel") > 0:
+		if inv.has_method("is_tool_equipped") and inv.is_tool_equipped("shovel"):
 			has_shovel = true
+		elif inv.equipped_tool in ["shovel", "iron_shovel"] or inv.tools.has("shovel") or inv.tools.has("iron_shovel") or inv.get_item_count("shovel") > 0 or inv.get_item_count("iron_shovel") > 0:
+			has_shovel = true
+		if inv.has_method("get_tool_level"):
+			shovel_level = inv.get_tool_level("shovel")
 	
 	if not has_shovel:
 		if player and player.has_method("notify"):
 			player.notify("⚠️ Для вскопки земли нужна лопата!")
 		return false
 	
+	var energy_needed: float = 6.0
+	if shovel_level >= 2:
+		energy_needed = 3.0
+	
 	if player and player.has_method("consume_energy"):
-		player.consume_energy(6.0)
+		player.consume_energy(energy_needed)
 	
 	soil_state = SoilState.TILLED
 	plot_tilled.emit()
@@ -204,7 +213,8 @@ func till_soil(player: Node) -> bool:
 	_play_dig_bounce()
 	
 	if player and player.has_method("notify"):
-		player.notify("🌾 Вы вскопали грядку и подготовили борозды к посеву!")
+		var shovel_info: String = " (легкая работа железной лопатой -50% сил)" if shovel_level >= 2 else ""
+		player.notify("🌾 Вы вскопали грядку и подготовили борозды к посеву!%s" % shovel_info)
 	return true
 
 func plant_crop(seed_id: String, player: Node = null) -> bool:

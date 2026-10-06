@@ -91,16 +91,29 @@ func _on_interacted(player: Node) -> void:
 				player.notify(msg)
 			return
 	
+	# Проверка уровня инструмента (Этап 11)
+	var tool_level: int = 1
+	if inv and inv.has_method("get_tool_level"):
+		tool_level = inv.get_tool_level(required_tool)
+	
+	var final_energy_cost: float = energy_cost
+	var hit_power: int = 1
+	var bonus_yield: int = 0
+	if tool_level >= 2:
+		final_energy_cost = energy_cost * 0.65
+		hit_power = 2
+		bonus_yield = 1
+	
 	# Трата энергии
 	if player.has_method("consume_energy"):
-		player.consume_energy(energy_cost)
+		player.consume_energy(final_energy_cost)
 	
 	# Визуальный отклик (shake tween)
 	_play_hit_effect()
 	
 	# Добыча
-	current_hits -= 1
-	var gained: int = yield_per_hit
+	current_hits -= hit_power
+	var gained: int = yield_per_hit + bonus_yield
 	var item_icon: String = ItemDB.get_item_icon(resource_id)
 	
 	if current_hits <= 0:

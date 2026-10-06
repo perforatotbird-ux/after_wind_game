@@ -206,6 +206,98 @@ const RECIPES: Dictionary = {
 		"duration": 5.0,
 		"energy_cost": 2.5,
 		"description": "Изготовление уличного фонарного столба с защитным стеклянным плафоном и проводкой."
+	},
+
+	# --- Компоненты оснастки и инструменты Lv.2 (Этап 11) ---
+	"craft_wooden_handle": {
+		"id": "craft_wooden_handle",
+		"name": "Выточка: Деревянная рукоять (x2)",
+		"machine": "workbench",
+		"inputs": {"wood": 1},
+		"outputs": {"wooden_handle": 2},
+		"duration": 2.5,
+		"energy_cost": 1.0,
+		"description": "Вытачивание гладких эргономичных деревянных рукоятей для инструментов из обтесанного полена."
+	},
+	"craft_bolt": {
+		"id": "craft_bolt",
+		"name": "Нарезка: Металлический болт (x2)",
+		"machine": "workbench",
+		"inputs": {"metal_scrap": 1},
+		"outputs": {"bolt": 2},
+		"duration": 2.5,
+		"energy_cost": 1.0,
+		"description": "Нарезка резьбы и ковка металлических болтов с гайками из отборного металлического лома."
+	},
+	"craft_fabric": {
+		"id": "craft_fabric",
+		"name": "Плетение: Плотная ткань (x1)",
+		"machine": "workbench",
+		"inputs": {"wheat": 2},
+		"outputs": {"fabric": 1},
+		"duration": 3.5,
+		"energy_cost": 1.5,
+		"description": "Плетение и прессование плотного растительного парусинового волокна из стеблей пшеницы."
+	},
+	"craft_leather_strap": {
+		"id": "craft_leather_strap",
+		"name": "Сборка: Усиленный ремень (x2)",
+		"machine": "workbench",
+		"inputs": {"fabric": 1, "metal_scrap": 1},
+		"outputs": {"leather_strap": 2},
+		"duration": 3.0,
+		"energy_cost": 1.0,
+		"description": "Изготовление усиленных ремней и стяжек с металлическими пряжками."
+	},
+	"upgrade_iron_axe": {
+		"id": "upgrade_iron_axe",
+		"name": "Кузница: Железный топор Lv.2",
+		"machine": "workbench",
+		"inputs": {"iron_ingot": 2, "wooden_handle": 1, "bolt": 1},
+		"outputs": {"iron_axe": 1},
+		"duration": 6.0,
+		"energy_cost": 3.0,
+		"description": "Ковка и сборка тяжелого железного топора Lv.2: рубит в 2 раза быстрее, дает +1 древесину и экономит 35% сил."
+	},
+	"upgrade_iron_pickaxe": {
+		"id": "upgrade_iron_pickaxe",
+		"name": "Кузница: Железная кирка Lv.2",
+		"machine": "workbench",
+		"inputs": {"iron_ingot": 2, "wooden_handle": 1, "bolt": 1},
+		"outputs": {"iron_pickaxe": 1},
+		"duration": 6.0,
+		"energy_cost": 3.0,
+		"description": "Сборка закаленной железной кирки Lv.2: раскалывает породу вдвое быстрее, дает +1 ресурс и тратит меньше сил."
+	},
+	"upgrade_iron_shovel": {
+		"id": "upgrade_iron_shovel",
+		"name": "Кузница: Железная лопата Lv.2",
+		"machine": "workbench",
+		"inputs": {"iron_ingot": 1, "wooden_handle": 1, "bolt": 1},
+		"outputs": {"iron_shovel": 1},
+		"duration": 5.0,
+		"energy_cost": 2.5,
+		"description": "Ковка усиленной железной лопаты Lv.2: снижает трату энергии на вскопку вдвое (-50% сил) и ускоряет добычу глины."
+	},
+	"upgrade_reinforced_bucket": {
+		"id": "upgrade_reinforced_bucket",
+		"name": "Сборка: Усиленное ведро Lv.2",
+		"machine": "workbench",
+		"inputs": {"iron_plate": 1, "bolt": 2, "wood": 1},
+		"outputs": {"reinforced_bucket": 1},
+		"duration": 5.0,
+		"energy_cost": 2.5,
+		"description": "Сборка герметичного ведра со стальными обручами: черпает сразу удвоенную порцию чистой воды из резервуара."
+	},
+	"upgrade_large_backpack": {
+		"id": "upgrade_large_backpack",
+		"name": "Пошив: Большой рюкзак Lv.2",
+		"machine": "workbench",
+		"inputs": {"fabric": 3, "leather_strap": 2, "bolt": 2},
+		"outputs": {"large_backpack": 1},
+		"duration": 7.0,
+		"energy_cost": 3.5,
+		"description": "Пошив вместительного экспедиционного рюкзака: расширяет вместимость до 20 слотов и грузоподъемность до 75 кг."
 	}
 }
 
