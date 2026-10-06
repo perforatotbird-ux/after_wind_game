@@ -1,0 +1,29 @@
+[gd_scene load_steps=5 format=3 uid="uid://dkn5w3q76735a"]
+
+[ext_resource type="Script" path="res://scripts/world/weather_manager.gd" id="1_weather"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rain_drop"]
+transparency = 1
+albedo_color = Color(0.72, 0.86, 1, 0.65)
+roughness = 0.2
+
+[sub_resource type="BoxMesh" id="BoxMesh_rain_drop"]
+material = SubResource("StandardMaterial3D_rain_drop")
+size = Vector3(0.03, 0.45, 0.03)
+
+[node name="WeatherManager" type="Node"]
+script = ExtResource("1_weather")
+
+[node name="RainParticles" type="CPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14, 0)
+emitting = false
+amount = 250
+lifetime = 0.85
+mesh = SubResource("BoxMesh_rain_drop")
+emission_shape = 3
+emission_box_extents = Vector3(25, 0.5, 25)
+direction = Vector3(-0.15, -1, 0.1)
+spread = 6.0
+gravity = Vector3(0, -9.8, 0)
+initial_velocity_min = 18.0
+initial_velocity_max = 24.0

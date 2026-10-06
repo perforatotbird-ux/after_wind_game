@@ -18,6 +18,8 @@ const ContractDB = preload("res://scripts/economy/contract_db.gd")
 @onready var thirst_label: Label = $TopLeftUI/Panel/Margin/VBox/ThirstBar/Label
 @onready var hunger_bar: ProgressBar = $TopLeftUI/Panel/Margin/VBox/HungerBar
 @onready var hunger_label: Label = $TopLeftUI/Panel/Margin/VBox/HungerBar/Label
+@onready var wetness_bar: ProgressBar = $TopLeftUI/Panel/Margin/VBox/WetnessBar
+@onready var wetness_label: Label = $TopLeftUI/Panel/Margin/VBox/WetnessBar/Label
 
 @onready var time_label: Label = $TopRightUI/Panel/Margin/VBox/TimeLabel
 @onready var weather_label: Label = $TopRightUI/Panel/Margin/VBox/WeatherLabel
@@ -190,6 +192,10 @@ func bind_player(player: Node) -> void:
 		player.hunger_changed.connect(_on_hunger_changed)
 	if "hunger" in player and "max_hunger" in player:
 		_on_hunger_changed(player.hunger, player.max_hunger)
+	if player.has_signal("wetness_changed"):
+		player.wetness_changed.connect(_on_wetness_changed)
+	if "wetness" in player and "max_wetness" in player:
+		_on_wetness_changed(player.wetness, player.max_wetness)
 	
 	if "inventory" in player and player.inventory:
 		var inv = player.inventory
@@ -278,26 +284,62 @@ func _on_hunger_changed(curr: float, max_v: float) -> void:
 			hunger_label.text = "🍞 Сытость %d%%" % pct
 			hunger_label.add_theme_color_override("font_color", Color(0.9, 1.0, 0.8))
 
+func _on_wetness_changed(curr: float, max_v: float) -> void:
+	if wetness_bar:
+		wetness_bar.value = (curr / max_v) * 100.0
+	if wetness_label:
+		var pct: int = int((curr / max_v) * 100.0)
+		if pct <= 0:
+			wetness_label.text = "💧 Сухой (0%)"
+			wetness_label.add_theme_color_override("font_color", Color(0.85, 0.9, 0.95))
+		elif pct < 40:
+			wetness_label.text = "💧 Влажный %d%%" % pct
+			wetness_label.add_theme_color_override("font_color", Color(0.6, 0.85, 1.0))
+		elif pct < 80:
+			wetness_label.text = "💧 Промок %d%% (Холод!)" % pct
+			wetness_label.add_theme_color_override("font_color", Color(1.0, 0.65, 0.3))
+		else:
+			wetness_label.text = "❄️ Насквозь промок %d%%" % pct
+			wetness_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
+
 func update_time_display(day: int, hour: int, minute: int, formatted: String, phase: String) -> void:
 	if time_label:
 		time_label.text = formatted
 	if weather_label:
-		var temp: int = 22
-		var desc: String = "Ясно"
+		var weather_mgr: Node = get_tree().root.find_child("WeatherManager", true, false)
+		var w_name: String = "Ясно"
+		var icon: String = "☀️"
+		var temp_offset: int = 0
+		if weather_mgr and weather_mgr.has_method("get_weather_name"):
+			w_name = weather_mgr.get_weather_name()
+			icon = weather_mgr.get_weather_icon()
+			temp_offset = weather_mgr.get_temperature_offset()
+		
+		var base_temp: int = 22
 		match phase:
-			"Утро":
-				temp = 16
-				desc = "Свежо"
-			"День":
-				temp = 23
-				desc = "Тепло"
-			"Вечер":
-				temp = 18
-				desc = "Прохладно"
-			"Ночь":
-				temp = 11
-				desc = "Холодно / Ветер"
-		weather_label.text = "⛅ %s (+%d°C)" % [desc, temp]
+			"Утро": base_temp = 16
+			"День": base_temp = 23
+			"Вечер": base_temp = 18
+			"Ночь": base_temp = 11
+		
+		var final_temp: int = max(4, base_temp + temp_offset)
+		weather_label.text = "%s %s (+%d°C)" % [icon, w_name, final_temp]
+
+func update_weather_display(_new_type: int = 0, w_name: String = "", icon: String = "") -> void:
+	if weather_label:
+		var day_cycle: Node = get_tree().root.find_child("DayNightCycle", true, false)
+		var phase: String = day_cycle.get_current_phase() if (day_cycle and day_cycle.has_method("get_current_phase")) else "День"
+		var base_temp: int = 22
+		match phase:
+			"Утро": base_temp = 16
+			"День": base_temp = 23
+			"Вечер": base_temp = 18
+			"Ночь": base_temp = 11
+		
+		var weather_mgr: Node = get_tree().root.find_child("WeatherManager", true, false)
+		var temp_offset: int = weather_mgr.get_temperature_offset() if (weather_mgr and weather_mgr.has_method("get_temperature_offset")) else 0
+		var final_temp: int = max(4, base_temp + temp_offset)
+		weather_label.text = "%s %s (+%d°C)" % [icon, w_name, final_temp]
 
 func _on_inventory_updated() -> void:
 	_update_resource_counters()
@@ -783,9 +825,19 @@ func _on_focused_interactable_changed(interactable: Node) -> void:
 		prompt_container.visible = false
 
 func show_notification(text: String, duration: float = 3.5) -> void:
-	notification_label.text = text
-	notification_container.visible = true
-	notification_timer.start(duration)
+	if not notification_label:
+		notification_label = get_node_or_null("NotificationContainer/MarginContainer/NotificationLabel")
+	if not notification_container:
+		notification_container = get_node_or_null("NotificationContainer")
+	if not notification_timer:
+		notification_timer = get_node_or_null("NotificationTimer")
+
+	if notification_label:
+		notification_label.text = text
+	if notification_container:
+		notification_container.visible = true
+	if notification_timer:
+		notification_timer.start(duration)
 
 func _on_notification_timeout() -> void:
 	notification_container.visible = false

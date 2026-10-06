@@ -92,7 +92,7 @@ anchors_preset = 0
 offset_left = 20.0
 offset_top = 20.0
 offset_right = 260.0
-offset_bottom = 140.0
+offset_bottom = 160.0
 
 [node name="Panel" type="PanelContainer" parent="TopLeftUI"]
 layout_mode = 1
@@ -183,6 +183,24 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 10
 text = "Жажда 90%"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WetnessBar" type="ProgressBar" parent="TopLeftUI/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+value = 0.0
+show_percentage = false
+
+[node name="Label" type="Label" parent="TopLeftUI/Panel/Margin/VBox/WetnessBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 10
+text = "Влажность 0%"
 horizontal_alignment = 1
 vertical_alignment = 1
 

@@ -4,12 +4,13 @@ extends Node3D
 @onready var camera: Camera3D = $IsometricCamera
 @onready var hud: CanvasLayer = $HUD
 @onready var day_night_cycle: Node = $DayNightCycle
+@onready var weather_manager: Node = $WeatherManager
 
 func _ready() -> void:
 	if player and hud and hud.has_method("bind_player"):
 		hud.bind_player(player)
 		if hud.has_method("show_notification"):
-			hud.show_notification("«После бури» [Этап 8 — Сельское хозяйство]: Вскапывайте грядки лопатой, сажайте семена, поливайте почву и собирайте урожай!")
+			hud.show_notification("«После бури» [Этап 9 — Погода]: Динамическая погода, дождь наполняет грядки и цистерны, укрывайтесь от ливня в доме!")
 	
 	if camera and player and "target_node" in camera:
 		camera.target_node = player
@@ -19,6 +20,10 @@ func _ready() -> void:
 		var h: int = int(day_night_cycle.current_hour)
 		var m: int = int((day_night_cycle.current_hour - h) * 60.0)
 		hud.update_time_display(day_night_cycle.current_day, h, m, day_night_cycle.get_time_string(), day_night_cycle.get_current_phase())
+	
+	if weather_manager and hud and hud.has_method("update_weather_display"):
+		weather_manager.weather_changed.connect(hud.update_weather_display)
+		hud.update_weather_display(weather_manager.current_weather, weather_manager.get_weather_name(), weather_manager.get_weather_icon())
 	
 	_connect_interactive_stations()
 

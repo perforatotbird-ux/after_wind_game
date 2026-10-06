@@ -5,6 +5,7 @@ signal notification_received(text: String)
 signal energy_changed(current: float, max_val: float)
 signal thirst_changed(current: float, max_val: float)
 signal hunger_changed(current: float, max_val: float)
+signal wetness_changed(current: float, max_val: float)
 signal inventory_toggle_requested()
 
 @export_group("Movement")
@@ -20,6 +21,7 @@ signal inventory_toggle_requested()
 @export var thirst_decay_rate: float = 0.2
 @export var max_hunger: float = 100.0
 @export var hunger_decay_rate: float = 0.15
+@export var max_wetness: float = 100.0
 
 const InventoryScript = preload("res://scripts/inventory/inventory.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
@@ -32,6 +34,7 @@ const ItemDB = preload("res://scripts/inventory/item_db.gd")
 var energy: float = 100.0
 var thirst: float = 100.0
 var hunger: float = 100.0
+var wetness: float = 0.0
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 var nearby_interactables: Array[Area3D] = []
 var current_interactable: Area3D = null
@@ -50,9 +53,11 @@ func _ready() -> void:
 	energy = max_energy
 	thirst = max_thirst
 	hunger = max_hunger
+	wetness = 0.0
 	energy_changed.emit(energy, max_energy)
 	thirst_changed.emit(thirst, max_thirst)
 	hunger_changed.emit(hunger, max_hunger)
+	wetness_changed.emit(wetness, max_wetness)
 
 func _physics_process(delta: float) -> void:
 	_handle_gravity(delta)
@@ -60,6 +65,7 @@ func _physics_process(delta: float) -> void:
 	_handle_energy_regen(delta)
 	_handle_thirst(delta)
 	_handle_hunger(delta)
+	_handle_wetness(delta)
 	_update_best_interactable()
 	_handle_interaction_input()
 	move_and_slide()
@@ -123,7 +129,13 @@ func get_speed_multiplier() -> float:
 	else:
 		h_mult = 0.60
 
-	return e_mult * t_mult * h_mult
+	var w_mult: float = 1.0
+	if wetness >= 80.0:
+		w_mult = 0.85
+	elif wetness >= 40.0:
+		w_mult = 0.92
+
+	return e_mult * t_mult * h_mult * w_mult
 
 func can_sprint() -> bool:
 	return energy >= 20.0 and thirst > 10.0 and hunger > 10.0
@@ -139,6 +151,9 @@ func _handle_energy_regen(delta: float) -> void:
 			var day_cycle: Node = get_tree().root.find_child("DayNightCycle", true, false)
 			if day_cycle and day_cycle.has_method("is_night") and day_cycle.is_night():
 				regen *= 0.5
+			# Промокший персонаж восстанавливает силы медленнее
+			if wetness >= 50.0:
+				regen *= 0.7
 			energy = min(max_energy, energy + regen * delta)
 			energy_changed.emit(energy, max_energy)
 
@@ -171,8 +186,54 @@ func _handle_hunger(delta: float) -> void:
 	if abs(old_hunger - hunger) > 0.01:
 		hunger_changed.emit(hunger, max_hunger)
 
+func _handle_wetness(delta: float) -> void:
+	var weather_mgr: Node = get_tree().root.find_child("WeatherManager", true, false)
+	var is_raining: bool = weather_mgr.is_raining() if (weather_mgr and weather_mgr.has_method("is_raining")) else false
+	var intensity: float = weather_mgr.get_rain_intensity() if (weather_mgr and weather_mgr.has_method("get_rain_intensity")) else 0.0
+
+	# Проверка укрытия (жилой дом стадии >= 1)
+	var is_sheltered: bool = false
+	var house: Node = get_tree().root.find_child("RepairableHouse", true, false)
+	if house and "current_stage" in house and house.current_stage >= 1:
+		if global_position.distance_to(house.global_position) < 5.2:
+			is_sheltered = true
+
+	# Проверка источника тепла (печь-плавильня)
+	var is_near_fire: bool = false
+	var smelter: Node = get_tree().root.find_child("Smelter", true, false)
+	if smelter and global_position.distance_to(smelter.global_position) < 4.2:
+		is_near_fire = true
+
+	var old_wetness: float = wetness
+	if is_raining and not is_sheltered:
+		# Намокание под дождем
+		var rate: float = 3.0 * intensity
+		wetness = min(max_wetness, wetness + rate * delta)
+	else:
+		# Сушка
+		var dry_rate: float = 1.0
+		if is_near_fire:
+			dry_rate = 8.5 # очень быстрая сушка у раскаленной печи
+		elif is_sheltered:
+			dry_rate = 5.0 # комфортная сушка в доме
+		
+		wetness = max(0.0, wetness - dry_rate * delta)
+
+	if abs(old_wetness - wetness) > 0.01:
+		wetness_changed.emit(wetness, max_wetness)
+
+func dry_off(amount: float = 50.0) -> void:
+	wetness = max(0.0, wetness - amount)
+	wetness_changed.emit(wetness, max_wetness)
+	notify("🔥 Вы обсохли и согрелись! Мокрота: %d%%." % int(wetness))
+
 func consume_energy(amount: float) -> void:
-	energy = max(0.0, energy - amount)
+	var mult: float = 1.0
+	if wetness >= 80.0:
+		mult = 1.5 # мокрая тяжелая одежда забирает больше сил
+	elif wetness >= 40.0:
+		mult = 1.25
+	energy = max(0.0, energy - amount * mult)
 	energy_changed.emit(energy, max_energy)
 
 func drink_water(amount: float = 40.0, is_clean: bool = true, energy_bonus: float = 0.0) -> bool:
@@ -281,6 +342,8 @@ func rest_in_bed(new_day: int = -1) -> void:
 	if hunger < 35.0:
 		hunger = 35.0
 		hunger_changed.emit(hunger, max_hunger)
+	wetness = 0.0
+	wetness_changed.emit(wetness, max_wetness)
 	if new_day > 0:
 		notify("💤 Вы отлично выспались в тепле! Наступил День %d. Энергия 100%%." % new_day)
 	else:
