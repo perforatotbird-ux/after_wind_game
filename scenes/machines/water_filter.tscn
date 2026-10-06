@@ -1,0 +1,122 @@
+[gd_scene load_steps=14 format=3 uid="uid://c7w9q4f8e1k2m"]
+
+[ext_resource type="Script" path="res://scripts/crafting/production_machine.gd" id="1_mach"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
+size = Vector3(2.4, 2.5, 2.4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood_frame"]
+albedo_color = Color(0.36, 0.26, 0.18, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_frame"]
+material = SubResource("StandardMaterial3D_wood_frame")
+size = Vector3(1.6, 0.3, 1.4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_barrel_metal"]
+albedo_color = Color(0.38, 0.42, 0.46, 1)
+metallic = 0.65
+roughness = 0.45
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_top_drum"]
+material = SubResource("StandardMaterial3D_barrel_metal")
+top_radius = 0.5
+bottom_radius = 0.52
+height = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_filter_drum"]
+albedo_color = Color(0.55, 0.42, 0.32, 1)
+roughness = 0.7
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_filter_drum"]
+material = SubResource("StandardMaterial3D_filter_drum")
+top_radius = 0.45
+bottom_radius = 0.45
+height = 0.7
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_clean_basin"]
+transparency = 1
+albedo_color = Color(0.2, 0.7, 0.92, 0.85)
+metallic = 0.1
+roughness = 0.2
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_clean_water"]
+material = SubResource("StandardMaterial3D_clean_basin")
+top_radius = 0.42
+bottom_radius = 0.42
+height = 0.08
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pipe"]
+albedo_color = Color(0.72, 0.48, 0.24, 1)
+metallic = 0.8
+roughness = 0.35
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_pipe"]
+material = SubResource("StandardMaterial3D_pipe")
+top_radius = 0.06
+bottom_radius = 0.06
+height = 0.45
+
+[sub_resource type="BoxMesh" id="BoxMesh_legs"]
+material = SubResource("StandardMaterial3D_wood_frame")
+size = Vector3(0.12, 1.0, 0.12)
+
+[node name="WaterFilter" type="Area3D" node_paths=PackedStringArray("visual_node")]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_mach")
+machine_type = "water_filter"
+machine_display_name = "Песчаный фильтр воды"
+visual_node = NodePath("Visual")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("BoxShape3D_interact")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="BaseStand" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+mesh = SubResource("BoxMesh_frame")
+
+[node name="Leg1" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.65, 0.6, -0.55)
+mesh = SubResource("BoxMesh_legs")
+
+[node name="Leg2" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.65, 0.6, -0.55)
+mesh = SubResource("BoxMesh_legs")
+
+[node name="Leg3" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.65, 0.6, 0.55)
+mesh = SubResource("BoxMesh_legs")
+
+[node name="Leg4" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.65, 0.6, 0.55)
+mesh = SubResource("BoxMesh_legs")
+
+[node name="FilterDrum" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+mesh = SubResource("CylinderMesh_filter_drum")
+
+[node name="TopRawDrum" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.95, 0)
+mesh = SubResource("CylinderMesh_top_drum")
+
+[node name="CleanBasin" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+mesh = SubResource("CylinderMesh_top_drum")
+
+[node name="WaterSurface" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+mesh = SubResource("CylinderMesh_clean_water")
+
+[node name="DrainPipe" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 0.95, 0.45)
+mesh = SubResource("CylinderMesh_pipe")
+
+[node name="WaterGlow" type="OmniLight3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0.2)
+light_color = Color(0.25, 0.75, 1, 1)
+light_energy = 0.6
+omni_range = 2.5

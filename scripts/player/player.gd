@@ -3,6 +3,7 @@ extends CharacterBody3D
 signal focused_interactable_changed(interactable: Area3D)
 signal notification_received(text: String)
 signal energy_changed(current: float, max_val: float)
+signal thirst_changed(current: float, max_val: float)
 signal inventory_toggle_requested()
 
 @export_group("Movement")
@@ -14,6 +15,8 @@ signal inventory_toggle_requested()
 @export_group("Stats")
 @export var max_energy: float = 100.0
 @export var energy_recovery_rate: float = 2.0
+@export var max_thirst: float = 100.0
+@export var thirst_decay_rate: float = 0.2
 
 const InventoryScript = preload("res://scripts/inventory/inventory.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
@@ -24,6 +27,7 @@ const ItemDB = preload("res://scripts/inventory/item_db.gd")
 @onready var inventory: Node = $Inventory
 
 var energy: float = 100.0
+var thirst: float = 100.0
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 var nearby_interactables: Array[Area3D] = []
 var current_interactable: Area3D = null
@@ -40,12 +44,15 @@ func _ready() -> void:
 		interaction_detector.area_exited.connect(_on_interaction_area_exited)
 	
 	energy = max_energy
+	thirst = max_thirst
 	energy_changed.emit(energy, max_energy)
+	thirst_changed.emit(thirst, max_thirst)
 
 func _physics_process(delta: float) -> void:
 	_handle_gravity(delta)
 	_handle_movement(delta)
 	_handle_energy_regen(delta)
+	_handle_thirst(delta)
 	_update_best_interactable()
 	_handle_interaction_input()
 	move_and_slide()
@@ -64,6 +71,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				equip_slot(3)
 			KEY_5:
 				equip_slot(4)
+			KEY_U:
+				drink_from_inventory()
 			KEY_TAB, KEY_I:
 				inventory_toggle_requested.emit()
 
@@ -75,17 +84,30 @@ func equip_slot(slot_index: int) -> void:
 			focused_interactable_changed.emit(current_interactable)
 
 func get_speed_multiplier() -> float:
+	var e_mult: float = 1.0
 	if energy >= 50.0:
-		return 1.0
+		e_mult = 1.0
 	elif energy >= 20.0:
-		return 0.88
+		e_mult = 0.88
 	elif energy > 0.0:
-		return 0.70
+		e_mult = 0.70
 	else:
-		return 0.50
+		e_mult = 0.50
+
+	var t_mult: float = 1.0
+	if thirst >= 40.0:
+		t_mult = 1.0
+	elif thirst >= 15.0:
+		t_mult = 0.88
+	elif thirst > 0.0:
+		t_mult = 0.72
+	else:
+		t_mult = 0.55
+
+	return e_mult * t_mult
 
 func can_sprint() -> bool:
-	return energy >= 20.0
+	return energy >= 20.0 and thirst > 10.0
 
 func _handle_energy_regen(delta: float) -> void:
 	var sprint_active: bool = Input.is_action_pressed("sprint") and can_sprint() and velocity.length_squared() > 1.0
@@ -101,13 +123,80 @@ func _handle_energy_regen(delta: float) -> void:
 			energy = min(max_energy, energy + regen * delta)
 			energy_changed.emit(energy, max_energy)
 
+func _handle_thirst(delta: float) -> void:
+	var drain_rate: float = thirst_decay_rate
+	var sprint_active: bool = Input.is_action_pressed("sprint") and can_sprint() and velocity.length_squared() > 1.0
+	if sprint_active:
+		drain_rate *= 1.6
+	
+	# В дневную жару (12:00-16:00) жажда нарастает интенсивнее
+	var day_cycle: Node = get_tree().root.find_child("DayNightCycle", true, false)
+	if day_cycle and "current_hour" in day_cycle:
+		var hour: int = day_cycle.current_hour
+		if hour >= 12 and hour <= 16:
+			drain_rate *= 1.3
+	
+	var old_thirst: float = thirst
+	thirst = max(0.0, thirst - drain_rate * delta)
+	if abs(old_thirst - thirst) > 0.01:
+		thirst_changed.emit(thirst, max_thirst)
+
 func consume_energy(amount: float) -> void:
 	energy = max(0.0, energy - amount)
 	energy_changed.emit(energy, max_energy)
 
+func drink_water(amount: float = 40.0, is_clean: bool = true, energy_bonus: float = 0.0) -> bool:
+	if thirst >= max_thirst:
+		notify("💧 Вы пока не хотите пить (Жажда 100%).")
+		return false
+	
+	thirst = min(max_thirst, thirst + amount)
+	thirst_changed.emit(thirst, max_thirst)
+	
+	if energy_bonus > 0.0:
+		energy = min(max_energy, energy + energy_bonus)
+		energy_changed.emit(energy, max_energy)
+		
+	if is_clean:
+		notify("💧 Вы утолили жажду чистой водой! (+%d%% жажды, текущая: %d%%)" % [int(amount), int(thirst)])
+	else:
+		notify("⚠️ Вы выпили мутную сырую воду (+%d%% жажды, текущая: %d%%). Лучше фильтровать её!" % [int(amount), int(thirst)])
+	return true
+
+func drink_from_inventory(preferred_item_id: String = "") -> bool:
+	if not inventory:
+		return false
+	
+	var target_item: String = preferred_item_id
+	if target_item == "" or inventory.get_item_count(target_item) <= 0:
+		for it_id in ["bottled_water", "clean_water", "water"]:
+			if inventory.get_item_count(it_id) > 0:
+				target_item = it_id
+				break
+	
+	if target_item == "" or inventory.get_item_count(target_item) <= 0:
+		notify("ℹ️ В рюкзаке нет воды для питья!")
+		return false
+	
+	if thirst >= max_thirst:
+		notify("💧 Вы пока не испытываете жажды (100%).")
+		return false
+	
+	var item_data: Dictionary = ItemDB.get_item(target_item)
+	var rec: float = item_data.get("thirst_recovery", 30.0)
+	var e_bon: float = item_data.get("energy_bonus", 0.0)
+	var is_clean: bool = (target_item != "water")
+	
+	inventory.remove_item(target_item, 1)
+	drink_water(rec, is_clean, e_bon)
+	return true
+
 func rest_in_bed(new_day: int = -1) -> void:
 	energy = max_energy
 	energy_changed.emit(energy, max_energy)
+	if thirst < 35.0:
+		thirst = 35.0
+		thirst_changed.emit(thirst, max_thirst)
 	if new_day > 0:
 		notify("💤 Вы отлично выспались в тепле! Наступил День %d. Энергия 100%%." % new_day)
 	else:

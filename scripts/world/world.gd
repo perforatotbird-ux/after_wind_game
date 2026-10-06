@@ -9,7 +9,7 @@ func _ready() -> void:
 	if player and hud and hud.has_method("bind_player"):
 		hud.bind_player(player)
 		if hud.has_method("show_notification"):
-			hud.show_notification("«После бури» [Этап 2 — Суточный цикл и отдых]: Следите за временем, солнцем и усталостью. Восстанавливайте силы сном в доме!")
+			hud.show_notification("«После бури» [Этап 6 — Водный контур и фильтрация]: Очищайте воду в фильтре, следите за шкалой жажды и пейте воду!")
 	
 	if camera and player and "target_node" in camera:
 		camera.target_node = player

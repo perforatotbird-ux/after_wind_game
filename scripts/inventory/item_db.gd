@@ -106,13 +106,16 @@ const ITEMS: Dictionary = {
 	},
 	"water": {
 		"id": "water",
-		"name": "Чистая вода",
+		"name": "Сырая вода",
 		"icon": "💧",
 		"category": "resource",
 		"weight": 0.8,
 		"max_stack": 20,
 		"sell_price": 1,
-		"description": "Свежая вода. Требуется для питья, полива грядок и замеса глины."
+		"is_drinkable": true,
+		"thirst_recovery": 25.0,
+		"energy_bonus": 0.0,
+		"description": "Сырая грунтовая вода. Утоляет немного жажды (+25%), но для пользы её лучше отфильтровать."
 	},
 
 	# --- Промежуточные материалы (Этап 3, разделы 18, 19) ---
@@ -137,7 +140,7 @@ const ITEMS: Dictionary = {
 		"description": "Древесные опилки из дробилки. Сырьё для топливных брикетов."
 	},
 
-	# --- Готовая продукция (Этап 3, разделы 20, 21, 22) ---
+	# --- Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6) ---
 	"poor_brick": {
 		"id": "poor_brick",
 		"name": "Говённый кирпич",
@@ -197,6 +200,32 @@ const ITEMS: Dictionary = {
 		"max_stack": 40,
 		"sell_price": 35,
 		"description": "Очищенный железный слиток, выплавленный из металлолома в печи."
+	},
+	"clean_water": {
+		"id": "clean_water",
+		"name": "Очищенная вода",
+		"icon": "💧",
+		"category": "product",
+		"weight": 0.8,
+		"max_stack": 30,
+		"sell_price": 15,
+		"is_drinkable": true,
+		"thirst_recovery": 50.0,
+		"energy_bonus": 8.0,
+		"description": "Кристально чистая фильтрованная вода. Восстанавливает +50% жажды и бодрит (+8 энергии)."
+	},
+	"bottled_water": {
+		"id": "bottled_water",
+		"name": "Бутилированная вода",
+		"icon": "🧴",
+		"category": "product",
+		"weight": 1.1,
+		"max_stack": 30,
+		"sell_price": 52,
+		"is_drinkable": true,
+		"thirst_recovery": 85.0,
+		"energy_bonus": 15.0,
+		"description": "Премиальная родниковая вода в герметичной стеклянной бутылке (+85% жажды, +15 энергии, высокая цена сбыта)."
 	}
 }
 
@@ -219,3 +248,18 @@ static func get_sell_price(item_id: String) -> int:
 	if ITEMS.has(item_id):
 		return ITEMS[item_id].get("sell_price", 0)
 	return 0
+
+static func is_drinkable(item_id: String) -> bool:
+	if ITEMS.has(item_id):
+		return ITEMS[item_id].get("is_drinkable", false)
+	return false
+
+static func get_thirst_recovery(item_id: String) -> float:
+	if ITEMS.has(item_id):
+		return ITEMS[item_id].get("thirst_recovery", 0.0)
+	return 0.0
+
+static func get_energy_bonus(item_id: String) -> float:
+	if ITEMS.has(item_id):
+		return ITEMS[item_id].get("energy_bonus", 0.0)
+	return 0.0

@@ -34,7 +34,9 @@ var items: Dictionary = {
 	"fired_brick": 0,
 	"glass": 0,
 	"metal_scrap": 0,
-	"iron_ingot": 0
+	"iron_ingot": 0,
+	"clean_water": 0,
+	"bottled_water": 0
 }
 
 func _ready() -> void:

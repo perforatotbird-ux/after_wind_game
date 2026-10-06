@@ -74,6 +74,36 @@ const RECIPES: Dictionary = {
 		"duration": 6.5,
 		"energy_cost": 3.0,
 		"description": "Переплавка собранного ржавого металлолома в чистый прочный слиток железа."
+	},
+	"filter_water": {
+		"id": "filter_water",
+		"name": "Песчаная фильтрация: Чистая вода (x2)",
+		"machine": "water_filter",
+		"inputs": {"water": 2, "sand": 1},
+		"outputs": {"clean_water": 2},
+		"duration": 4.5,
+		"energy_cost": 1.5,
+		"description": "Очистка мутной сырой воды через слой кварцевого песка в чистую питьевую воду."
+	},
+	"mineral_filter_water": {
+		"id": "mineral_filter_water",
+		"name": "Глубокая фильтрация: Чистая вода (x4)",
+		"machine": "water_filter",
+		"inputs": {"water": 3, "sand": 1, "stone_dust": 1},
+		"outputs": {"clean_water": 4},
+		"duration": 5.0,
+		"energy_cost": 2.0,
+		"description": "Многоступенчатая фильтрация песком и каменной пылью с повышенным выходом чистой воды."
+	},
+	"bottle_water": {
+		"id": "bottle_water",
+		"name": "Розлив: Бутилированная вода (x1)",
+		"machine": "workbench",
+		"inputs": {"clean_water": 1, "glass": 1},
+		"outputs": {"bottled_water": 1},
+		"duration": 3.0,
+		"energy_cost": 1.0,
+		"description": "Розлив фильтрованной воды в герметичные стеклянные бутылки для длительного хранения и продажи."
 	}
 }
 

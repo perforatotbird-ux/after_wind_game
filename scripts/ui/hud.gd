@@ -13,6 +13,8 @@ const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
 @onready var health_label: Label = $TopLeftUI/Panel/Margin/VBox/HealthBar/Label
 @onready var energy_bar: ProgressBar = $TopLeftUI/Panel/Margin/VBox/EnergyBar
 @onready var energy_label: Label = $TopLeftUI/Panel/Margin/VBox/EnergyBar/Label
+@onready var thirst_bar: ProgressBar = $TopLeftUI/Panel/Margin/VBox/ThirstBar
+@onready var thirst_label: Label = $TopLeftUI/Panel/Margin/VBox/ThirstBar/Label
 
 @onready var time_label: Label = $TopRightUI/Panel/Margin/VBox/TimeLabel
 @onready var weather_label: Label = $TopRightUI/Panel/Margin/VBox/WeatherLabel
@@ -162,6 +164,10 @@ func bind_player(player: Node) -> void:
 		player.energy_changed.connect(_on_energy_changed)
 	if player.has_signal("inventory_toggle_requested"):
 		player.inventory_toggle_requested.connect(toggle_inventory)
+	if player.has_signal("thirst_changed"):
+		player.thirst_changed.connect(_on_thirst_changed)
+	if "thirst" in player and "max_thirst" in player:
+		_on_thirst_changed(player.thirst, player.max_thirst)
 	
 	if "inventory" in player and player.inventory:
 		var inv = player.inventory
@@ -220,6 +226,21 @@ func _on_energy_changed(curr: float, max_v: float) -> void:
 			energy_label.text = "⚡ Энергия %d%%" % pct
 			energy_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 
+func _on_thirst_changed(curr: float, max_v: float) -> void:
+	if thirst_bar:
+		thirst_bar.value = (curr / max_v) * 100.0
+	if thirst_label:
+		var pct: int = int((curr / max_v) * 100.0)
+		if pct <= 15:
+			thirst_label.text = "💧 Жажда %d%% (Обезвоживание!)" % pct
+			thirst_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+		elif pct <= 40:
+			thirst_label.text = "💧 Жажда %d%% (Жажда!)" % pct
+			thirst_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.2))
+		else:
+			thirst_label.text = "💧 Жажда %d%%" % pct
+			thirst_label.add_theme_color_override("font_color", Color(0.7, 0.9, 1.0))
+
 func update_time_display(day: int, hour: int, minute: int, formatted: String, phase: String) -> void:
 	if time_label:
 		time_label.text = formatted
@@ -268,7 +289,13 @@ func _update_resource_counters() -> void:
 	if sand_label:
 		sand_label.text = "⏳ Песок: %d" % inv.get_item_count("sand")
 	if water_label:
-		water_label.text = "💧 Вода: %d" % inv.get_item_count("water")
+		var raw_w: int = inv.get_item_count("water")
+		var clean_w: int = inv.get_item_count("clean_water")
+		var bot_w: int = inv.get_item_count("bottled_water")
+		if clean_w > 0 or bot_w > 0:
+			water_label.text = "💧 Вода: %d (Чист:%d Бут:%d)" % [raw_w, clean_w, bot_w]
+		else:
+			water_label.text = "💧 Вода: %d" % raw_w
 
 # --- Окно Рюкзака ---
 func toggle_inventory() -> void:
@@ -325,6 +352,14 @@ func _refresh_inventory_window() -> void:
 			lbl_w.add_theme_color_override("font_color", Color(0.7, 0.75, 0.8))
 			row.add_child(lbl_w)
 			
+			if ItemDB.is_drinkable(item_id):
+				var btn_drink: Button = Button.new()
+				btn_drink.text = "💧 Пить"
+				btn_drink.custom_minimum_size = Vector2(65, 26)
+				btn_drink.add_theme_font_size_override("font_size", 11)
+				btn_drink.pressed.connect(_on_inventory_drink_pressed.bind(item_id))
+				row.add_child(btn_drink)
+			
 			items_list.add_child(row)
 	
 	if not has_items:
@@ -342,6 +377,11 @@ func _refresh_inventory_window() -> void:
 			inv.get_used_slots(),
 			inv.max_slots
 		]
+
+func _on_inventory_drink_pressed(item_id: String) -> void:
+	if _bound_player and _bound_player.has_method("drink_from_inventory"):
+		_bound_player.drink_from_inventory(item_id)
+		_refresh_inventory_window()
 
 # --- Окно Производственной Машины (Дробилка / Верстак) ---
 func open_machine_window(machine: Node) -> void:
@@ -560,7 +600,7 @@ func _on_quick_sell_pressed() -> void:
 		return
 	
 	var to_sell: Dictionary = {}
-	for product_id in ["poor_brick", "fuel_briquette", "fired_brick", "glass", "iron_ingot"]:
+	for product_id in ["poor_brick", "fuel_briquette", "fired_brick", "glass", "iron_ingot", "clean_water", "bottled_water"]:
 		var c: int = inv.get_item_count(product_id)
 		if c > 0:
 			to_sell[product_id] = c
