@@ -1,0 +1,67 @@
+[gd_scene load_steps=8 format=3 uid="uid://c8v4m2k7w9x1a"]
+
+[ext_resource type="Script" path="res://scripts/resources/resource_node.gd" id="1_res"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_interact"]
+height = 2.0
+radius = 2.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_clay"]
+albedo_color = Color(0.58, 0.32, 0.2, 1)
+roughness = 0.75
+
+[sub_resource type="SphereMesh" id="SphereMesh_clay_mound"]
+material = SubResource("StandardMaterial3D_clay")
+radius = 1.2
+height = 0.8
+
+[sub_resource type="SphereMesh" id="SphereMesh_clay_small"]
+material = SubResource("StandardMaterial3D_clay")
+radius = 0.6
+height = 0.45
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_excavated"]
+albedo_color = Color(0.38, 0.22, 0.14, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_pit"]
+material = SubResource("StandardMaterial3D_excavated")
+top_radius = 0.9
+bottom_radius = 0.7
+height = 0.1
+
+[node name="ClayNode" type="Area3D" node_paths=PackedStringArray("visual_node", "depleted_visual_node")]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_res")
+resource_id = "clay"
+resource_display_name = "Глина"
+required_tool = "shovel"
+action_verb = "Копать"
+max_hits = 2
+current_hits = 2
+yield_per_hit = 2
+bonus_depleted_yield = 1
+visual_node = NodePath("Visual")
+depleted_visual_node = NodePath("DepletedVisual")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("CylinderShape3D_interact")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Mound" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+mesh = SubResource("SphereMesh_clay_mound")
+
+[node name="Lump" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 0.2, 0.4)
+mesh = SubResource("SphereMesh_clay_small")
+
+[node name="DepletedVisual" type="Node3D" parent="."]
+visible = false
+
+[node name="Pit" type="MeshInstance3D" parent="DepletedVisual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+mesh = SubResource("CylinderMesh_pit")

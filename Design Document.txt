@@ -1,0 +1,2923 @@
+# ПОСЛЕ БУРИ / AFTER THE STORM
+
+### Game Design Document v0.1
+
+**Жанр:** survival / simulator / crafting / resource management
+**Вид:** 3D, third-person, top-side / elevated isometric
+**Движок:** Godot 4.7.3
+**Платформа первого релиза:** PC / Web
+**Основной принцип разработки:** максимально возможное производство контента и кода при помощи AI
+**Целевая продолжительность первого игрового этапа:** 2–4 часа
+**Главная цель первого этапа:** восстановить разрушенную базу и ферму, превратив заброшенное место в работающее хозяйство.
+
+---
+
+# 1. КОНЦЕПЦИЯ ИГРЫ
+
+Игрок оказывается на разрушенной после урагана территории.
+
+В распоряжении игрока только:
+
+* разрушенный дом;
+* разрушенный склад;
+* печь-плавильня;
+* аппарат для измельчения камня;
+* верстак;
+* базовый набор ручного инструмента;
+* несколько уцелевших участков земли.
+
+Игрок выбирает одного из трёх персонажей:
+
+**Шахтёр** — специалист по добыче.
+
+**Фермер** — специалист по растениям и выживанию.
+
+**Учёный** — специалист по переработке, исследованиям и улучшениям.
+
+На старте все трое могут выполнять одинаковые основные действия. Отличия между ними постепенно усиливаются через пассивные способности и специализацию.
+
+Основной игровой цикл:
+
+> **Исследовать территорию > добывать ресурсы > возвращаться на базу > перерабатывать > создавать продукцию > продавать > получать деньги > восстанавливать оборудование > открывать новые возможности > развивать ферму.**
+
+---
+
+# 2. ФАНТАЗИЯ ИГРОКА
+
+Игрок должен постоянно ощущать:
+
+> «Я пришёл в разрушенное место и буквально своими руками возвращаю его к жизни».
+
+Важно не делать игру очередным сложным hardcore-survival.
+
+Основное настроение:
+
+**уют + грязная работа + восстановление + маленький личный бизнес + постепенный прогресс.**
+
+В начале:
+
+* всё разваливается;
+* мало места;
+* плохие инструменты;
+* мало ресурсов;
+* персонаж быстро устаёт;
+* производство медленное.
+
+В середине:
+
+* работает часть оборудования;
+* склад заполнен материалами;
+* инструменты улучшены;
+* производственные процессы ускорены;
+* персонаж меньше зависит от внешней среды.
+
+В конце первого этапа:
+
+* дом восстановлен;
+* склад восстановлен;
+* дробилка работает;
+* плавильня восстановлена;
+* верстак работает;
+* ферма снова функционирует;
+* игрок уже ощущает себя хозяином собственного хозяйства.
+
+---
+
+# 3. ОСНОВНЫЕ ИГРОВЫЕ СИСТЕМЫ
+
+## 3.1. Передвижение
+
+Персонаж свободно перемещается по миру.
+
+Нужны:
+
+* ходьба;
+* бег;
+* взаимодействие;
+* подбор предметов;
+* работа с объектами;
+* перенос ресурсов;
+* использование инструментов.
+
+На первом этапе НЕ нужны:
+
+* прыжки через сложные препятствия;
+* паркур;
+* боевая система;
+* транспорт;
+* сложная физика.
+
+Чем проще MVP, тем быстрее AI сможет собрать работающую игру.
+
+---
+
+# 4. ВЫБОР ПЕРСОНАЖА
+
+На старте игрок выбирает одного персонажа.
+
+## 4.1. Шахтёр
+
+### Внешность
+
+Возраст: 35–50 лет.
+
+Телосложение:
+
+* крепкое;
+* широкие плечи;
+* массивные руки;
+* средний рост.
+
+Одежда:
+
+* рабочая куртка;
+* тяжёлые штаны;
+* ботинки;
+* перчатки;
+* рабочий шлем;
+* налобный фонарь;
+* пояс с инструментами.
+
+Цветовая гамма:
+
+* тёмно-коричневый;
+* угольно-серый;
+* пыльно-жёлтый;
+* тёмно-синий.
+
+### Характер
+
+Молчаливый, практичный, физически сильный.
+
+### Игровые бонусы
+
+**Mining Efficiency I**
++20% скорости добычи камня.
+
+**Strong Back**
++15% максимального веса переносимых ресурсов.
+
+**Stone Sense**
+Небольшой радиус подсветки залежей камня.
+
+---
+
+# 4.2. Фермер
+
+### Внешность
+
+Возраст: 25–40 лет.
+
+Телосложение:
+
+* среднее;
+* спортивное;
+* подвижное.
+
+Одежда:
+
+* рабочая рубашка;
+* жилет;
+* брюки;
+* сапоги;
+* перчатки;
+* шляпа или кепка;
+* небольшой поясной нож.
+
+Цветовая гамма:
+
+* зелёный;
+* коричневый;
+* бежевый;
+* тёмно-красный.
+
+### Характер
+
+Спокойный, практичный, терпеливый.
+
+### Игровые бонусы
+
+**Efficient Gathering**
++15% ресурсов при сборе растений/древесины.
+
+**Forager**
+Меньше расход пищи.
+
+**Green Thumb**
+Позже получает +20% урожая.
+
+---
+
+# 4.3. Учёный
+
+### Внешность
+
+Возраст: 28–45 лет.
+
+Телосложение:
+
+* худощавое;
+* средний рост.
+
+Одежда:
+
+* рабочий комбинезон;
+* защитные очки;
+* перчатки;
+* пояс с приборами;
+* небольшой рюкзак;
+* технический датчик.
+
+Цветовая гамма:
+
+* серый;
+* белый;
+* голубой;
+* оранжевый.
+
+### Характер
+
+Любопытный, рациональный, немного эксцентричный.
+
+### Игровые бонусы
+
+**Efficient Processing**
++15% эффективности переработки.
+
+**Material Scanner**
+Позволяет определять характеристики неизвестных ресурсов.
+
+**Researcher**
+Снижает стоимость первых улучшений.
+
+---
+
+# 5. ПРОГРЕССИЯ ПЕРСОНАЖА
+
+Все персонажи начинают одинаково.
+
+Дальше появляется специализация.
+
+## Дерево развития
+
+### Физика
+
+Скорость передвижения > выносливость > переносимый вес.
+
+### Инструменты
+
+Прочность > скорость работы > эффективность.
+
+### Выживание
+
+Голод > жажда > температура > восстановление энергии.
+
+### Производство
+
+Переработка > крафт > качество продукции.
+
+### Специализация
+
+Шахтёр:
+
+> Mining > Stone > Metals
+
+Фермер:
+
+> Agriculture > Food > Crops
+
+Учёный:
+
+> Processing > Research > Technology
+
+---
+
+# 6. СИСТЕМА ПОТРЕБНОСТЕЙ
+
+У персонажа есть шесть физических состояний.
+
+| Параметр    | Что влияет                            |
+| ----------- | ------------------------------------- |
+| Сон         | энергия и скорость работы             |
+| Голод       | максимальная выносливость             |
+| Жажда       | скорость движения                     |
+| Температура | расход энергии                        |
+| Усталость   | производительность                    |
+| Мокрота     | температура и скорость восстановления |
+
+---
+
+# 7. СОН
+
+У персонажа есть шкала энергии.
+
+100%:
+
+> полностью отдохнувший.
+
+50%:
+
+> лёгкая усталость.
+
+20%:
+
+> персонаж работает заметно медленнее.
+
+0%:
+
+> персонаж принудительно должен отдохнуть.
+
+Игрок может лечь спать в доме.
+
+Сон:
+
+* восстанавливает энергию;
+* частично восстанавливает температуру;
+* снимает состояние мокроты;
+* обновляет дневной цикл.
+
+---
+
+# 8. ГОЛОД
+
+Голод постепенно уменьшается.
+
+На высоком уровне голода:
+
+* уменьшается максимальная выносливость;
+* немного замедляется работа.
+
+При критическом голоде:
+
+* сильное снижение производительности.
+
+На раннем этапе еда может быть очень простой.
+
+Например:
+
+* ягоды;
+* овощи;
+* хлеб;
+* простая похлёбка.
+
+Полноценную сложную пищевую систему лучше добавить после MVP.
+
+---
+
+# 9. ЖАЖДА
+
+Игрок должен получать воду.
+
+Источники:
+
+* колодец;
+* бочка;
+* ручей;
+* дождь.
+
+Вода используется одновременно:
+
+1. для питья;
+2. для производства;
+3. для фермы.
+
+Это делает воду важным ресурсом.
+
+---
+
+# 10. ТЕМПЕРАТУРА
+
+В мире меняется температура.
+
+На неё влияют:
+
+* время суток;
+* погода;
+* нахождение под открытым небом;
+* мокрая одежда;
+* пребывание возле печи;
+* дом.
+
+Очень холодно:
+
+> усталость увеличивается.
+
+Очень жарко:
+
+> жажда увеличивается.
+
+Оптимальная температура:
+
+> бонус к восстановлению.
+
+---
+
+# 11. МОКРОТА
+
+Очень простая, но атмосферная система.
+
+Персонаж становится мокрым:
+
+* под дождём;
+* при переходе через воду;
+* при падении в грязь;
+* при ручной работе с водой.
+
+Мокрый персонаж:
+
+* быстрее охлаждается;
+* быстрее устаёт.
+
+Сушка:
+
+* дома;
+* возле огня;
+* возле печи;
+* естественным образом со временем.
+
+---
+
+# 12. ДЕНЬ / НОЧЬ
+
+Полный игровой день рекомендуется сделать примерно 20–30 минут.
+
+Пример:
+
+**06:00** — утро
+**12:00** — день
+**18:00** — вечер
+**22:00** — ночь
+**02:00** — глубокая ночь
+
+Ночью:
+
+* холоднее;
+* хуже видимость;
+* выше риск потеряться;
+* производительность ниже.
+
+В будущем можно добавить ночных животных и другие угрозы.
+
+На первом этапе этого НЕ делать.
+
+---
+
+# 13. ПОГОДА
+
+Для MVP достаточно четырёх состояний:
+
+### Солнечно
+
+Нормальная температура.
+
+### Пасмурно
+
+Небольшое снижение температуры.
+
+### Дождь
+
+* мокрота;
+* холод;
+* вода наполняет резервуары.
+
+### Сильный дождь
+
+* очень высокая мокрота;
+* сниженная эффективность;
+* больше воды.
+
+Позже:
+
+* жара;
+* гроза;
+* снег;
+* засуха;
+* пыльная буря.
+
+---
+
+# 14. БАЗОВЫЙ ИНВЕНТАРЬ
+
+Каждый персонаж начинает с:
+
+| Предмет | Назначение       |
+| ------- | ---------------- |
+| Топор   | дерево           |
+| Кирка   | камень           |
+| Лопата  | глина / песок    |
+| Ведро   | вода             |
+| Рюкзак  | перенос ресурсов |
+
+Все предметы улучшаются.
+
+---
+
+# 15. СИСТЕМА УЛУЧШЕНИЯ ИНСТРУМЕНТОВ
+
+Каждый инструмент имеет:
+
+* уровень;
+* прочность;
+* скорость работы;
+* эффективность.
+
+## Топор
+
+**Lv.1 Старый топор**
+
+> **Lv.2 Железный топор**
+
+> **Lv.3 Усиленный топор**
+
+> **Lv.4 Промышленный топор**
+
+## Кирка
+
+**Lv.1 Самодельная кирка**
+
+> **Lv.2 Железная кирка**
+
+> **Lv.3 Стальная кирка**
+
+> **Lv.4 Усиленная кирка**
+
+## Лопата
+
+Аналогичная система.
+
+## Ведро
+
+Улучшения:
+
+* больше вместимость;
+* быстрее наполняется;
+* меньше проливается вода.
+
+## Рюкзак
+
+Главный upgrade.
+
+Lv.1:
+
+**12 слотов**
+
+Lv.2:
+
+**18**
+
+Lv.3:
+
+**26**
+
+Lv.4:
+
+**36**
+
+---
+
+# 16. БАЗОВЫЕ РЕСУРСЫ
+
+На первом этапе всего четыре основных сырьевых ресурса:
+
+### Камень
+
+Получение:
+
+> добыча камня киркой.
+
+Используется:
+
+> каменная пыль > кирпич > строительство.
+
+### Дерево
+
+Получение:
+
+> рубка деревьев.
+
+Используется:
+
+> опилки > топливные брикеты.
+
+### Глина
+
+Получение:
+
+> лопатой.
+
+Используется:
+
+> кирпич.
+
+### Песок
+
+Получение:
+
+> лопатой.
+
+На первом этапе:
+
+* используется для восстановления объектов;
+* позже нужен для стекла.
+
+---
+
+# 17. ВОДА
+
+Базовый ресурс.
+
+Хранится в ведре.
+
+Используется:
+
+* для питья;
+* крафта;
+* фермы;
+* будущего производства.
+
+Важно:
+
+**ведро не расходуется.**
+
+Расходуется только вода.
+
+---
+
+# 18. ПЕРЕРАБОТКА
+
+## Камень > каменная пыль
+
+Используется:
+
+**Дробилка камня**
+
+Рецепт:
+
+**2 Камня > 1 Каменная пыль**
+
+Время:
+
+**8 секунд**
+
+После улучшения:
+
+**4 секунды**
+
+---
+
+# 19. ДЕРЕВО > ОПИЛКИ
+
+Используется:
+
+**Дробилка / лесопильный механизм**
+
+Рецепт:
+
+**2 Древесины > 4 Опилок**
+
+Время:
+
+**8 секунд**
+
+---
+
+# 20. КРАФТ КИРПИЧА
+
+Игровое название продукта:
+
+**Говённый кирпич**
+
+Внутреннее техническое название:
+
+**Poor Brick**
+
+Рецепт:
+
+**2 Каменная пыль + 1 Глина > 2 кирпича**
+
+Опционально:
+
+**0.25 воды**
+
+Почему название работает:
+
+оно подчёркивает раннюю стадию производства и создаёт юмористический контраст с дальнейшими качественными материалами.
+
+На более поздних этапах можно заменить его на:
+
+* Обожжённый кирпич;
+* усиленный кирпич;
+* промышленный блок.
+
+---
+
+# 21. ТОПЛИВНЫЕ БРИКЕТЫ
+
+Рецепт:
+
+**4 Опилок + 1 Вода > 2 Топливных брикета**
+
+Процесс:
+
+1. игрок берёт воду;
+2. приносит материалы;
+3. помещает всё на верстак;
+4. запускает производство;
+5. получает брикеты.
+
+В будущем:
+
+* древесный уголь;
+* торф;
+* энергетические гранулы;
+* улучшенное биотопливо.
+
+---
+
+# 22. ПРОДАЖА
+
+Главный торговый объект:
+
+# СТАНЦИЯ ОТПРАВКИ
+
+Это место, куда игрок приносит произведённые товары.
+
+Первоначально покупаются:
+
+**Говённый кирпич**
+
+**Топливные брикеты**
+
+Пример экономики:
+
+| Товар  | Себестоимость | Цена |
+| ------ | ------------: | ---: |
+| Кирпич |           3–4 |    8 |
+| Брикет |           4–5 |   10 |
+
+Цены должны быть настроены так, чтобы игрок чувствовал прогресс, но не мог мгновенно восстановить всю базу.
+
+---
+
+# 23. СТАНЦИЯ ОТПРАВКИ
+
+Визуально:
+
+* старый металлический контейнер;
+* небольшая погрузочная площадка;
+* весы;
+* терминал;
+* деревянные ящики;
+* сигнальная лампа;
+* старый грузовик / платформа.
+
+Игрок подходит:
+
+> Взаимодействие > Открыть продажу.
+
+UI:
+
+**Ваш груз**
+
+**Стоимость**
+
+**Комиссия**
+
+**Итого**
+
+**[ОТПРАВИТЬ]**
+
+После продажи:
+
+> +156 монет
+
+---
+
+# 24. ДЕНЬГИ
+
+Игрок получает универсальную валюту:
+
+**Кредиты**
+
+или более атмосферное:
+
+**Гривны / жетоны / монеты региона**.
+
+Для MVP рекомендуется:
+
+**Кредиты**
+
+Цель игрока:
+
+не накопить деньги,
+
+а **потратить их на восстановление производства**.
+
+---
+
+# 25. ВОССТАНОВЛЕНИЕ БАЗЫ
+
+Каждый разрушенный объект имеет 4 стадии.
+
+## Стадия 0
+
+Полностью разрушен.
+
+## Стадия 1
+
+Работает частично.
+
+## Стадия 2
+
+Работает нормально.
+
+## Стадия 3
+
+Полностью восстановлен.
+
+## Стадия 4
+
+Улучшен.
+
+---
+
+# 26. ДОМ
+
+Дом выполняет функции:
+
+* сон;
+* хранение;
+* восстановление;
+* защита от дождя;
+* защита от холода/жары.
+
+### Восстановление
+
+Уровень 1:
+
+**1 000 кредитов**
+
+Уровень 2:
+
+**2 500**
+
+Уровень 3:
+
+**5 000**
+
+Уровень 4:
+
+**10 000**
+
+После полного восстановления:
+
+> улучшенный сон + больше места для хранения.
+
+---
+
+# 27. СКЛАД ПРОДУКЦИИ
+
+Назначение:
+
+* хранение ресурсов;
+* хранение готовой продукции;
+* хранение компонентов.
+
+Уровни:
+
+**20 > 40 > 70 > 120 слотов.**
+
+---
+
+# 28. ПЕЧЬ-ПЛАВИЛЬНЯ
+
+На первом этапе она почти разрушена.
+
+Игрок может восстановить:
+
+* топку;
+* дымоход;
+* корпус;
+* металлические элементы.
+
+После ремонта она становится объектом будущего производства.
+
+Важно:
+
+**не заставлять использовать плавильню в первые 10 минут игры.**
+
+Её восстановление — инвестиция в будущее.
+
+После восстановления открывается:
+
+> металлы > компоненты > улучшенные инструменты.
+
+---
+
+# 29. ДРОБИЛКА
+
+Главный производственный объект первого этапа.
+
+Использует:
+
+> камень / дерево.
+
+Создаёт:
+
+> каменную пыль / опилки.
+
+После улучшения:
+
+* быстрее работает;
+* больше производительность;
+* меньше расход ресурсов;
+* открывает дополнительные рецепты.
+
+---
+
+# 30. ВЕРСТАК
+
+Основной объект крафта.
+
+Здесь создаются:
+
+* брикеты;
+* компоненты;
+* улучшения инструментов;
+* строительные элементы.
+
+Позже:
+
+* механические детали;
+* электроника;
+* научное оборудование.
+
+---
+
+# 31. ФЕРМА
+
+Ферма первоначально разрушена.
+
+Игрок должен:
+
+1. очистить территорию;
+2. восстановить землю;
+3. построить грядки;
+4. провести воду;
+5. посадить растения.
+
+Для первого этапа достаточно:
+
+* картофель;
+* морковь;
+* пшеница.
+
+Пока ферма может быть финальной целью первого этапа.
+
+---
+
+# 32. ГЛАВНАЯ ПРОГРЕССИЯ ПЕРВОГО ЭТАПА
+
+### Шаг 1
+
+Игрок просыпается в разрушенном доме.
+
+### Шаг 2
+
+Осматривает базу.
+
+### Шаг 3
+
+Получает инструменты.
+
+### Шаг 4
+
+Идёт за камнем.
+
+### Шаг 5
+
+Возвращается.
+
+### Шаг 6
+
+Запускает дробилку.
+
+### Шаг 7
+
+Добывает глину.
+
+### Шаг 8
+
+Создаёт кирпичи.
+
+### Шаг 9
+
+Добывает дерево.
+
+### Шаг 10
+
+Получает опилки.
+
+### Шаг 11
+
+Создаёт брикеты.
+
+### Шаг 12
+
+Несёт товары на станцию.
+
+### Шаг 13
+
+Получает деньги.
+
+### Шаг 14
+
+Восстанавливает первый объект.
+
+### Шаг 15
+
+Разблокирует новый производственный этап.
+
+### Шаг 16
+
+Постепенно восстанавливает всю базу.
+
+### Шаг 17
+
+Восстанавливает ферму.
+
+### Шаг 18
+
+Первый этап завершён.
+
+---
+
+# 33. СТРУКТУРА ПЕРВОГО MVP
+
+Не делать сразу огромную игру.
+
+## MVP должен содержать только:
+
+### Мир
+
+1 небольшая карта.
+
+### Персонаж
+
+3 выбора.
+
+### Ресурсы
+
+* камень;
+* дерево;
+* глина;
+* песок;
+* вода.
+
+### Инструменты
+
+* топор;
+* кирка;
+* лопата;
+* ведро;
+* рюкзак.
+
+### Производство
+
+* дробилка;
+* верстак;
+* плавильня.
+
+### Продукция
+
+* каменная пыль;
+* опилки;
+* кирпич;
+* брикеты.
+
+### Торговля
+
+* станция отправки.
+
+### База
+
+* дом;
+* склад;
+* производство;
+* ферма.
+
+### Survival
+
+* голод;
+* жажда;
+* сон;
+* усталость;
+* температура;
+* мокрота.
+
+### Прогрессия
+
+* деньги;
+* восстановление;
+* улучшения.
+
+---
+
+# 34. ЧТО НЕ ДЕЛАТЬ В ПЕРВОЙ ВЕРСИИ
+
+До появления рабочего MVP запрещено добавлять:
+
+* боёвку;
+* врагов;
+* транспорт;
+* сложных NPC;
+* большие города;
+* онлайн;
+* сюжет на 20 часов;
+* десятки ресурсов;
+* сложную физику;
+* огромный procedural world;
+* десятки станков;
+* технологическое дерево на 100 элементов.
+
+Главная цель:
+
+> **сделать один очень хорошо работающий цикл.**
+
+---
+
+# 35. ВИЗУАЛЬНЫЙ СТИЛЬ
+
+Основной стиль:
+
+**stylized semi-realistic 3D**
+
+Характеристики:
+
+* читаемые силуэты;
+* слегка преувеличенные пропорции;
+* реалистичные материалы;
+* мягкое освещение;
+* умеренная детализация;
+* слегка грязная поверхность;
+* природные цвета;
+* постапокалиптическая атмосфера без мрачного хоррора.
+
+Мир должен быть:
+
+> **грязным, разрушенным, но уютным и перспективным.**
+
+Не делать:
+
+* ультрареализм;
+* фотореалистичных людей;
+* чрезмерный cyberpunk;
+* чрезмерный cartoon;
+* слишком тёмную палитру.
+
+---
+
+# 36. ВИЗУАЛЬНАЯ ФОРМУЛА МИРА
+
+Мир должен быть похож на мир из игры Stardew Valley, но не копировать его в слепую
+
+Главные материалы:
+
+**дерево + старый металл + камень + грязь + ржавчина + ткань + стекло.**
+
+Окружение:
+
+* трава;
+* грязевые дороги;
+* разрушенные деревья;
+* камни;
+* небольшие водоёмы;
+* канавы;
+* заброшенные объекты;
+* следы урагана.
+
+---
+
+# 37. ПРОМТ ДЛЯ ГЕНЕРАЦИИ ОБЩЕЙ КОНЦЕПЦИИ МИРА
+
+Использовать как master prompt для image generator:
+
+```text
+Create a high-quality 3D game environment concept for a cozy post-storm survival and crafting simulator.
+
+Setting:
+A small rural settlement devastated by a powerful hurricane. Buildings are damaged but salvageable. Fallen trees, broken wooden fences, scattered stones, muddy paths, damaged equipment, rusty metal, wet soil and patches of wild grass.
+
+Visual style:
+Stylized semi-realistic 3D game art, strong readable silhouettes, believable materials, slightly exaggerated proportions, warm cinematic lighting, realistic vegetation but simplified geometry, detailed PBR surfaces, subtle post-apocalyptic atmosphere without horror.
+
+Gameplay readability:
+Resources and interactable objects must be easy to identify from an elevated third-person camera.
+
+Environment palette:
+earth brown, muted green, dusty beige, dark gray stone, rusty orange metal, weathered wood.
+
+Camera:
+elevated third-person / top-side perspective, approximately 35–50 degree camera angle.
+
+Mood:
+sad beginning, hopeful atmosphere, feeling of rebuilding a broken home.
+
+No characters, no UI, no text, no logos.
+```
+
+---
+
+# 38. ПРОМТ ДЛЯ WORLD TILESET
+
+```text
+Create a modular 3D game environment tileset for a stylized semi-realistic rural post-storm survival simulator.
+
+Create modular terrain assets:
+grass ground, dry grass, mud, wet mud, dirt path, rocky ground, sand, clay ground, shallow water, small puddles, damaged terrain, roots, small rocks.
+
+All pieces must be modular and tile seamlessly.
+
+Use clean grid-based dimensions suitable for a Godot 3D game.
+
+Readable from elevated third-person camera.
+
+Low-to-medium polygon count, optimized for real-time gameplay.
+
+Consistent materials, consistent scale, consistent lighting.
+
+No buildings, no characters, no UI, no text.
+```
+
+---
+
+# 39. ПРОМТ ДЛЯ ТРЁХ ПЕРСОНАЖЕЙ — CHARACTER SHEET
+
+```text
+Create a professional 3D character concept sheet for a stylized semi-realistic survival crafting game.
+
+Character: [MINER / FARMER / SCIENTIST]
+
+Show:
+front view,
+back view,
+left side,
+right side,
+three-quarter view,
+close-up portrait,
+equipment details.
+
+The character must be designed for a real-time 3D game and must have:
+clear silhouette,
+simple readable clothing layers,
+practical work equipment,
+boots,
+gloves,
+tool belt,
+backpack compatibility.
+
+Style:
+stylized semi-realistic,
+slightly exaggerated proportions,
+high readability,
+realistic cloth and leather materials,
+clean game-ready design.
+
+Neutral studio background.
+No weapons.
+No fantasy armor.
+No text.
+
+```
+---
+
+# 40. ПРОМТ ДЛЯ 8-НАПРАВЛЕННОГО CHARACTER SHEET
+
+Если потребуется 2D reference / animation guide:
+
+```text
+Create a complete 8-direction game character animation reference sheet.
+
+Character: [MINER / FARMER / SCIENTIST]
+
+Directions:
+front,
+front-left,
+left,
+back-left,
+back,
+back-right,
+right,
+front-right.
+
+Pose:
+neutral standing pose.
+
+Include clear silhouette, readable backpack, tool belt, clothing and footwear.
+
+Stylized semi-realistic game art.
+Consistent proportions between all directions.
+Orthographic game reference.
+No environment.
+No text.
+No UI.
+```
+
+---
+
+# 41. BLENDER MCP — ОБЩИЙ MASTER PROMPT
+
+Этот промт передаётся AI-агенту, который управляет Blender через MCP.
+
+```text
+You are a senior Blender environment and game asset artist working through Blender MCP.
+
+Create a production-ready 3D game asset for a stylized semi-realistic survival crafting simulator.
+
+Requirements:
+
+1. Build the asset directly in Blender.
+2. Use clean object hierarchy and meaningful object names.
+3. Use real-world proportions.
+4. Keep topology clean and game-friendly.
+5. Use modifiers where useful, then apply them when appropriate.
+6. Create simple PBR materials.
+7. Avoid unnecessary geometry hidden from the player.
+8. Optimize the asset for a Godot real-time game.
+9. Set the object origin/pivot correctly.
+10. Apply transforms.
+11. Create collision-friendly geometry.
+12. Use separate meshes for major interactive parts when needed.
+13. Create LOD-friendly topology.
+14. Use a consistent scale across all project assets.
+15. Keep the style consistent with the other project models.
+
+Target style:
+stylized semi-realistic,
+weathered,
+slightly exaggerated shapes,
+readable from an elevated third-person camera,
+rusty metal,
+aged wood,
+mud,
+stone,
+subtle imperfections.
+
+Before finishing:
+- verify scale,
+- verify normals,
+- verify materials,
+- verify object names,
+- verify origin,
+- verify transforms,
+- verify that the asset can be exported to Godot.
+
+Do not create unnecessary decorative details that increase polygon count without improving gameplay readability.
+```
+
+---
+
+# 42. BLENDER MCP — ШАХТЁР
+
+```text
+Using the Blender MCP workflow, create a production-ready stylized semi-realistic 3D game character: a rugged middle-aged miner.
+
+Character design:
+strong shoulders,
+muscular arms,
+practical work clothing,
+heavy boots,
+work gloves,
+helmet with small lamp,
+tool belt,
+small backpack.
+
+Clothing:
+dark gray work trousers,
+weathered brown jacket,
+dusty yellow safety elements,
+dark boots.
+
+Face:
+tired but friendly,
+weathered skin,
+short practical haircut,
+light beard.
+
+Create:
+full body model,
+separate hair,
+separate backpack,
+separate helmet,
+separate tools where appropriate.
+
+Game-ready topology.
+Readable silhouette from elevated third-person camera.
+
+Prepare the model for:
+idle,
+walk,
+run,
+tool-use animations.
+
+Use clean naming conventions.
+```
+
+---
+
+# 43. BLENDER MCP — ФЕРМЕР
+
+```text
+Using Blender MCP, create a production-ready stylized semi-realistic 3D game character: a practical rural farmer.
+
+Appearance:
+athletic average build,
+friendly face,
+weathered working clothes,
+work boots,
+gloves,
+utility belt,
+simple backpack.
+
+Clothing:
+green-brown jacket or work shirt,
+beige trousers,
+dark boots,
+red-brown details.
+
+Character should visually communicate:
+agriculture,
+manual labor,
+survival,
+rural life.
+
+Create a readable silhouette from elevated third-person camera.
+
+Prepare for idle, walking, running and tool-use animations.
+
+Game-ready topology.
+Consistent scale with the miner character.
+```
+
+---
+
+# 44. BLENDER MCP — УЧЁНЫЙ
+
+```text
+Using Blender MCP, create a production-ready stylized semi-realistic 3D game character: an eccentric but practical field scientist.
+
+Appearance:
+slim build,
+intelligent expression,
+slightly messy hair,
+protective glasses,
+utility suit,
+work gloves,
+heavy boots,
+small scientific backpack,
+portable scanner attached to belt.
+
+Clothing colors:
+light gray,
+blue,
+orange accents,
+dark boots.
+
+The character should look like someone who can both perform physical work and operate industrial equipment.
+
+Readable silhouette from elevated third-person camera.
+
+Create production-ready topology and materials.
+Prepare for idle, walking, running and interaction animations.
+```
+
+---
+
+# 45. ПРОМТ — ДОМ
+
+```text
+Create a stylized semi-realistic 3D game building: a small rural worker's house damaged by a hurricane.
+
+The house should look repairable, not completely destroyed.
+
+Features:
+broken roof,
+damaged wooden walls,
+one broken window,
+crooked porch,
+fallen boards,
+muddy surroundings,
+partially collapsed chimney,
+weathered wooden door.
+
+Gameplay requirement:
+the house must clearly communicate that it is a safe shelter and sleeping location.
+
+Create a modular game-ready model suitable for Godot.
+
+Readable from elevated third-person camera.
+No characters.
+No text.
+```
+
+---
+
+# 46. ПРОМТ — СКЛАД
+
+```text
+Create a stylized semi-realistic 3D rural production storage warehouse damaged by a hurricane.
+
+Features:
+large sliding wooden door,
+partially collapsed roof,
+wooden crates,
+metal shelves,
+broken wall section,
+rusty supports,
+old industrial containers,
+mud and debris.
+
+The interior must be visually understandable as a storage location.
+
+Game-ready modular design.
+Optimized for real-time rendering.
+Readable from elevated third-person camera.
+```
+
+---
+
+# 47. ПРОМТ — ПЕЧЬ-ПЛАВИЛЬНЯ
+
+```text
+Create a stylized semi-realistic small industrial smelting furnace for a rural post-storm crafting game.
+
+Design:
+old brick and metal furnace,
+damaged chimney,
+rusty metal casing,
+visible fire chamber,
+ash deposits,
+manual controls,
+pipes,
+reinforced sections.
+
+The furnace should look old but repairable.
+
+Create:
+damaged version,
+restored version,
+upgraded version.
+
+Game-ready geometry.
+Clear visual distinction between all three states.
+```
+
+---
+
+# 48. ПРОМТ — ДРОБИЛКА КАМНЯ
+
+```text
+Create a stylized semi-realistic mechanical stone crusher for a survival crafting simulator.
+
+Construction:
+heavy metal frame,
+large crushing chamber,
+rotating mechanical components,
+hopper,
+output chute,
+rusty steel,
+dust,
+belts,
+industrial bolts,
+simple mechanical controls.
+
+The machine should visibly communicate:
+stone enters here,
+processed material exits here.
+
+Create damaged, functional and upgraded versions.
+
+Game-ready asset for Godot.
+Readable from elevated third-person camera.
+```
+
+---
+
+# 49. ПРОМТ — ВЕРСТАК
+
+```text
+Create a stylized semi-realistic rural industrial crafting workbench.
+
+Features:
+thick wooden work surface,
+metal supports,
+hand tools,
+hammer,
+pliers,
+saw,
+containers,
+rope,
+small storage drawers,
+rusty metal parts,
+crafting components.
+
+The workbench should look heavily used and repaired many times.
+
+Create modular game-ready asset.
+```
+
+---
+
+# 50. ПРОМТ — СТАНЦИЯ ОТПРАВКИ
+
+```text
+Create a stylized semi-realistic cargo dispatch station for a rural crafting game.
+
+Features:
+small cargo platform,
+industrial weighing scale,
+shipping crates,
+metal loading frame,
+old terminal,
+warning lamp,
+small conveyor or loading mechanism,
+weathered metal,
+rust,
+wooden pallets.
+
+The player must instantly understand:
+this is where manufactured goods are sold and shipped away.
+
+Game-ready model optimized for Godot.
+```
+
+---
+
+# 51. ПРОМТ — НАБОР ИНСТРУМЕНТОВ
+
+```text
+Create a professional game asset sheet containing five survival crafting tools:
+
+1. Axe
+2. Pickaxe
+3. Shovel
+4. Metal Bucket
+5. Backpack
+
+Style:
+stylized semi-realistic,
+weathered,
+practical,
+post-storm rural industrial setting.
+
+Each item must have:
+clear silhouette,
+realistic proportions,
+game-readable details,
+slightly exaggerated shape language.
+
+Neutral background.
+Orthographic presentation.
+No text.
+```
+
+---
+
+# 52. ПРОМТ — ИКОНКИ ИНВЕНТАРЯ
+
+```text
+Create a complete game UI inventory icon set for a stylized semi-realistic survival crafting simulator.
+
+Icons:
+axe,
+pickaxe,
+shovel,
+bucket,
+backpack,
+stone,
+wood,
+clay,
+sand,
+water,
+stone dust,
+sawdust,
+brick,
+fuel briquette,
+coins.
+
+Requirements:
+square icon format,
+centered object,
+clear silhouette,
+strong readability at small size,
+subtle shadow,
+consistent lighting,
+consistent perspective,
+consistent rendering style.
+
+Transparent background.
+No text.
+No borders.
+No UI frame.
+```
+
+---
+
+# 53. ПРОМТ — ИКОНКИ КОМПОНЕНТОВ
+
+```text
+Create a coherent game inventory icon set for industrial crafting components.
+
+Objects:
+wooden handle,
+metal plate,
+metal rod,
+bolt,
+gear,
+rope,
+cloth,
+glass,
+charcoal,
+iron fragment,
+copper wire,
+mechanical spring,
+small bearing,
+reinforced bracket.
+
+Style:
+stylized semi-realistic,
+slightly exaggerated,
+high readability,
+consistent lighting,
+same camera angle.
+
+Transparent background.
+No text.
+```
+
+---
+
+# 54. СИСТЕМА КОМПОНЕНТОВ
+
+После восстановления базовых производственных объектов открываются компоненты.
+
+Базовые:
+
+* деревянная ручка;
+* верёвка;
+* ткань;
+* болт;
+* металлическая пластина;
+* металлический стержень.
+
+Продвинутые:
+
+* шестерня;
+* подшипник;
+* пружина;
+* медный провод;
+* стекло;
+* усиленный кронштейн.
+
+---
+
+# 55. РЕЦЕПТЫ УЛУЧШЕНИЯ ИНСТРУМЕНТОВ
+
+## Топор Lv.2
+
+1 металлическая пластина
+1 деревянная ручка
+2 болта
+
+Результат:
+
+**Железный топор**
+
+---
+
+## Кирка Lv.2
+
+1 металлическая пластина
+1 деревянная ручка
+2 болта
+
+---
+
+## Лопата Lv.2
+
+1 металлическая пластина
+1 деревянная ручка
+2 болта
+
+---
+
+## Ведро Lv.2
+
+2 металлические пластины
+4 болта
+
+Результат:
+
+**Усиленное ведро**
+
+---
+
+## Рюкзак Lv.2
+
+3 ткани
+2 кожаных/тканевых ремня
+1 металлическая застёжка
+
+Результат:
+
+**Большой рюкзак**
+
+---
+
+# 56. ПРОГРЕССИЯ ОБОРУДОВАНИЯ
+
+Каждый объект имеет три параметра:
+
+**Состояние**
+
+**Производительность**
+
+**Стоимость ремонта**
+
+Пример:
+
+### Дробилка
+
+Lv.1:
+
+1 ресурс > 1 продукт.
+
+Lv.2:
+
++25% скорость.
+
+Lv.3:
+
++25% скорость.
+
+Lv.4:
+
+двойная переработка.
+
+---
+
+# 57. ДЕРЕВО ТЕХНОЛОГИЙ
+
+Минимальное дерево:
+
+```text
+СЫРЬЁ
+¦
++-- Камень
+¦   L-- Каменная пыль
+¦       L-- Кирпич
+¦
++-- Дерево
+¦   L-- Опилки
+¦       L-- Брикеты
+¦
++-- Глина
+¦   L-- Кирпич
+¦
+L-- Песок
+    L-- Будущее производство
+```
+
+Следующий технологический уровень:
+
+```text
+Плавильня
+¦
++-- Железо
+¦   +-- пластины
+¦   +-- стержни
+¦   L-- болты
+¦
+L-- Медные компоненты
+```
+
+---
+
+# 58. UI
+
+Главный экран:
+
+### Верхняя левая часть
+
+* здоровье;
+* энергия;
+* голод;
+* жажда.
+
+### Верхняя правая
+
+* время;
+* погода;
+* температура;
+* деньги.
+
+### Нижняя часть
+
+Hotbar:
+
+**1 Топор**
+
+**2 Кирка**
+
+**3 Лопата**
+
+**4 Ведро**
+
+**5 Рюкзак**
+
+---
+
+# 59. ИНВЕНТАРЬ
+
+Инвентарь должен быть максимально простым.
+
+Сетка:
+
+**6 ? 4**
+
+Каждый предмет:
+
+* иконка;
+* количество;
+* состояние.
+
+При наведении:
+
+> Каменная пыль
+> Обработанный минеральный материал.
+> Используется для изготовления кирпича.
+
+---
+
+# 60. ВЗАИМОДЕЙСТВИЕ С ОБЪЕКТАМИ
+
+Один универсальный принцип:
+
+```text
+Подойти
+v
+Нажать E
+v
+Открыть контекст
+v
+Выполнить действие
+```
+
+Пример:
+
+Дробилка:
+
+> [E] Использовать дробилку
+
+После открытия:
+
+```text
+КАМЕННАЯ ДРОБИЛКА
+
+Вход:
+Камень ?2
+
+Результат:
+Каменная пыль ?1
+
+Время:
+8 сек
+
+[ЗАПУСТИТЬ]
+```
+
+---
+
+# 61. СИСТЕМА РЕСУРСНЫХ ТОЧЕК
+
+Для первого MVP ресурсы должны появляться в фиксированных местах.
+
+Пример:
+
+5 каменных залежей.
+
+8 деревьев.
+
+4 глиняных участка.
+
+3 песчаных участка.
+
+Это проще реализовать и балансировать, чем procedural generation.
+
+Позже можно добавить:
+
+> regeneration / random resource spawning.
+
+---
+
+# 62. СОХРАНЕНИЕ
+
+Автосохранение:
+
+* каждый игровой день;
+* после продажи;
+* после восстановления объекта;
+* после получения новой технологии.
+
+Manual Save:
+
+через меню.
+
+Save должен хранить:
+
+* персонажа;
+* выбранный класс;
+* деньги;
+* инвентарь;
+* расположение ресурсов;
+* здоровье;
+* потребности;
+* уровень оборудования;
+* состояние базы;
+* прогресс фермы;
+* время суток.
+
+---
+
+# 63. АРХИТЕКТУРА GODOT
+
+Рекомендуемая структура:
+
+```text
+res://
++-- scenes/
+¦   +-- player/
+¦   +-- world/
+¦   +-- buildings/
+¦   +-- resources/
+¦   +-- machines/
+¦   +-- ui/
+¦   L-- systems/
+¦
++-- scripts/
+¦   +-- player/
+¦   +-- inventory/
+¦   +-- crafting/
+¦   +-- needs/
+¦   +-- economy/
+¦   +-- save/
+¦   L-- world/
+¦
++-- assets/
+¦   +-- characters/
+¦   +-- buildings/
+¦   +-- environment/
+¦   +-- props/
+¦   +-- tools/
+¦   L-- ui/
+¦
++-- data/
+¦   +-- items/
+¦   +-- recipes/
+¦   +-- buildings/
+¦   L-- characters/
+¦
+L-- audio/
+```
+
+---
+
+# 64. ПРИНЦИП РАЗРАБОТКИ ЧЕРЕЗ AI
+
+ИИ НЕ должен получать задачу:
+
+> «Сделай всю игру».
+
+Это практически гарантирует хаотичный проект.
+
+Вместо этого:
+
+> **одна система > тест > исправление > следующая система.**
+
+Каждая задача должна заканчиваться рабочим результатом.
+
+---
+
+# 65. ЭТАП 0 — ТЕХНИЧЕСКИЙ ПРОТОТИП
+
+Сначала создать:
+
+* пустой мир;
+* персонажа;
+* камеру;
+* движение;
+* взаимодействие;
+* базовый инвентарь.
+
+### Результат
+
+Игрок запускает игру и может:
+
+> двигаться > подойти к объекту > нажать E > получить сообщение.
+
+---
+
+# 66. ЭТАП 1 — СИСТЕМА РЕСУРСОВ
+
+Добавить:
+
+* деревья;
+* камни;
+* глину;
+* песок;
+* воду.
+
+Игрок должен:
+
+> подойти > использовать инструмент > добыть ресурс > ресурс попадает в инвентарь.
+
+---
+
+# 67. ЭТАП 2 — ИНВЕНТАРЬ
+
+Создать:
+
+* inventory data;
+* item database;
+* stack system;
+* weight;
+* hotbar;
+* drag & drop.
+
+---
+
+# 68. ЭТАП 3 — ПРОИЗВОДСТВО
+
+Ввести:
+
+* дробилка;
+* верстак;
+* рецепты;
+* очередь производства;
+* таймер;
+* готовую продукцию.
+
+---
+
+# 69. ЭТАП 4 — ЭКОНОМИКА
+
+Создать:
+
+* деньги;
+* станцию отправки;
+* продажу товаров;
+* цены;
+* transaction log.
+
+---
+
+# 70. ЭТАП 5 — ВОССТАНОВЛЕНИЕ
+
+Добавить:
+
+* разрушенные здания;
+* ремонт;
+* стоимость;
+* стадии;
+* визуальное изменение здания.
+
+Очень важно:
+
+**каждый ремонт должен визуально менять мир.**
+
+Например:
+
+уровень 0:
+
+> развалина.
+
+уровень 1:
+
+> частично восстановлено.
+
+уровень 2:
+
+> работает.
+
+уровень 3:
+
+> полностью восстановлено.
+
+---
+
+# 71. ЭТАП 6 — NEEDS
+
+После того как производственный цикл уже работает:
+
+добавить:
+
+* hunger;
+* thirst;
+* fatigue;
+* sleep;
+* temperature;
+* wetness.
+
+Не делать эту систему раньше.
+
+Иначе AI будет одновременно отлаживать слишком много зависимых систем.
+
+---
+
+# 72. ЭТАП 7 — ПОГОДА
+
+Добавить:
+
+* солнце;
+* облака;
+* дождь;
+* ветер;
+* изменение температуры.
+
+Потом связать с:
+
+* мокротой;
+* жаждой;
+* холодом.
+
+---
+
+# 73. ЭТАП 8 — ПЕРСОНАЖИ
+
+После создания общей игровой системы подключить:
+
+* Miner;
+* Farmer;
+* Scientist.
+
+Сначала общий базовый класс.
+
+После него:
+
+* визуальные отличия;
+* пассивки;
+* характеристики;
+* уникальные бонусы.
+
+---
+
+# 74. ЭТАП 9 — ФЕРМА
+
+Добавить:
+
+* расчистку;
+* почву;
+* грядки;
+* полив;
+* семена;
+* рост растений;
+* урожай.
+
+---
+
+# 75. ЭТАП 10 — ПЕРВЫЙ VERTICAL SLICE
+
+На этом этапе игра уже должна быть полностью играема от начала до конца.
+
+Игрок:
+
+> начинает игру > добывает > перерабатывает > производит > продаёт > ремонтирует > выращивает растение > завершает первый этап.
+
+Только после этого начинать большое расширение.
+
+---
+
+# 76. ИДЕАЛЬНЫЙ ПОРЯДОК СОЗДАНИЯ АССЕТОВ
+
+Не генерировать сотни моделей сразу.
+
+Порядок:
+
+### 1.
+
+Один персонаж.
+
+### 2.
+
+Один дом.
+
+### 3.
+
+Один камень.
+
+### 4.
+
+Одно дерево.
+
+### 5.
+
+Одна глиняная залежь.
+
+### 6.
+
+Дробилка.
+
+### 7.
+
+Верстак.
+
+### 8.
+
+Инструменты.
+
+### 9.
+
+Базовый terrain.
+
+### 10.
+
+Склад.
+
+### 11.
+
+Печь.
+
+### 12.
+
+Станция отправки.
+
+### 13.
+
+UI.
+
+После этого:
+
+> собрать маленькую полностью работающую сцену.
+
+Только затем массово генерировать оставшиеся ассеты.
+
+---
+
+# 77. AI PIPELINE ДЛЯ АССЕТОВ
+
+Рекомендуемый pipeline:
+
+```text
+GDD
+ v
+Visual Concept
+ v
+Concept Art
+ v
+3D Generation / Blender MCP
+ v
+Cleanup
+ v
+Materials
+ v
+LOD
+ v
+Collision
+ v
+Export GLB
+ v
+Godot Import
+ v
+Scene Setup
+ v
+Gameplay Integration
+ v
+Testing
+```
+
+---
+
+# 78. MASTER PROMPT ДЛЯ AI-GAME-DEVELOPER
+
+Этот промт можно давать основному coding agent.
+
+```text
+You are the lead Godot 4.7.3 game developer for a survival crafting simulator called "After the Storm".
+
+The user is not a programmer.
+
+Your job is to perform the implementation, not merely explain what should be done.
+
+Rules:
+
+1. Build the game incrementally.
+2. Never create an enormous architecture before the current feature works.
+3. Every milestone must be runnable.
+4. Prefer simple, robust GDScript solutions.
+5. Avoid unnecessary dependencies.
+6. Keep systems modular.
+7. Use data-driven item and recipe definitions.
+8. Keep gameplay constants easy to edit.
+9. Add clear comments only where they improve maintainability.
+10. After each milestone:
+    - run the project,
+    - test the implemented feature,
+    - fix errors,
+    - verify that previous systems still work.
+
+Core systems:
+- player movement;
+- camera;
+- interaction;
+- inventory;
+- tools;
+- resource gathering;
+- crafting;
+- processing machines;
+- economy;
+- base restoration;
+- survival needs;
+- weather;
+- day/night;
+- farming;
+- save/load.
+
+Core gameplay loop:
+
+explore
+> gather resources
+> process resources
+> craft products
+> sell products
+> earn credits
+> restore machines and buildings
+> restore farm
+> unlock progression.
+
+Do not add combat unless explicitly requested.
+
+Do not create placeholder architecture that will later require rewriting the whole project.
+
+When an asset is missing, create a temporary primitive placeholder so gameplay can continue.
+
+All gameplay systems must be testable without final art assets.
+
+The current milestone will always be specified separately.
+```
+
+---
+
+# 79. MASTER PROMPT ДЛЯ BLENDER MCP AGENT
+
+```text
+You are the 3D asset production agent for the Godot game "After the Storm".
+
+You work through Blender MCP.
+
+Your responsibilities:
+
+- create 3D models;
+- organize Blender scenes;
+- create materials;
+- prepare game-ready topology;
+- create collision-friendly geometry;
+- establish consistent scale;
+- create damaged/restored/upgraded versions;
+- prepare exports for Godot.
+
+Visual target:
+
+stylized semi-realistic rural survival game,
+post-storm environment,
+weathered materials,
+wood,
+rusty metal,
+stone,
+mud,
+glass,
+cloth,
+natural vegetation.
+
+Every model must be readable from an elevated third-person camera.
+
+Every interactive machine must have:
+- logical origin;
+- clean object names;
+- separated interactive components when necessary;
+- usable collision geometry;
+- animation-ready parts where appropriate.
+
+Do not spend geometry budget on details the player will never see.
+
+Maintain visual consistency with all previously created assets.
+
+Before finishing each asset:
+- inspect model;
+- apply transforms;
+- verify normals;
+- verify scale;
+- verify materials;
+- verify pivot/origin;
+- prepare for export;
+- report the final asset structure.
+```
+
+---
+
+# 80. СИСТЕМА AI-АГЕНТОВ
+
+Для проекта выгодно разделить работу между несколькими AI-ролями.
+
+## Lead Game Designer
+
+Отвечает за:
+
+* GDD;
+* баланс;
+* progression;
+* economy.
+
+## Godot Developer
+
+Отвечает за:
+
+* GDScript;
+* scenes;
+* systems;
+* bugs.
+
+## Blender Artist
+
+Отвечает за:
+
+* 3D;
+* materials;
+* LOD;
+* collisions.
+
+## UI Artist
+
+Отвечает за:
+
+* icons;
+* menus;
+* inventory;
+* HUD.
+
+## QA Agent
+
+Проверяет:
+
+* ошибки;
+* softlock;
+* невозможные рецепты;
+* пропадающие предметы;
+* сохранение;
+* баланс.
+
+---
+
+# 81. QA CHECKLIST
+
+Перед каждым milestone AI должен проверить:
+
+### Player
+
+* движение работает;
+* камера не ломается;
+* взаимодействие работает.
+
+### Inventory
+
+* предмет добавляется;
+* предмет удаляется;
+* stack работает;
+* нельзя создать отрицательное количество.
+
+### Crafting
+
+* нельзя создать предмет без ресурсов;
+* ресурсы списываются корректно;
+* результат появляется корректно.
+
+### Machines
+
+* процесс запускается;
+* таймер работает;
+* результат можно забрать.
+
+### Economy
+
+* продажа работает;
+* деньги начисляются;
+* деньги сохраняются.
+
+### Save
+
+* выход из игры;
+* загрузка;
+* состояние базы;
+* inventory;
+* деньги.
+
+---
+
+# 82. БАЛАНС ПЕРВОГО ЧАСА
+
+Рекомендуемый темп:
+
+### 0–10 минут
+
+Знакомство.
+
+Игрок добывает первые ресурсы.
+
+### 10–20 минут
+
+Первое производство.
+
+### 20–30 минут
+
+Первая продажа.
+
+### 30–45 минут
+
+Первое восстановление.
+
+### 45–60 минут
+
+Игрок уже понимает экономический цикл.
+
+### 60–120 минут
+
+Массовое производство.
+
+### 120–240 минут
+
+Восстановление основной базы и фермы.
+
+---
+
+# 83. ПРАВИЛО ХОРОШЕГО GAME FEEL
+
+Каждое действие должно иметь обратную связь.
+
+Игрок ломает камень:
+
+**звук удара > частицы > анимация > всплывающий +1 камень.**
+
+Рубит дерево:
+
+**удар > скол > звук > дерево падает > +resource.**
+
+Запускает дробилку:
+
+**звук двигателя > вибрация > вращение > материал высыпается.**
+
+Продаёт:
+
+**весы > сигнал > деньги > UI-анимация.**
+
+Ремонтирует:
+
+**искры > звук строительства > визуальная трансформация здания.**
+
+---
+
+# 84. КЛЮЧЕВОЙ ДИЗАЙН-ПРИНЦИП
+
+Игрок должен видеть прогресс.
+
+Не только в цифрах.
+
+Мир должен физически становиться лучше.
+
+В начале:
+
+> грязь, обломки, ржавчина, сломанные стены.
+
+В конце:
+
+> чистые дорожки, работающая техника, свет в окнах, заполненный склад, зелёные грядки.
+
+Это должно быть одной из главных эмоциональных наград игры.
+
+---
+
+# 85. ПЕРВЫЙ ЭТАП — ФИНАЛЬНАЯ ЦЕЛЬ
+
+Первый этап считается завершённым, когда:
+
+**Дом восстановлен**
+
+**Склад восстановлен**
+
+**Дробилка восстановлена**
+
+**Верстак восстановлен**
+
+**Плавильня восстановлена**
+
+**Ферма восстановлена**
+
+**Персонаж произвёл и продал первую партию продукции**
+
+**Игрок получил доступ к продвинутому производству**
+
+После этого показывается:
+
+> **BASE RESTORED**
+
+и открывается следующий этап игры.
+
+---
+
+# 86. ВТОРОЙ ЭТАП — ЗАГОТОВКА НА БУДУЩЕЕ
+
+Вторая глава может добавить:
+
+* железо;
+* медь;
+* стекло;
+* продвинутые инструменты;
+* электричество;
+* насосы;
+* теплицы;
+* более сложное фермерство;
+* автомобили;
+* NPC;
+* торговцев;
+* новые районы карты.
+
+---
+
+# 87. ТРЕТИЙ ЭТАП
+
+Здесь уже можно переходить к:
+
+* автоматизации;
+* большим производственным цепочкам;
+* исследовательской ветке учёного;
+* крупному сельхозпроизводству;
+* экспедициям;
+* восстановлению инфраструктуры региона.
+
+---
+
+# 88. ПРОИЗВОДСТВЕННЫЙ ПЛАН ДЛЯ AI
+
+## Фаза A — Prototype
+
+1. Godot project.
+2. Player.
+3. Camera.
+4. Interaction.
+5. Resource nodes.
+6. Inventory.
+
+## Фаза B — Gameplay Loop
+
+7. Tools.
+8. Gathering.
+9. Crusher.
+10. Workbench.
+11. Recipes.
+12. Sales station.
+13. Money.
+
+## Фаза C — Progression
+
+14. Building restoration.
+15. Equipment upgrades.
+16. Storage.
+17. Character classes.
+
+## Фаза D — Survival
+
+18. Hunger.
+19. Thirst.
+20. Fatigue.
+21. Sleep.
+22. Temperature.
+23. Wetness.
+
+## Фаза E — World
+
+24. Day/night.
+25. Weather.
+26. Farm.
+27. Water systems.
+
+## Фаза F — Polish
+
+28. Animations.
+29. VFX.
+30. Audio.
+31. UI polish.
+32. Save/load.
+33. Optimization.
+34. QA.
+
+---
+
+# 89. ПРИОРИТЕТЫ
+
+Если AI начинает перегружать проект, приоритеты должны быть такими:
+
+**P0 — обязательно**
+
+* movement;
+* camera;
+* interaction;
+* gathering;
+* inventory;
+* crafting;
+* selling;
+* restoration;
+* save/load.
+
+**P1 — важно**
+
+* survival;
+* weather;
+* character differences;
+* farming;
+* animations.
+
+**P2 — позже**
+
+* advanced technology;
+* NPC;
+* automation;
+* vehicles;
+* combat.
+
+---
+
+# 90. САМОЕ ВАЖНОЕ ПРАВИЛО РАЗРАБОТКИ
+
+Не делать сразу «игру мечты».
+
+Сначала сделать маленькую рабочую версию:
+
+> **1 персонаж + 1 маленькая карта + 4 ресурса + 2 машины + 1 рецепт + 1 продавец + 1 ремонтируемое здание.**
+
+Когда этот цикл работает идеально:
+
+> добавить остальные системы.
+
+И только потом:
+
+> расширять мир.
+
+---
+
+# 91. ИТОГОВЫЙ CORE LOOP
+
+```text
+ПРОСНУТЬСЯ
+    v
+ПРОВЕРИТЬ ПОТРЕБНОСТИ
+    v
+ВЗЯТЬ ИНСТРУМЕНТЫ
+    v
+ПОЙТИ В МИР
+    v
+ДОБЫТЬ РЕСУРСЫ
+    v
+ВЕРНУТЬСЯ НА БАЗУ
+    v
+ПЕРЕРАБОТАТЬ
+    v
+СОЗДАТЬ ПРОДУКЦИЮ
+    v
+ОТПРАВИТЬ НА СТАНЦИЮ
+    v
+ПОЛУЧИТЬ КРЕДИТЫ
+    v
+ВОССТАНОВИТЬ ОБОРУДОВАНИЕ
+    v
+УЛУЧШИТЬ ИНСТРУМЕНТЫ
+    v
+РАСШИРИТЬ ПРОИЗВОДСТВО
+    v
+ВОССТАНОВИТЬ ФЕРМУ
+    v
+НОВЫЙ ТЕХНОЛОГИЧЕСКИЙ УРОВЕНЬ
+```
+
+# 92. ФИЛОСОФИЯ ИГРЫ
+
+Главное ощущение, которое должна оставлять игра:
+
+> **«Всё было разрушено. Но теперь это моё. И я сам это восстановил».**
+
+Не сила.
+
+Не война.
+
+Не победа над врагом.
+
+**Прогресс через труд.**
+
+Именно это должно отличать игру от обычного survival simulator.

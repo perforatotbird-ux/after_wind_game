@@ -1,0 +1,706 @@
+[gd_scene load_steps=9 format=3 uid="uid://b0yqv2w6km7xr"]
+
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_prompt"]
+bg_color = Color(0.12, 0.14, 0.16, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.78, 0.25, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_notif"]
+bg_color = Color(0.13, 0.16, 0.2, 0.94)
+border_width_left = 3
+border_color = Color(0.3, 0.7, 0.9, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.1, 0.12, 0.14, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_res_badge"]
+bg_color = Color(0.08, 0.1, 0.13, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.45, 0.55, 0.5)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inv_window"]
+bg_color = Color(0.1, 0.12, 0.16, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.7, 0.6, 0.35, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot_active"]
+bg_color = Color(0.2, 0.3, 0.45, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.85, 0.25, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot_normal"]
+bg_color = Color(0.12, 0.15, 0.18, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.35, 0.4, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="TopLeftUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 260.0
+offset_bottom = 140.0
+
+[node name="Panel" type="PanelContainer" parent="TopLeftUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="TopLeftUI/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="TopLeftUI/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HealthBar" type="ProgressBar" parent="TopLeftUI/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="Label" type="Label" parent="TopLeftUI/Panel/Margin/VBox/HealthBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 10
+text = "Здоровье 100%"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EnergyBar" type="ProgressBar" parent="TopLeftUI/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="Label" type="Label" parent="TopLeftUI/Panel/Margin/VBox/EnergyBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 10
+text = "Энергия 100%"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HungerBar" type="ProgressBar" parent="TopLeftUI/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+value = 85.0
+show_percentage = false
+
+[node name="Label" type="Label" parent="TopLeftUI/Panel/Margin/VBox/HungerBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 10
+text = "Сытость 85%"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ThirstBar" type="ProgressBar" parent="TopLeftUI/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+value = 90.0
+show_percentage = false
+
+[node name="Label" type="Label" parent="TopLeftUI/Panel/Margin/VBox/ThirstBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 10
+text = "Жажда 90%"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TopRightUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 120.0
+grow_horizontal = 0
+
+[node name="Panel" type="PanelContainer" parent="TopRightUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="TopRightUI/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="TopRightUI/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TimeLabel" type="Label" parent="TopRightUI/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "🕒 08:30 (Утро)"
+
+[node name="WeatherLabel" type="Label" parent="TopRightUI/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "⛅ Пасмурно / +18°C"
+
+[node name="MoneyLabel" type="Label" parent="TopRightUI/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "💰 Кредиты: 0"
+
+[node name="ResourceBarUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -275.0
+offset_top = 15.0
+offset_right = 275.0
+offset_bottom = 55.0
+grow_horizontal = 2
+
+[node name="Panel" type="PanelContainer" parent="ResourceBarUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_res_badge")
+
+[node name="Margin" type="MarginContainer" parent="ResourceBarUI/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 4
+
+[node name="HBox" type="HBoxContainer" parent="ResourceBarUI/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="WoodCount" type="Label" parent="ResourceBarUI/Panel/Margin/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "🌲 Дерево: 0"
+
+[node name="StoneCount" type="Label" parent="ResourceBarUI/Panel/Margin/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "⛰ Камень: 0"
+
+[node name="ClayCount" type="Label" parent="ResourceBarUI/Panel/Margin/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "🧱 Глина: 0"
+
+[node name="SandCount" type="Label" parent="ResourceBarUI/Panel/Margin/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "⏳ Песок: 0"
+
+[node name="WaterCount" type="Label" parent="ResourceBarUI/Panel/Margin/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "💧 Вода: 0"
+
+[node name="HotbarUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -210.0
+offset_top = -75.0
+offset_right = 210.0
+offset_bottom = -15.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="Panel" type="PanelContainer" parent="HotbarUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="HotbarUI/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="HBox" type="HBoxContainer" parent="HotbarUI/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Slot1" type="Button" parent="HotbarUI/Panel/Margin/HBox"]
+custom_minimum_size = Vector2(72, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_slot_active")
+text = "1: 🪓 Топор"
+
+[node name="Slot2" type="Button" parent="HotbarUI/Panel/Margin/HBox"]
+custom_minimum_size = Vector2(72, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_slot_normal")
+text = "2: ⛏ Кирка"
+
+[node name="Slot3" type="Button" parent="HotbarUI/Panel/Margin/HBox"]
+custom_minimum_size = Vector2(72, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_slot_normal")
+text = "3: ⛏ Лопата"
+
+[node name="Slot4" type="Button" parent="HotbarUI/Panel/Margin/HBox"]
+custom_minimum_size = Vector2(72, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_slot_normal")
+text = "4: 💧 Ведро"
+
+[node name="Slot5" type="Button" parent="HotbarUI/Panel/Margin/HBox"]
+custom_minimum_size = Vector2(72, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_slot_normal")
+text = "5: 🎒 Рюкзак"
+
+[node name="PromptContainer" type="PanelContainer" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -135.0
+offset_right = 220.0
+offset_bottom = -88.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_prompt")
+
+[node name="MarginContainer" type="MarginContainer" parent="PromptContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="PromptLabel" type="Label" parent="PromptContainer/MarginContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "[E] Взаимодействовать"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="NotificationContainer" type="PanelContainer" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -280.0
+offset_top = 65.0
+offset_right = 280.0
+offset_bottom = 115.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_notif")
+
+[node name="MarginContainer" type="MarginContainer" parent="NotificationContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 10
+
+[node name="NotificationLabel" type="Label" parent="NotificationContainer/MarginContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "Уведомление"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="NotificationTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="InventoryWindow" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -170.0
+offset_right = 230.0
+offset_bottom = 170.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inv_window")
+
+[node name="Margin" type="MarginContainer" parent="InventoryWindow"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="InventoryWindow/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderHBox" type="HBoxContainer" parent="InventoryWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="InventoryWindow/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.9, 0.45, 1)
+theme_override_font_sizes/font_size = 16
+text = "🎒 Рюкзак выжившего (12 слотов)"
+
+[node name="CloseButton" type="Button" parent="InventoryWindow/Margin/VBox/HeaderHBox"]
+custom_minimum_size = Vector2(30, 26)
+layout_mode = 2
+text = "✕"
+
+[node name="HSeparator" type="HSeparator" parent="InventoryWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="InventoryWindow/Margin/VBox"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemsList" type="VBoxContainer" parent="InventoryWindow/Margin/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="FooterLabel" type="Label" parent="InventoryWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.8, 0.85, 1)
+theme_override_font_sizes/font_size = 12
+text = "Вес: 0.0 / 50.0 кг  |  Слоты: 0 / 12  (TAB для закрытия)"
+
+[node name="MachineWindow" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -180.0
+offset_right = 240.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inv_window")
+
+[node name="Margin" type="MarginContainer" parent="MachineWindow"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="MachineWindow/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderHBox" type="HBoxContainer" parent="MachineWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MachineWindow/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.9, 0.45, 1)
+theme_override_font_sizes/font_size = 16
+text = "⚙️ Производственная машина"
+
+[node name="CloseButton" type="Button" parent="MachineWindow/Margin/VBox/HeaderHBox"]
+custom_minimum_size = Vector2(30, 26)
+layout_mode = 2
+text = "✕"
+
+[node name="ProgressBox" type="VBoxContainer" parent="MachineWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="StatusLabel" type="Label" parent="MachineWindow/Margin/VBox/ProgressBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Статус: Ожидание запуска"
+
+[node name="ProgressBar" type="ProgressBar" parent="MachineWindow/Margin/VBox/ProgressBox"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+show_percentage = false
+
+[node name="HSeparator" type="HSeparator" parent="MachineWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MachineWindow/Margin/VBox"]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RecipeList" type="VBoxContainer" parent="MachineWindow/Margin/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="FooterLabel" type="Label" parent="MachineWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "Машина работает автономно после запуска."
+
+[node name="SalesWindow" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -190.0
+offset_right = 250.0
+offset_bottom = 190.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inv_window")
+
+[node name="Margin" type="MarginContainer" parent="SalesWindow"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="SalesWindow/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderHBox" type="HBoxContainer" parent="SalesWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="SalesWindow/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.9, 0.45, 1)
+theme_override_font_sizes/font_size = 16
+text = "📦 Станция отправки продукции"
+
+[node name="CloseButton" type="Button" parent="SalesWindow/Margin/VBox/HeaderHBox"]
+custom_minimum_size = Vector2(30, 26)
+layout_mode = 2
+text = "✕"
+
+[node name="HSeparator" type="HSeparator" parent="SalesWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="SalesWindow/Margin/VBox"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GoodsList" type="VBoxContainer" parent="SalesWindow/Margin/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="QuickSellButton" type="Button" parent="SalesWindow/Margin/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "🚀 Отправить всю готовую продукцию (Кирпичи и Брикеты)"
+
+[node name="FooterLabel" type="Label" parent="SalesWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "Кредиты зачисляются на счет мгновенно. Комиссия 0%."
+
+[node name="RepairWindow" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -215.0
+offset_right = 260.0
+offset_bottom = 215.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inv_window")
+
+[node name="Margin" type="MarginContainer" parent="RepairWindow"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="RepairWindow/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderHBox" type="HBoxContainer" parent="RepairWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="RepairWindow/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.9, 0.45, 1)
+theme_override_font_sizes/font_size = 16
+text = "🏗️ Восстановление здания"
+
+[node name="CloseButton" type="Button" parent="RepairWindow/Margin/VBox/HeaderHBox"]
+custom_minimum_size = Vector2(30, 26)
+layout_mode = 2
+text = "✕"
+
+[node name="StageStatusLabel" type="Label" parent="RepairWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Текущее состояние: Разрушено (Уровень 0/3)"
+
+[node name="StageProgressBar" type="ProgressBar" parent="RepairWindow/Margin/VBox"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+show_percentage = false
+
+[node name="PerksLabel" type="Label" parent="RepairWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 12
+text = "Текущие возможности: Объект непригоден к использованию"
+
+[node name="HSeparator" type="HSeparator" parent="RepairWindow/Margin/VBox"]
+layout_mode = 2
+
+[node name="NextStageTitleLabel" type="Label" parent="RepairWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 0.6, 1)
+theme_override_font_sizes/font_size = 13
+text = "Следующий этап: Уровень 1"
+
+[node name="RequirementsScroll" type="ScrollContainer" parent="RepairWindow/Margin/VBox"]
+custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RequirementsList" type="VBoxContainer" parent="RepairWindow/Margin/VBox/RequirementsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="UpgradeButton" type="Button" parent="RepairWindow/Margin/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "🔨 Восстановить объект"
+
+[node name="SleepButton" type="Button" parent="RepairWindow/Margin/VBox"]
+visible = false
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "🛏️ Отдохнуть и восстановить силы (100% Энергии)"
+
+[node name="FooterLabel" type="Label" parent="RepairWindow/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "Каждый этап восстановления открывает новые функции."

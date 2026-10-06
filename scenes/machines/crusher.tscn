@@ -1,0 +1,56 @@
+[gd_scene load_steps=8 format=3 uid="uid://dm4k8v2y1x9qa"]
+
+[ext_resource type="Script" path="res://scripts/crafting/production_machine.gd" id="1_mach"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
+size = Vector3(2.5, 2.5, 2.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_crusher"]
+albedo_color = Color(0.32, 0.35, 0.4, 1)
+metallic = 0.6
+roughness = 0.55
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+material = SubResource("StandardMaterial3D_crusher")
+size = Vector3(1.8, 1.4, 1.8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hopper"]
+albedo_color = Color(0.25, 0.28, 0.32, 1)
+metallic = 0.7
+roughness = 0.5
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_hopper"]
+material = SubResource("StandardMaterial3D_hopper")
+top_radius = 0.7
+bottom_radius = 0.4
+height = 0.6
+
+[sub_resource type="BoxMesh" id="BoxMesh_chute"]
+material = SubResource("StandardMaterial3D_hopper")
+size = Vector3(0.6, 0.35, 0.5)
+
+[node name="StoneCrusher" type="Area3D" node_paths=PackedStringArray("visual_node")]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_mach")
+machine_type = "crusher"
+machine_display_name = "Дробилка камня"
+visual_node = NodePath("Visual")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+shape = SubResource("BoxShape3D_interact")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+mesh = SubResource("BoxMesh_body")
+
+[node name="Hopper" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+mesh = SubResource("CylinderMesh_hopper")
+
+[node name="Chute" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0.95)
+mesh = SubResource("BoxMesh_chute")

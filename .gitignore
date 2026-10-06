@@ -1,0 +1,23 @@
+# Godot 4 editor cache and import metadata
+.godot/
+*.translation
+
+# Mono / C#
+.mono/
+data_*/
+mono_crash.*.json
+
+# Binary executables
+*.exe
+*.dll
+*.so
+*.dylib
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.log

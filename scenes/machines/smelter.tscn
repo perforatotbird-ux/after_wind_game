@@ -1,0 +1,79 @@
+[gd_scene load_steps=12 format=3 uid="uid://c8m4p7k1y9q5e"]
+
+[ext_resource type="Script" path="res://scripts/crafting/production_machine.gd" id="1_smelt"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
+size = Vector3(2.8, 3.2, 2.8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_furnace_brick"]
+albedo_color = Color(0.55, 0.32, 0.22, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_furnace_body"]
+material = SubResource("StandardMaterial3D_furnace_brick")
+size = Vector3(2.0, 1.8, 2.0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_chimney"]
+albedo_color = Color(0.35, 0.32, 0.30, 1)
+roughness = 0.85
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_chimney"]
+material = SubResource("StandardMaterial3D_chimney")
+top_radius = 0.35
+bottom_radius = 0.5
+height = 1.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iron_bands"]
+albedo_color = Color(0.25, 0.26, 0.28, 1)
+metallic = 0.8
+roughness = 0.45
+
+[sub_resource type="BoxMesh" id="BoxMesh_door"]
+material = SubResource("StandardMaterial3D_iron_bands")
+size = Vector3(0.9, 0.8, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fire"]
+albedo_color = Color(1, 0.4, 0.1, 1)
+emission_enabled = true
+emission = Color(1, 0.5, 0.15, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_fire"]
+material = SubResource("StandardMaterial3D_fire")
+size = Vector3(0.6, 0.45, 0.15)
+
+[node name="Smelter" type="Area3D" node_paths=PackedStringArray("visual_node")]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_smelt")
+machine_type = "furnace"
+machine_display_name = "Печь-плавильня"
+visual_node = NodePath("Visual")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("BoxShape3D_interact")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("BoxMesh_furnace_body")
+
+[node name="Chimney" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 0)
+mesh = SubResource("CylinderMesh_chimney")
+
+[node name="DoorFrame" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 1.0)
+mesh = SubResource("BoxMesh_door")
+
+[node name="FireGlowMesh" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 1.05)
+mesh = SubResource("BoxMesh_fire")
+
+[node name="FireLight" type="OmniLight3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 1.4)
+light_color = Color(1, 0.6, 0.25, 1)
+light_energy = 1.6
+omni_range = 4.5

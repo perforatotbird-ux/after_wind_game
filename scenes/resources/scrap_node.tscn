@@ -1,0 +1,71 @@
+[gd_scene load_steps=8 format=3 uid="uid://c5v8m3k2q1w7r"]
+
+[ext_resource type="Script" path="res://scripts/resources/resource_node.gd" id="1_res"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_interact"]
+height = 2.0
+radius = 2.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rust_metal"]
+albedo_color = Color(0.42, 0.35, 0.3, 1)
+metallic = 0.7
+roughness = 0.65
+
+[sub_resource type="BoxMesh" id="BoxMesh_beam1"]
+material = SubResource("StandardMaterial3D_rust_metal")
+size = Vector3(1.8, 0.25, 0.3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_beam2"]
+material = SubResource("StandardMaterial3D_rust_metal")
+size = Vector3(1.4, 0.2, 0.25)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_pipe"]
+material = SubResource("StandardMaterial3D_rust_metal")
+top_radius = 0.12
+bottom_radius = 0.12
+height = 1.6
+
+[sub_resource type="BoxMesh" id="BoxMesh_plate"]
+material = SubResource("StandardMaterial3D_rust_metal")
+size = Vector3(0.8, 0.06, 0.8)
+
+[node name="ScrapNode" type="Area3D" node_paths=PackedStringArray("visual_node", "depleted_visual_node")]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_res")
+resource_id = "metal_scrap"
+resource_display_name = "Металлолом"
+required_tool = "pickaxe"
+action_verb = "Разбирать"
+max_hits = 3
+current_hits = 3
+yield_per_hit = 2
+bonus_depleted_yield = 1
+energy_cost = 4.0
+visual_node = NodePath("Visual")
+depleted_visual_node = NodePath("DepletedVisual")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("CylinderShape3D_interact")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Beam1" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(0.866025, 0.173648, 0.469846, 0, 0.939693, -0.34202, -0.5, 0.300706, 0.813798, 0, 0.35, 0)
+mesh = SubResource("BoxMesh_beam1")
+
+[node name="Beam2" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(0.5, -0.258819, -0.826352, 0, 0.95424, -0.299041, 0.866025, 0.14952, 0.47712, 0.3, 0.4, 0.2)
+mesh = SubResource("BoxMesh_beam2")
+
+[node name="Pipe" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, -0.2, 0.25, -0.3)
+mesh = SubResource("CylinderMesh_pipe")
+
+[node name="DepletedVisual" type="Node3D" parent="."]
+visible = false
+
+[node name="Plate" type="MeshInstance3D" parent="DepletedVisual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, 0)
+mesh = SubResource("BoxMesh_plate")
