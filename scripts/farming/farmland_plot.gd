@@ -44,6 +44,7 @@ var is_ripe: bool = false
 var _mat_untilled: StandardMaterial3D = null
 var _mat_tilled_dry: StandardMaterial3D = null
 var _mat_tilled_wet: StandardMaterial3D = null
+var _cached_player: Node = null
 
 func _ready() -> void:
 	super._ready()
@@ -92,8 +93,10 @@ func _init_materials() -> void:
 func _process(delta: float) -> void:
 	# Высыхание почвы
 	if moisture > 0.0:
+		var was_wet: bool = (moisture > 10.0)
 		moisture = max(0.0, moisture - moisture_decay_rate * delta)
-		_update_soil_material()
+		if (moisture > 10.0) != was_wet:
+			_update_soil_material()
 
 	# Развитие культуры
 	if crop_type != "" and not is_ripe:
@@ -104,12 +107,13 @@ func _process(delta: float) -> void:
 		if is_fertilized:
 			speed_mult *= 2.0 # удобрение ускоряет вегетацию вдвое
 		
-		# Бонус специализации Фермер (Этап 12)
-		var player_node: Node = get_tree().root.find_child("Player", true, false)
-		if player_node and "character_class" in player_node and player_node.character_class == "farmer":
+		# Бонус специализации Фермер (Этап 12) с кэшированием O(1)
+		if not is_instance_valid(_cached_player) and get_tree() and get_tree().root:
+			_cached_player = get_tree().root.find_child("Player", true, false)
+		if _cached_player and "character_class" in _cached_player and _cached_player.character_class == "farmer":
 			speed_mult *= 1.35
 		
-		var step: float = (100.0 / growth_time_total) * speed_mult * delta
+		var step: float = (100.0 / maxf(0.1, growth_time_total)) * speed_mult * delta
 		growth_progress = min(100.0, growth_progress + step)
 		
 		if growth_progress >= 100.0:

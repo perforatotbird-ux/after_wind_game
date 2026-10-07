@@ -60,6 +60,8 @@ const CLASSES: Dictionary = {
 		"id": "scientist",
 		"name": "Учёный",
 		"icon": "🔬",
+		"portrait": "res://assets/sprites/miner_portrait.png",
+		"sprite": "res://assets/sprites/miner_isometric.png",
 		"title": "Специалист по переработке и исследованиям",
 		"description": "Инженер-технолог и исследователь. Максимально оптимизирует производственные линии, работу дробилок, печей и верстака.",
 		"perks": [

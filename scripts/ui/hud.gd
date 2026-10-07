@@ -113,9 +113,27 @@ var _current_active_machine: Node = null
 var _current_active_station: Node = null
 var _current_active_building: Node = null
 var _current_active_npc: Node = null
+var _cached_weather_mgr: Node = null
+var _cached_day_cycle: Node = null
+var _cached_world: Node = null
 
 var style_slot_active: StyleBoxFlat = null
 var style_slot_normal: StyleBoxFlat = null
+
+func _get_weather_mgr() -> Node:
+	if not is_instance_valid(_cached_weather_mgr) and get_tree() and get_tree().root:
+		_cached_weather_mgr = get_tree().root.find_child("WeatherManager", true, false)
+	return _cached_weather_mgr
+
+func _get_day_cycle() -> Node:
+	if not is_instance_valid(_cached_day_cycle) and get_tree() and get_tree().root:
+		_cached_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
+	return _cached_day_cycle
+
+func _get_world() -> Node:
+	if not is_instance_valid(_cached_world):
+		_cached_world = get_tree().current_scene if get_tree().current_scene else (get_tree().root.find_child("World", true, false) if get_tree() and get_tree().root else null)
+	return _cached_world
 
 func _ready() -> void:
 	prompt_container.visible = false
@@ -380,7 +398,7 @@ func update_time_display(day: int, hour: int, minute: int, formatted: String, ph
 	if time_label:
 		time_label.text = formatted
 	if weather_label:
-		var weather_mgr: Node = get_tree().root.find_child("WeatherManager", true, false)
+		var weather_mgr: Node = _get_weather_mgr()
 		var w_name: String = "Ясно"
 		var icon: String = "☀️"
 		var temp_offset: int = 0
@@ -401,7 +419,7 @@ func update_time_display(day: int, hour: int, minute: int, formatted: String, ph
 
 func update_weather_display(_new_type: int = 0, w_name: String = "", icon: String = "") -> void:
 	if weather_label:
-		var day_cycle: Node = get_tree().root.find_child("DayNightCycle", true, false)
+		var day_cycle: Node = _get_day_cycle()
 		var phase: String = day_cycle.get_current_phase() if (day_cycle and day_cycle.has_method("get_current_phase")) else "День"
 		var base_temp: int = 22
 		match phase:
@@ -410,7 +428,7 @@ func update_weather_display(_new_type: int = 0, w_name: String = "", icon: Strin
 			"Вечер": base_temp = 18
 			"Ночь": base_temp = 11
 		
-		var weather_mgr: Node = get_tree().root.find_child("WeatherManager", true, false)
+		var weather_mgr: Node = _get_weather_mgr()
 		var temp_offset: int = weather_mgr.get_temperature_offset() if (weather_mgr and weather_mgr.has_method("get_temperature_offset")) else 0
 		var final_temp: int = max(4, base_temp + temp_offset)
 		weather_label.text = "%s %s (+%d°C)" % [icon, w_name, final_temp]
@@ -1170,7 +1188,7 @@ func close_pause_menu() -> void:
 		get_tree().paused = false
 
 func _refresh_pause_menu() -> void:
-	var world = get_tree().root.find_child("World", true, false)
+	var world = _get_world()
 	if not world:
 		return
 	var v_data: Dictionary = VictoryManager.evaluate_base_restored(world)
@@ -1224,7 +1242,7 @@ func _on_amb_slider_changed(val: float) -> void:
 func check_and_show_victory_if_earned() -> bool:
 	if _victory_shown:
 		return false
-	var world = get_tree().root.find_child("World", true, false)
+	var world = _get_world()
 	if not world:
 		return false
 	var v_data: Dictionary = VictoryManager.evaluate_base_restored(world)
@@ -1244,7 +1262,7 @@ func show_victory_window(v_data: Dictionary) -> void:
 	
 	if victory_stats_label:
 		var days: int = 1
-		var day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
+		var day_cycle = _get_day_cycle()
 		if day_cycle and "current_day" in day_cycle:
 			days = day_cycle.current_day
 		var creds: int = _bound_player.inventory.credits if (_bound_player and _bound_player.inventory) else 0

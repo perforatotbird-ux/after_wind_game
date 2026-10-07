@@ -11,6 +11,7 @@ extends "res://scripts/interaction/interactable.gd"
 @onready var bulb_mesh: MeshInstance3D = $Post/Arm/Bulb
 
 var _has_grid_power: bool = true
+var _day_cycle: Node = null
 
 func _ready() -> void:
 	super._ready()
@@ -28,15 +29,14 @@ func _process(_delta: float) -> void:
 	_update_lamp_state()
 
 func should_be_illuminated() -> bool:
-	var day_cycle: Node = null
-	if get_tree() and get_tree().root:
-		day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
+	if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
+		_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
 	
-	if day_cycle:
-		if day_cycle.has_method("is_night") and day_cycle.is_night():
+	if _day_cycle:
+		if _day_cycle.has_method("is_night") and _day_cycle.is_night():
 			return true
-		if "current_hour" in day_cycle:
-			var h: float = day_cycle.current_hour
+		if "current_hour" in _day_cycle:
+			var h: float = _day_cycle.current_hour
 			if h >= 18.0 or h < 6.0:
 				return true
 	return false

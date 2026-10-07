@@ -17,6 +17,11 @@ var _generators: Array[Node] = []
 var _consumers: Array[Node] = []
 var _batteries: Array[Node] = []
 
+var _last_emitted_stored: float = -1.0
+var _last_emitted_gen: float = -1.0
+var _last_emitted_con: float = -1.0
+var _last_emitted_has_power: bool = false
+
 func _ready() -> void:
 	_scan_grid_devices()
 	_update_grid(0.0)
@@ -94,10 +99,20 @@ func _update_grid(delta: float) -> void:
 		if is_instance_valid(bat) and bat.has_method("update_charge_display"):
 			bat.update_charge_display(current_stored, max_capacity, net)
 
-	grid_updated.emit(current_stored, max_capacity, current_generation, current_consumption, has_power)
+	var changed: bool = (absf(current_stored - _last_emitted_stored) >= 0.05
+		or absf(current_generation - _last_emitted_gen) >= 0.05
+		or absf(current_consumption - _last_emitted_con) >= 0.05
+		or has_power != _last_emitted_has_power
+		or delta == 0.0)
+	if changed:
+		_last_emitted_stored = current_stored
+		_last_emitted_gen = current_generation
+		_last_emitted_con = current_consumption
+		_last_emitted_has_power = has_power
+		grid_updated.emit(current_stored, max_capacity, current_generation, current_consumption, has_power)
 
 func get_power_status_text() -> String:
 	var net: float = current_generation - current_consumption
-	var pct: int = int((current_stored / max_capacity) * 100.0) if max_capacity > 0 else 0
+	var pct: int = int((current_stored / max_capacity) * 100.0) if max_capacity > 0.001 else 0
 	var sign_str: String = "+" if net >= 0 else ""
 	return "⚡ %d%% (%s%.1f кВт)" % [pct, sign_str, net]

@@ -11,6 +11,7 @@ extends "res://scripts/interaction/interactable.gd"
 @onready var status_light: OmniLight3D = $StatusLight
 
 var _current_rotation_speed: float = 3.0
+var _weather_mgr: Node = null
 
 func _ready() -> void:
 	super._ready()
@@ -30,11 +31,13 @@ func _process(delta: float) -> void:
 	if rotor_node:
 		rotor_node.rotate_z(_current_rotation_speed * delta)
 
+func _get_weather_manager() -> Node:
+	if not is_instance_valid(_weather_mgr) and get_tree() and get_tree().root:
+		_weather_mgr = get_tree().root.find_child("WeatherManager", true, false)
+	return _weather_mgr
+
 func _update_generation_parameters() -> void:
-	var weather_mgr: Node = null
-	if get_tree() and get_tree().root:
-		weather_mgr = get_tree().root.find_child("WeatherManager", true, false)
-	
+	var weather_mgr = _get_weather_manager()
 	var weather_type: int = 0
 	if weather_mgr and "current_weather" in weather_mgr:
 		weather_type = weather_mgr.current_weather
@@ -55,10 +58,7 @@ func get_current_output() -> float:
 	if not is_operational:
 		return 0.0
 	
-	var weather_mgr: Node = null
-	if get_tree() and get_tree().root:
-		weather_mgr = get_tree().root.find_child("WeatherManager", true, false)
-	
+	var weather_mgr = _get_weather_manager()
 	var weather_type: int = 0
 	if weather_mgr and "current_weather" in weather_mgr:
 		weather_type = weather_mgr.current_weather

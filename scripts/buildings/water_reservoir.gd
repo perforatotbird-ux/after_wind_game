@@ -16,6 +16,7 @@ var _timer: float = 0.0
 
 func _ready() -> void:
 	super._ready()
+	add_to_group("water_reservoirs")
 	object_name = "Резервуар чистой воды"
 	prompt_action = "Пить / Набрать"
 

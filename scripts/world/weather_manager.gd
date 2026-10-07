@@ -110,17 +110,18 @@ func _update_visuals() -> void:
 				sun_light.light_energy = 0.35
 
 func _apply_rainfall_to_world(intensity: float, delta: float) -> void:
-	var world = get_parent()
-	if not world:
+	if not get_tree():
 		return
 	
-	# 1. Автоматическое увлажнение грядок пашни
-	for plot in world.find_children("*", "Area3D", true, false):
-		if plot.has_method("water_plot") and "soil_state" in plot and "moisture" in plot:
+	# 1. Автоматическое увлажнение грядок пашни через группу (O(1) поиск)
+	var plots = get_tree().get_nodes_in_group("farmland_plots")
+	for plot in plots:
+		if is_instance_valid(plot) and "soil_state" in plot and "moisture" in plot:
 			if plot.soil_state == 1: # SoilState.TILLED
 				var hydration: float = 3.5 * intensity * delta
+				var old_wet: bool = (plot.moisture > 10.0)
 				plot.moisture = min(plot.max_moisture, plot.moisture + hydration)
-				if plot.has_method("_update_soil_material"):
+				if (plot.moisture > 10.0) != old_wet and plot.has_method("_update_soil_material"):
 					plot._update_soil_material()
 	
 	# 2. Наполнение водного резервуара дождевой водой
@@ -128,8 +129,11 @@ func _apply_rainfall_to_world(intensity: float, delta: float) -> void:
 	var threshold: float = 10.0 # каждые 10 сек в обычный дождь, 5 сек в ливень
 	if _reservoir_accumulator >= threshold:
 		_reservoir_accumulator = 0.0
-		for reservoir in world.find_children("*", "Area3D", true, false):
-			if "current_water" in reservoir and "max_capacity" in reservoir:
+		var reservoirs = get_tree().get_nodes_in_group("water_reservoirs")
+		if reservoirs.is_empty() and get_parent():
+			reservoirs = get_parent().find_children("*", "Area3D", true, false)
+		for reservoir in reservoirs:
+			if is_instance_valid(reservoir) and "current_water" in reservoir and "max_capacity" in reservoir:
 				if reservoir.current_water < reservoir.max_capacity:
 					reservoir.current_water = min(reservoir.max_capacity, reservoir.current_water + 1)
 					if reservoir.has_signal("water_level_changed"):

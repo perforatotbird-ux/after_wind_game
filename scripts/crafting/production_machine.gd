@@ -37,7 +37,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if is_machine_running:
 		process_timer += delta
-		var progress: float = clamp(process_timer / process_duration, 0.0, 1.0)
+		var progress: float = clamp(process_timer / maxf(0.01, process_duration), 0.0, 1.0)
 		process_progress.emit(progress)
 		
 		# Визуальная вибрация работающей техники

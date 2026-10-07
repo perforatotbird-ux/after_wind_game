@@ -21,6 +21,21 @@ var ambient_volume: float = 0.6
 func _init() -> void:
 	instance = self
 
+func _exit_tree() -> void:
+	if instance == self:
+		instance = null
+	if _ambient_wind_player and is_instance_valid(_ambient_wind_player):
+		_ambient_wind_player.stop()
+		_ambient_wind_player.stream = null
+	if _ambient_rain_player and is_instance_valid(_ambient_rain_player):
+		_ambient_rain_player.stop()
+		_ambient_rain_player.stream = null
+	for p in _sfx_players:
+		if is_instance_valid(p):
+			p.stop()
+			p.stream = null
+	_sounds.clear()
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_audio_players()
@@ -33,6 +48,8 @@ static func play(sound_name: String, pitch: float = 1.0, volume_db: float = 0.0)
 
 func play_sfx(sound_name: String, pitch: float = 1.0, volume_db: float = 0.0) -> void:
 	if not _sounds.has(sound_name):
+		return
+	if DisplayServer.get_name() == "headless":
 		return
 	if _sfx_players.is_empty():
 		return
@@ -59,6 +76,8 @@ func set_ambient_vol(val: float) -> void:
 
 func set_weather_rain(is_raining: bool, rain_intensity: float = 1.0) -> void:
 	if not _ambient_rain_player:
+		return
+	if DisplayServer.get_name() == "headless":
 		return
 	if is_raining:
 		if not _ambient_rain_player.playing:
@@ -93,6 +112,8 @@ func _update_ambient_volumes() -> void:
 		_ambient_wind_player.volume_db = linear_to_db(maxf(0.001, linear_wind))
 
 func _start_ambient() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
 	if _sounds.has("wind_ambient") and _ambient_wind_player:
 		_ambient_wind_player.stream = _sounds["wind_ambient"]
 		_update_ambient_volumes()

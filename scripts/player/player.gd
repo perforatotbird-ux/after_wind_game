@@ -65,6 +65,10 @@ var _strike_buffered: bool = false
 var _strike_held: bool = false
 var _strike_pause_remaining: float = 0.0
 var _hud: Node = null
+var _day_cycle: Node = null
+var _weather_mgr: Node = null
+var _house: Node = null
+var _smelter: Node = null
 
 func _ready() -> void:
 	if not inventory:
@@ -193,13 +197,13 @@ func set_character_class(new_class_id: String, grant_starting_bonus: bool = fals
 	return true
 
 func quick_save() -> bool:
-	var world = get_tree().root.find_child("World", true, false)
+	var world = get_tree().current_scene if get_tree().current_scene else (get_tree().root.find_child("World", true, false) if get_tree().root else null)
 	if world:
 		return SaveManager.save_game(world)
 	return false
 
 func quick_load() -> bool:
-	var world = get_tree().root.find_child("World", true, false)
+	var world = get_tree().current_scene if get_tree().current_scene else (get_tree().root.find_child("World", true, false) if get_tree().root else null)
 	if world:
 		return SaveManager.load_game(world)
 	return false
@@ -262,8 +266,9 @@ func _handle_energy_regen(delta: float) -> void:
 		if energy < max_energy:
 			var regen: float = energy_recovery_rate
 			# Ночью на открытом воздухе регенерация энергии снижается вдвое
-			var day_cycle: Node = get_tree().root.find_child("DayNightCycle", true, false)
-			if day_cycle and day_cycle.has_method("is_night") and day_cycle.is_night():
+			if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
+				_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
+			if _day_cycle and _day_cycle.has_method("is_night") and _day_cycle.is_night():
 				regen *= 0.5
 			# Промокший персонаж восстанавливает силы медленнее
 			if wetness >= 50.0:
@@ -278,9 +283,10 @@ func _handle_thirst(delta: float) -> void:
 		drain_rate *= 1.6
 	
 	# В дневную жару (12:00-16:00) жажда нарастает интенсивнее
-	var day_cycle: Node = get_tree().root.find_child("DayNightCycle", true, false)
-	if day_cycle and "current_hour" in day_cycle:
-		var hour: int = day_cycle.current_hour
+	if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
+		_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
+	if _day_cycle and "current_hour" in _day_cycle:
+		var hour: int = _day_cycle.current_hour
 		if hour >= 12 and hour <= 16:
 			drain_rate *= 1.3
 	
@@ -303,21 +309,24 @@ func _handle_hunger(delta: float) -> void:
 		hunger_changed.emit(hunger, max_hunger)
 
 func _handle_wetness(delta: float) -> void:
-	var weather_mgr: Node = get_tree().root.find_child("WeatherManager", true, false)
-	var is_raining: bool = weather_mgr.is_raining() if (weather_mgr and weather_mgr.has_method("is_raining")) else false
-	var intensity: float = weather_mgr.get_rain_intensity() if (weather_mgr and weather_mgr.has_method("get_rain_intensity")) else 0.0
+	if not is_instance_valid(_weather_mgr) and get_tree() and get_tree().root:
+		_weather_mgr = get_tree().root.find_child("WeatherManager", true, false)
+	var is_raining: bool = _weather_mgr.is_raining() if (_weather_mgr and _weather_mgr.has_method("is_raining")) else false
+	var intensity: float = _weather_mgr.get_rain_intensity() if (_weather_mgr and _weather_mgr.has_method("get_rain_intensity")) else 0.0
 
 	# Проверка укрытия (жилой дом стадии >= 1)
 	var is_sheltered: bool = false
-	var house: Node = get_tree().root.find_child("RepairableHouse", true, false)
-	if house and "current_stage" in house and house.current_stage >= 1:
-		if global_position.distance_to(house.global_position) < 5.2:
+	if not is_instance_valid(_house) and get_tree() and get_tree().root:
+		_house = get_tree().root.find_child("RepairableHouse", true, false)
+	if _house and "current_stage" in _house and _house.current_stage >= 1:
+		if global_position.distance_to(_house.global_position) < 5.2:
 			is_sheltered = true
 
 	# Проверка источника тепла (печь-плавильня)
 	var is_near_fire: bool = false
-	var smelter: Node = get_tree().root.find_child("Smelter", true, false)
-	if smelter and global_position.distance_to(smelter.global_position) < 4.2:
+	if not is_instance_valid(_smelter) and get_tree() and get_tree().root:
+		_smelter = get_tree().root.find_child("Smelter", true, false)
+	if _smelter and global_position.distance_to(_smelter.global_position) < 4.2:
 		is_near_fire = true
 
 	var old_wetness: float = wetness
@@ -638,11 +647,13 @@ func _apply_strike_contact() -> void:
 		return
 	if global_position.distance_to(_strike_target.global_position) > 2.5:
 		return
-	var old_hits: int = _strike_target.get("current_hits")
+	var old_hits = _strike_target.get("current_hits")
 	_strike_target.interact(self)
 	# ResourceNode owns sound and yield. Pause only this animation on a real hit.
-	if is_instance_valid(_strike_target) and _strike_target.get("current_hits") < old_hits:
-		_trigger_hit_stop(STRIKE_HIT_PAUSE)
+	if is_instance_valid(_strike_target) and old_hits != null:
+		var new_hits = _strike_target.get("current_hits")
+		if new_hits != null and new_hits < old_hits:
+			_trigger_hit_stop(STRIKE_HIT_PAUSE)
 	focused_interactable_changed.emit(current_interactable if is_instance_valid(current_interactable) and current_interactable.get("is_interactable") != false else null)
 
 func _trigger_hit_stop(duration: float = STRIKE_HIT_PAUSE) -> void:
