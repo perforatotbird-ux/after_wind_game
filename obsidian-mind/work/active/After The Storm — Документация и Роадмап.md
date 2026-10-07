@@ -15,7 +15,7 @@ tags:
 Проект: `k:\After Wind`  
 Репозиторий: **[GitHub: perforatotbird-ux/after_wind_game](https://github.com/perforatotbird-ux/after_wind_game)**  
 Ветки: `main`, для каждого этапа создается отдельная ветка (`stage-<N>-...`)  
-Активная ветка разработки: `stage-10-electricity`  
+Активная ветка разработки: `main` — все этапы 0–13 влиты; пост-релизная работа по 3D-персонажу, анимациям и орбитальной камере ведётся в рабочем дереве (не закоммичена)  
 Движок: **Godot Engine (4.3 / 4.7+)**  
 Жанр: **Изометрический симулятор выживания, крафта, производственных цепочек и восстановления базы**  
 Документ концепта: `k:\After Wind\Design Document.txt`
@@ -77,7 +77,9 @@ k:/After Wind/
 │   ├── npc/
 │   │   └── trader_npc.tscn           # NPC Степан (караванщик со снаряжением и фонарем)
 │   ├── player/
-│   │   └── player.tscn               # Игрок (CharacterBody3D, детектор лучей, коллизии)
+│   │   ├── player.tscn               # Игрок (CharacterBody3D, детектор лучей, коллизии)
+│   │   ├── character_model.tscn      # Скелетная 3D-модель Фермера (реалистичный герой)
+│   │   └── miner_model.tscn          # Скелетная 3D-модель Шахтёра
 │   ├── resources/
 │   │   ├── clay_node.tscn            # Жила глины
 │   │   ├── rock_node.tscn            # Валун
@@ -85,16 +87,26 @@ k:/After Wind/
 │   │   ├── scrap_node.tscn           # Куча металлолома
 │   │   ├── tree_node.tscn            # Дерево (со срубанием в пенёк)
 │   │   └── water_node.tscn           # Источник воды
+│   ├── tools/
+│   │   └── pickaxe_model.tscn        # Автономная модель кирки (для рук и иконок)
 │   ├── ui/
 │   │   └── hud.tscn                  # Головной интерфейс (ресурсы, хотбар, окна)
 │   └── world/
+│       ├── interactable_object.tscn  # Шаблон интерактивного объекта
 │       ├── weather_manager.tscn      # Система осадков, дождь, визуальные частицы
 │       └── world.tscn                # Сцена тестовой площадки / двора
 ├── scripts/
+│   ├── audio/
+│   │   └── audio_manager.gd          # Процедурный синтезатор 11 PCM-звуков (SFX / эмбиент)
 │   ├── buildings/
 │   │   ├── contract_board.gd         # Интерактивная логика доски заказов
 │   │   ├── repairable_building.gd    # Логика стадийного восстановления и преимуществ
 │   │   └── water_reservoir.gd        # Резервуар и точка прямого питья базы
+│   ├── characters/
+│   │   └── character_class_db.gd     # Архетипы выживших (Шахтёр/Фермер/Учёный), портреты, спрайты
+│   ├── core/
+│   │   ├── save_manager.gd           # JSON-сериализация мира (F5/F9, автосейв при сне)
+│   │   └── victory_manager.gd        # Валидация 8 критериев финала «BASE RESTORED»
 │   ├── crafting/
 │   │   ├── production_machine.gd     # Логика станков (вибрация, цикл, таймер)
 │   │   └── recipe_db.gd              # Реестр рецептов переработки
@@ -135,7 +147,15 @@ k:/After Wind/
     ├── test_stage7_npc_contracts.gd       # Автотест NPC, диалогов, сдачи заказов и наград
     ├── test_stage8_farming.gd             # Автотест фермерства, грядок, семян, роста и питания
     ├── test_stage9_weather.gd             # Автотест погоды, дождя, намокания, сушки и осадков
-    └── test_stage10_electricity.gd        # Автотест энергосети, ветряка, аккумулятора и фонарей
+    ├── test_stage10_electricity.gd        # Автотест энергосети, ветряка, аккумулятора и фонарей
+    ├── test_stage11_tool_upgrades.gd      # Автотест инструментов Lv.2, компонентов и рюкзака
+    ├── test_stage12_classes_and_save.gd   # Автотест специализаций и Save/Load
+    ├── test_stage13_polish_and_finale.gd  # Автотест аудио, паузы и финала «Base Restored»
+    ├── test_orbit_camera.gd               # Автотест орбитальной камеры (ПКМ, зум, clamp, камеро-движение)
+    ├── test_miner_and_pickaxe.gd          # Автотест модели Шахтёра, кирки, анимаций и спрайтов
+    ├── test_pickaxe_swing_and_lmb.gd      # Автотест ориентации кирки, замаха и ЛКМ
+    ├── test_modern_strike_animation.gd    # Автотест кинематики удара сверху вниз
+    └── test_stardew_character.gd          # Автотест реалистичной модели Фермера
 ```
 
 ---
@@ -444,6 +464,32 @@ k:/After Wind/
 - **Крупный контракт в `ContractDB`**:
   - **«Оснащение экспедиции рудокопов»**: 2 рукояти + 4 болта + 2 ткани + 2 железных слитка $\to$ **+450 кр.**
 
+### Пост-релизная работа: 3D-персонажи, анимации и орбитальная камера (не влито в `main`)
+
+После завершения Главы 1 ведётся работа над визуальным слоем персонажа (изменения в рабочем дереве, ещё не закоммичены).
+
+- **Скелетные 3D-модели классов** (`scenes/player/miner_model.tscn`, `scenes/player/character_model.tscn`):
+  - Модели импортированы из Blender (`assets/models/character/miner.glb`, `stardew_farmer.glb`), содержат `Skeleton3D` (≥ 15 костей у Шахтёра, ≥ 20 у Фермера).
+  - Реалистичная модель Фермера: тело `Farmer_Character` (фланель, жилет, штаны с наколенниками, сапоги), шляпа от солнца `Sun_Hat`, кирка `Equipped_Pickaxe` в руке.
+  - Хелперы конвертации: `tools/convert_glb_to_tscn.gd`, `tools/convert_character_glb_to_tscn.gd`; генераторы `tools/create_miner_and_pickaxe.py`, `tools/create_stardew_realistic_character.py`.
+- **Анимации** (`AnimationPlayer`, `scripts/player/player.gd`):
+  - Запечённые клипы `idle`, `walk`, `run`, `mine`.
+  - `mine` — сокрушительный замах сверху вниз: ≥ 16 анимированных треков (Hips, Spine, Chest, UpperArm.R/L, Thigh.L/R, Shin.L/R), просадка таза (≥ 0.02 м), длина ≤ 1.1 с.
+  - Методы `play_animation(name)`, `play_mining_animation()`, `trigger_tool_strike()`, `get_speed_multiplier()`.
+- **Удар по ЛКМ** (`project.godot`, `scripts/player/player.gd`):
+  - Новый экшен ввода `strike` = `MOUSE_BUTTON_LEFT`; клик переводит игрока в `is_mining`, включает клип `mine` и показывает инструмент в руке.
+  - Во время замаха скорость передвижения снижается до 35% (устранение скольжения, эффект «приземлённости»).
+- **Динамическая экипировка**: `set_equipped_tool_visible(bool)` (инструмент скрыт в покое/ходьбе, виден в момент удара), `set_hat_visible(bool)`.
+- **Орбитальная камера** (`scripts/world/isometric_camera.gd`):
+  - ПКМ (зажать) + движение мыши — вращение (yaw / pitch), захват курсора `MOUSE_MODE_CAPTURED`.
+  - Зум колесом: `zoom_step = 1.5`, дистанция `3.5 … 26.0` м, стартовая ≈ 14.87 м, наклон ≈ 47.7° (0.832 рад).
+  - Защита: clamp `min_pitch` / `max_pitch`, авто-сброс захвата при потере фокуса окна (`NOTIFICATION_APPLICATION_FOCUS_OUT`).
+  - **Камеро-зависимое движение**: WASD рассчитывается относительно ракурса камеры.
+- **2D-графика классов** (`assets/sprites/`, `CharacterClassDB`):
+  - Портреты (`miner_portrait.png`, `farmer_portrait.png`) и изометрия-спрайты (`miner_isometric.png`, `farmer_isometric.png`), привязаны к полям `portrait` / `sprite`.
+  - Иконки инструментов в `ItemDB` (`assets/tools/pickaxe_icon.png` для `pickaxe` / `iron_pickaxe`).
+- **Тесты** (все проходят, код 0): `test_orbit_camera.gd`, `test_miner_and_pickaxe.gd`, `test_pickaxe_swing_and_lmb.gd`, `test_modern_strike_animation.gd`, `test_stardew_character.gd`.
+
 ---
 
 ## 5. Важные технические стандарты проекта
@@ -526,6 +572,15 @@ k:/After Wind/
 
 ## 7. Журнал изменений (Changelog)
 
+- **2026-10-07 [Пост-релизная сессия — 3D-персонаж, анимации и орбитальная камера]**:
+  - Начат визуальный слой персонажа: скелетные 3D-модели Шахтёра и Фермера (импорт из Blender через `tools/*.py` и `.glb`).
+  - Запечены анимации `idle` / `walk` / `run` / `mine`; реализован сокрушительный замах сверху вниз с просадкой таза и работой корпуса/ног.
+  - Добавлен экшен ввода `strike` (ЛКМ): удар инструментом, показ кирки в руке, снижение скорости до 35% во время замаха.
+  - Реализована орбитальная камера (ПКМ-вращение, зум колесом 3.5–26 м, clamp pitch, сброс захвата при потере фокуса) и камеро-зависимое движение WASD.
+  - Добавлены 2D-портреты и изометрия-спрайты классов, иконка кирки.
+  - Написаны 5 автотестов (все проходят, код 0): `test_orbit_camera.gd`, `test_miner_and_pickaxe.gd`, `test_pickaxe_swing_and_lmb.gd`, `test_modern_strike_animation.gd`, `test_stardew_character.gd`. Полный прогон — **16/16 успех**.
+  - **Статус**: изменения находятся в рабочем дереве и ещё не закоммичены в `main`.
+  - Обновлена документация (README, памятка по управлению, реестр фаз, гайд по передаче).
 - **2026-10-06 [Сессия 13 — ФИНАЛ ПЕРВОЙ ГЛАВЫ: BASE RESTORED]**:
   - **Слияние Этапа 12 в `main`**: ветка `stage-12-classes-and-save` влита в `main` и отправлена на GitHub.
   - **Реализован Этап 13 (Game Feel, процедурный AudioManager, PauseMenu и победный финал Base Restored)**:

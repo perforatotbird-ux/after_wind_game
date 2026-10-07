@@ -33,6 +33,11 @@ const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
 const SaveManager = preload("res://scripts/core/save_manager.gd")
 
+# Must match the authored Blender mine action (60 FPS, contact on frame 10).
+const STRIKE_CONTACT_TIME: float = 0.15
+const STRIKE_BUFFER_WINDOW: float = 0.12
+const STRIKE_HIT_PAUSE: float = 0.025
+
 @export_group("References")
 @onready var visual_root: Node3D = $Visuals
 @onready var interaction_detector: Area3D = $InteractionDetector
@@ -46,6 +51,21 @@ var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9
 var nearby_interactables: Array[Area3D] = []
 var current_interactable: Area3D = null
 
+# Анимации и визуальные элементы героя (Blender MCP Stardew Protagonist)
+var anim_player: AnimationPlayer = null
+var equipped_pickaxe_mesh: Node3D = null
+var sun_hat_mesh: Node3D = null
+var current_anim: String = ""
+var is_mining: bool = false
+var _strike_elapsed: float = 0.0
+var _strike_duration: float = 0.42
+var _strike_target: Area3D = null
+var _strike_impacted: bool = false
+var _strike_buffered: bool = false
+var _strike_held: bool = false
+var _strike_pause_remaining: float = 0.0
+var _hud: Node = null
+
 func _ready() -> void:
 	if not inventory:
 		# На случай если нода не добавлена в сцену явно
@@ -57,6 +77,22 @@ func _ready() -> void:
 		interaction_detector.area_entered.connect(_on_interaction_area_entered)
 		interaction_detector.area_exited.connect(_on_interaction_area_exited)
 	
+	# Инициализация модели персонажа и анимаций
+	anim_player = find_child("AnimationPlayer", true, false)
+	equipped_pickaxe_mesh = find_child("Equipped_Pickaxe", true, false)
+	sun_hat_mesh = find_child("Sun_Hat", true, false)
+	if equipped_pickaxe_mesh:
+		# Кирка появляется только в момент нажатия кнопки удара
+		equipped_pickaxe_mesh.visible = false
+	if anim_player:
+		for a_name in ["idle", "walk", "run"]:
+			if anim_player.has_animation(a_name):
+				anim_player.get_animation(a_name).loop_mode = Animation.LOOP_LINEAR
+		play_character_anim("idle")
+	
+	if inventory and inventory.has_signal("tool_changed"):
+		inventory.tool_changed.connect(_on_inventory_tool_changed)
+	
 	energy = max_energy
 	thirst = max_thirst
 	hunger = max_hunger
@@ -65,6 +101,10 @@ func _ready() -> void:
 	thirst_changed.emit(thirst, max_thirst)
 	hunger_changed.emit(hunger, max_hunger)
 	wetness_changed.emit(wetness, max_wetness)
+
+func _process(delta: float) -> void:
+	# Render-frame clock: no physics-tick input delay or anonymous finish timers.
+	_update_strike(delta)
 
 func _physics_process(delta: float) -> void:
 	_handle_gravity(delta)
@@ -76,9 +116,37 @@ func _physics_process(delta: float) -> void:
 	_update_best_interactable()
 	_handle_interaction_input()
 	move_and_slide()
+	_update_character_animation()
 	_check_bounds()
 
+func _input(event: InputEvent) -> void:
+	# Release must clear repetition even when a UI control consumes the event.
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+		_strike_held = false
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_strike_held = false
+		_strike_buffered = false
+
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if _is_gameplay_blocked():
+			return
+		_strike_held = true
+		trigger_tool_strike()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("interact") and not event.is_echo():
+		if not _is_gameplay_blocked():
+			_update_best_interactable()
+			if is_instance_valid(current_interactable):
+				if _is_mining_resource(current_interactable):
+					trigger_tool_strike()
+				else:
+					current_interactable.interact(self)
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_1:
@@ -180,7 +248,8 @@ func get_speed_multiplier() -> float:
 	elif wetness >= 40.0:
 		w_mult = 0.92
 
-	return e_mult * t_mult * h_mult * w_mult
+	var mining_mult: float = 0.0 if is_mining else 1.0
+	return e_mult * t_mult * h_mult * w_mult * mining_mult
 
 func can_sprint() -> bool:
 	return energy >= 20.0 and thirst > 10.0 and hunger > 10.0
@@ -410,12 +479,28 @@ func _handle_gravity(delta: float) -> void:
 			velocity.y = -0.1
 
 func _handle_movement(delta: float) -> void:
+	if is_mining:
+		# A short planted stance, not an ice-skating full-body animation.
+		velocity.x = 0.0
+		velocity.z = 0.0
+		return
 	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 	var is_sprinting: bool = Input.is_action_pressed("sprint") and can_sprint()
 	var speed_mult: float = get_speed_multiplier()
 	var target_speed: float = (sprint_speed if is_sprinting else walk_speed) * speed_mult
 	
-	var move_direction: Vector3 = Vector3(input_dir.x, 0.0, input_dir.y).normalized()
+	var cam: Camera3D = get_viewport().get_camera_3d()
+	var move_direction: Vector3 = Vector3.ZERO
+	if cam:
+		var cam_forward: Vector3 = -cam.global_transform.basis.z
+		cam_forward.y = 0.0
+		cam_forward = cam_forward.normalized()
+		var cam_right: Vector3 = cam.global_transform.basis.x
+		cam_right.y = 0.0
+		cam_right = cam_right.normalized()
+		move_direction = (cam_right * input_dir.x + cam_forward * -input_dir.y).normalized()
+	else:
+		move_direction = Vector3(input_dir.x, 0.0, input_dir.y).normalized()
 	
 	if move_direction.length_squared() > 0.001:
 		velocity.x = move_toward(velocity.x, move_direction.x * target_speed, acceleration * delta * target_speed)
@@ -448,12 +533,25 @@ func _update_best_interactable() -> void:
 		return
 	
 	var best_item: Area3D = null
-	var min_dist: float = INF
+	var min_score: float = INF
+	var facing_dir: Vector3 = -visual_root.global_transform.basis.z if visual_root else Vector3.FORWARD
+	facing_dir.y = 0.0
+	if facing_dir.length_squared() > 0.001:
+		facing_dir = facing_dir.normalized()
+	else:
+		facing_dir = Vector3.FORWARD
 	
 	for item in nearby_interactables:
-		var dist: float = global_position.distance_to(item.global_position)
-		if dist < min_dist:
-			min_dist = dist
+		var to_item: Vector3 = item.global_position - global_position
+		to_item.y = 0.0
+		var dist: float = to_item.length()
+		var dot: float = 1.0
+		if dist > 0.001:
+			dot = facing_dir.dot(to_item.normalized())
+		# Объекты впереди (dot ~ 1.0) получают приоритет; объекты за спиной штрафуются
+		var score: float = dist * (1.8 - 0.8 * clampf(dot, -1.0, 1.0))
+		if score < min_score:
+			min_score = score
 			best_item = item
 			
 	_set_current_interactable(best_item)
@@ -464,24 +562,162 @@ func _set_current_interactable(new_target: Area3D) -> void:
 		focused_interactable_changed.emit(current_interactable)
 
 func _handle_interaction_input() -> void:
-	if Input.is_action_just_pressed("interact"):
-		if current_interactable and current_interactable.has_method("interact"):
-			# Анимация взмаха/наклона персонажа
-			_play_interaction_swing()
-			current_interactable.interact(self)
-			# Обновляем текст подсказки после взаимодействия (например убавилась прочность)
-			if current_interactable and current_interactable.get("is_interactable") != false:
-				focused_interactable_changed.emit(current_interactable)
-			else:
-				focused_interactable_changed.emit(null)
+	# Input is dispatched once through _unhandled_input, after GUI consumption.
+	pass
+
+func _is_gameplay_blocked() -> bool:
+	if get_tree().paused:
+		return true
+	if not is_instance_valid(_hud):
+		_hud = get_tree().root.find_child("HUD", true, false)
+	return is_instance_valid(_hud) and _hud.has_method("is_gameplay_input_blocked") and _hud.is_gameplay_input_blocked()
+
+func _is_mining_resource(target: Area3D) -> bool:
+	if not is_instance_valid(target):
+		return false
+	if target.get("is_trader") == true or target.get("is_npc") == true:
+		return false
+	if "required_tool" in target and target.get("required_tool") in ["pickaxe", "axe", "shovel"]:
+		return true
+	if target.name.begins_with("Mock") or target.has_method("take_hit"):
+		return true
+	return not (target.get("is_machine") == true or target.get("is_container") == true)
+
+func trigger_tool_strike() -> void:
+	if _is_gameplay_blocked():
+		_strike_held = false
+		_strike_buffered = false
+		return
+	if is_mining:
+		# One queued click, only near recovery; never an unbounded click backlog.
+		if _strike_duration - _strike_elapsed <= STRIKE_BUFFER_WINDOW:
+			_strike_buffered = true
+		return
+	if is_instance_valid(current_interactable) and not _is_mining_resource(current_interactable):
+		# Machines, traders and water don't need a pickaxe animation.
+		current_interactable.interact(self)
+		_strike_held = false
+		return
+	_strike_target = current_interactable if is_instance_valid(current_interactable) else null
+	if is_instance_valid(_strike_target) and visual_root:
+		var dir_to_target: Vector3 = _strike_target.global_position - global_position
+		dir_to_target.y = 0.0
+		if dir_to_target.length_squared() > 0.001:
+			var current_facing: Vector3 = -visual_root.global_transform.basis.z
+			current_facing.y = 0.0
+			if current_facing.length_squared() < 0.001 or current_facing.dot(dir_to_target.normalized()) > -0.2:
+				visual_root.rotation.y = atan2(-dir_to_target.x, -dir_to_target.z)
+	_play_interaction_swing()
+
+func _update_strike(delta: float) -> void:
+	if not is_mining:
+		return
+	if _is_gameplay_blocked():
+		_strike_held = false
+		_strike_buffered = false
+		_finish_strike()
+		return
+	if _strike_pause_remaining > 0.0:
+		_strike_pause_remaining = maxf(0.0, _strike_pause_remaining - delta)
+		if _strike_pause_remaining <= 0.0 and anim_player:
+			anim_player.speed_scale = 1.0
+		return
+	_strike_elapsed += delta
+	if not _strike_impacted and _strike_elapsed >= STRIKE_CONTACT_TIME:
+		_strike_impacted = true
+		_apply_strike_contact()
+	if _strike_elapsed >= _strike_duration:
+		var repeat: bool = _strike_buffered or _strike_held
+		_finish_strike()
+		if repeat:
+			_update_best_interactable()
+			trigger_tool_strike()
+
+func _apply_strike_contact() -> void:
+	if not is_instance_valid(_strike_target) or _strike_target.get("is_interactable") == false:
+		return
+	if global_position.distance_to(_strike_target.global_position) > 2.5:
+		return
+	var old_hits: int = _strike_target.get("current_hits")
+	_strike_target.interact(self)
+	# ResourceNode owns sound and yield. Pause only this animation on a real hit.
+	if is_instance_valid(_strike_target) and _strike_target.get("current_hits") < old_hits:
+		_trigger_hit_stop(STRIKE_HIT_PAUSE)
+	focused_interactable_changed.emit(current_interactable if is_instance_valid(current_interactable) and current_interactable.get("is_interactable") != false else null)
+
+func _trigger_hit_stop(duration: float = STRIKE_HIT_PAUSE) -> void:
+	_strike_pause_remaining = duration
+	if anim_player:
+		anim_player.speed_scale = 0.0
+
+func _finish_strike() -> void:
+	is_mining = false
+	_strike_buffered = false
+	_strike_target = null
+	_strike_pause_remaining = 0.0
+	current_anim = ""
+	if anim_player:
+		anim_player.speed_scale = 1.0
+	set_equipped_tool_visible(false)
+	_update_character_animation()
+
+func _on_inventory_tool_changed(_tool_id: String, _tool_name: String = "") -> void:
+	# Кирка появляется только в момент нажатия кнопки удара
+	if equipped_pickaxe_mesh and not is_mining:
+		equipped_pickaxe_mesh.visible = false
+
+func _update_character_animation() -> void:
+	if not anim_player or is_mining:
+		return
+	
+	var h_vel: Vector2 = Vector2(velocity.x, velocity.z)
+	var speed: float = h_vel.length()
+	
+	if speed < 0.2:
+		play_character_anim("idle")
+	elif Input.is_action_pressed("sprint") and can_sprint():
+		play_character_anim("run")
+	else:
+		play_character_anim("walk")
+
+func play_character_anim(anim_name: String) -> void:
+	if not anim_player or current_anim == anim_name:
+		return
+	if anim_player.has_animation(anim_name):
+		current_anim = anim_name
+		anim_player.play(anim_name, 0.15)
+
+func play_animation(anim_name: String) -> void:
+	play_character_anim(anim_name)
+
+func play_mining_animation() -> void:
+	trigger_tool_strike()
+
+func set_equipped_tool_visible(is_visible: bool) -> void:
+	if equipped_pickaxe_mesh:
+		equipped_pickaxe_mesh.visible = is_visible
+
+func set_hat_visible(is_visible: bool) -> void:
+	if sun_hat_mesh:
+		sun_hat_mesh.visible = is_visible
 
 func _play_interaction_swing() -> void:
-	if not visual_root:
-		return
-	var tw: Tween = create_tween()
-	var orig_rot: Vector3 = visual_root.rotation
-	tw.tween_property(visual_root, "rotation:x", orig_rot.x - 0.25, 0.08)
-	tw.tween_property(visual_root, "rotation:x", orig_rot.x, 0.12)
+	is_mining = true
+	current_anim = "mine"
+	_strike_elapsed = 0.0
+	_strike_impacted = false
+	_strike_buffered = false
+	_strike_pause_remaining = 0.0
+	velocity.x = 0.0
+	velocity.z = 0.0
+	set_equipped_tool_visible(true)
+	_strike_duration = 0.42
+	if anim_player and anim_player.has_animation("mine"):
+		_strike_duration = anim_player.get_animation("mine").length
+		anim_player.speed_scale = 1.0
+		anim_player.play("mine", 0.0, 1.0)
+		# Apply the first raised-tool pose now, not on the next animation tick.
+		anim_player.advance(0.0)
 
 func notify(text: String) -> void:
 	notification_received.emit(text)

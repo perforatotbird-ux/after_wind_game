@@ -13,10 +13,10 @@
 |---|---|:---:|---|---|
 | **0** | Технический прототип и контроллер | ✅ | `scenes/player/player.tscn`, `scripts/player/player.gd` | Движение WASD, коллизии |
 | **1** | Инструменты, сбор ресурсов, инвентарь | ✅ | `scripts/inventory/`, `scenes/resources/` | Хотбар 1-5, вес, 5 жил |
-| **2** | Суточный цикл, солнце и усталость | ✅ | `scripts/world/day_night_cycle.gd`, `player.gd` | `tests/test_stage2_day_night.gd` |
+| **2** | Суточный цикл, солнце и усталость | ✅ | `scripts/world/day_night_cycle.gd`, `player.gd` | `tests/test_stage2_time_and_fatigue.gd` |
 | **3** | Станки, переработка и станция сбыта | ✅ | `scripts/crafting/`, `scenes/machines/` | Верстак, дробилка, экспорт |
 | **4** | Термообработка и плавильня | ✅ | `scenes/machines/smelter.tscn`, `recipe_db.gd` | `tests/test_stage4_thermal_processing.gd` |
-| **5** | Восстановление зданий (Дом и Склад) | ✅ | `scripts/buildings/repairable_building.gd` | `tests/test_stage5_base_restoration.gd` |
+| **5** | Восстановление зданий (Дом и Склад) | ✅ | `scripts/buildings/repairable_building.gd` | `tests/test_stage5_buildings.gd` |
 | **6** | Водный контур, фильтр и жажда | ✅ | `scenes/buildings/water_reservoir.tscn`, `water_filter.tscn` | `tests/test_stage6_water_network.gd` |
 | **7** | NPC Степан, контракты и доска заказов | ✅ | `scripts/economy/contract_db.gd`, `trader_npc.tscn` | `tests/test_stage7_npc_contracts.gd` |
 | **8** | Ферма, агрокультуры и питание | ✅ | `scenes/farming/farmland_plot.tscn`, `farmland_plot.gd` | `tests/test_stage8_farming.gd` |
@@ -141,21 +141,41 @@
     5. Ветрогенератор подключен.
     6. Аккумулятор заряжен.
     7. Грядки засажены и ухожены.
-    8. Выполнено $\ge 3$ контрактов караванщика Степана.
+    8. Выполнено $\ge 2$ контрактов караванщика Степана (`victory_manager.gd`: `completed_contracts >= 2`).
   - Триумфальное окно **«BASE RESTORED»**: фанфары, статистика выживания и переход в свободный режим бесконечной песочницы.
 
 ---
 
 ## Прохождение регрессионного сьюта тестов
 
-Все 11 комплексных тестов (для каждого этапа) запускаются автономно через headless-режим Godot:
+Все **16** автотестов запускаются автономно через headless-режим Godot:
 
 ```bash
 # Запуск из корня проекта:
 .\start.bat --test
 
 # Либо напрямую через консольный бинарник:
-Godot.exe --headless --path . -s tests/test_stage13_polish_and_finale.gd
+Godot_v4.7.2-stable_win64.exe --headless --path . -s tests/test_stage13_polish_and_finale.gd
 ```
 
-Результат выполнения: **100% SUCCESS, Exit code 0**.
+- **11 этапных** тестов (`test_stage2_time_and_fatigue.gd`, `test_stage4_thermal_processing.gd`, `test_stage5_buildings.gd`, `test_stage6_water_network.gd`, `test_stage7_npc_contracts.gd`, `test_stage8_farming.gd`, `test_stage9_weather.gd`, `test_stage10_electricity.gd`, `test_stage11_tool_upgrades.gd`, `test_stage12_classes_and_save.gd`, `test_stage13_polish_and_finale.gd`).
+- **5 фичевых** тестов (см. раздел ниже).
+
+Результат выполнения: **16/16 SUCCESS, Exit code 0**.
+
+---
+
+## Пост-релизная работа (не влита в `main`)
+
+После завершения Главы 1 ведётся работа над визуальным слоем персонажа и камерой (файлы в рабочем дереве, ещё не закоммичены):
+
+| Область | Что сделано | Файлы | Тест |
+|---|---|---|---|
+| 3D-модели классов | Скелетные модели Шахтёра и Фермера (Blender → `.glb`) | `scenes/player/miner_model.tscn`, `character_model.tscn`, `assets/models/character/*.glb` | `test_miner_and_pickaxe.gd`, `test_stardew_character.gd` |
+| Анимации | Запечённые `idle` / `walk` / `run` / `mine` (замах сверху вниз, просадка таза, работа корпуса и ног) | `scripts/player/player.gd` | `test_modern_strike_animation.gd` |
+| Удар по ЛКМ | Экшен ввода `strike` (ЛКМ), видимость инструмента в момент удара, снижение скорости до 35% | `project.godot`, `scripts/player/player.gd` | `test_pickaxe_swing_and_lmb.gd` |
+| Модель кирки | Автономная модель инструмента и её иконка | `scenes/tools/pickaxe_model.tscn`, `assets/tools/pickaxe_icon.png` | `test_miner_and_pickaxe.gd` |
+| Орбитальная камера | ПКМ-вращение, зум колесом (3.5–26 м), clamp pitch, сброс захвата при потере фокуса, камеро-зависимое движение | `scripts/world/isometric_camera.gd` | `test_orbit_camera.gd` |
+| 2D-графика | Портреты и изометрия-спрайты классов | `assets/sprites/*.png`, `CharacterClassDB` | `test_miner_and_pickaxe.gd`, `test_stardew_character.gd` |
+
+> Работа находится в незакоммиченном состоянии (`git status` показывает изменения в `project.godot`, `player.gd`, `isometric_camera.gd`, `character_class_db.gd`, `item_db.gd`, `player.tscn` и новые файлы).

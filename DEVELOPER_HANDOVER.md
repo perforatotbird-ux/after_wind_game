@@ -57,10 +57,11 @@ k:/After Wind/
 │   ├── farming/                  # Грядка открытого грунта
 │   ├── machines/                 # Дробилка, печь-плавильня, верстак, песчаный фильтр
 │   ├── npc/                      # Торговец Степан с фонарем
-│   ├── player/                   # Контроллер игрока (камера, коллизии, детектор лучей)
+│   ├── player/                   # Контроллер игрока + скелетные модели (Шахтёр, Фермер)
 │   ├── resources/                # Жилы дерева, камня, металлолома, глины, песка, воды
+│   ├── tools/                    # Автономные модели инструментов (кирка)
 │   ├── ui/                       # Головной HUD, инвентарь, окна крафта, пауза, триумф
-│   └── world/                    # Основной мир двора и погодный контроллер
+│   └── world/                    # Основной мир двора, погодный контроллер, шаблон интерактива
 │
 ├── scripts/                      # Скрипты логики (.gd)
 │   ├── audio/                    # AudioManager с процедурными звуковыми эффектами
@@ -75,18 +76,23 @@ k:/After Wind/
 │   ├── player/                   # Контроллер игрока и параметры выживания
 │   └── world/                    # DayNightCycle, WeatherManager
 │
-└── tests/                        # 11 комплексных интеграционных тестов
-    ├── test_stage2_day_night.gd
-    ├── test_stage4_thermal_processing.gd
-    ├── test_stage5_base_restoration.gd
-    ├── test_stage6_water_network.gd
-    ├── test_stage7_npc_contracts.gd
-    ├── test_stage8_farming.gd
-    ├── test_stage9_weather.gd
-    ├── test_stage10_electricity.gd
-    ├── test_stage11_tool_upgrades.gd
-    ├── test_stage12_classes_and_save.gd
-    └── test_stage13_polish_and_finale.gd
+└── tests/                        # 16 автотестов (11 этапных + 5 фичевых)
+    ├── test_stage2_time_and_fatigue.gd    # Этап 2: сутки, освещение, усталость, сон
+    ├── test_stage4_thermal_processing.gd  # Этап 4: печь, обжиг, стекло, слитки, сбыт
+    ├── test_stage5_buildings.gd           # Этап 5: восстановление зданий
+    ├── test_stage6_water_network.gd       # Этап 6: фильтрация, жажда, питьё, розлив
+    ├── test_stage7_npc_contracts.gd       # Этап 7: NPC, диалоги, контракты, награды
+    ├── test_stage8_farming.gd             # Этап 8: грядки, семена, рост, питание
+    ├── test_stage9_weather.gd             # Этап 9: погода, дождь, намокание, сушка
+    ├── test_stage10_electricity.gd        # Этап 10: энергосеть, ветряк, аккумулятор, фонари
+    ├── test_stage11_tool_upgrades.gd      # Этап 11: инструменты Lv.2, компоненты, рюкзак
+    ├── test_stage12_classes_and_save.gd   # Этап 12: специализации, Save/Load
+    ├── test_stage13_polish_and_finale.gd  # Этап 13: аудио, пауза, финал «Base Restored»
+    ├── test_orbit_camera.gd               # Орбитальная камера (ПКМ, зум, clamp, камеро-движение)
+    ├── test_miner_and_pickaxe.gd          # Модель Шахтёра, кирка, анимации, спрайты
+    ├── test_pickaxe_swing_and_lmb.gd      # Ориентация кирки, замах, ЛКМ
+    ├── test_modern_strike_animation.gd    # Кинематика удара сверху вниз
+    └── test_stardew_character.gd          # Реалистичная модель Фермера
 ```
 
 ---
@@ -134,6 +140,14 @@ k:/After Wind/
 - Автосейв при сне в кровати.
 - Формат: чистый JSON-файл в `user://savegame.json`.
 
+### 4.8. Персонаж: 3D-модели, анимации и камера (в работе, не влито в `main`)
+- **Модели**: скелетные модели Шахтёра (`scenes/player/miner_model.tscn`) и Фермера (`scenes/player/character_model.tscn`), импортированы из Blender (`.glb`), подключены в узле `Player/Visuals/CharacterModel`.
+- **Анимации** (`AnimationPlayer`): `idle`, `walk`, `run`, `mine` — замах инструментом сверху вниз с просадкой таза и работой корпуса/ног; длина `mine` ≤ 1.1 с.
+- **Удар по ЛКМ**: новый экшен ввода `strike` (ЛКМ) в `project.godot`; во время замаха скорость передвижения снижается до 35%.
+- **Динамическая экипировка**: `set_equipped_tool_visible(bool)` (кирка видна только в момент удара), `set_hat_visible(bool)`.
+- **Орбитальная камера** (`scripts/world/isometric_camera.gd`): ПКМ-вращение (захват курсора), зум колесом (3.5–26 м), clamp наклона, авто-сброс захвата при потере фокуса; движение WASD — относительно ракурса камеры.
+- **2D-графика**: портреты и изометрия-спрайты классов (`assets/sprites/`), иконки инструментов (`assets/tools/`).
+
 ---
 
 ## 5. Как работать с базой знаний Obsidian (`obsidian-mind`)
@@ -152,7 +166,7 @@ k:/After Wind/
 
 ## 6. Запуск тестов и проверка регрессий
 
-Каждый этап покрыт автономным скриптом тестирования:
+Проект покрыт **16** автономными тестами: **11 этапных** регрессионных (`test_stage2…13`) и **5 фичевых** (модели персонажа, анимация удара, орбитальная камера).
 ```bash
 # Запуск через start.bat:
 start.bat --test
@@ -160,7 +174,7 @@ start.bat --test
 # Запуск любого конкретного теста вручную:
 Godot_v4.7.2-stable_win64.exe --headless --path . -s tests/test_stage12_classes_and_save.gd
 ```
-Перед отправкой любых изменений в `main` убедитесь, что тест завершается с кодом 0 (`code 0`).
+Перед отправкой любых изменений в `main` убедитесь, что все тесты завершаются с кодом 0 (`code 0`).
 
 ---
 

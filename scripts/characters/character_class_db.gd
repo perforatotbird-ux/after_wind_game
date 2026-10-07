@@ -8,6 +8,8 @@ const CLASSES: Dictionary = {
 		"id": "miner",
 		"name": "Шахтёр",
 		"icon": "⛏️",
+		"portrait": "res://assets/sprites/miner_portrait.png",
+		"sprite": "res://assets/sprites/miner_isometric.png",
 		"title": "Специалист по добыче",
 		"description": "Опытный проходчик и геолог. Мастерски раскалывает скальные породы, добывает руды и извлекает скрытые залежи металлолома.",
 		"perks": [
@@ -31,6 +33,8 @@ const CLASSES: Dictionary = {
 		"id": "farmer",
 		"name": "Фермер",
 		"icon": "🌾",
+		"portrait": "res://assets/sprites/farmer_portrait.png",
+		"sprite": "res://assets/sprites/farmer_isometric.png",
 		"title": "Специалист по агрономии и выживанию",
 		"description": "Знаток почв, селекции и ботаники. Умеет ускорять созревание культур и исключительно экономен в расходе пищи.",
 		"perks": [

@@ -1,0 +1,156 @@
+extends SceneTree
+
+const PlayerScene = preload("res://scenes/player/player.tscn")
+const RockScene = preload("res://scenes/resources/rock_node.tscn")
+
+class ModalStub extends Node:
+	func is_gameplay_input_blocked() -> bool:
+		return true
+
+var player
+var failed: bool = false
+
+func _initialize() -> void:
+	call_deferred("_run")
+
+func check(condition: bool, message: String) -> void:
+	if not condition:
+		failed = true
+		push_error(message)
+
+func _run() -> void:
+	player = PlayerScene.instantiate()
+	root.add_child(player)
+	player.set_physics_process(false)
+	player.set_process(false)
+	var ap: AnimationPlayer = player.anim_player
+	var skeleton: Skeleton3D = player.find_child("Skeleton3D", true, false)
+	var pickaxe: MeshInstance3D = player.equipped_pickaxe_mesh
+	check(ap != null and skeleton != null and pickaxe != null, "Missing hero rig")
+	if failed:
+		quit(1)
+		return
+	var mine: Animation = ap.get_animation("mine")
+	check(mine.length >= 0.35 and mine.length <= 0.45, "Strike cycle must be 350-450ms")
+	for bone_name in ["Spine", "Chest", "UpperArm.R", "Forearm.R", "Hand.R", "UpperArm.L", "Forearm.L", "Hand.L"]:
+		var found: bool = false
+		for track in range(mine.get_track_count()):
+			if bone_name in str(mine.track_get_path(track)):
+				found = true
+		check(found, "Missing authored upper-body track: " + bone_name)
+	var visuals: Node3D = player.visual_root
+	var hand: int = skeleton.find_bone("Hand.R")
+	var bind: Transform3D = skeleton.get_bone_global_rest(hand).affine_inverse()
+	var tool_data := MeshDataTool.new()
+	tool_data.create_from_surface(pickaxe.mesh, 0)
+	var tip := Vector3.ZERO
+	var tip_z: float = -INF
+	for i in range(tool_data.get_vertex_count()):
+		var v: Vector3 = tool_data.get_vertex(i)
+		if v.z > tip_z:
+			tip_z = v.z
+			tip = v
+	ap.play("mine", 0.0)
+	ap.seek(0.0, true)
+	skeleton.force_update_all_bone_transforms()
+	var feet: Dictionary = {}
+	for name in ["Foot.L", "Foot.R"]:
+		feet[name] = skeleton.get_bone_global_pose(skeleton.find_bone(name))
+	var max_drift: float = 0.0
+	var max_tip_z: float = -INF
+	var high_tip_y: float = -INF
+	var impact_tip := Vector3.ZERO
+	# 121 samples, including between authored keys (catches quaternion flips).
+	for i in range(121):
+		var t: float = mine.length * i / 120.0
+		ap.seek(t, true)
+		skeleton.force_update_all_bone_transforms()
+		for name in feet:
+			var pose: Transform3D = skeleton.get_bone_global_pose(skeleton.find_bone(name))
+			max_drift = maxf(max_drift, pose.origin.distance_to(feet[name].origin))
+			check(pose.basis.is_equal_approx(feet[name].basis), "Foot rotation changed during planted strike")
+		var p: Vector3 = visuals.to_local(skeleton.global_transform * (skeleton.get_bone_global_pose(hand) * bind * tip))
+		max_tip_z = maxf(max_tip_z, p.z)
+		high_tip_y = maxf(high_tip_y, p.y)
+	ap.seek(player.STRIKE_CONTACT_TIME, true)
+	skeleton.force_update_all_bone_transforms()
+	impact_tip = visuals.to_local(skeleton.global_transform * (skeleton.get_bone_global_pose(hand) * bind * tip))
+	check(max_drift < 0.002, "Planted feet drifted >2mm")
+	check(max_tip_z <= 0.02, "Tool swung behind the hero")
+	check(impact_tip.z <= -0.50, "Impact must be in front")
+	check(high_tip_y - impact_tip.y > 0.70, "Missing readable high-to-low arc")
+	# Verify geometry weights: no foot vertices connected to hands/arms.
+	var body: MeshInstance3D = player.find_child("Farmer_Character", true, false)
+	var foot_vertices: int = 0
+	for surface in range(body.mesh.get_surface_count()):
+		var md := MeshDataTool.new()
+		md.create_from_surface(body.mesh, surface)
+		for i in range(md.get_vertex_count()):
+			if md.get_vertex(i).y > 0.13:
+				continue
+			foot_vertices += 1
+			var bones: PackedInt32Array = md.get_vertex_bones(i)
+			var weights: PackedFloat32Array = md.get_vertex_weights(i)
+			for j in range(bones.size()):
+				if weights[j] > 0.001:
+					var name: String = skeleton.get_bone_name(body.skin.get_bind_bone(bones[j]))
+					check(name.begins_with("Foot.") or name.begins_with("Shin."), "Boot geometry weighted outside lower limb: " + name)
+	check(foot_vertices > 0, "No boot vertices tested")
+
+	# A real ResourceNode, not a prop that only changes an animation boolean.
+	var rock = RockScene.instantiate()
+	root.add_child(rock)
+	rock.position = Vector3(0, 0, -1)
+	player.inventory.equip_tool("pickaxe")
+	player.current_interactable = rock
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	var before: int = rock.current_hits
+	player.is_mining = false
+	player.current_anim = ""
+	player.play_animation("walk")
+	ap.advance(0.15)
+	player.velocity = Vector3(4, 0, 0)
+	player._unhandled_input(click)
+	check(player.is_mining and player.current_anim == "mine", "Input did not start strike immediately")
+	check(ap.current_animation == "mine" and is_zero_approx(ap.current_animation_position), "Animation not applied in input callback")
+	check(player.velocity.x == 0 and player.velocity.z == 0, "Player slides while planting feet")
+	check(rock.current_hits == before, "Resource hit happened before visual contact")
+	check(Engine.time_scale == 1.0, "Global time scale changed at windup")
+	player._update_strike(0.14)
+	check(rock.current_hits == before, "Hit before 150ms contact")
+	player._update_strike(0.02)
+	check(rock.current_hits == before - 1, "Contact must apply exactly one hit")
+	check(ap.speed_scale == 0.0 and Engine.time_scale == 1.0, "Hit pause must be local to animation")
+	player._update_strike(0.03)
+	check(ap.speed_scale == 1.0, "Hit pause did not clear")
+	player._update_strike(0.03)
+	check(rock.current_hits == before - 1, "Duplicate resource hit within one swing")
+	# Recovery click buffering, then release: one extra swing, not a backlog.
+	player._update_strike(0.15)
+	player._unhandled_input(click)
+	check(player._strike_buffered, "Recovery click lost")
+	click.pressed = false
+	player._input(click)
+	player.nearby_interactables.assign([rock])
+	player._update_strike(0.10)
+	check(player.is_mining and player._strike_elapsed == 0.0, "Buffered strike did not start")
+	player._update_strike(0.16)
+	check(rock.current_hits == before - 2, "Buffered strike did not hit exactly once")
+	player._update_strike(0.03)
+	player._update_strike(0.30)
+	check(not player.is_mining, "Release failed to stop repetition")
+	check(not pickaxe.visible and ap.speed_scale == 1.0, "Strike state did not reset")
+
+	# UI/modal blocks input and clears hold without mutating world time.
+	var hud := ModalStub.new()
+	hud.name = "HUD"
+	root.add_child(hud)
+	player._hud = hud
+	click.pressed = true
+	player._unhandled_input(click)
+	check(not player.is_mining, "Modal allowed a gameplay click")
+	print("STRIKE: cycle=%.3fs, contact=%.3fs, foot drift=%.6fm, arc height=%.3fm, tested boot vertices=%d" % [mine.length, player.STRIKE_CONTACT_TIME, max_drift, high_tip_y-impact_tip.y, foot_vertices])
+	print("Input callback pose, exactly-once contact, local hit pause, buffering/release and UI block checked.")
+	quit(1 if failed else 0)

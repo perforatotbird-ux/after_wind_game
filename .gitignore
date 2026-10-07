@@ -21,3 +21,9 @@ desktop.ini
 # Temporary files
 *.tmp
 *.log
+*.blend1
+
+# AI agent local cache and debug outputs
+.workbuddy-ai/
+outputs/
+.agents/

@@ -211,6 +211,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				toggle_pause_menu()
 				get_viewport().set_input_as_handled()
 
+func is_gameplay_input_blocked() -> bool:
+	for window in [inventory_window, machine_window, sales_window, repair_window, contract_window, class_window, pause_window, victory_window]:
+		if is_instance_valid(window) and window.visible:
+			return true
+	return false
+
 func _process(_delta: float) -> void:
 	if machine_window and machine_window.visible and _current_active_machine:
 		_update_machine_progress_ui()

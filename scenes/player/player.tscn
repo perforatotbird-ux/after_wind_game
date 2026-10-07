@@ -1,45 +1,12 @@
-[gd_scene load_steps=13 format=3 uid="uid://c6v2n7j5w1q8p"]
+[gd_scene load_steps=6 format=3 uid="uid://c6v2n7j5w1q8p"]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/inventory/inventory.gd" id="2_inv"]
+[ext_resource type="PackedScene" path="res://scenes/player/character_model.tscn" id="3_char"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.35
 height = 1.8
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
-albedo_color = Color(0.28, 0.38, 0.52, 1)
-roughness = 0.8
-
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
-material = SubResource("StandardMaterial3D_body")
-radius = 0.32
-height = 1.2
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_head"]
-albedo_color = Color(0.85, 0.68, 0.55, 1)
-roughness = 0.6
-
-[sub_resource type="SphereMesh" id="SphereMesh_head"]
-material = SubResource("StandardMaterial3D_head")
-radius = 0.22
-height = 0.44
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hat"]
-albedo_color = Color(0.82, 0.62, 0.18, 1)
-roughness = 0.5
-
-[sub_resource type="BoxMesh" id="BoxMesh_visor"]
-material = SubResource("StandardMaterial3D_hat")
-size = Vector3(0.3, 0.08, 0.22)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_backpack"]
-albedo_color = Color(0.44, 0.31, 0.21, 1)
-roughness = 0.9
-
-[sub_resource type="BoxMesh" id="BoxMesh_backpack"]
-material = SubResource("StandardMaterial3D_backpack")
-size = Vector3(0.42, 0.55, 0.24)
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_interact"]
 height = 2.0
@@ -59,21 +26,8 @@ shape = SubResource("CapsuleShape3D_player")
 
 [node name="Visuals" type="Node3D" parent="."]
 
-[node name="Body" type="MeshInstance3D" parent="Visuals"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-mesh = SubResource("CapsuleMesh_body")
-
-[node name="Head" type="MeshInstance3D" parent="Visuals"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.48, 0)
-mesh = SubResource("SphereMesh_head")
-
-[node name="HatVisor" type="MeshInstance3D" parent="Visuals"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, -0.15)
-mesh = SubResource("BoxMesh_visor")
-
-[node name="Backpack" type="MeshInstance3D" parent="Visuals"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0.24)
-mesh = SubResource("BoxMesh_backpack")
+[node name="CharacterModel" parent="Visuals" instance=ExtResource("3_char")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)
 
 [node name="InteractionDetector" type="Area3D" parent="."]
 collision_layer = 0
