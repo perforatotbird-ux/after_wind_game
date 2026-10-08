@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://c62kpx8m523ya"]
+[gd_scene load_steps=8 format=3 uid="uid://c62kpx8m523ya"]
 
 [ext_resource type="Script" path="res://scripts/energy/battery_bank.gd" id="1_bank"]
 
@@ -22,6 +22,9 @@ roughness = 0.8
 material = SubResource("StandardMaterial3D_panel")
 size = Vector3(1.1, 0.35, 0.05)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_solid"]
+size = Vector3(1.2, 1.2, 0.8)
+
 [node name="BatteryBank" type="Area3D"]
 collision_layer = 8
 collision_mask = 0
@@ -44,3 +47,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, 0.52)
 light_color = Color(0.2, 0.9, 0.35, 1)
 light_energy = 1.0
 omni_range = 3.0
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("BoxShape3D_solid")

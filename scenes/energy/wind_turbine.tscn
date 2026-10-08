@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://b7v12kj9g54da"]
+[gd_scene load_steps=11 format=3 uid="uid://b7v12kj9g54da"]
 
 [ext_resource type="Script" path="res://scripts/energy/wind_turbine.gd" id="1_turbine"]
 
@@ -38,6 +38,10 @@ roughness = 0.4
 [sub_resource type="BoxMesh" id="BoxMesh_blade"]
 material = SubResource("StandardMaterial3D_blade")
 size = Vector3(0.12, 2.3, 0.04)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_solid"]
+height = 4.0
+radius = 0.4
 
 [node name="WindTurbine" type="Area3D"]
 collision_layer = 8
@@ -80,3 +84,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.7, 0)
 light_color = Color(0.2, 0.9, 0.35, 1)
 light_energy = 1.2
 omni_range = 4.0
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+shape = SubResource("CylinderShape3D_solid")

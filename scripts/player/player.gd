@@ -34,9 +34,28 @@ const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd
 const SaveManager = preload("res://scripts/core/save_manager.gd")
 
 # Must match the authored Blender mine action (60 FPS, contact on frame 10).
+# Для новой модели шахтёра из Miner_Character_Package (Track_Pickaxe_Swing 1.5 c)
+# длительность и момент контакта вычисляются от длины клипа:
+# замах играется ускоренно (1.5x -> ~1.0 c), контакт на 55% замаха.
 const STRIKE_CONTACT_TIME: float = 0.15
 const STRIKE_BUFFER_WINDOW: float = 0.12
 const STRIKE_HIT_PAUSE: float = 0.025
+const STRIKE_CONTACT_FRACTION_LONG: float = 0.55
+const STRIKE_CONTACT_FRACTION_SHORT: float = 0.38
+const STRIKE_LONG_ANIM_THRESHOLD: float = 0.8
+const STRIKE_LONG_ANIM_SPEED: float = 1.5
+
+# Алиасы анимаций: логическое имя -> кандидаты в AnimationPlayer.
+# Старая модель (stardew/miner): idle/walk/run/mine/dig/scoop.
+# Новая модель из пакета: Track_Idle/Walk/Run/Pickaxe_Swing/Dig_Loop.
+const ANIM_ALIASES: Dictionary = {
+	"idle": ["idle", "Track_Idle", "Armature|Armature|Iddle01", "Armature|Iddle01", "Iddle01", "Armature|Armature|Iddle02", "Armature|Iddle02", "ual_Idle"],
+	"walk": ["walk", "Track_Walk", "Armature|Armature|Walk", "Armature|Walk", "Walk", "ual_Walk", "Walk_Loop"],
+	"run": ["run", "Track_Run", "ual_Sprint", "Sprint_Loop", "Jog_Fwd_Loop", "Armature|Armature|Walk", "Armature|Walk"],
+	"mine": ["mine", "Armature|Armature|Mine", "Armature|Mine", "Mine", "Track_Pickaxe_Swing", "Track_Pickaxe_Swing_Heavy", "ual_Chop"],
+	"dig": ["dig", "Track_Pickaxe_Dig_Loop", "Track_Pickaxe_Dig", "Armature|Armature|Mine", "Armature|Mine", "ual_Chop", "Track_Pickaxe_Swing"],
+	"scoop": ["scoop", "Track_Pickaxe_Dig_Loop", "Track_Pickaxe_Dig", "Armature|Armature|Iddle01", "Armature|Iddle01", "ual_Idle", "Track_Idle", "idle"],
+}
 
 @export_group("References")
 @onready var visual_root: Node3D = $Visuals
@@ -82,6 +101,8 @@ var current_anim: String = ""
 var is_mining: bool = false
 var _strike_elapsed: float = 0.0
 var _strike_duration: float = 0.42
+var _strike_contact_time: float = STRIKE_CONTACT_TIME
+var _pickaxe_is_builtin: bool = false
 var _strike_target: Area3D = null
 var _strike_impacted: bool = false
 var _strike_buffered: bool = false
@@ -107,13 +128,19 @@ func _ready() -> void:
 	# Инициализация модели персонажа и анимаций
 	anim_player = find_child("AnimationPlayer", true, false)
 	equipped_pickaxe_mesh = find_child("Equipped_Pickaxe", true, false)
+	if equipped_pickaxe_mesh == null:
+		# Модели с киркой, заскиненной в тело (кирка всегда в руке, отдельного узла нет).
+		equipped_pickaxe_mesh = find_child("Pickaxe", true, false)
+	_pickaxe_is_builtin = equipped_pickaxe_mesh != null and equipped_pickaxe_mesh.name != "Equipped_Pickaxe"
+	_fix_new_model_culling()
 	sun_hat_mesh = find_child("Sun_Hat", true, false)
 	_setup_equipped_tool_socket()
 	_refresh_tool_visibility()
 	if anim_player:
 		for a_name in ["idle", "walk", "run"]:
-			if anim_player.has_animation(a_name):
-				anim_player.get_animation(a_name).loop_mode = Animation.LOOP_LINEAR
+			var resolved: String = _resolve_anim(a_name)
+			if resolved != "" and anim_player.has_animation(resolved):
+				anim_player.get_animation(resolved).loop_mode = Animation.LOOP_LINEAR
 		play_character_anim("idle")
 	
 	if inventory and inventory.has_signal("tool_changed"):
@@ -615,11 +642,17 @@ func _is_mining_resource(target: Area3D) -> bool:
 		return false
 	if target.get("is_trader") == true or target.get("is_npc") == true:
 		return false
-	if "required_tool" in target and target.get("required_tool") in ["pickaxe", "axe", "shovel"]:
-		return true
 	if target.name.begins_with("Mock") or target.has_method("take_hit"):
 		return true
-	return not (target.get("is_machine") == true or target.get("is_container") == true)
+	# Добывающие узлы — только ResourceNode с инструментом удара.
+	# Станки, торговец, грядки, водоём-резервуар и вода (ведро) идут
+	# через прямое взаимодействие без замаха киркой.
+	if target.get("is_machine") == true or target.get("is_container") == true:
+		return false
+	var req: Variant = target.get("required_tool") if "required_tool" in target else null
+	if req == null:
+		return false
+	return req in ["pickaxe", "axe", "shovel"]
 
 func trigger_tool_strike() -> void:
 	if _is_gameplay_blocked():
@@ -663,7 +696,7 @@ func _update_strike(delta: float) -> void:
 			anim_player.speed_scale = 1.0
 		return
 	_strike_elapsed += delta
-	if not _strike_impacted and _strike_elapsed >= STRIKE_CONTACT_TIME:
+	if not _strike_impacted and _strike_elapsed >= _strike_contact_time:
 		_strike_impacted = true
 		_apply_strike_contact()
 	if _strike_elapsed >= _strike_duration:
@@ -716,6 +749,19 @@ func _current_tool_type() -> String:
 
 ## Создаёт BoneAttachment на кости ToolSocket.R и цепляет in-hand модели
 ## топора/лопаты/ведра. Кирка уже заскинена в модели персонажа — используем её узел.
+## Новая модель из Miner_Character_Package не имеет кости ToolSocket.R:
+## откатываемся на Pickaxe_Attachment_R / Hand_R / Hand.R.
+const TOOL_SOCKET_BONES: Array[String] = [
+	"ToolSocket.R", "Pickaxe_Attachment_R", "Hand_R", "Hand.R", "Hand.r", "hand_r",
+	"mixamorig:RightHand", "RightHand",
+]
+
+func _find_tool_bone(skeleton: Skeleton3D) -> String:
+	for b in TOOL_SOCKET_BONES:
+		if skeleton.find_bone(b) != -1:
+			return b
+	return ""
+
 func _setup_equipped_tool_socket() -> void:
 	equipped_tool_nodes.clear()
 	if equipped_pickaxe_mesh:
@@ -725,18 +771,19 @@ func _setup_equipped_tool_socket() -> void:
 	var skeleton := visual_root.find_child("Skeleton3D", true, false) as Skeleton3D
 	if skeleton == null:
 		return
-	if skeleton.find_bone("ToolSocket.R") == -1:
+	var bone_name: String = _find_tool_bone(skeleton)
+	if bone_name == "":
 		return
 	# Модели персонажей уже содержат BoneAttachment на ToolSocket.R
 	# (кость-родитель для Equipped_Pickaxe) — переиспользуем его.
 	for child in skeleton.get_children():
-		if child is BoneAttachment3D and child.bone_name == "ToolSocket.R":
+		if child is BoneAttachment3D and child.bone_name == bone_name:
 			tool_socket = child
 			break
 	if tool_socket == null:
 		tool_socket = BoneAttachment3D.new()
 		tool_socket.name = "ToolSocket_Runtime"
-		tool_socket.bone_name = "ToolSocket.R"
+		tool_socket.bone_name = bone_name
 		skeleton.add_child(tool_socket)
 	_attach_inhand_tool("axe", AxeInHandScene)
 	_attach_inhand_tool("shovel", ShovelInHandScene)
@@ -802,6 +849,9 @@ func _refresh_tool_visibility() -> void:
 			equipped_tool_nodes[t].visible = true
 	elif t == "bucket":
 		_show_bucket()
+	elif t == "pickaxe" and _pickaxe_is_builtin:
+		# Встроенная кирка новой модели — часть образа шахтёра, несём в руке всегда.
+		equipped_tool_nodes[t].visible = true
 
 func _update_character_animation() -> void:
 	if not anim_player or is_mining or is_digging or is_scooping:
@@ -818,11 +868,37 @@ func _update_character_animation() -> void:
 		play_character_anim("walk")
 
 func play_character_anim(anim_name: String) -> void:
-	if not anim_player or current_anim == anim_name:
+	if not anim_player:
 		return
-	if anim_player.has_animation(anim_name):
-		current_anim = anim_name
-		anim_player.play(anim_name, 0.15)
+	var resolved: String = _resolve_anim(anim_name)
+	if resolved == "" or current_anim == resolved:
+		return
+	if anim_player.has_animation(resolved):
+		current_anim = resolved
+		anim_player.play(resolved, 0.15)
+
+## Возвращает первое существующее в AnimationPlayer имя из алиасов.
+## Пустая строка — анимация отсутствует в текущей модели.
+func _resolve_anim(logical_name: String) -> String:
+	if anim_player == null:
+		return ""
+	if anim_player.has_animation(logical_name):
+		return logical_name
+	if ANIM_ALIASES.has(logical_name):
+		for candidate in ANIM_ALIASES[logical_name]:
+			if anim_player.has_animation(candidate):
+				return candidate
+	return ""
+
+## Защита от исчезновения меша новой модели из-за AABB-отсечения.
+func _fix_new_model_culling() -> void:
+	if visual_root == null:
+		return
+	var meshes: Array[Node] = visual_root.find_children("*", "MeshInstance3D", true, false)
+	for m in meshes:
+		var mi := m as MeshInstance3D
+		if mi:
+			mi.extra_cull_margin = 5.0
 
 func play_animation(anim_name: String) -> void:
 	play_character_anim(anim_name)
@@ -853,15 +929,18 @@ func play_dig_animation(target: Node3D = null) -> bool:
 	_dig_duration = 1.1
 	current_anim = "dig"
 	if anim_player:
-		if anim_player.has_animation("dig"):
-			# Мокап-клип (2.0 с) играем ускоренно, чтобы вскопка не вязала надолго.
-			_dig_duration = anim_player.get_animation("dig").length / 1.45
+		var dig_anim: String = _resolve_anim("dig")
+		if dig_anim != "":
+			_dig_duration = anim_player.get_animation(dig_anim).length
+			var dig_speed: float = 1.0
+			# Мокап-клип старой модели (2.0 с) играем ускоренно, чтобы вскопка не вязала надолго.
+			# Короткий цикл новой модели (1.0 с) — как есть.
+			if _dig_duration > 1.5:
+				dig_speed = 1.45
+				_dig_duration = _dig_duration / dig_speed
 			anim_player.speed_scale = 1.0
-			anim_player.play("dig", 0.1, 1.45)
-		elif anim_player.has_animation("mine"):
-			_dig_duration = anim_player.get_animation("mine").length
-			anim_player.speed_scale = 1.0
-			anim_player.play("mine", 0.1, 1.0)
+			anim_player.play(dig_anim, 0.1, dig_speed)
+			current_anim = dig_anim
 	_refresh_tool_visibility()
 	return true
 
@@ -895,10 +974,12 @@ func play_scoop_animation(source_pos: Vector3) -> bool:
 	_scoop_filled_done = false
 	current_anim = "scoop"
 	if anim_player:
-		if anim_player.has_animation("scoop"):
-			_scoop_duration = anim_player.get_animation("scoop").length
+		var scoop_anim: String = _resolve_anim("scoop")
+		if scoop_anim != "":
+			_scoop_duration = anim_player.get_animation(scoop_anim).length
 			anim_player.speed_scale = 1.0
-			anim_player.play("scoop", 0.1, 1.0)
+			anim_player.play(scoop_anim, 0.1, 1.0)
+			current_anim = scoop_anim
 	_refresh_tool_visibility()
 	return true
 
@@ -992,12 +1073,27 @@ func _play_interaction_swing() -> void:
 	velocity.z = 0.0
 	set_equipped_tool_visible(true)
 	_strike_duration = 0.42
-	if anim_player and anim_player.has_animation("mine"):
-		_strike_duration = anim_player.get_animation("mine").length
-		anim_player.speed_scale = 1.0
-		anim_player.play("mine", 0.0, 1.0)
-		# Apply the first raised-tool pose now, not on the next animation tick.
-		anim_player.advance(0.0)
+	_strike_contact_time = STRIKE_CONTACT_TIME
+	if anim_player:
+		var swing_anim: String = _resolve_anim("mine")
+		if swing_anim != "":
+			var swing_len: float = anim_player.get_animation(swing_anim).length
+			var swing_speed: float = 1.0
+			# Нормальный темп кирки: длинный замах новой модели (1.5 c)
+			# играем ускоренно до ~1.0 c, контакт на 55% замаха.
+			# Короткий замах старой модели (~0.42 c) — как есть, контакт на 38%.
+			if swing_len >= STRIKE_LONG_ANIM_THRESHOLD:
+				swing_speed = STRIKE_LONG_ANIM_SPEED
+				_strike_duration = swing_len / swing_speed
+				_strike_contact_time = _strike_duration * STRIKE_CONTACT_FRACTION_LONG
+			else:
+				_strike_duration = swing_len
+				_strike_contact_time = _strike_duration * STRIKE_CONTACT_FRACTION_SHORT
+			current_anim = swing_anim
+			anim_player.speed_scale = 1.0
+			anim_player.play(swing_anim, 0.0, swing_speed)
+			# Apply the first raised-tool pose now, not on the next animation tick.
+			anim_player.advance(0.0)
 
 func notify(text: String) -> void:
 	notification_received.emit(text)

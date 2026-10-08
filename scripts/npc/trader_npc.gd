@@ -12,6 +12,8 @@ signal dialogue_opened(npc: Node)
 
 var _orig_y: float = 0.0
 var _anim_time: float = 0.0
+var is_trader: bool = true
+var is_npc: bool = true
 var starter_seeds_given: bool = false
 
 func _ready() -> void:

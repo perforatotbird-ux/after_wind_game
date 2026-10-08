@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://df7s6x1y3m8qa"]
+[gd_scene load_steps=9 format=3 uid="uid://df7s6x1y3m8qa"]
 
 [ext_resource type="Script" path="res://scripts/resources/resource_node.gd" id="1_res"]
 
@@ -27,6 +27,10 @@ roughness = 0.95
 [sub_resource type="BoxMesh" id="BoxMesh_rubble"]
 material = SubResource("StandardMaterial3D_rubble")
 size = Vector3(1.2, 0.15, 1.2)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_solid"]
+height = 1.4
+radius = 0.9
 
 [node name="RockNode" type="Area3D" node_paths=PackedStringArray("visual_node", "depleted_visual_node")]
 collision_layer = 8
@@ -67,3 +71,11 @@ visible = false
 [node name="Rubble" type="MeshInstance3D" parent="DepletedVisual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
 mesh = SubResource("BoxMesh_rubble")
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("CylinderShape3D_solid")

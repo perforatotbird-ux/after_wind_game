@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://c5v8m3k2q1w7r"]
+[gd_scene load_steps=9 format=3 uid="uid://c5v8m3k2q1w7r"]
 
 [ext_resource type="Script" path="res://scripts/resources/resource_node.gd" id="1_res"]
 
@@ -28,6 +28,10 @@ height = 1.6
 [sub_resource type="BoxMesh" id="BoxMesh_plate"]
 material = SubResource("StandardMaterial3D_rust_metal")
 size = Vector3(0.8, 0.06, 0.8)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_solid"]
+height = 1.2
+radius = 0.7
 
 [node name="ScrapNode" type="Area3D" node_paths=PackedStringArray("visual_node", "depleted_visual_node")]
 collision_layer = 8
@@ -69,3 +73,11 @@ visible = false
 [node name="Plate" type="MeshInstance3D" parent="DepletedVisual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, 0)
 mesh = SubResource("BoxMesh_plate")
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("CylinderShape3D_solid")

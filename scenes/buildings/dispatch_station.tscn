@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://dm9x4v1k7w2qa"]
+[gd_scene load_steps=9 format=3 uid="uid://dm9x4v1k7w2qa"]
 
 [ext_resource type="Script" path="res://scripts/economy/dispatch_station.gd" id="1_disp"]
 
@@ -31,6 +31,9 @@ roughness = 0.85
 material = SubResource("StandardMaterial3D_crate")
 size = Vector3(0.6, 0.6, 0.6)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_solid"]
+size = Vector3(1.6, 1.6, 1.2)
+
 [node name="DispatchStation" type="Area3D"]
 collision_layer = 8
 collision_mask = 0
@@ -54,3 +57,11 @@ mesh = SubResource("BoxMesh_platform")
 [node name="CargoCrate" type="MeshInstance3D" parent="Visual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 0.38, 0.8)
 mesh = SubResource("BoxMesh_crate")
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("BoxShape3D_solid")

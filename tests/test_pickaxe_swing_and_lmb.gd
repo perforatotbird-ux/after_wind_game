@@ -22,6 +22,45 @@ func _fail(reason: String) -> void:
 	print("❌ ТЕСТ ПРОВАЛЕН: " + reason)
 	quit(1)
 
+## Резолвер анимаций для старой (mine) и новой (Track_Pickaxe_Swing) моделей.
+func _resolve_swing_anim(ap: AnimationPlayer) -> String:
+	for c in ["mine", "Track_Pickaxe_Swing", "Track_Pickaxe_Swing_Heavy"]:
+		if ap.has_animation(c):
+			return c
+	return ""
+
+## Строгая конвенция in-hand меша (Quaternius Pickaxe_Bronze, нормализован):
+## рукоять вдоль Y, хват в origin, двуглавый ударник симметрично вдоль X.
+func _convention_quaternius(aabb: AABB) -> void:
+	var y_min = aabb.position.y
+	var y_max = aabb.position.y + aabb.size.y
+	var x_min = aabb.position.x
+	var x_max = aabb.position.x + aabb.size.x
+	print("  • Диапазон высоты кирки по вертикали Y (Godot UP): %.3f .. %.3f" % [y_min, y_max])
+	if aabb.size.y < 0.70:
+		_fail("Черенок кирки слишком короткий (длина %.3f, ожидалось >= 0.70)" % aabb.size.y)
+		return
+	if not (y_min < 0.0 and y_max > 0.0):
+		_fail("Хват (origin Y=0) должен лежать внутри черенка: %.3f .. %.3f" % [y_min, y_max])
+		return
+	if aabb.size.x < 0.40:
+		_fail("Ударник кирки слишком узкий по X (%.3f, ожидалось >= 0.40)" % aabb.size.x)
+		return
+	if abs(x_min + x_max) > 0.10:
+		_fail("Двуглавый ударник должен быть симметричен относительно черенка (X: %.3f .. %.3f)" % [x_min, x_max])
+		return
+	print("  • Положение подтверждено: черенок %.2f м вдоль Y, хват в origin, ударник симметричен по X (%.2f .. %.2f)!" % [aabb.size.y, x_min, x_max])
+
+## Встроенная кирка пакета Miner_Character_Package: проверяем только
+## разумные габариты (ручной инструмент, не гигантский и не точка).
+func _convention_package_pickaxe(aabb: AABB) -> void:
+	var longest: float = maxf(aabb.size.x, maxf(aabb.size.y, aabb.size.z))
+	print("  • Встроенная кирка пакета: габариты %s." % aabb.size)
+	if longest < 0.2 or longest > 3.0:
+		_fail("Подозрительный размер встроенной кирки: %s" % aabb.size)
+		return
+	print("  • Размер встроенной кирки в норме.")
+
 func _run_tests() -> void:
 	print("=================================================================")
 	print("⛏️ ЗАПУСК ТЕСТОВ: PICKAXE GRIP, TOP-TO-BOTTOM SWING & LMB MAPPING")
@@ -44,7 +83,10 @@ func _run_tests() -> void:
 		
 	var pickaxe_mesh = char_model.find_child("Equipped_Pickaxe", true, false) as MeshInstance3D
 	if not pickaxe_mesh:
-		_fail("Equipped_Pickaxe не найден в CharacterModel")
+		# Новая модель из Miner_Character_Package: кирка — узел "Pickaxe".
+		pickaxe_mesh = char_model.find_child("Pickaxe", true, false) as MeshInstance3D
+	if not pickaxe_mesh:
+		_fail("Equipped_Pickaxe (или Pickaxe) не найден в CharacterModel")
 		return
 		
 	# -------------------------------------------------------------
@@ -59,27 +101,10 @@ func _run_tests() -> void:
 	var aabb = mesh.get_aabb()
 	print("  • Размеры кирки AABB: min=%s, max=%s, size=%s" % [aabb.position, aabb.position + aabb.size, aabb.size])
 
-	# Конвенция in-hand меша (Quaternius Pickaxe_Bronze, нормализован):
-	# рукоять вдоль Y (в Blender Z -> в Godot Y), хват в origin (Y=0 внутри размаха),
-	# двуглавый ударник симметрично вдоль X, малая толщина по Z.
-	var y_min = aabb.position.y
-	var y_max = aabb.position.y + aabb.size.y
-	var x_min = aabb.position.x
-	var x_max = aabb.position.x + aabb.size.x
-	print("  • Диапазон высоты кирки по вертикали Y (Godot UP): %.3f .. %.3f" % [y_min, y_max])
-	if aabb.size.y < 0.70:
-		_fail("Черенок кирки слишком короткий (длина %.3f, ожидалось >= 0.70)" % aabb.size.y)
-		return
-	if not (y_min < 0.0 and y_max > 0.0):
-		_fail("Хват (origin Y=0) должен лежать внутри черенка: %.3f .. %.3f" % [y_min, y_max])
-		return
-	if aabb.size.x < 0.40:
-		_fail("Ударник кирки слишком узкий по X (%.3f, ожидалось >= 0.40)" % aabb.size.x)
-		return
-	if abs(x_min + x_max) > 0.10:
-		_fail("Двуглавый ударник должен быть симметричен относительно черенка (X: %.3f .. %.3f)" % [x_min, x_max])
-		return
-	print("  • Положение подтверждено: черенок %.2f м вдоль Y, хват в origin, ударник симметричен по X (%.2f .. %.2f)!" % [aabb.size.y, x_min, x_max])
+	if pickaxe_mesh.name == "Equipped_Pickaxe":
+		_convention_quaternius(aabb)
+	else:
+		_convention_package_pickaxe(aabb)
 
 	# -------------------------------------------------------------
 	# Проверка 2: Динамическая видимость (скрыта в idle/walk)
@@ -112,8 +137,8 @@ func _run_tests() -> void:
 	if not player.is_mining:
 		_fail("Клик ЛКМ должен переводить персонажа в состояние удара (is_mining = true)")
 		return
-	if player.current_anim != "mine":
-		_fail("Клик ЛКМ должен активировать анимацию 'mine', текущая: '%s'" % player.current_anim)
+	if player.current_anim != _resolve_swing_anim(player.anim_player):
+		_fail("Клик ЛКМ должен активировать анимацию удара, текущая: '%s'" % player.current_anim)
 		return
 	if not pickaxe_mesh.visible:
 		_fail("Кирка ДОЛЖНА стать видимой в момент нажатия кнопки удара!")
@@ -125,21 +150,22 @@ func _run_tests() -> void:
 	# -------------------------------------------------------------
 	print("\n--- Проверка 4: Анимация удара СВЕРХУ ВНИЗ (top-to-bottom chop) ---")
 	var anim_player = player.anim_player
-	if not anim_player or not anim_player.has_animation("mine"):
-		_fail("Анимация 'mine' отсутствует в AnimationPlayer")
+	var swing_name: String = _resolve_swing_anim(anim_player)
+	if swing_name == "":
+		_fail("Анимация удара ('mine' / 'Track_Pickaxe_Swing') отсутствует в AnimationPlayer")
 		return
 		
-	var mine_anim = anim_player.get_animation("mine")
-	print("  • Длина анимации mine: %.2f сек, число треков: %d" % [mine_anim.length, mine_anim.get_track_count()])
+	var mine_anim = anim_player.get_animation(swing_name)
+	print("  • Длина анимации удара '%s': %.2f сек, число треков: %d" % [swing_name, mine_anim.length, mine_anim.get_track_count()])
 	if mine_anim.get_track_count() < 5:
 		_fail("Недостаточно анимированных суставов в анимации удара (ожидалось >= 5)")
 		return
 		
-	# Ищем трек правого плеча или позвоночника
+	# Ищем трек правого плеча или позвоночника (кости .R старой модели / _R новой).
 	var found_arm_track: bool = false
 	for t_idx in range(mine_anim.get_track_count()):
 		var t_path = str(mine_anim.track_get_path(t_idx))
-		if ("UpperArm.R" in t_path or "Chest" in t_path or "Spine" in t_path) and mine_anim.track_get_type(t_idx) == Animation.TYPE_ROTATION_3D:
+		if ("UpperArm.R" in t_path or "UpperArm_R" in t_path or "Chest" in t_path or "Spine" in t_path) and mine_anim.track_get_type(t_idx) == Animation.TYPE_ROTATION_3D:
 			found_arm_track = true
 			var k_count = mine_anim.track_get_key_count(t_idx)
 			print("  • Трек вращения '%s' содержит %d ключевых кадров." % [t_path, k_count])

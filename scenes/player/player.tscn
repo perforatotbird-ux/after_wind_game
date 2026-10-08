@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/inventory/inventory.gd" id="2_inv"]
-[ext_resource type="PackedScene" path="res://scenes/player/character_model.tscn" id="3_char"]
+[ext_resource type="PackedScene" path="res://scenes/player/miner_package_model.tscn" id="3_char"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.35
@@ -27,7 +27,7 @@ shape = SubResource("CapsuleShape3D_player")
 [node name="Visuals" type="Node3D" parent="."]
 
 [node name="CharacterModel" parent="Visuals" instance=ExtResource("3_char")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)
+transform = Transform3D(-0.36, 0, 0, 0, 0.36, 0, 0, 0, -0.36, 0, 0, 0)
 
 [node name="InteractionDetector" type="Area3D" parent="."]
 collision_layer = 0

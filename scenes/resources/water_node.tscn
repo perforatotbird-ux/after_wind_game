@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://b2x7w1m8q4k3a"]
+[gd_scene load_steps=10 format=3 uid="uid://b2x7w1m8q4k3a"]
 
 [ext_resource type="Script" path="res://scripts/resources/resource_node.gd" id="1_res"]
 
@@ -37,6 +37,10 @@ material = SubResource("StandardMaterial3D_mud_bottom")
 top_radius = 0.95
 bottom_radius = 0.95
 height = 0.05
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_solid"]
+height = 0.9
+radius = 1.0
 
 [node name="WaterNode" type="Area3D" node_paths=PackedStringArray("visual_node", "depleted_visual_node")]
 collision_layer = 8
@@ -78,3 +82,11 @@ mesh = SubResource("CylinderMesh_rim")
 [node name="DryBottom" type="MeshInstance3D" parent="DepletedVisual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
 mesh = SubResource("CylinderMesh_bottom")
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("CylinderShape3D_solid")

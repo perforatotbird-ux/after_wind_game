@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://b7v8x2y1m4k9a"]
+[gd_scene load_steps=11 format=3 uid="uid://b7v8x2y1m4k9a"]
 
 [ext_resource type="Script" path="res://scripts/resources/resource_node.gd" id="1_res"]
 
@@ -40,6 +40,10 @@ top_radius = 0.3
 bottom_radius = 0.35
 height = 0.4
 
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_solid"]
+height = 2.2
+radius = 0.35
+
 [node name="TreeNode" type="Area3D" node_paths=PackedStringArray("visual_node", "depleted_visual_node")]
 collision_layer = 8
 collision_mask = 0
@@ -79,3 +83,11 @@ visible = false
 [node name="Stump" type="MeshInstance3D" parent="DepletedVisual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
 mesh = SubResource("CylinderMesh_stump")
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("CylinderShape3D_solid")

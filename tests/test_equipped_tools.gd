@@ -33,6 +33,20 @@ func _fail(reason: String) -> void:
 	print("ТЕСТ ПРОВАЛЕН: " + reason)
 	quit(1)
 
+## Резолвер анимаций: старая модель (dig/scoop) и новая из пакета
+## (Track_Pickaxe_Dig_Loop для копания и набора воды).
+func _resolve_tool_anim(ap: AnimationPlayer, logical: String) -> String:
+	var aliases: Dictionary = {
+		"dig": ["dig", "Track_Pickaxe_Dig_Loop", "Track_Pickaxe_Dig", "mine", "Track_Pickaxe_Swing"],
+		"scoop": ["scoop", "Track_Pickaxe_Dig_Loop", "Track_Pickaxe_Dig", "Track_Idle", "idle"],
+	}
+	if ap.has_animation(logical):
+		return logical
+	for c in aliases.get(logical, []):
+		if ap.has_animation(c):
+			return c
+	return ""
+
 func _assert_only_visible(player: Node, expected_type: String) -> void:
 	var nodes: Dictionary = player.equipped_tool_nodes
 	for tool_type in ["axe", "pickaxe", "shovel", "bucket"]:
@@ -61,10 +75,10 @@ func _run_tests() -> void:
 	if skeleton == null:
 		_fail("Skeleton3D не найден в Player/Visuals")
 		return
-	if skeleton.find_bone("ToolSocket.R") == -1:
-		_fail("Кость ToolSocket.R отсутствует в скелете")
+	if skeleton.find_bone("ToolSocket.R") == -1 and skeleton.find_bone("Pickaxe_Attachment_R") == -1 and skeleton.find_bone("Hand_R") == -1 and skeleton.find_bone("Hand.R") == -1:
+		_fail("Кость ToolSocket.R (или Hand_R/Pickaxe_Attachment_R новой модели) отсутствует в скелете")
 		return
-	print("  • Кость ToolSocket.R найдена.")
+	print("  • Кость ToolSocket.R (или сокет новой модели) найдена.")
 	if player.tool_socket == null or not is_instance_valid(player.tool_socket):
 		_fail("BoneAttachment3D сокет не создан (player.tool_socket)")
 		return
@@ -137,10 +151,11 @@ func _run_tests() -> void:
 
 	# 8. Анимация копания лопатой
 	print("\n--- Проверка 8: Анимация копания dig ---")
-	if not player.anim_player.has_animation("dig"):
-		_fail("Анимация 'dig' отсутствует в AnimationPlayer (модель фермера)")
+	var dig_name: String = _resolve_tool_anim(player.anim_player, "dig")
+	if dig_name == "":
+		_fail("Анимация копания ('dig' / 'Track_Pickaxe_Dig_Loop') отсутствует в AnimationPlayer")
 		return
-	print("  • Клип 'dig' найден (длина: %.2f сек)." % player.anim_player.get_animation("dig").length)
+	print("  • Клип копания '%s' найден (длина: %.2f сек)." % [dig_name, player.anim_player.get_animation(dig_name).length])
 	player.inventory.equip_tool("axe")
 	if not player.play_dig_animation():
 		_fail("play_dig_animation вернул false")
@@ -161,8 +176,9 @@ func _run_tests() -> void:
 
 	# 9. Анимация набора воды: поза, капли, полное ведро
 	print("\n--- Проверка 9: Набор воды scoop + капли + полное ведро ---")
-	if not player.anim_player.has_animation("scoop"):
-		_fail("Анимация 'scoop' отсутствует в AnimationPlayer (модель фермера)")
+	var scoop_name: String = _resolve_tool_anim(player.anim_player, "scoop")
+	if scoop_name == "":
+		_fail("Анимация набора воды ('scoop' / 'Track_Pickaxe_Dig_Loop') отсутствует в AnimationPlayer")
 		return
 	if player.bucket_full_mesh == null or not is_instance_valid(player.bucket_full_mesh):
 		_fail("Узел Equipped_BucketFull не создан (bucket_full_inhand)")

@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://df3k9x7w1m2qa"]
+[gd_scene load_steps=8 format=3 uid="uid://df3k9x7w1m2qa"]
 
 [ext_resource type="Script" path="res://scripts/resources/resource_node.gd" id="1_res"]
 
@@ -24,6 +24,10 @@ material = SubResource("StandardMaterial3D_flat_sand")
 top_radius = 1.0
 bottom_radius = 1.1
 height = 0.08
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_solid"]
+height = 0.7
+radius = 0.9
 
 [node name="SandNode" type="Area3D" node_paths=PackedStringArray("visual_node", "depleted_visual_node")]
 collision_layer = 8
@@ -56,3 +60,11 @@ visible = false
 [node name="FlatSand" type="MeshInstance3D" parent="DepletedVisual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, 0)
 mesh = SubResource("CylinderMesh_flat_sand")
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+shape = SubResource("CylinderShape3D_solid")

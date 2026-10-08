@@ -1,6 +1,7 @@
 extends SceneTree
 
 const PlayerScene = preload("res://scenes/player/player.tscn")
+const FarmerScene = preload("res://scenes/player/character_model.tscn")
 const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 
@@ -34,18 +35,13 @@ func _run_tests() -> void:
 		_fail("Узел Player не найден в корне дерева")
 		return
 	
-	# 1. Проверка структуры модели персонажа в Player.tscn
-	print("\n--- Проверка 1: Структура модели в Player.tscn ---")
-	var visuals = player.get_node_or_null("Visuals")
-	if not visuals:
-		_fail("Узел Visuals не найден в Player")
-		return
-	
-	var char_model = visuals.get_node_or_null("CharacterModel")
-	if not char_model:
-		_fail("Узел CharacterModel не найден в Player/Visuals")
-		return
-	print("  • CharacterModel успешно найден в Visuals.")
+	# 1. Проверка структуры модели фермера (файл character_model.tscn intact,
+	# сам игрок по умолчанию использует шахтёра из Miner_Character_Package).
+	print("\n--- Проверка 1: Структура модели фермера (character_model.tscn) ---")
+	var farmer_model = FarmerScene.instantiate()
+	root.add_child(farmer_model)
+	var visuals = farmer_model
+	var char_model = farmer_model
 	
 	var skeleton = char_model.find_child("Skeleton3D", true, false) as Skeleton3D
 	if not skeleton:
@@ -74,46 +70,54 @@ func _run_tests() -> void:
 		return
 	print("  • Farmer_Character (анатомическое тело, фланель, жилет, штаны с наколенниками, сапоги) обнаружен.")
 	
-	# 2. Проверка AnimationPlayer и запеченных анимаций
-	print("\n--- Проверка 2: AnimationPlayer и анимации реалистичного героя ---")
-	var anim_player = player.anim_player
+	# 2. Проверка AnimationPlayer и запеченных анимаций фермера
+	print("\n--- Проверка 2: AnimationPlayer и анимации фермера ---")
+	var anim_player = farmer_model.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if not anim_player:
-		_fail("anim_player не инициализирован в Player.gd")
+		_fail("AnimationPlayer не найден в character_model.tscn")
 		return
 	
-	var expected_anims = ["idle", "walk", "run", "mine"]
+	var expected_anims = ["idle", "walk", "run", "mine", "dig", "scoop"]
 	for a in expected_anims:
 		if not anim_player.has_animation(a):
-			_fail("Анимация '%s' отсутствует в AnimationPlayer" % a)
+			_fail("Анимация '%s' отсутствует в character_model.tscn" % a)
 			return
 		var anim = anim_player.get_animation(a)
 		print("  • Анимация '%s' найдена (длина: %.2f сек, треков: %d)" % [a, anim.length, anim.get_track_count()])
 	
-	# Проверка переключения анимаций через player.gd
+	# Переключение анимаций живого игрока идёт через алиасы на модель пакета.
 	player.play_animation("walk")
-	if player.current_anim != "walk":
-		_fail("Не удалось включить анимацию 'walk'")
+	if player.current_anim == "" or not player.anim_player.has_animation(player.current_anim):
+		_fail("Не удалось включить анимацию 'walk' на модели игрока")
 		return
-	print("  • Переключение на 'walk' успешно.")
+	print("  • Переключение на 'walk' успешно (клип: %s)." % player.current_anim)
 	
 	player.play_mining_animation()
-	if player.current_anim != "mine" or not player.is_mining:
+	if not player.is_mining or player.current_anim == "":
 		_fail("Не удалось активировать взмах инструментом (mining animation)")
 		return
-	print("  • Анимация удара 'mine' успешно запущена.")
+	print("  • Анимация удара успешно запущена (клип: %s)." % player.current_anim)
+	player.is_mining = false
 	
 	# 3. Проверка динамического отображения инструмента и шляпы:
 	# виден инструмент экипированного слота, а не всегда кирка
 	print("\n--- Проверка 3: Динамическое управление видимостью экипировки ---")
+	# 3. Проверка динамического отображения инструмента живого игрока
+	# (модель шахтёра из пакета; фермерская сцена выше проверена отдельно).
+	print("\n--- Проверка 3: Динамическое управление видимостью экипировки ---")
+	var player_pickaxe: Node3D = player.equipped_pickaxe_mesh
+	if player_pickaxe == null:
+		_fail("Узел кирки не найден у игрока (Equipped_Pickaxe/Pickaxe)")
+		return
 	player.inventory.equip_tool("pickaxe")
 	player.set_equipped_tool_visible(false)
-	if equipped_pickaxe.visible:
+	if player_pickaxe.visible:
 		_fail("Инструмент должен быть скрыт при вызове set_equipped_tool_visible(false)")
 		return
 	print("  • Инструмент корректно скрывается, когда убран.")
-	
+
 	player.set_equipped_tool_visible(true)
-	if not equipped_pickaxe.visible:
+	if not player_pickaxe.visible:
 		_fail("Инструмент должен быть видим при вызове set_equipped_tool_visible(true)")
 		return
 	print("  • Инструмент корректно отображается в руках героя.")
@@ -127,22 +131,20 @@ func _run_tests() -> void:
 	if not equipped_shovel.visible:
 		_fail("Лопата должна быть видима, когда экипирована лопата")
 		return
-	if equipped_pickaxe.visible:
+	if player_pickaxe.visible:
 		_fail("Кирка должна быть скрыта, когда экипирована лопата (раньше везде была кирка)")
 		return
 	print("  • Лопата корректно отображается в руках, кирка скрыта.")
-	
+
+	# Шляпа/каска: у фермера — Sun_Hat, у шахтёра пакета — шлем (Character_Helmet).
+	# set_hat_visible не должен падать при отсутствии Sun_Hat.
 	player.set_hat_visible(false)
-	if hat_mesh.visible:
-		_fail("Шляпа должна быть скрыта при вызове set_hat_visible(false)")
-		return
-	print("  • Шляпа корректно скрывается при программном вызове.")
-	
 	player.set_hat_visible(true)
-	if not hat_mesh.visible:
-		_fail("Шляпа должна быть видима при вызове set_hat_visible(true)")
+	var helmet = player.find_child("Character_Helmet", true, false)
+	if player.sun_hat_mesh == null and helmet == null:
+		_fail("Ни Sun_Hat, ни Character_Helmet не найдены у модели игрока")
 		return
-	print("  • Шляпа корректно отображается на голове героя.")
+	print("  • Головной убор модели игрока на месте.")
 	
 	# 4. Проверка спрайтов и иконок UI
 	print("\n--- Проверка 4: 2D Спрайты, портреты и иконки ---")

@@ -18,6 +18,7 @@ signal process_completed(recipe_id: String, outputs: Dictionary)
 @export var visual_node: Node3D
 
 var is_machine_running: bool = false
+var is_machine: bool = true
 var active_recipe: Dictionary = {}
 var process_timer: float = 0.0
 var process_duration: float = 1.0

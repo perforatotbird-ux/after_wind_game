@@ -25,6 +25,22 @@ func _fail(reason: String) -> void:
 	print("❌ ТЕСТ ПРОВАЛЕН: " + reason)
 	quit(1)
 
+## Алиасы анимаций: старая модель (idle/walk/run/mine) и новая из
+## Miner_Character_Package (Track_Idle/Walk/Run/Pickaxe_Swing).
+func _resolve_test_anim(ap: AnimationPlayer, logical: String) -> String:
+	var aliases: Dictionary = {
+		"idle": ["idle", "Track_Idle"],
+		"walk": ["walk", "Track_Walk"],
+		"run": ["run", "Track_Run"],
+		"mine": ["mine", "Track_Pickaxe_Swing", "Track_Pickaxe_Swing_Heavy"],
+	}
+	if ap.has_animation(logical):
+		return logical
+	for c in aliases.get(logical, []):
+		if ap.has_animation(c):
+			return c
+	return ""
+
 func _run_tests() -> void:
 	print("=================================================================")
 	print("⛏️ ЗАПУСК ТЕСТОВ: МОДЕЛЬ ШАХТЕРА, КИРКА, АНИМАЦИИ И СПРАЙТЫ")
@@ -61,7 +77,10 @@ func _run_tests() -> void:
 	
 	var equipped_pickaxe = miner_model.find_child("Equipped_Pickaxe", true, false) as MeshInstance3D
 	if not equipped_pickaxe:
-		_fail("Equipped_Pickaxe не найден внутри модели персонажа")
+		# Новая модель из Miner_Character_Package: кирка — узел "Pickaxe".
+		equipped_pickaxe = miner_model.find_child("Pickaxe", true, false) as MeshInstance3D
+	if not equipped_pickaxe:
+		_fail("Equipped_Pickaxe (или Pickaxe) не найден внутри модели персонажа")
 		return
 	print("  • Equipped_Pickaxe прикреплена к правой руке персонажа.")
 	
@@ -74,21 +93,22 @@ func _run_tests() -> void:
 	
 	var expected_anims = ["idle", "walk", "run", "mine"]
 	for a in expected_anims:
-		if not anim_player.has_animation(a):
+		var resolved: String = _resolve_test_anim(anim_player, a)
+		if resolved == "":
 			_fail("Анимация '%s' отсутствует в AnimationPlayer" % a)
 			return
-		var anim = anim_player.get_animation(a)
-		print("  • Анимация '%s' найдена (длина: %.2f сек, треков: %d)" % [a, anim.length, anim.get_track_count()])
+		var anim = anim_player.get_animation(resolved)
+		print("  • Анимация '%s' найдена (длина: %.2f сек, треков: %d)" % [resolved, anim.length, anim.get_track_count()])
 	
 	# Проверка переключения анимаций через player.gd
 	player.play_animation("walk")
-	if player.current_anim != "walk":
+	if player.current_anim != _resolve_test_anim(anim_player, "walk"):
 		_fail("Не удалось включить анимацию 'walk'")
 		return
 	print("  • Переключение на 'walk' успешно.")
 	
 	player.play_mining_animation()
-	if player.current_anim != "mine" or not player.is_mining:
+	if player.current_anim != _resolve_test_anim(anim_player, "mine") or not player.is_mining:
 		_fail("Не удалось активировать взмах киркой (mining animation)")
 		return
 	print("  • Анимация удара киркой 'mine' успешно запущена.")

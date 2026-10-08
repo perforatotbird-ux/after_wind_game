@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://c8m4p7k1y9q5e"]
+[gd_scene load_steps=13 format=3 uid="uid://c8m4p7k1y9q5e"]
 
 [ext_resource type="Script" path="res://scripts/crafting/production_machine.gd" id="1_smelt"]
 
@@ -42,6 +42,9 @@ emission_energy_multiplier = 4.0
 material = SubResource("StandardMaterial3D_fire")
 size = Vector3(0.6, 0.45, 0.15)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_solid"]
+size = Vector3(2.0, 1.8, 2.0)
+
 [node name="Smelter" type="Area3D" node_paths=PackedStringArray("visual_node")]
 collision_layer = 8
 collision_mask = 0
@@ -77,3 +80,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 1.4)
 light_color = Color(1, 0.6, 0.25, 1)
 light_energy = 1.6
 omni_range = 4.5
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("BoxShape3D_solid")
