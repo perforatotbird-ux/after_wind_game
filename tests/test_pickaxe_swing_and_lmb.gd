@@ -58,19 +58,28 @@ func _run_tests() -> void:
 		
 	var aabb = mesh.get_aabb()
 	print("  • Размеры кирки AABB: min=%s, max=%s, size=%s" % [aabb.position, aabb.position + aabb.size, aabb.size])
-	
-	# В Godot 3D вертикальная ось — это Y (в Blender Z -> в Godot Y)
-	# Черенок сверху (Y ~ 0.895), ударник снизу (Y ~ 0.24)
+
+	# Конвенция in-hand меша (Quaternius Pickaxe_Bronze, нормализован):
+	# рукоять вдоль Y (в Blender Z -> в Godot Y), хват в origin (Y=0 внутри размаха),
+	# двуглавый ударник симметрично вдоль X, малая толщина по Z.
 	var y_min = aabb.position.y
 	var y_max = aabb.position.y + aabb.size.y
+	var x_min = aabb.position.x
+	var x_max = aabb.position.x + aabb.size.x
 	print("  • Диапазон высоты кирки по вертикали Y (Godot UP): %.3f .. %.3f" % [y_min, y_max])
-	if y_min > 0.40:
-		_fail("Ударник кирки должен находиться внизу (Y <= 0.40), а y_min = %.3f" % y_min)
+	if aabb.size.y < 0.70:
+		_fail("Черенок кирки слишком короткий (длина %.3f, ожидалось >= 0.70)" % aabb.size.y)
 		return
-	if y_max < 0.80:
-		_fail("Черенок кирки должен доходить до руки персонажа (Y >= 0.80), а y_max = %.3f" % y_max)
+	if not (y_min < 0.0 and y_max > 0.0):
+		_fail("Хват (origin Y=0) должен лежать внутри черенка: %.3f .. %.3f" % [y_min, y_max])
 		return
-	print("  • Положение подтверждено: ударник находится ВНИЗУ (Y=%.2f), черенок ВВЕРХУ в ладони (Y=%.2f)!" % [y_min, y_max])
+	if aabb.size.x < 0.40:
+		_fail("Ударник кирки слишком узкий по X (%.3f, ожидалось >= 0.40)" % aabb.size.x)
+		return
+	if abs(x_min + x_max) > 0.10:
+		_fail("Двуглавый ударник должен быть симметричен относительно черенка (X: %.3f .. %.3f)" % [x_min, x_max])
+		return
+	print("  • Положение подтверждено: черенок %.2f м вдоль Y, хват в origin, ударник симметричен по X (%.2f .. %.2f)!" % [aabb.size.y, x_min, x_max])
 
 	# -------------------------------------------------------------
 	# Проверка 2: Динамическая видимость (скрыта в idle/walk)
@@ -91,6 +100,8 @@ func _run_tests() -> void:
 	# Проверка 3: Нажатие ЛКМ (LMB) вызывает удар киркой
 	# -------------------------------------------------------------
 	print("\n--- Проверка 3: Удар киркой по Левой Кнопке Мыши (LMB) ---")
+	# В руке виден инструмент экипированного слота: для удара киркой экипируем кирку
+	player.inventory.equip_tool("pickaxe")
 	var lmb_event = InputEventMouseButton.new()
 	lmb_event.button_index = MOUSE_BUTTON_LEFT
 	lmb_event.pressed = true

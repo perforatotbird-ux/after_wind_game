@@ -59,7 +59,7 @@ k:/After Wind/
 │   ├── npc/                      # Торговец Степан с фонарем
 │   ├── player/                   # Контроллер игрока + скелетные модели (Шахтёр, Фермер)
 │   ├── resources/                # Жилы дерева, камня, металлолома, глины, песка, воды
-│   ├── tools/                    # Автономные модели инструментов (кирка)
+│   ├── tools/                    # Автономные и in-hand модели инструментов (кирка, топор, лопата, ведро)
 │   ├── ui/                       # Головной HUD, инвентарь, окна крафта, пауза, триумф
 │   └── world/                    # Основной мир двора, погодный контроллер, шаблон интерактива
 │
@@ -76,7 +76,7 @@ k:/After Wind/
 │   ├── player/                   # Контроллер игрока и параметры выживания
 │   └── world/                    # DayNightCycle, WeatherManager
 │
-└── tests/                        # 16 автотестов (11 этапных + 5 фичевых)
+└── tests/                        # 17 автотестов (11 этапных + 6 фичевых)
     ├── test_stage2_time_and_fatigue.gd    # Этап 2: сутки, освещение, усталость, сон
     ├── test_stage4_thermal_processing.gd  # Этап 4: печь, обжиг, стекло, слитки, сбыт
     ├── test_stage5_buildings.gd           # Этап 5: восстановление зданий
@@ -92,7 +92,8 @@ k:/After Wind/
     ├── test_miner_and_pickaxe.gd          # Модель Шахтёра, кирка, анимации, спрайты
     ├── test_pickaxe_swing_and_lmb.gd      # Ориентация кирки, замах, ЛКМ
     ├── test_modern_strike_animation.gd    # Кинематика удара сверху вниз
-    └── test_stardew_character.gd          # Реалистичная модель Фермера
+    ├── test_stardew_character.gd          # Реалистичная модель Фермера
+    └── test_equipped_tools.gd             # Динамическая экипировка: топор/кирка/лопата/ведро в руке по активному слоту
 ```
 
 ---
@@ -142,9 +143,11 @@ k:/After Wind/
 
 ### 4.8. Персонаж: 3D-модели, анимации и камера (в работе, не влито в `main`)
 - **Модели**: скелетные модели Шахтёра (`scenes/player/miner_model.tscn`) и Фермера (`scenes/player/character_model.tscn`), импортированы из Blender (`.glb`), подключены в узле `Player/Visuals/CharacterModel`.
+- **Модели инструментов**: готовые CC0-ассеты из интернета (не процедурная генерация) — топор/ведро/кирка: Quaternius (Fantasy Props MegaKit + Medieval Weapons Pack, Godot Asset Store / Google Drive, CC0), лопата: Kenney Graveyard Kit 5.0 (kenney.nl, CC0). Пайплайн: `tools/normalize_library_tools.py` (real-world масштаб, хват в origin, рукоять +Z, текстуры ужаты до 512) — автономные сцены `scenes/tools/{axe,pickaxe,shovel,bucket}_model.tscn` + in-hand варианты `scenes/tools/*_inhand.tscn` (+ `bucket_full_inhand.tscn` с зеркалом воды) + иконки `assets/tools/*.png`, привязанные в `ItemDB` (включая Lv.2). Встроенная кирка в моделях персонажей заменена на Quaternius Pickaxe_Bronze (`tools/swap_pickaxe_mesh.py`, кость-родитель ToolSocket.R). Позы в руке проверены рендерами на риге фермера (`tools/preview_dig_scoop.py`, `outputs/dig_scoop_preview/`).
 - **Анимации** (`AnimationPlayer`): `idle`, `walk`, `run`, `mine` — замах инструментом сверху вниз с просадкой таза и работой корпуса/ног; длина `mine` ≤ 1.1 с.
 - **Удар по ЛКМ**: новый экшен ввода `strike` (ЛКМ) в `project.godot`; во время замаха скорость передвижения снижается до 35%.
-- **Динамическая экипировка**: `set_equipped_tool_visible(bool)` (кирка видна только в момент удара), `set_hat_visible(bool)`.
+- **Динамическая экипировка**: `player.gd` переиспользует `BoneAttachment3D` на кости `ToolSocket.R` и показывает инструмент экипированного слота (`equipped_tool_nodes`: axe/pickaxe/shovel/bucket по `tool_type` из `ItemDB`, включая Lv.2-апгрейды); `set_equipped_tool_visible(bool)`; ведро носят в руке постоянно (у него нет замаха), после набора воды 5 сек видна полная версия (`Equipped_BucketFull`); `set_hat_visible(bool)`.
+- **Анимации dig/scoop**: настоящий мокап Quaternius Universal Animation Library v1 (CC0, Godot Asset Store, прямое скачивание без логина): `dig` ← Fixing_Kneeling кадры 30–90 (наклон + работа на коленях, ~2.0 с, играется ×1.45), `scoop` ← PickUp_Table кадры 1–20 (наклон + подъём, 0.65 с). Ретаргет `tools/retarget_ual.py` (rotation-only копирование мировых кватернионов + дельта таза, стороны сшиты с учётом зеркальности ригов, ноги invariant, LINEAR-ключи; доворот сокета в dig правит клинок лопаты в грунт): `dig` проигрывается при вскопке (`till_soil` → `play_dig_animation`, в руке принудительно лопата); `scoop` — при наборе воды (`WaterReservoir`, пруд `resource_node` с `required_tool == "bucket"` → `play_scoop_animation`), капли `ScoopDroplets` на 60% клипа, полное ведро на 85%. Превью: `outputs/ual_retarget/`. UAL2 (TREECHOPPING/WATERING) с itch.io скриптами не забирается — если понадобится, скачать вручную и ретаргечить тем же скриптом.
 - **Орбитальная камера** (`scripts/world/isometric_camera.gd`): ПКМ-вращение (захват курсора), зум колесом (3.5–26 м), clamp наклона, авто-сброс захвата при потере фокуса; движение WASD — относительно ракурса камеры.
 - **2D-графика**: портреты и изометрия-спрайты классов (`assets/sprites/`), иконки инструментов (`assets/tools/`).
 
@@ -166,7 +169,7 @@ k:/After Wind/
 
 ## 6. Запуск тестов и проверка регрессий
 
-Проект покрыт **16** автономными тестами: **11 этапных** регрессионных (`test_stage2…13`) и **5 фичевых** (модели персонажа, анимация удара, орбитальная камера).
+Проект покрыт **17** автономными тестами: **11 этапных** регрессионных (`test_stage2…13`) и **6 фичевых** (модели персонажа, анимация удара, орбитальная камера, динамическая экипировка инструментов).
 ```bash
 # Запуск через start.bat:
 start.bat --test

@@ -93,8 +93,10 @@ func _run_tests() -> void:
 		return
 	print("  • Анимация удара киркой 'mine' успешно запущена.")
 	
-	# 3. Проверка динамического отображения кирки в руках
-	print("\n--- Проверка 3: Динамическое снаряжение кирки в руках ---")
+	# 3. Проверка динамического отображения инструмента в руках:
+	# виден инструмент экипированного слота, а не всегда кирка
+	print("\n--- Проверка 3: Динамическое снаряжение инструмента в руках ---")
+	player.inventory.equip_tool("pickaxe")
 	player.set_equipped_tool_visible(false)
 	if equipped_pickaxe.visible:
 		_fail("Кирка должна быть скрыта при вызове set_equipped_tool_visible(false)")
@@ -106,6 +108,20 @@ func _run_tests() -> void:
 		_fail("Кирка должна быть видима при вызове set_equipped_tool_visible(true)")
 		return
 	print("  • Кирка корректно отображается в руках шахтера.")
+
+	player.inventory.equip_tool("axe")
+	player.set_equipped_tool_visible(true)
+	var equipped_axe: Node3D = player.equipped_tool_nodes.get("axe")
+	if equipped_axe == null:
+		_fail("Узел Equipped_Axe не создан в ToolSocket (player.equipped_tool_nodes)")
+		return
+	if not equipped_axe.visible:
+		_fail("Топор должен быть видим, когда экипирован топор")
+		return
+	if equipped_pickaxe.visible:
+		_fail("Кирка должна быть скрыта, когда экипирован топор (раньше везде была кирка)")
+		return
+	print("  • Топор корректно отображается в руках, кирка скрыта.")
 	
 	# 4. Проверка отдельной модели кирки
 	print("\n--- Проверка 4: Автономная модель кирки (scenes/tools/pickaxe_model.tscn) ---")

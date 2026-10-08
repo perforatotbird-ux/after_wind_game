@@ -223,6 +223,8 @@ func till_soil(player: Node) -> bool:
 	AudioManager.play("till_soil")
 	_update_visuals()
 	_play_dig_bounce()
+	if player and player.has_method("play_dig_animation"):
+		player.play_dig_animation(self)
 	
 	if player and player.has_method("notify"):
 		var shovel_info: String = " (легкая работа железной лопатой -50% сил)" if shovel_level >= 2 else ""

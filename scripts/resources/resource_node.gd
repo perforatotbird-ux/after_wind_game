@@ -154,6 +154,9 @@ func _on_interacted(player: Node) -> void:
 		]
 		if player.has_method("notify"):
 			player.notify(msg_hit)
+		# Набор воды ведром из пруда: персонаж выставляет ведро, капли, полное ведро.
+		if required_tool == "bucket" and player.has_method("play_scoop_animation"):
+			player.play_scoop_animation(global_position)
 
 func _play_hit_effect() -> void:
 	if not visual_node:

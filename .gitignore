@@ -27,3 +27,7 @@ desktop.ini
 .workbuddy-ai/
 outputs/
 .agents/
+
+# Full-project archive dumps (built locally, never committed)
+"After Wind.zip"
+*.zip

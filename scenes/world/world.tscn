@@ -1,40 +1,38 @@
-[gd_scene load_steps=31 format=3 uid="uid://c53v4j8v7x2ka"]
+[gd_scene format=3 uid="uid://c53v4j8v7x2ka"]
 
-[ext_resource type="Script" path="res://scripts/world/world.gd" id="1_world"]
-[ext_resource type="Script" path="res://scripts/world/isometric_camera.gd" id="2_cam"]
-[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_player"]
-[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="4_hud"]
-[ext_resource type="PackedScene" path="res://scenes/world/interactable_object.tscn" id="5_obj"]
-[ext_resource type="PackedScene" path="res://scenes/resources/tree_node.tscn" id="6_tree"]
-[ext_resource type="PackedScene" path="res://scenes/resources/rock_node.tscn" id="7_rock"]
-[ext_resource type="PackedScene" path="res://scenes/resources/clay_node.tscn" id="8_clay"]
-[ext_resource type="PackedScene" path="res://scenes/resources/sand_node.tscn" id="9_sand"]
-[ext_resource type="PackedScene" path="res://scenes/resources/water_node.tscn" id="10_water"]
-[ext_resource type="PackedScene" path="res://scenes/machines/crusher.tscn" id="11_crusher"]
-[ext_resource type="PackedScene" path="res://scenes/machines/workbench.tscn" id="12_bench"]
-[ext_resource type="PackedScene" path="res://scenes/buildings/dispatch_station.tscn" id="13_station"]
-[ext_resource type="PackedScene" path="res://scenes/buildings/repairable_house.tscn" id="14_house"]
-[ext_resource type="PackedScene" path="res://scenes/buildings/repairable_storage.tscn" id="15_storage"]
-[ext_resource type="Script" path="res://scripts/world/day_night_cycle.gd" id="16_cycle"]
-[ext_resource type="PackedScene" path="res://scenes/machines/smelter.tscn" id="17_smelter"]
-[ext_resource type="PackedScene" path="res://scenes/resources/scrap_node.tscn" id="18_scrap"]
-[ext_resource type="PackedScene" path="res://scenes/machines/water_filter.tscn" id="19_filter"]
-[ext_resource type="PackedScene" path="res://scenes/buildings/water_reservoir.tscn" id="20_reservoir"]
-[ext_resource type="PackedScene" path="res://scenes/npc/trader_npc.tscn" id="21_npc"]
-[ext_resource type="PackedScene" path="res://scenes/buildings/contract_board.tscn" id="22_board"]
-[ext_resource type="PackedScene" path="res://scenes/farming/farmland_plot.tscn" id="23_farmland"]
-[ext_resource type="PackedScene" path="res://scenes/world/weather_manager.tscn" id="24_weather"]
-[ext_resource type="Script" path="res://scripts/energy/power_grid.gd" id="25_grid"]
-[ext_resource type="PackedScene" path="res://scenes/energy/wind_turbine.tscn" id="26_turbine"]
-[ext_resource type="PackedScene" path="res://scenes/energy/battery_bank.tscn" id="27_battery"]
-[ext_resource type="PackedScene" path="res://scenes/energy/street_lamp.tscn" id="28_lamp"]
+[ext_resource type="Script" uid="uid://c0wrm0u16jy2i" path="res://scripts/world/world.gd" id="1_world"]
+[ext_resource type="Script" uid="uid://c37awdjfio1l8" path="res://scripts/world/isometric_camera.gd" id="2_cam"]
+[ext_resource type="PackedScene" uid="uid://c6v2n7j5w1q8p" path="res://scenes/player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" uid="uid://b0yqv2w6km7xr" path="res://scenes/ui/hud.tscn" id="4_hud"]
+[ext_resource type="PackedScene" uid="uid://b7v8x2y1m4laa" path="res://scenes/resources/tree_node.tscn" id="6_tree"]
+[ext_resource type="PackedScene" uid="uid://df7s6x1y3m8qa" path="res://scenes/resources/rock_node.tscn" id="7_rock"]
+[ext_resource type="PackedScene" uid="uid://c8v4m2k7xax1a" path="res://scenes/resources/clay_node.tscn" id="8_clay"]
+[ext_resource type="PackedScene" uid="uid://df3lax7w1m2qa" path="res://scenes/resources/sand_node.tscn" id="9_sand"]
+[ext_resource type="PackedScene" uid="uid://b2x7w1m8q4k3a" path="res://scenes/resources/water_node.tscn" id="10_water"]
+[ext_resource type="PackedScene" uid="uid://dm4k8v2y1yaqa" path="res://scenes/machines/crusher.tscn" id="11_crusher"]
+[ext_resource type="PackedScene" uid="uid://c7x2v1m4k8raa" path="res://scenes/machines/workbench.tscn" id="12_bench"]
+[ext_resource type="PackedScene" uid="uid://dnax4v1k7w2qa" path="res://scenes/buildings/dispatch_station.tscn" id="13_station"]
+[ext_resource type="PackedScene" uid="uid://dp7gq8v4j3n1b" path="res://scenes/buildings/repairable_house.tscn" id="14_house"]
+[ext_resource type="PackedScene" uid="uid://b7v8k1m2p4q6c" path="res://scenes/buildings/repairable_storage.tscn" id="15_storage"]
+[ext_resource type="Script" uid="uid://cowd2nkle7e2o" path="res://scripts/world/day_night_cycle.gd" id="16_cycle"]
+[ext_resource type="PackedScene" uid="uid://c8m4p7k10aq5e" path="res://scenes/machines/smelter.tscn" id="17_smelter"]
+[ext_resource type="PackedScene" uid="uid://c5v8m3k2q1w7r" path="res://scenes/resources/scrap_node.tscn" id="18_scrap"]
+[ext_resource type="PackedScene" uid="uid://c7xaq4f8e1k2m" path="res://scenes/machines/water_filter.tscn" id="19_filter"]
+[ext_resource type="PackedScene" uid="uid://b6q1x7w2oam3e" path="res://scenes/buildings/water_reservoir.tscn" id="20_reservoir"]
+[ext_resource type="PackedScene" uid="uid://cb5q8w2y4naka" path="res://scenes/npc/trader_npc.tscn" id="21_npc"]
+[ext_resource type="PackedScene" uid="uid://df7x2y4m1laqb" path="res://scenes/buildings/contract_board.tscn" id="22_board"]
+[ext_resource type="PackedScene" uid="uid://cx82mflk5780a" path="res://scenes/farming/farmland_plot.tscn" id="23_farmland"]
+[ext_resource type="PackedScene" uid="uid://dkn5w3q76735a" path="res://scenes/world/weather_manager.tscn" id="24_weather"]
+[ext_resource type="Script" uid="uid://ci63n60hajbw7" path="res://scripts/energy/power_grid.gd" id="25_grid"]
+[ext_resource type="PackedScene" uid="uid://b7v12kkag54da" path="res://scenes/energy/wind_turbine.tscn" id="26_turbine"]
+[ext_resource type="PackedScene" uid="uid://c62kpx8m523ya" path="res://scenes/energy/battery_bank.tscn" id="27_battery"]
+[ext_resource type="PackedScene" uid="uid://dm20bkl521ya" path="res://scenes/energy/street_lamp.tscn" id="28_lamp"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.36, 0.54, 0.75, 1)
 sky_horizon_color = Color(0.65, 0.7, 0.75, 1)
 ground_bottom_color = Color(0.2, 0.18, 0.15, 1)
 ground_horizon_color = Color(0.5, 0.48, 0.45, 1)
-sun_angle_max = 30.0
 
 [sub_resource type="Sky" id="Sky_sky"]
 sky_material = SubResource("ProceduralSkyMaterial_sky")
@@ -66,151 +64,141 @@ roughness = 0.9
 material = SubResource("StandardMaterial3D_dirt")
 size = Vector3(22, 0.15, 16)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_house"]
-albedo_color = Color(0.48, 0.36, 0.26, 1)
-roughness = 0.85
-
-[sub_resource type="BoxMesh" id="BoxMesh_house"]
-material = SubResource("StandardMaterial3D_house")
-size = Vector3(5, 3.2, 4)
-
-[node name="World" type="Node3D"]
+[node name="World" type="Node3D" unique_id=885266309]
 script = ExtResource("1_world")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=14352983]
 environment = SubResource("Environment_world")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1176431530]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 18, 0)
 light_color = Color(0.98, 0.94, 0.88, 1)
 light_energy = 1.2
 shadow_enabled = true
 
-[node name="DayNightCycle" type="Node" parent="."]
+[node name="DayNightCycle" type="Node" parent="." unique_id=674242811]
 script = ExtResource("16_cycle")
 
-[node name="WeatherManager" parent="." instance=ExtResource("24_weather")]
+[node name="WeatherManager" parent="." unique_id=147006761 instance=ExtResource("24_weather")]
 
-[node name="PowerGrid" type="Node" parent="." groups=["power_grid"]]
+[node name="PowerGrid" type="Node" parent="." unique_id=270830116 groups=["power_grid"]]
 script = ExtResource("25_grid")
 
-[node name="Ground" type="StaticBody3D" parent="."]
+[node name="Ground" type="StaticBody3D" parent="." unique_id=2053127971]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
-collision_layer = 1
 collision_mask = 0
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground" unique_id=1162914313]
 shape = SubResource("BoxShape3D_ground")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground" unique_id=1200031459]
 mesh = SubResource("BoxMesh_ground")
 
-[node name="DirtYard" type="MeshInstance3D" parent="."]
+[node name="DirtYard" type="MeshInstance3D" parent="." unique_id=464614225]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, -1)
 mesh = SubResource("BoxMesh_dirt")
 
-[node name="Player" parent="." instance=ExtResource("3_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+[node name="Player" parent="." unique_id=412396496 instance=ExtResource("3_player")]
 
-[node name="IsometricCamera" type="Camera3D" parent="."]
+[node name="IsometricCamera" type="Camera3D" parent="." unique_id=318722680]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 11, 10)
 current = true
 fov = 56.0
 script = ExtResource("2_cam")
 target_node = NodePath("../Player")
 
-[node name="HUD" parent="." instance=ExtResource("4_hud")]
+[node name="HUD" parent="." unique_id=620748309 instance=ExtResource("4_hud")]
 
-[node name="Props" type="Node3D" parent="."]
+[node name="Props" type="Node3D" parent="." unique_id=1497961561]
 
-[node name="RepairableHouse" parent="Props" instance=ExtResource("14_house")]
+[node name="RepairableHouse" parent="Props" unique_id=1518916102 instance=ExtResource("14_house")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2, 0, -5.5)
 
-[node name="RepairableStorage" parent="Props" instance=ExtResource("15_storage")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0, -7.0)
+[node name="RepairableStorage" parent="Props" unique_id=1068845650 instance=ExtResource("15_storage")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0, -7)
 
-[node name="StoneCrusher" parent="Props" instance=ExtResource("11_crusher")]
+[node name="StoneCrusher" parent="Props" unique_id=1787148247 instance=ExtResource("11_crusher")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 0, -2.5)
 
-[node name="Workbench" parent="Props" instance=ExtResource("12_bench")]
+[node name="Workbench" parent="Props" unique_id=421908700 instance=ExtResource("12_bench")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 0, -2.5)
 
-[node name="Smelter" parent="Props" instance=ExtResource("17_smelter")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0, -2.5)
+[node name="Smelter" parent="Props" unique_id=615457270 instance=ExtResource("17_smelter")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.5)
 
-[node name="DispatchStation" parent="Props" instance=ExtResource("13_station")]
+[node name="DispatchStation" parent="Props" unique_id=2079646939 instance=ExtResource("13_station")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0, -4.5)
 
-[node name="WaterFilter" parent="Props" instance=ExtResource("19_filter")]
+[node name="WaterFilter" parent="Props" unique_id=1312238489 instance=ExtResource("19_filter")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8, 0, 1.2)
 
-[node name="WaterReservoir" parent="Props" instance=ExtResource("20_reservoir")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 0, 3.8)
+[node name="WaterReservoir" parent="Props" unique_id=1352104916 instance=ExtResource("20_reservoir")]
+transform = Transform3D(0.9993801, -0.035205834, 0, 0.035205834, 0.9993801, 0, 0, 0, 1, -1.8, 0, 3.8)
 
-[node name="TraderNPC" parent="Props" instance=ExtResource("21_npc")]
+[node name="TraderNPC" parent="Props" unique_id=1384456242 instance=ExtResource("21_npc")]
 transform = Transform3D(0.866025, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866025, 7.2, 0, -3.2)
 
-[node name="ContractBoard" parent="Props" instance=ExtResource("22_board")]
-transform = Transform3D(0.965926, 0, -0.258819, 0, 1, 0, 0.258819, 0, 0.965926, 5.0, 0, -2.0)
+[node name="ContractBoard" parent="Props" unique_id=485017386 instance=ExtResource("22_board")]
+transform = Transform3D(0.965926, 0, -0.258819, 0, 1, 0, 0.258819, 0, 0.965926, 5, 0, -2)
 
-[node name="FarmlandPlot1" parent="Props" instance=ExtResource("23_farmland")]
+[node name="FarmlandPlot1" parent="Props" unique_id=2066015928 instance=ExtResource("23_farmland")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.6, 0, 0.8)
 
-[node name="FarmlandPlot2" parent="Props" instance=ExtResource("23_farmland")]
+[node name="FarmlandPlot2" parent="Props" unique_id=1473434389 instance=ExtResource("23_farmland")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.2, 0, 0.8)
 
-[node name="WindTurbine" parent="Props" instance=ExtResource("26_turbine")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 0, -8.0)
+[node name="WindTurbine" parent="Props" unique_id=1078612388 instance=ExtResource("26_turbine")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 0, -8)
 
-[node name="BatteryBank" parent="Props" instance=ExtResource("27_battery")]
+[node name="BatteryBank" parent="Props" unique_id=1251654109 instance=ExtResource("27_battery")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.8, 0, -6.5)
 
-[node name="StreetLamp1" parent="Props" instance=ExtResource("28_lamp")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2, 0, -1.0)
+[node name="StreetLamp1" parent="Props" unique_id=998312351 instance=ExtResource("28_lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2, 0, -1)
 
-[node name="StreetLamp2" parent="Props" instance=ExtResource("28_lamp")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0, 0, 2.5)
+[node name="StreetLamp2" parent="Props" unique_id=831666013 instance=ExtResource("28_lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, 2.5)
 
-[node name="Resources" type="Node3D" parent="."]
+[node name="Resources" type="Node3D" parent="." unique_id=1006483689]
 
-[node name="ScrapHeap1" parent="Resources" instance=ExtResource("18_scrap")]
+[node name="ScrapHeap1" parent="Resources" unique_id=1986872257 instance=ExtResource("18_scrap")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0, 5.5)
 
-[node name="ScrapHeap2" parent="Resources" instance=ExtResource("18_scrap")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -2.5, 0, 4.0)
+[node name="ScrapHeap2" parent="Resources" unique_id=1939189372 instance=ExtResource("18_scrap")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -2.5, 0, 4)
 
-[node name="Tree1" parent="Resources" instance=ExtResource("6_tree")]
+[node name="Tree1" parent="Resources" unique_id=1730841030 instance=ExtResource("6_tree")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0, 3.2)
 
-[node name="Tree2" parent="Resources" instance=ExtResource("6_tree")]
-transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, -10.0, 0, 1.5)
+[node name="Tree2" parent="Resources" unique_id=72950527 instance=ExtResource("6_tree")]
+transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, -10, 0, 1.5)
 
-[node name="Tree3" parent="Resources" instance=ExtResource("6_tree")]
-transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, -6.0, 0, 7.5)
+[node name="Tree3" parent="Resources" unique_id=675825590 instance=ExtResource("6_tree")]
+transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, -6, 0, 7.5)
 
-[node name="Tree4" parent="Resources" instance=ExtResource("6_tree")]
-transform = Transform3D(1.05, 0, 0, 0, 1.05, 0, 0, 0, 1.05, -3.2, 0, 6.0)
+[node name="Tree4" parent="Resources" unique_id=1848285313 instance=ExtResource("6_tree")]
+transform = Transform3D(1.05, 0, 0, 0, 1.05, 0, 0, 0, 1.05, -3.2, 0, 6)
 
-[node name="Rock1" parent="Resources" instance=ExtResource("7_rock")]
+[node name="Rock1" parent="Resources" unique_id=1391073464 instance=ExtResource("7_rock")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.2, 0, 2.5)
 
-[node name="Rock2" parent="Resources" instance=ExtResource("7_rock")]
-transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 8.5, 0, 5.0)
+[node name="Rock2" parent="Resources" unique_id=1051466990 instance=ExtResource("7_rock")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 8.5, 0, 5)
 
-[node name="Rock3" parent="Resources" instance=ExtResource("7_rock")]
-transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, 7.0, 0, 8.2)
+[node name="Rock3" parent="Resources" unique_id=1350360747 instance=ExtResource("7_rock")]
+transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, 7, 0, 8.2)
 
-[node name="Clay1" parent="Resources" instance=ExtResource("8_clay")]
+[node name="Clay1" parent="Resources" unique_id=1598095560 instance=ExtResource("8_clay")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0, 6.8)
 
-[node name="Clay2" parent="Resources" instance=ExtResource("8_clay")]
+[node name="Clay2" parent="Resources" unique_id=213549718 instance=ExtResource("8_clay")]
 transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 1.2, 0, 9.2)
 
-[node name="Sand1" parent="Resources" instance=ExtResource("9_sand")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0, 9.0)
+[node name="Sand1" parent="Resources" unique_id=1576772670 instance=ExtResource("9_sand")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0, 9)
 
-[node name="Sand2" parent="Resources" instance=ExtResource("9_sand")]
-transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, -4.0, 0, 11.0)
+[node name="Sand2" parent="Resources" unique_id=2075794033 instance=ExtResource("9_sand")]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, -4, 0, 11)
 
-[node name="WaterWell" parent="Resources" instance=ExtResource("10_water")]
+[node name="WaterWell" parent="Resources" unique_id=1404619995 instance=ExtResource("10_water")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0, 3.8)

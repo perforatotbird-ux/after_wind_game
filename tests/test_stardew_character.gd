@@ -102,8 +102,10 @@ func _run_tests() -> void:
 		return
 	print("  • Анимация удара 'mine' успешно запущена.")
 	
-	# 3. Проверка динамического отображения инструмента и шляпы
+	# 3. Проверка динамического отображения инструмента и шляпы:
+	# виден инструмент экипированного слота, а не всегда кирка
 	print("\n--- Проверка 3: Динамическое управление видимостью экипировки ---")
+	player.inventory.equip_tool("pickaxe")
 	player.set_equipped_tool_visible(false)
 	if equipped_pickaxe.visible:
 		_fail("Инструмент должен быть скрыт при вызове set_equipped_tool_visible(false)")
@@ -115,6 +117,20 @@ func _run_tests() -> void:
 		_fail("Инструмент должен быть видим при вызове set_equipped_tool_visible(true)")
 		return
 	print("  • Инструмент корректно отображается в руках героя.")
+
+	player.inventory.equip_tool("shovel")
+	player.set_equipped_tool_visible(true)
+	var equipped_shovel: Node3D = player.equipped_tool_nodes.get("shovel")
+	if equipped_shovel == null:
+		_fail("Узел Equipped_Shovel не создан в ToolSocket (player.equipped_tool_nodes)")
+		return
+	if not equipped_shovel.visible:
+		_fail("Лопата должна быть видима, когда экипирована лопата")
+		return
+	if equipped_pickaxe.visible:
+		_fail("Кирка должна быть скрыта, когда экипирована лопата (раньше везде была кирка)")
+		return
+	print("  • Лопата корректно отображается в руках, кирка скрыта.")
 	
 	player.set_hat_visible(false)
 	if hat_mesh.visible:

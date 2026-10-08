@@ -48,6 +48,8 @@ func _on_interacted(player: Node) -> void:
 				current_water -= amount_to_draw
 				inv.add_item("clean_water", amount_to_draw)
 				water_level_changed.emit(current_water, max_capacity)
+				if player.has_method("play_scoop_animation"):
+					player.play_scoop_animation(global_position)
 				if player.has_method("notify"):
 					player.notify("💧 Вы набрали %d л чистой воды в рюкзак (Остаток: %d/%d л)." % [amount_to_draw, current_water, max_capacity])
 				return

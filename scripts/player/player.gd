@@ -55,6 +55,29 @@ var current_interactable: Area3D = null
 var anim_player: AnimationPlayer = null
 var equipped_pickaxe_mesh: Node3D = null
 var sun_hat_mesh: Node3D = null
+# Динамическая экипировка: инструмент в руке соответствует экипированному слоту.
+# Ключи словаря — tool_type из ItemDB ("axe", "pickaxe", "shovel", "bucket").
+var tool_socket: BoneAttachment3D = null
+var equipped_tool_nodes: Dictionary = {}
+# Полное ведро (показывается после набора воды). Отдельный узел, не тип.
+var bucket_full_mesh: Node3D = null
+var bucket_filled: bool = false
+var _bucket_full_timer: float = 0.0
+# Копание лопатой (анимация dig) и набор воды (анимация scoop + капли).
+var is_digging: bool = false
+var _dig_elapsed: float = 0.0
+var _dig_duration: float = 1.1
+var is_scooping: bool = false
+var _scoop_elapsed: float = 0.0
+var _scoop_duration: float = 1.2
+var _scoop_from: Vector3 = Vector3.ZERO
+var _scoop_droplets_done: bool = false
+var _scoop_filled_done: bool = false
+
+const AxeInHandScene = preload("res://scenes/tools/axe_inhand.tscn")
+const ShovelInHandScene = preload("res://scenes/tools/shovel_inhand.tscn")
+const BucketInHandScene = preload("res://scenes/tools/bucket_inhand.tscn")
+const BucketFullInHandScene = preload("res://scenes/tools/bucket_full_inhand.tscn")
 var current_anim: String = ""
 var is_mining: bool = false
 var _strike_elapsed: float = 0.0
@@ -85,9 +108,8 @@ func _ready() -> void:
 	anim_player = find_child("AnimationPlayer", true, false)
 	equipped_pickaxe_mesh = find_child("Equipped_Pickaxe", true, false)
 	sun_hat_mesh = find_child("Sun_Hat", true, false)
-	if equipped_pickaxe_mesh:
-		# Кирка появляется только в момент нажатия кнопки удара
-		equipped_pickaxe_mesh.visible = false
+	_setup_equipped_tool_socket()
+	_refresh_tool_visibility()
 	if anim_player:
 		for a_name in ["idle", "walk", "run"]:
 			if anim_player.has_animation(a_name):
@@ -109,6 +131,13 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	# Render-frame clock: no physics-tick input delay or anonymous finish timers.
 	_update_strike(delta)
+	_update_dig(delta)
+	_update_scoop(delta)
+	if _bucket_full_timer > 0.0:
+		_bucket_full_timer -= delta
+		if _bucket_full_timer <= 0.0 and bucket_filled:
+			bucket_filled = false
+			_refresh_tool_visibility()
 
 func _physics_process(delta: float) -> void:
 	_handle_gravity(delta)
@@ -252,7 +281,7 @@ func get_speed_multiplier() -> float:
 	elif wetness >= 40.0:
 		w_mult = 0.92
 
-	var mining_mult: float = 0.0 if is_mining else 1.0
+	var mining_mult: float = 0.0 if (is_mining or is_digging or is_scooping) else 1.0
 	return e_mult * t_mult * h_mult * w_mult * mining_mult
 
 func can_sprint() -> bool:
@@ -488,7 +517,7 @@ func _handle_gravity(delta: float) -> void:
 			velocity.y = -0.1
 
 func _handle_movement(delta: float) -> void:
-	if is_mining:
+	if is_mining or is_digging or is_scooping:
 		# A short planted stance, not an ice-skating full-body animation.
 		velocity.x = 0.0
 		velocity.z = 0.0
@@ -597,13 +626,15 @@ func trigger_tool_strike() -> void:
 		_strike_held = false
 		_strike_buffered = false
 		return
+	if is_digging or is_scooping:
+		return
 	if is_mining:
 		# One queued click, only near recovery; never an unbounded click backlog.
 		if _strike_duration - _strike_elapsed <= STRIKE_BUFFER_WINDOW:
 			_strike_buffered = true
 		return
 	if is_instance_valid(current_interactable) and not _is_mining_resource(current_interactable):
-		# Machines, traders and water don't need a pickaxe animation.
+		# Machines, traders and water don't need a tool-swing animation.
 		current_interactable.interact(self)
 		_strike_held = false
 		return
@@ -669,16 +700,111 @@ func _finish_strike() -> void:
 	current_anim = ""
 	if anim_player:
 		anim_player.speed_scale = 1.0
-	set_equipped_tool_visible(false)
+	_refresh_tool_visibility()
 	_update_character_animation()
 
 func _on_inventory_tool_changed(_tool_id: String, _tool_name: String = "") -> void:
-	# Кирка появляется только в момент нажатия кнопки удара
-	if equipped_pickaxe_mesh and not is_mining:
-		equipped_pickaxe_mesh.visible = false
+	_refresh_tool_visibility()
+
+## Тип currently экипированного инструмента по ItemDB ("axe"/"pickaxe"/"shovel"/"bucket").
+func _current_tool_type() -> String:
+	if inventory == null:
+		return "pickaxe"
+	var eq: String = inventory.get_equipped_tool() if inventory.has_method("get_equipped_tool") else "pickaxe"
+	var d: Dictionary = ItemDB.get_item(eq)
+	return d.get("tool_type", "pickaxe")
+
+## Создаёт BoneAttachment на кости ToolSocket.R и цепляет in-hand модели
+## топора/лопаты/ведра. Кирка уже заскинена в модели персонажа — используем её узел.
+func _setup_equipped_tool_socket() -> void:
+	equipped_tool_nodes.clear()
+	if equipped_pickaxe_mesh:
+		equipped_tool_nodes["pickaxe"] = equipped_pickaxe_mesh
+	if visual_root == null:
+		return
+	var skeleton := visual_root.find_child("Skeleton3D", true, false) as Skeleton3D
+	if skeleton == null:
+		return
+	if skeleton.find_bone("ToolSocket.R") == -1:
+		return
+	# Модели персонажей уже содержат BoneAttachment на ToolSocket.R
+	# (кость-родитель для Equipped_Pickaxe) — переиспользуем его.
+	for child in skeleton.get_children():
+		if child is BoneAttachment3D and child.bone_name == "ToolSocket.R":
+			tool_socket = child
+			break
+	if tool_socket == null:
+		tool_socket = BoneAttachment3D.new()
+		tool_socket.name = "ToolSocket_Runtime"
+		tool_socket.bone_name = "ToolSocket.R"
+		skeleton.add_child(tool_socket)
+	_attach_inhand_tool("axe", AxeInHandScene)
+	_attach_inhand_tool("shovel", ShovelInHandScene)
+	_attach_inhand_tool("bucket", BucketInHandScene)
+	_bucket_full_mesh_setup()
+
+func _attach_inhand_tool(tool_type: String, scene: PackedScene) -> void:
+	if tool_socket == null or scene == null:
+		return
+	var inst := scene.instantiate() as Node3D
+	if inst == null:
+		return
+	inst.name = "Equipped_" + tool_type.capitalize()
+	inst.visible = false
+	tool_socket.add_child(inst)
+	equipped_tool_nodes[tool_type] = inst
+
+func _bucket_full_mesh_setup() -> void:
+	if tool_socket == null or BucketFullInHandScene == null:
+		return
+	var inst := BucketFullInHandScene.instantiate() as Node3D
+	if inst == null:
+		return
+	inst.name = "Equipped_BucketFull"
+	inst.visible = false
+	tool_socket.add_child(inst)
+	bucket_full_mesh = inst
+
+## Единая точка управления видимостью: во время замаха виден инструмент,
+## соответствующий экипированному слоту; вне замаха все скрыты, кроме ведра
+## (ведро несут в руке постоянно — у него нет анимации удара, только набор воды).
+func _hide_all_tools() -> void:
+	for k in equipped_tool_nodes:
+		var n: Node3D = equipped_tool_nodes[k]
+		if is_instance_valid(n):
+			n.visible = false
+	if is_instance_valid(bucket_full_mesh):
+		bucket_full_mesh.visible = false
+
+func _show_bucket() -> void:
+	if bucket_filled and is_instance_valid(bucket_full_mesh):
+		bucket_full_mesh.visible = true
+	elif equipped_tool_nodes.has("bucket"):
+		equipped_tool_nodes["bucket"].visible = true
+
+func _refresh_tool_visibility() -> void:
+	_hide_all_tools()
+	if is_digging:
+		# Копание всегда лопатой, даже если экипирован другой инструмент.
+		if equipped_tool_nodes.has("shovel"):
+			equipped_tool_nodes["shovel"].visible = true
+		return
+	if is_scooping:
+		_show_bucket()
+		return
+	var t := _current_tool_type()
+	if not equipped_tool_nodes.has(t):
+		return
+	if is_mining:
+		if t == "bucket":
+			_show_bucket()
+		else:
+			equipped_tool_nodes[t].visible = true
+	elif t == "bucket":
+		_show_bucket()
 
 func _update_character_animation() -> void:
-	if not anim_player or is_mining:
+	if not anim_player or is_mining or is_digging or is_scooping:
 		return
 	
 	var h_vel: Vector2 = Vector2(velocity.x, velocity.z)
@@ -704,9 +830,152 @@ func play_animation(anim_name: String) -> void:
 func play_mining_animation() -> void:
 	trigger_tool_strike()
 
+## Поворачивает корпус лицом к мировой точке (для копания/набора воды).
+func _face_toward(world_pos: Vector3) -> void:
+	if not visual_root:
+		return
+	var dir: Vector3 = world_pos - global_position
+	dir.y = 0.0
+	if dir.length_squared() > 0.001:
+		visual_root.rotation.y = atan2(-dir.x, -dir.z)
+
+## Копание лопатой: поза dig (fallback — mine), в руке принудительно лопата.
+## Возвращает false, если персонаж занят другим действием.
+func play_dig_animation(target: Node3D = null) -> bool:
+	if is_mining or is_digging or is_scooping:
+		return false
+	if is_instance_valid(target):
+		_face_toward(target.global_position)
+	velocity.x = 0.0
+	velocity.z = 0.0
+	is_digging = true
+	_dig_elapsed = 0.0
+	_dig_duration = 1.1
+	current_anim = "dig"
+	if anim_player:
+		if anim_player.has_animation("dig"):
+			# Мокап-клип (2.0 с) играем ускоренно, чтобы вскопка не вязала надолго.
+			_dig_duration = anim_player.get_animation("dig").length / 1.45
+			anim_player.speed_scale = 1.0
+			anim_player.play("dig", 0.1, 1.45)
+		elif anim_player.has_animation("mine"):
+			_dig_duration = anim_player.get_animation("mine").length
+			anim_player.speed_scale = 1.0
+			anim_player.play("mine", 0.1, 1.0)
+	_refresh_tool_visibility()
+	return true
+
+func _update_dig(delta: float) -> void:
+	if not is_digging:
+		return
+	_dig_elapsed += delta
+	if _dig_elapsed >= _dig_duration:
+		_finish_dig()
+
+func _finish_dig() -> void:
+	is_digging = false
+	_dig_elapsed = 0.0
+	current_anim = ""
+	_refresh_tool_visibility()
+	_update_character_animation()
+
+## Набор воды: персонаж выставляет ведро к источнику, капли перелетают
+## из хранилища в ведро, модель меняется на наполненное.
+func play_scoop_animation(source_pos: Vector3) -> bool:
+	if is_mining or is_digging or is_scooping:
+		return false
+	_face_toward(source_pos)
+	velocity.x = 0.0
+	velocity.z = 0.0
+	is_scooping = true
+	_scoop_elapsed = 0.0
+	_scoop_duration = 1.2
+	_scoop_from = source_pos
+	_scoop_droplets_done = false
+	_scoop_filled_done = false
+	current_anim = "scoop"
+	if anim_player:
+		if anim_player.has_animation("scoop"):
+			_scoop_duration = anim_player.get_animation("scoop").length
+			anim_player.speed_scale = 1.0
+			anim_player.play("scoop", 0.1, 1.0)
+	_refresh_tool_visibility()
+	return true
+
+func _update_scoop(delta: float) -> void:
+	if not is_scooping:
+		return
+	_scoop_elapsed += delta
+	# Моменты привязаны к длине клипа: капли — когда руки внизу (60%),
+	# полное ведро — на подъёме (85%).
+	if not _scoop_droplets_done and _scoop_elapsed >= _scoop_duration * 0.6:
+		_scoop_droplets_done = true
+		_spawn_scoop_droplets(_scoop_from)
+	if not _scoop_filled_done and _scoop_elapsed >= _scoop_duration * 0.85:
+		_scoop_filled_done = true
+		bucket_filled = true
+		_bucket_full_timer = 5.0
+		_refresh_tool_visibility()
+	if _scoop_elapsed >= _scoop_duration:
+		_finish_scoop()
+
+func _finish_scoop() -> void:
+	is_scooping = false
+	_scoop_elapsed = 0.0
+	current_anim = ""
+	_refresh_tool_visibility()
+	_update_character_animation()
+
+## Залп капель от источника к ведру по баллистической дуге (one-shot).
+func _spawn_scoop_droplets(from_pos: Vector3) -> void:
+	var bucket_node: Node3D = bucket_full_mesh if bucket_filled else equipped_tool_nodes.get("bucket")
+	var target: Vector3 = global_position + Vector3(0, 1.0, 0)
+	if is_instance_valid(bucket_node):
+		target = bucket_node.global_position
+	elif is_instance_valid(tool_socket):
+		target = tool_socket.global_position
+	var emit: Vector3 = from_pos + Vector3(0, 0.5, 0)
+	var flight: float = 0.55
+	var vel: Vector3 = (target - emit) / flight + Vector3(0, 0.5 * 9.8 * flight, 0)
+	var parts := GPUParticles3D.new()
+	parts.name = "ScoopDroplets"
+	parts.amount = 28
+	parts.lifetime = 0.7
+	parts.one_shot = true
+	parts.explosiveness = 0.85
+	var pm := ParticleProcessMaterial.new()
+	pm.direction = vel.normalized()
+	pm.spread = 10.0
+	pm.initial_velocity_min = vel.length() * 0.9
+	pm.initial_velocity_max = vel.length() * 1.1
+	pm.gravity = Vector3(0, -9.8, 0)
+	pm.scale_min = 0.6
+	pm.scale_max = 1.2
+	parts.process_material = pm
+	var dot := SphereMesh.new()
+	dot.radius = 0.025
+	dot.height = 0.05
+	var dot_mat := StandardMaterial3D.new()
+	dot_mat.albedo_color = Color(0.35, 0.65, 0.95)
+	dot_mat.roughness = 0.1
+	dot.material = dot_mat
+	parts.draw_pass_1 = dot
+	var parent := get_parent()
+	if parent == null:
+		parent = get_tree().root
+	parent.add_child(parts)
+	parts.global_position = emit
+	parts.emitting = true
+	get_tree().create_timer(2.0).timeout.connect(parts.queue_free)
+
 func set_equipped_tool_visible(is_visible: bool) -> void:
-	if equipped_pickaxe_mesh:
-		equipped_pickaxe_mesh.visible = is_visible
+	_hide_all_tools()
+	if is_visible:
+		var t := _current_tool_type()
+		if t == "bucket":
+			_show_bucket()
+		elif equipped_tool_nodes.has(t):
+			equipped_tool_nodes[t].visible = true
 
 func set_hat_visible(is_visible: bool) -> void:
 	if sun_hat_mesh:
