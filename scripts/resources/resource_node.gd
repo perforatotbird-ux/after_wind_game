@@ -169,6 +169,10 @@ func _play_hit_effect() -> void:
 func _set_depleted(depleted: bool) -> void:
 	is_depleted = depleted
 	is_interactable = not depleted
+	# Твёрдое тело (валун) исчезает вместе с моделью: по щебню можно пройти.
+	var solid := get_node_or_null("SolidBody/SolidShape") as CollisionShape3D
+	if solid:
+		solid.set_deferred("disabled", depleted)
 	
 	if depleted:
 		respawn_timer = respawn_time

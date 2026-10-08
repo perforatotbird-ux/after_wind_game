@@ -27,6 +27,9 @@
 [ext_resource type="PackedScene" uid="uid://b7v12kkag54da" path="res://scenes/energy/wind_turbine.tscn" id="26_turbine"]
 [ext_resource type="PackedScene" uid="uid://c62kpx8m523ya" path="res://scenes/energy/battery_bank.tscn" id="27_battery"]
 [ext_resource type="PackedScene" uid="uid://dm20bkl521ya" path="res://scenes/energy/street_lamp.tscn" id="28_lamp"]
+[ext_resource type="PackedScene" path="res://scenes/props/rock_small_slab.tscn" id="29_rock_slab"]
+[ext_resource type="PackedScene" path="res://scenes/props/rock_small_spire.tscn" id="30_rock_spire"]
+[ext_resource type="PackedScene" path="res://scenes/props/rock_small_pebble.tscn" id="31_rock_pebble"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.36, 0.54, 0.75, 1)
@@ -202,3 +205,137 @@ transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, -4, 0, 11)
 
 [node name="WaterWell" parent="Resources" unique_id=1404619995 instance=ExtResource("10_water")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0, 3.8)
+
+[node name="Rock4" parent="Resources" instance=ExtResource("7_rock")]
+transform = Transform3D(-0.4830, 0, -0.7236, 0, 0.8700, 0, 0.7236, 0, -0.4830, 16.89, 0, 15.69)
+
+[node name="Rock5" parent="Resources" instance=ExtResource("7_rock")]
+transform = Transform3D(-0.6457, 0, -0.7896, 0, 1.0200, 0, 0.7896, 0, -0.6457, -30.12, 0, -2.24)
+
+[node name="Rock6" parent="Resources" instance=ExtResource("7_rock")]
+transform = Transform3D(-0.9248, 0, 0.2927, 0, 0.9700, 0, -0.2927, 0, -0.9248, 13.96, 0, 10.5)
+
+[node name="Rock7" parent="Resources" instance=ExtResource("7_rock")]
+transform = Transform3D(0.2402, 0, 0.9707, 0, 1.0000, 0, -0.9707, 0, 0.2402, -19.43, 0, -14.31)
+
+[node name="Rock8" parent="Resources" instance=ExtResource("7_rock")]
+transform = Transform3D(0.3880, 0, -0.9433, 0, 1.0200, 0, 0.9433, 0, 0.3880, 4.99, 0, -23.43)
+
+[node name="Rock9" parent="Resources" instance=ExtResource("7_rock")]
+transform = Transform3D(0.6310, 0, -0.9132, 0, 1.1100, 0, 0.9132, 0, 0.6310, -3.46, 0, -28.15)
+
+[node name="Rock10" parent="Resources" instance=ExtResource("7_rock")]
+transform = Transform3D(1.0280, 0, 0.3311, 0, 1.0800, 0, -0.3311, 0, 1.0280, 1.6, 0, 25.23)
+
+[node name="Rocks" type="Node3D" parent="Props"]
+
+[node name="RockSpire1" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(0.5398, 0, 0.9123, 0, 1.0600, 0, -0.9123, 0, 0.5398, 20.35, 0, 14.79)
+
+[node name="RockPebble2" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(0.2867, 0, 0.9789, 0, 1.0200, 0, -0.9789, 0, 0.2867, -26.64, 0, -3.01)
+
+[node name="RockSlab3" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(0.7252, 0, -0.4240, 0, 0.8400, 0, 0.4240, 0, 0.7252, -29.69, 0, -5.75)
+
+[node name="RockSpire4" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(-0.0822, 0, 0.6851, 0, 0.6900, 0, -0.6851, 0, -0.0822, 12.66, 0, 7.22)
+
+[node name="RockPebble5" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(-0.0824, 0, 1.2473, 0, 1.2500, 0, -1.2473, 0, -0.0824, 10.63, 0, 11.58)
+
+[node name="RockSlab6" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(0.7351, 0, -0.0851, 0, 0.7400, 0, 0.0851, 0, 0.7351, -22.96, 0, -14.68)
+
+[node name="RockSpire7" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(0.5695, 0, 0.7976, 0, 0.9800, 0, -0.7976, 0, 0.5695, -19.02, 0, -10.79)
+
+[node name="RockPebble8" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(-1.0952, 0, 0.5375, 0, 1.2200, 0, -0.5375, 0, -1.0952, 3.29, 0, -26.55)
+
+[node name="RockSlab9" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(-0.8996, 0, -0.8388, 0, 1.2300, 0, 0.8388, 0, -0.8996, 4.68, 0, -19.9)
+
+[node name="RockSpire10" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(-1.0145, 0, 0.1061, 0, 1.0200, 0, -0.1061, 0, -1.0145, -0.22, 0, -26.77)
+
+[node name="RockPebble11" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(0.5080, 0, -0.7790, 0, 0.9300, 0, 0.7790, 0, 0.5080, 0.13, 0, 22.04)
+
+[node name="RockSlab12" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(0.9278, 0, -0.5529, 0, 1.0800, 0, 0.5529, 0, 0.9278, -26.5, 0, 22.2)
+
+[node name="RockSpire13" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(-0.3861, 0, -0.6662, 0, 0.7700, 0, 0.6662, 0, -0.3861, -17.87, 0, 22.65)
+
+[node name="RockPebble14" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(0.9564, 0, -0.2558, 0, 0.9900, 0, 0.2558, 0, 0.9564, -5.67, 0, -15.83)
+
+[node name="RockSlab15" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(0.1645, 0, 0.6907, 0, 0.7100, 0, -0.6907, 0, 0.1645, 29.55, 0, -7.93)
+
+[node name="RockSpire16" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(-0.2530, 0, -0.9157, 0, 0.9500, 0, 0.9157, 0, -0.2530, 21.38, 0, 20.67)
+
+[node name="RockPebble17" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(-0.7673, 0, -0.9613, 0, 1.2300, 0, 0.9613, 0, -0.7673, -14.0, 0, 30.3)
+
+[node name="RockSlab18" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(0.4096, 0, -1.0101, 0, 1.0900, 0, 1.0101, 0, 0.4096, -17.61, 0, -4.78)
+
+[node name="RockSpire19" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(0.9883, 0, -0.0587, 0, 0.9900, 0, 0.0587, 0, 0.9883, -26.43, 0, -10.63)
+
+[node name="RockPebble20" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(-0.8631, 0, -0.1091, 0, 0.8700, 0, 0.1091, 0, -0.8631, -16.41, 0, -8.77)
+
+[node name="RockSlab21" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(0.4527, 0, 1.1005, 0, 1.1900, 0, -1.1005, 0, 0.4527, -11.54, 0, 10.29)
+
+[node name="RockSpire22" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(1.2391, 0, 0.1645, 0, 1.2500, 0, -0.1645, 0, 1.2391, -13.13, 0, 7.11)
+
+[node name="RockPebble23" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(0.4483, 0, -0.8262, 0, 0.9400, 0, 0.8262, 0, 0.4483, -18.06, 0, -29.09)
+
+[node name="RockSlab24" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(0.4066, 0, -0.8586, 0, 0.9500, 0, 0.8586, 0, 0.4066, -7.97, 0, -18.03)
+
+[node name="RockSpire25" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(0.6075, 0, -1.0116, 0, 1.1800, 0, 1.0116, 0, 0.6075, -0.41, 0, 12.98)
+
+[node name="RockPebble26" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(-1.1648, 0, 0.1099, 0, 1.1700, 0, -0.1099, 0, -1.1648, 16.3, 0, 2.41)
+
+[node name="RockSlab27" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(-0.3725, 0, 0.4703, 0, 0.6000, 0, -0.4703, 0, -0.3725, -15.98, 0, 2.14)
+
+[node name="RockSpire28" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(-0.5923, 0, -0.5957, 0, 0.8400, 0, 0.5957, 0, -0.5923, -26.34, 0, -17.58)
+
+[node name="RockPebble29" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(0.1476, 0, -0.6843, 0, 0.7000, 0, 0.6843, 0, 0.1476, 22.21, 0, -5.51)
+
+[node name="RockSlab30" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(-0.5239, 0, 0.4335, 0, 0.6800, 0, -0.4335, 0, -0.5239, -2.49, 0, 25.97)
+
+[node name="RockSpire31" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(0.9060, 0, 0.0856, 0, 0.9100, 0, -0.0856, 0, 0.9060, 0.5, 0, -17.57)
+
+[node name="RockPebble32" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(0.7516, 0, 0.7616, 0, 1.0700, 0, -0.7616, 0, 0.7516, 21.5, 0, -2.97)
+
+[node name="RockSlab33" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(-0.7341, 0, -0.6791, 0, 1.0000, 0, 0.6791, 0, -0.7341, 26.86, 0, -5.09)
+
+[node name="RockSpire34" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(-0.4982, 0, 0.6638, 0, 0.8300, 0, -0.6638, 0, -0.4982, 22.04, 0, -25.94)
+
+[node name="RockPebble35" parent="Props/Rocks" instance=ExtResource("31_rock_pebble")]
+transform = Transform3D(0.5729, 0, 0.3663, 0, 0.6800, 0, -0.3663, 0, 0.5729, 16.43, 0, -11.01)
+
+[node name="RockSlab36" parent="Props/Rocks" instance=ExtResource("29_rock_slab")]
+transform = Transform3D(-1.1319, 0, 0.1353, 0, 1.1400, 0, -0.1353, 0, -1.1319, 34.29, 0, -5.17)
+
+[node name="RockSpire37" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
+transform = Transform3D(-0.3651, 0, 0.8226, 0, 0.9000, 0, -0.8226, 0, -0.3651, 3.44, 0, 31.2)
