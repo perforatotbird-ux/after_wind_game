@@ -46,16 +46,24 @@ const STRIKE_LONG_ANIM_THRESHOLD: float = 0.8
 const STRIKE_LONG_ANIM_SPEED: float = 1.5
 
 # Алиасы анимаций: логическое имя -> кандидаты в AnimationPlayer.
-# Старая модель (stardew/miner): idle/walk/run/mine/dig/scoop.
-# Новая модель из пакета: Track_Idle/Walk/Run/Pickaxe_Swing/Dig_Loop.
+# Текущая модель (miner_package_model.tscn, tools/retarget_ual_to_miner.gd) содержит
+# логические клипы idle/walk/jog/run/mine/chop/dig/scoop/... ретаргетированные из UAL1/UAL2.
+# Остальные имена — для старых моделей (stardew/miner, Miner_Character_Package).
 const ANIM_ALIASES: Dictionary = {
-	"idle": ["idle", "Track_Idle", "Armature|Armature|Iddle01", "Armature|Iddle01", "Iddle01", "Armature|Armature|Iddle02", "Armature|Iddle02", "ual_Idle"],
-	"walk": ["walk", "Track_Walk", "Armature|Armature|Walk", "Armature|Walk", "Walk", "ual_Walk", "Walk_Loop"],
-	"run": ["run", "Track_Run", "ual_Sprint", "Sprint_Loop", "Jog_Fwd_Loop", "Armature|Armature|Walk", "Armature|Walk"],
-	"mine": ["mine", "Armature|Armature|Mine", "Armature|Mine", "Mine", "Track_Pickaxe_Swing", "Track_Pickaxe_Swing_Heavy", "ual_Chop"],
-	"dig": ["dig", "Track_Pickaxe_Dig_Loop", "Track_Pickaxe_Dig", "Armature|Armature|Mine", "Armature|Mine", "ual_Chop", "Track_Pickaxe_Swing"],
-	"scoop": ["scoop", "Track_Pickaxe_Dig_Loop", "Track_Pickaxe_Dig", "Armature|Armature|Iddle01", "Armature|Iddle01", "ual_Idle", "Track_Idle", "idle"],
+	"idle": ["idle", "Track_Idle", "ual_Idle"],
+	"walk": ["walk", "Track_Walk", "ual_Walk", "Walk_Loop"],
+	"jog": ["jog", "walk", "Track_Walk"],
+	"run": ["run", "Track_Run", "ual_Sprint", "Sprint_Loop", "Jog_Fwd_Loop"],
+	"mine": ["mine", "Track_Pickaxe_Swing", "Track_Pickaxe_Swing_Heavy", "ual_Chop"],
+	"chop": ["chop", "mine", "ual_Chop", "Track_Pickaxe_Swing"],
+	"dig": ["dig", "Track_Pickaxe_Dig_Loop", "Track_Pickaxe_Dig", "mine", "Track_Pickaxe_Swing"],
+	"scoop": ["scoop", "Track_Pickaxe_Dig_Loop", "Track_Pickaxe_Dig", "idle", "Track_Idle"],
 }
+## Выше этой скорости (м/с) вместо шага играется лёгкий бег (jog): walk_speed = 4.5 м/с.
+const JOG_SPEED_THRESHOLD: float = 2.2
+## Пределы подгонки скорости клипа ходьбы под реальную скорость (против скольжения стоп).
+const LOCOMOTION_SPEED_SCALE_MIN: float = 0.7
+const LOCOMOTION_SPEED_SCALE_MAX: float = 1.6
 
 @export_group("References")
 @onready var visual_root: Node3D = $Visuals
@@ -134,10 +142,13 @@ func _ready() -> void:
 	_pickaxe_is_builtin = equipped_pickaxe_mesh != null and equipped_pickaxe_mesh.name != "Equipped_Pickaxe"
 	_fix_new_model_culling()
 	sun_hat_mesh = find_child("Sun_Hat", true, false)
+	if sun_hat_mesh == null:
+		# Шахтёр: каска с фонарём вынесена в отдельный меш при запекании модели.
+		sun_hat_mesh = find_child("Character_Helmet", true, false)
 	_setup_equipped_tool_socket()
 	_refresh_tool_visibility()
 	if anim_player:
-		for a_name in ["idle", "walk", "run"]:
+		for a_name in ["idle", "walk", "jog", "run"]:
 			var resolved: String = _resolve_anim(a_name)
 			if resolved != "" and anim_player.has_animation(resolved):
 				anim_player.get_animation(resolved).loop_mode = Animation.LOOP_LINEAR
@@ -864,8 +875,23 @@ func _update_character_animation() -> void:
 		play_character_anim("idle")
 	elif Input.is_action_pressed("sprint") and can_sprint():
 		play_character_anim("run")
+	elif speed > JOG_SPEED_THRESHOLD:
+		play_character_anim("jog")
 	else:
 		play_character_anim("walk")
+	_match_locomotion_speed(speed)
+
+## Подгоняет темп клипа ходьбы/бега под скорость персонажа (metadata/ground_speed
+## записывает tools/retarget_ual_to_miner.gd), чтобы стопы не скользили.
+func _match_locomotion_speed(speed: float) -> void:
+	if current_anim == "" or not anim_player.has_animation(current_anim):
+		return
+	var anim: Animation = anim_player.get_animation(current_anim)
+	if anim.has_meta("ground_speed") and float(anim.get_meta("ground_speed")) > 0.01 and speed >= 0.2:
+		var ratio: float = speed / float(anim.get_meta("ground_speed"))
+		anim_player.speed_scale = clampf(ratio, LOCOMOTION_SPEED_SCALE_MIN, LOCOMOTION_SPEED_SCALE_MAX)
+	else:
+		anim_player.speed_scale = 1.0
 
 func play_character_anim(anim_name: String) -> void:
 	if not anim_player:
@@ -876,6 +902,14 @@ func play_character_anim(anim_name: String) -> void:
 	if anim_player.has_animation(resolved):
 		current_anim = resolved
 		anim_player.play(resolved, 0.15)
+
+## Темп проигрывания клипа из metadata/play_speed (задаётся при запекании), иначе fallback.
+func _anim_play_speed(anim_name: String, fallback: float) -> float:
+	if anim_player and anim_player.has_animation(anim_name):
+		var a: Animation = anim_player.get_animation(anim_name)
+		if a.has_meta("play_speed"):
+			return maxf(0.05, float(a.get_meta("play_speed")))
+	return fallback
 
 ## Возвращает первое существующее в AnimationPlayer имя из алиасов.
 ## Пустая строка — анимация отсутствует в текущей модели.
@@ -932,12 +966,10 @@ func play_dig_animation(target: Node3D = null) -> bool:
 		var dig_anim: String = _resolve_anim("dig")
 		if dig_anim != "":
 			_dig_duration = anim_player.get_animation(dig_anim).length
-			var dig_speed: float = 1.0
-			# Мокап-клип старой модели (2.0 с) играем ускоренно, чтобы вскопка не вязала надолго.
-			# Короткий цикл новой модели (1.0 с) — как есть.
-			if _dig_duration > 1.5:
-				dig_speed = 1.45
-				_dig_duration = _dig_duration / dig_speed
+			# Мокап-клип (2.0+ с) играем ускоренно, чтобы вскопка не вязала надолго;
+			# темп берём из metadata/play_speed клипа, если он задан при запекании.
+			var dig_speed: float = _anim_play_speed(dig_anim, 1.45 if _dig_duration > 1.5 else 1.0)
+			_dig_duration = _dig_duration / dig_speed
 			anim_player.speed_scale = 1.0
 			anim_player.play(dig_anim, 0.1, dig_speed)
 			current_anim = dig_anim
@@ -976,9 +1008,10 @@ func play_scoop_animation(source_pos: Vector3) -> bool:
 	if anim_player:
 		var scoop_anim: String = _resolve_anim("scoop")
 		if scoop_anim != "":
-			_scoop_duration = anim_player.get_animation(scoop_anim).length
+			var scoop_speed: float = _anim_play_speed(scoop_anim, 1.0)
+			_scoop_duration = anim_player.get_animation(scoop_anim).length / scoop_speed
 			anim_player.speed_scale = 1.0
-			anim_player.play(scoop_anim, 0.1, 1.0)
+			anim_player.play(scoop_anim, 0.1, scoop_speed)
 			current_anim = scoop_anim
 	_refresh_tool_visibility()
 	return true
@@ -1075,14 +1108,21 @@ func _play_interaction_swing() -> void:
 	_strike_duration = 0.42
 	_strike_contact_time = STRIKE_CONTACT_TIME
 	if anim_player:
-		var swing_anim: String = _resolve_anim("mine")
+		# Топор рубит горизонтально (chop), остальные инструменты — удар сверху (mine).
+		var swing_anim: String = _resolve_anim("chop" if _current_tool_type() == "axe" else "mine")
 		if swing_anim != "":
-			var swing_len: float = anim_player.get_animation(swing_anim).length
+			var swing: Animation = anim_player.get_animation(swing_anim)
+			var swing_len: float = swing.length
 			var swing_speed: float = 1.0
-			# Нормальный темп кирки: длинный замах новой модели (1.5 c)
-			# играем ускоренно до ~1.0 c, контакт на 55% замаха.
+			if swing.has_meta("contact_time"):
+				# Запечённый клип: темп и момент контакта заданы в metadata
+				# (tools/retarget_ual_to_miner.gd).
+				swing_speed = _anim_play_speed(swing_anim, 1.0)
+				_strike_duration = swing_len / swing_speed
+				_strike_contact_time = float(swing.get_meta("contact_time")) / swing_speed
+			# Длинный замах (1.5 c) играем ускоренно до ~1.0 c, контакт на 55% замаха.
 			# Короткий замах старой модели (~0.42 c) — как есть, контакт на 38%.
-			if swing_len >= STRIKE_LONG_ANIM_THRESHOLD:
+			elif swing_len >= STRIKE_LONG_ANIM_THRESHOLD:
 				swing_speed = STRIKE_LONG_ANIM_SPEED
 				_strike_duration = swing_len / swing_speed
 				_strike_contact_time = _strike_duration * STRIKE_CONTACT_FRACTION_LONG

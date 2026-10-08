@@ -161,19 +161,19 @@ func _run_tests() -> void:
 		_fail("Недостаточно анимированных суставов в анимации удара (ожидалось >= 5)")
 		return
 		
-	# Ищем трек правого плеча или позвоночника (кости .R старой модели / _R новой).
+	# Ищем анимированные треки правого плеча/торса (старые модели: UpperArm.R/Chest/Spine,
+	# текущий шахтёр: Spine2/Forearm.r — у его рига Forearm.* это плечевая кость).
+	# Неподвижные треки (2 ключа после прореживания) не считаются.
 	var found_arm_track: bool = false
 	for t_idx in range(mine_anim.get_track_count()):
 		var t_path = str(mine_anim.track_get_path(t_idx))
-		if ("UpperArm.R" in t_path or "UpperArm_R" in t_path or "Chest" in t_path or "Spine" in t_path) and mine_anim.track_get_type(t_idx) == Animation.TYPE_ROTATION_3D:
-			found_arm_track = true
+		if ("UpperArm.R" in t_path or "UpperArm_R" in t_path or "Chest" in t_path or "Spine" in t_path or "Forearm.r" in t_path) and mine_anim.track_get_type(t_idx) == Animation.TYPE_ROTATION_3D:
 			var k_count = mine_anim.track_get_key_count(t_idx)
 			print("  • Трек вращения '%s' содержит %d ключевых кадров." % [t_path, k_count])
-			if k_count < 4:
-				_fail("Трек '%s' должен содержать ключевые кадры замаха и удара" % t_path)
-				return
+			if k_count >= 4:
+				found_arm_track = true
 	if not found_arm_track:
-		_fail("Трек руки/торса не найден в анимации mine")
+		_fail("В анимации mine нет анимированного трека руки/торса с ключами замаха и удара")
 		return
 	print("  • Анатомическая артикуляция удара сверху вниз подтверждена.")
 

@@ -76,7 +76,7 @@ k:/After Wind/
 │   ├── player/                   # Контроллер игрока и параметры выживания
 │   └── world/                    # DayNightCycle, WeatherManager
 │
-└── tests/                        # 17 автотестов (11 этапных + 6 фичевых)
+└── tests/                        # 18 автотестов (11 этапных + 7 фичевых)
     ├── test_stage2_time_and_fatigue.gd    # Этап 2: сутки, освещение, усталость, сон
     ├── test_stage4_thermal_processing.gd  # Этап 4: печь, обжиг, стекло, слитки, сбыт
     ├── test_stage5_buildings.gd           # Этап 5: восстановление зданий
@@ -93,7 +93,8 @@ k:/After Wind/
     ├── test_pickaxe_swing_and_lmb.gd      # Ориентация кирки, замах, ЛКМ
     ├── test_modern_strike_animation.gd    # Кинематика удара сверху вниз
     ├── test_stardew_character.gd          # Реалистичная модель Фермера
-    └── test_equipped_tools.gd             # Динамическая экипировка: топор/кирка/лопата/ведро в руке по активному слоту
+    ├── test_equipped_tools.gd             # Динамическая экипировка: топор/кирка/лопата/ведро в руке по активному слоту
+    └── test_hero_animations_ingame.gd     # Герой в игре: idle -> jog -> run -> mine, кости реально двигаются
 ```
 
 ---
@@ -151,6 +152,21 @@ k:/After Wind/
 - **Орбитальная камера** (`scripts/world/isometric_camera.gd`): ПКМ-вращение (захват курсора), зум колесом (3.5–26 м), clamp наклона, авто-сброс захвата при потере фокуса; движение WASD — относительно ракурса камеры.
 - **2D-графика**: портреты и изометрия-спрайты классов (`assets/sprites/`), иконки инструментов (`assets/tools/`).
 
+### 4.9. Модель героя и ретаргет анимаций UAL (`tools/retarget_ual_to_miner.gd`)
+- **Модель**: `assets/models/character/miner_ready_fixed.glb` → запекается в `scenes/player/miner_package_model.tscn` (используется в `player.tscn`, масштаб 0.36).
+- **Почему раньше «не было анимаций»**: родные клипы glb (`Iddle01/Walk/Mine`) двигают в основном IK-контроллеры (`Footik.*`, `Handik.*`). IK-констрейнты Blender в glTF не экспортируются, поэтому в Godot конечности стояли на месте. UAL-клипы копировались как локальные кватернионы 1:1, хотя rest-позы скелетов разные (T-pose UAL vs A-pose шахтёра).
+- **Решение**: ретаргет в мировом пространстве с коррекцией rest-поз по «анатомическим» базисам костей (направление на дочернюю кость + боковой/передний вектор / линия костяшек для кистей и пальцев), смещение таза масштабируется по высоте таза. Нерабочие IK-клипы удалены.
+- **Клипы** (Universal Animation Library 1/2, Quaternius, CC0): `idle`, `walk`, `jog`, `run`, `mine` (OverhandThrow — удар сверху вниз), `chop` (TreeChopping — топор), `dig`/`scoop`/`harvest` (Farm_Harvest), `plant`, `water`, `eat`, `interact`, `pickup`, `carry_walk`, `talk`, `sit`, `hit`, `death`, `jump_*`.
+- **Metadata клипов**: `play_speed` (темп), `contact_time` (момент удара для `mine`/`chop`), `ground_speed` (м/с — `player.gd` подгоняет темп ходьбы/бега под скорость, стопы не скользят).
+- **Сокет инструмента**: кость `ToolSocket.R` (дочерняя `Hand.r`, +Y — ось рукояти, +X — лезвие, масштаб в метрах) + `BoneAttachment3D` `ToolSocket_R`. Встроенная в меш кирка вынесена в узел `Pickaxe` на сокете, каска — в skinned меш `Character_Helmet` (`set_hat_visible`).
+- **Материал**: в glb нет `metallicFactor` (по glTF = 1.0) — при запекании ставится `metallic = 0`, иначе одежда выглядит тёмным хромом. Текстура подключается файлом `miner_ready_RGB_Alpha.png`.
+- **Перезапекание** (после правки модели или выбора других клипов в `CLIPS`):
+  ```bash
+  Godot_v4.7.3-stable_win64.exe --headless --path . -s tools/retarget_ual_to_miner.gd
+  # метрики клипов (траектория кисти, высота стоп) + дамп поз в /tmp/miner_pose_dump.json:
+  Godot_v4.7.3-stable_win64.exe --headless --path . -s tools/retarget_ual_to_miner.gd -- --probe
+  ```
+
 ---
 
 ## 5. Как работать с базой знаний Obsidian (`obsidian-mind`)
@@ -169,7 +185,7 @@ k:/After Wind/
 
 ## 6. Запуск тестов и проверка регрессий
 
-Проект покрыт **17** автономными тестами: **11 этапных** регрессионных (`test_stage2…13`) и **6 фичевых** (модели персонажа, анимация удара, орбитальная камера, динамическая экипировка инструментов).
+Проект покрыт **18** автономными тестами: **11 этапных** регрессионных (`test_stage2…13`) и **7 фичевых** (модели персонажа, анимация удара, орбитальная камера, динамическая экипировка инструментов, анимации героя в игре).
 ```bash
 # Запуск через start.bat:
 start.bat --test

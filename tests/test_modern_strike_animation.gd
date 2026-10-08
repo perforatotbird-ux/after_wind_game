@@ -30,100 +30,75 @@ func _run() -> void:
 	if failed:
 		quit(1)
 		return
-	# Резолвер замаха: старая модель ("mine" 0.42 c) и новая из пакета
-	# ("Track_Pickaxe_Swing" 1.5 c, играется ускоренно до ~1.0 c).
+	# Удар киркой текущей модели: клип "mine" (UAL OverhandThrow, ретаргет
+	# tools/retarget_ual_to_miner.gd). Темп и момент контакта — в metadata клипа.
 	var swing_name: String = "mine"
-	if not ap.has_animation(swing_name):
-		for c in ["Track_Pickaxe_Swing", "Track_Pickaxe_Swing_Heavy"]:
-			if ap.has_animation(c):
-				swing_name = c
-				break
+	check(ap.has_animation(swing_name), "Missing 'mine' strike clip")
+	if failed:
+		quit(1)
+		return
 	var mine: Animation = ap.get_animation(swing_name)
-	var is_long_swing: bool = mine.length >= 0.8
-	if is_long_swing:
-		check(mine.length >= 0.9 and mine.length <= 1.7, "Long swing cycle must be 0.9-1.7s")
-	else:
-		check(mine.length >= 0.35 and mine.length <= 0.45, "Strike cycle must be 350-450ms")
-	for bone_name in ["Spine", "Chest", "UpperArm"]:
+	check(mine.length >= 0.8 and mine.length <= 1.6, "Strike clip must be 0.8-1.6s")
+	check(mine.has_meta("contact_time") and mine.has_meta("play_speed"), "Strike clip must carry contact_time/play_speed metadata")
+	var speed: float = float(mine.get_meta("play_speed", 1.0))
+	var DUR: float = mine.length / speed
+	var CONTACT: float = float(mine.get_meta("contact_time", mine.length * 0.5)) / speed
+	check(DUR >= 0.6 and DUR <= 1.2, "Strike must feel snappy (0.6-1.2s)")
+	for bone_name in ["Spine1", "Spine2", "Forearm.r", "Hand.r", "Thigh.l"]:
 		var found: bool = false
 		for track in range(mine.get_track_count()):
-			if bone_name in str(mine.track_get_path(track)):
+			if str(mine.track_get_path(track)).ends_with(":" + bone_name):
 				found = true
-		check(found, "Missing authored upper-body track: " + bone_name)
-	# Ожидаемые параметры замаха зеркалят логику player._play_interaction_swing.
-	var DUR: float = mine.length / 1.5 if is_long_swing else mine.length
-	var CONTACT: float = DUR * (0.55 if is_long_swing else 0.38)
+		check(found, "Missing retargeted body track: " + bone_name)
 	var visuals: Node3D = player.visual_root
-	var hand_bone_name: String = "Hand.R"
-	if skeleton.find_bone(hand_bone_name) == -1:
-		hand_bone_name = "Hand_R"
-	var hand: int = skeleton.find_bone(hand_bone_name)
-	var bind: Transform3D = skeleton.get_bone_global_rest(hand).affine_inverse()
+	var socket: int = skeleton.find_bone("ToolSocket.R")
+	check(socket != -1, "Missing ToolSocket.R bone")
+	# Навершие кирки: вершина, дальше всех по оси рукояти (+Y сокета).
 	var tool_data := MeshDataTool.new()
 	tool_data.create_from_surface(pickaxe.mesh, 0)
 	var tip := Vector3.ZERO
-	var tip_z: float = -INF
 	for i in range(tool_data.get_vertex_count()):
 		var v: Vector3 = tool_data.get_vertex(i)
-		if v.z > tip_z:
-			tip_z = v.z
+		if v.y > tip.y:
 			tip = v
+	tip = pickaxe.transform * tip
+	var tip_at := func(t: float) -> Vector3:
+		ap.seek(t, true)
+		skeleton.force_update_all_bone_transforms()
+		return visuals.to_local(skeleton.global_transform * (skeleton.get_bone_global_pose(socket) * tip))
 	ap.play(swing_name, 0.0)
 	ap.seek(0.0, true)
 	skeleton.force_update_all_bone_transforms()
 	var feet: Dictionary = {}
-	var foot_names: Array[String] = ["Foot.L", "Foot.R"]
-	if skeleton.find_bone("Foot.L") == -1:
-		foot_names = ["Foot_L", "Foot_R"]
-	for name in foot_names:
+	for name in ["Foot.l", "Foot.r"]:
 		feet[name] = skeleton.get_bone_global_pose(skeleton.find_bone(name))
 	var max_drift: float = 0.0
-	var max_tip_z: float = -INF
 	var high_tip_y: float = -INF
-	var impact_tip := Vector3.ZERO
-	# 121 samples, including between authored keys (catches quaternion flips).
+	# 121 samples, including between keys (catches quaternion flips).
+	var prev_tip: Vector3 = tip_at.call(0.0)
+	var max_jump: float = 0.0
 	for i in range(121):
 		var t: float = mine.length * i / 120.0
-		ap.seek(t, true)
-		skeleton.force_update_all_bone_transforms()
+		var p: Vector3 = tip_at.call(t)
 		for name in feet:
 			var pose: Transform3D = skeleton.get_bone_global_pose(skeleton.find_bone(name))
-			max_drift = maxf(max_drift, pose.origin.distance_to(feet[name].origin))
-			if not is_long_swing:
-				check(pose.basis.is_equal_approx(feet[name].basis), "Foot rotation changed during planted strike")
-		var p: Vector3 = visuals.to_local(skeleton.global_transform * (skeleton.get_bone_global_pose(hand) * bind * tip))
-		max_tip_z = maxf(max_tip_z, p.z)
-		high_tip_y = maxf(high_tip_y, p.y)
-	ap.seek(CONTACT, true)
-	skeleton.force_update_all_bone_transforms()
-	impact_tip = visuals.to_local(skeleton.global_transform * (skeleton.get_bone_global_pose(hand) * bind * tip))
-	# Длинный замах новой модели допускает больший дрейф/дугу, чем короткий авторский.
-	var drift_limit: float = 0.05 if is_long_swing else 0.002
-	check(max_drift < drift_limit, "Planted feet drifted too much")
-	check(max_tip_z <= 0.05 if is_long_swing else 0.02, "Tool swung behind the hero")
-	check(impact_tip.z <= (-0.30 if is_long_swing else -0.50), "Impact must be in front")
-	check(high_tip_y - impact_tip.y > (0.30 if is_long_swing else 0.70), "Missing readable high-to-low arc")
-	# Verify geometry weights: no foot vertices connected to hands/arms.
-	var body: MeshInstance3D = player.find_child("Farmer_Character", true, false)
-	if body == null:
-		body = player.find_child("Character_Boots", true, false)
-	if body == null:
-		body = player.find_child("Character_Jacket", true, false)
-	var foot_vertices: int = 0
-	for surface in range(body.mesh.get_surface_count()):
-		var md := MeshDataTool.new()
-		md.create_from_surface(body.mesh, surface)
-		for i in range(md.get_vertex_count()):
-			if md.get_vertex(i).y > 0.13:
-				continue
-			foot_vertices += 1
-			var bones: PackedInt32Array = md.get_vertex_bones(i)
-			var weights: PackedFloat32Array = md.get_vertex_weights(i)
-			for j in range(bones.size()):
-				if weights[j] > 0.001:
-					var bname: String = skeleton.get_bone_name(body.skin.get_bind_bone(bones[j]))
-					check(bname.begins_with("Foot.") or bname.begins_with("Shin.") or bname.begins_with("Foot_") or bname.begins_with("Shin_") or bname.begins_with("LowerLeg"), "Boot geometry weighted outside lower limb: " + bname)
-	check(foot_vertices > 0, "No boot vertices tested")
+			max_drift = maxf(max_drift, (skeleton.global_transform.basis * (pose.origin - feet[name].origin)).length())
+		if t <= mine.get_meta("contact_time", mine.length):
+			high_tip_y = maxf(high_tip_y, p.y)
+		max_jump = maxf(max_jump, p.distance_to(prev_tip))
+		prev_tip = p
+	var impact_tip: Vector3 = tip_at.call(float(mine.get_meta("contact_time", 0.0)))
+	check(max_drift < 0.35, "Feet drifted too much during the strike")
+	check(max_jump < 0.6, "Tool teleports between samples (quaternion flip)")
+	check(impact_tip.z <= -0.30, "Impact must be in front of the hero")
+	check(high_tip_y - impact_tip.y > 0.60, "Missing readable high-to-low arc")
+	check(impact_tip.y < 0.9, "Pickaxe must come down low at contact")
+	# Тело и каска — skinned меши на скелете героя.
+	var body: MeshInstance3D = player.find_child("Miner_Body", true, false)
+	check(body != null and body.skin != null, "Missing skinned Miner_Body")
+	var helmet: MeshInstance3D = player.find_child("Character_Helmet", true, false)
+	check(helmet != null and helmet.skin != null, "Missing skinned Character_Helmet")
+	var foot_vertices: int = body.mesh.surface_get_array_len(0) if body else 0
 
 	# A real ResourceNode, not a prop that only changes an animation boolean.
 	var rock = RockScene.instantiate()

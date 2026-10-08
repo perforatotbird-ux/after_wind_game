@@ -108,7 +108,9 @@ func _run_tests() -> void:
 	print("  • Переключение на 'walk' успешно.")
 	
 	player.play_mining_animation()
-	if player.current_anim != _resolve_test_anim(anim_player, "mine") or not player.is_mining:
+	# С топором в руке играется горизонтальная рубка (chop), иначе — удар сверху (mine).
+	var strike_ok: bool = player.current_anim == _resolve_test_anim(anim_player, "mine") or (anim_player.has_animation("chop") and player.current_anim == "chop")
+	if not strike_ok or not player.is_mining:
 		_fail("Не удалось активировать взмах киркой (mining animation)")
 		return
 	print("  • Анимация удара киркой 'mine' успешно запущена.")

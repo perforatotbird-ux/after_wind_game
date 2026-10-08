@@ -190,21 +190,23 @@ func _run_tests() -> void:
 	if not player.is_scooping:
 		_fail("Флаг is_scooping должен быть true во время набора воды")
 		return
-	player._process(0.6)
+	# Тайминги привязаны к длине клипа: капли на 60%, полное ведро на 85%.
+	var scoop_len: float = player._scoop_duration
+	player._process(scoop_len * 0.62)
 	var droplets = root.find_child("ScoopDroplets", true, false)
 	if droplets == null:
-		_fail("Капли ScoopDroplets не заспавнились к моменту 0.6с")
+		_fail("Капли ScoopDroplets не заспавнились к 60% клипа")
 		return
 	print("  • Капли летят от источника к ведру.")
-	player._process(0.5)
+	player._process(scoop_len * 0.3)
 	if not player.bucket_filled:
-		_fail("К моменту 1.1с ведро должно стать полным (bucket_filled)")
+		_fail("К 92% клипа ведро должно стать полным (bucket_filled)")
 		return
 	if not player.bucket_full_mesh.visible:
 		_fail("Должна быть видна модель наполненного ведра")
 		return
 	print("  • Ведро стало полным: модель заменена.")
-	player._process(1.0)
+	player._process(scoop_len)
 	if player.is_scooping:
 		_fail("Набор воды должен завершиться по истечении длительности")
 		return
