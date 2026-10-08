@@ -1,0 +1,44 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/resource_node.gd" id="1_ead3d"]
+[ext_resource type="ArrayMesh" path="res://assets/models/trees/tree_oak_young.tres" id="2_er123"]
+[ext_resource type="ArrayMesh" path="res://assets/models/trees/tree_oak_young_stump.tres" id="3_yfqqj"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_j75ly"]
+height = 3.0
+radius = 2.07
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_wv3bp"]
+height = 2.4
+radius = 0.1955
+
+[node name="TreeOakYoung" type="Area3D" unique_id=430644898 node_paths=PackedStringArray("visual_node", "depleted_visual_node") groups=["trees"]]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_ead3d")
+resource_display_name = "Молодой дуб"
+bonus_depleted_yield = 2
+visual_node = NodePath("Visual")
+depleted_visual_node = NodePath("DepletedVisual")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1275552529]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("CylinderShape3D_j75ly")
+
+[node name="Visual" type="Node3D" parent="." unique_id=48352764]
+
+[node name="Tree" type="MeshInstance3D" parent="Visual" unique_id=2146998781]
+mesh = ExtResource("2_er123")
+
+[node name="DepletedVisual" type="Node3D" parent="." unique_id=1741768304]
+visible = false
+
+[node name="Stump" type="MeshInstance3D" parent="DepletedVisual" unique_id=1566993088]
+mesh = ExtResource("3_yfqqj")
+
+[node name="SolidBody" type="StaticBody3D" parent="." unique_id=177120618]
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody" unique_id=78268394]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("CylinderShape3D_wv3bp")

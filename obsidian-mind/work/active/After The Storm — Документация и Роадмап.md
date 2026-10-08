@@ -85,7 +85,7 @@ k:/After Wind/
 │   │   ├── rock_node.tscn            # Валун
 │   │   ├── sand_node.tscn            # Залежи песка
 │   │   ├── scrap_node.tscn           # Куча металлолома
-│   │   ├── tree_node.tscn            # Дерево (со срубанием в пенёк)
+│   │   ├── tree_oak/_young, tree_pine/_wide.tscn  # Деревья (рубятся топором в пенёк)
 │   │   └── water_node.tscn           # Источник воды
 │   ├── tools/
 │   │   └── pickaxe_model.tscn        # Автономная модель кирки (для рук и иконок)

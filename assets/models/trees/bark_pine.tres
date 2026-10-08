@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/models/trees/bark_texture.tres" id="1_0me3y"]
+
+[resource]
+resource_name = "bark_pine"
+vertex_color_use_as_albedo = true
+albedo_color = Color(0.4, 0.26, 0.2, 1)
+albedo_texture = ExtResource("1_0me3y")
+roughness = 0.95
+texture_filter = 5
