@@ -105,6 +105,16 @@ const AxeInHandScene = preload("res://scenes/tools/axe_inhand.tscn")
 const ShovelInHandScene = preload("res://scenes/tools/shovel_inhand.tscn")
 const BucketInHandScene = preload("res://scenes/tools/bucket_inhand.tscn")
 const BucketFullInHandScene = preload("res://scenes/tools/bucket_full_inhand.tscn")
+## Хват in-hand моделей в сокете ToolSocket.R героя: начало сокета — центр кулака,
+## +Y — от мизинца к указательному (к голове инструмента), +X — к костяшкам (лезвие).
+## Меш axe_inhand смоделирован топорищем вверх и головой вниз (-Y): в руке он был
+## перевёрнут. Поворот на 180° вокруг X ставит голову над кулаком, сохраняя направление
+## лезвия (+X), а сдвиг переносит хват к концу топорища (12 см от торца).
+## Лопата (лезвие +Y) остаётся как есть: в клипе dig кисть повёрнута большим пальцем
+## к земле, и лезвие смотрит в грунт.
+const INHAND_GRIP: Dictionary = {
+	"axe": Transform3D(Basis(Vector3.RIGHT, PI), Vector3(0.0, 0.20, 0.0)),
+}
 var current_anim: String = ""
 var is_mining: bool = false
 var _strike_elapsed: float = 0.0
@@ -809,6 +819,8 @@ func _attach_inhand_tool(tool_type: String, scene: PackedScene) -> void:
 		return
 	inst.name = "Equipped_" + tool_type.capitalize()
 	inst.visible = false
+	if INHAND_GRIP.has(tool_type):
+		inst.transform = INHAND_GRIP[tool_type]
 	tool_socket.add_child(inst)
 	equipped_tool_nodes[tool_type] = inst
 

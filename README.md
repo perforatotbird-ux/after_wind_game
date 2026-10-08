@@ -2,7 +2,7 @@
 
 [![Engine: Godot 4.7.3](https://img.shields.io/badge/Engine-Godot%204.7.3-blue.svg)](https://godotengine.org)
 [![Status: Chapter 1 Finished](https://img.shields.io/badge/Status-Chapter%201%20%7C%20Base%20Restored-brightgreen.svg)]()
-[![Tests: 18/18 Passing](https://img.shields.io/badge/Tests-18%2F18%20Passed-success.svg)]()
+[![Tests: 19/19 Passing](https://img.shields.io/badge/Tests-19%2F19%20Passed-success.svg)]()
 
 > Изометрический 3D-симулятор выживания, сбора ресурсов, переработки, сельского хозяйства, электрогенерации и восстановления разрушенного поселения после природного катаклизма.
 
@@ -76,7 +76,7 @@ start.bat --test
 .\start.bat --test
 ```
 
-Все **18** автотестов выполняются в headless-режиме со 100% успехом (код возврата 0):
+Все **19** автотестов выполняются в headless-режиме со 100% успехом (код возврата 0):
 
 - **11 этапных** регрессионных тестов (`test_stage2…13`) — покрывают этапы 2, 4–13.
-- **7 фичевых** тестов (`test_orbit_camera`, `test_miner_and_pickaxe`, `test_pickaxe_swing_and_lmb`, `test_modern_strike_animation`, `test_stardew_character`, `test_equipped_tools`, `test_hero_animations_ingame`) — покрывают модели персонажей, анимацию удара, орбитальную камеру, динамическую экипировку инструментов (топор/кирка/лопата/ведро в руке по активному слоту) и проигрывание анимаций героя в игре.
+- **8 фичевых** тестов (`test_orbit_camera`, `test_miner_and_pickaxe`, `test_pickaxe_swing_and_lmb`, `test_modern_strike_animation`, `test_stardew_character`, `test_equipped_tools`, `test_hero_animations_ingame`, `test_hero_grip_and_feet`) — покрывают модели персонажей, анимацию удара, орбитальную камеру, динамическую экипировку инструментов (топор/кирка/лопата/ведро в руке по активному слоту) проигрывание анимаций героя в игре, постановку стоп и хват инструментов в кулаке.

@@ -117,6 +117,17 @@ const CLIPS: Dictionary = {
 	"jump_land": [UAL1_GLB, "Jump_Land", 0, -1, false, 1.0],
 }
 
+## Кости, у которых rest-поза героя переносится в rest-позу UAL без выравнивания по осям.
+const REST_MATCH_BONES: Array[String] = ["Foot.l", "Toe.l", "Foot.r", "Toe.r"]
+## Клипы с инструментом в правой руке: пальцы правой кисти фиксируются в кулаке-хвате
+## (в OverhandThrow кисть раскрывается при «броске» — кирка «висела» рядом с ладонью).
+const GRIP_CLIPS: Array[String] = ["mine", "chop", "dig", "scoop", "water"]
+const GRIP_FINGERS: Array[String] = [
+	"Index1.r", "Index2.r", "Index3.r", "Middle1.r", "Middle2.r", "Middle3.r",
+	"Ring1.r", "Ring2.r", "Ring3.r", "Pinky1.r", "Pinky2.r", "Pinky3.r", "Thumb1.r", "Thumb2.r"]
+## Эталон кулака: кадр UAL, где правая кисть сжата (Idle_Loop, кадр 0).
+const FIST_REF := [UAL1_GLB, "Idle_Loop", 0]
+
 ## Клипы удара: для них вычисляется момент контакта (metadata/contact_time).
 const STRIKE_CLIPS: Array[String] = ["mine", "chop"]
 ## Клипы ходьбы: вычисляется скорость шага (metadata/ground_speed, м/с) против скольжения стоп.
@@ -232,13 +243,21 @@ func _run() -> bool:
 		var s_name: String = BONE_MAP[d_name]
 		var s_rest: Transform3D = s0.rest_g[s0.names[s_name]]
 		src_rest_rot[d_name] = R0 * _rot(s_rest)
-		if AIM.has(d_name):
+		if d_name in REST_MATCH_BONES:
+			# Стопа: в rest-позах обоих скелетов стопа стоит на полу плашмя, поэтому
+			# rest должен переходить в rest (коррекция = I), а не «кость в кость».
+			# У героя кость Foot идёт от лодыжки круто вниз к Toe (~68°), у UAL foot->ball
+			# пологая (~31°): выравнивание по направлению задирало носки вверх на ~37°.
+			corr[d_name] = Basis.IDENTITY
+		elif AIM.has(d_name):
 			var a: Array = AIM[d_name]
 			var pd: Vector3 = _pos(dst, a[0]) - _pos(dst, d_name)
 			var ps: Vector3 = R0 * (_pos(s0, a[1]) - _pos(s0, s_name))
 			var sec_d: Vector3 = vd[a[2]]
 			var sec_s: Vector3 = R0 * vs[a[2]]
 			corr[d_name] = _frame(ps, sec_s) * _frame(pd, sec_d).inverse()
+		elif d_name in REST_MATCH_BONES:
+			pass
 		else:
 			var par := dst.sk.get_bone_parent(dst.names[d_name])
 			corr[d_name] = corr.get(dst.sk.get_bone_name(par), Basis.IDENTITY)
@@ -248,6 +267,7 @@ func _run() -> bool:
 	var hip_scale: float = hd / hs
 	print("hip height dst=%.3f src=%.3f scale=%.3f" % [hd, hs, hip_scale])
 
+	var fist := _retarget(srcs[FIST_REF[0]], dst, FIST_REF[1], FIST_REF[2], FIST_REF[2] + 1, false, R0, corr, src_rest_rot, hip_scale)
 	var lib := AnimationLibrary.new()
 	var clips: Dictionary = CLIPS
 	if probe and OS.get_environment("PROBE_CLIPS") != "":
@@ -261,9 +281,9 @@ func _run() -> bool:
 		var anim := _retarget(s, dst, c[1], c[2], c[3], c[4], R0, corr, src_rest_rot, hip_scale)
 		if anim == null:
 			continue
+		if clip_name in GRIP_CLIPS:
+			_apply_fist(anim, fist)
 		_reduce_keys(anim)
-		if clip_name == "idle":
-			_mirror_right_foot(anim)
 		anim.set_meta("play_speed", float(c[5]))
 		if clip_name in STRIKE_CLIPS:
 			anim.set_meta("contact_time", _contact_time(dst, anim))
@@ -276,7 +296,7 @@ func _run() -> bool:
 	if probe:
 		return true
 
-	_build_scene(dst, lib)
+	_build_scene(dst, lib, fist)
 	return true
 
 func _sample_local(s: Rig, anim: Animation, t: float) -> Array:
@@ -480,12 +500,31 @@ func _probe_clip(dst: Rig, anim: Animation, clip_name: String) -> void:
 # Сборка сцены
 # ---------------------------------------------------------------------------
 
-func _build_scene(dst: Rig, lib: AnimationLibrary) -> void:
+## Заменяет треки пальцев правой кисти постоянным кулаком из эталона.
+func _apply_fist(anim: Animation, fist: Animation) -> void:
+	for nm in GRIP_FINGERS:
+		var src_tr := -1
+		for t in fist.get_track_count():
+			if String(fist.track_get_path(t)).ends_with(":" + nm):
+				src_tr = t
+		var dst_tr := -1
+		for t in anim.get_track_count():
+			if String(anim.track_get_path(t)).ends_with(":" + nm) and anim.track_get_type(t) == Animation.TYPE_ROTATION_3D:
+				dst_tr = t
+		if src_tr == -1 or dst_tr == -1:
+			continue
+		var q: Quaternion = fist.track_get_key_value(src_tr, 0)
+		while anim.track_get_key_count(dst_tr) > 0:
+			anim.track_remove_key(dst_tr, 0)
+		anim.rotation_track_insert_key(dst_tr, 0.0, q)
+		anim.rotation_track_insert_key(dst_tr, anim.length, q)
+
+func _build_scene(dst: Rig, lib: AnimationLibrary, fist: Animation) -> void:
 	var node := dst.root
 	node.name = "MinerPackageModel"
 	var sk := dst.sk
 	# 1. Сокет инструмента (кость + BoneAttachment3D).
-	var socket_global := _socket_global_rest(dst)
+	var socket_global := _socket_global_rest(dst, fist)
 	var hand := sk.find_bone("Hand.r")
 	var sock := sk.find_bone("ToolSocket.R")
 	if sock == -1:
@@ -561,25 +600,41 @@ func _make_reset(dst: Rig) -> Animation:
 	a.position_track_insert_key(hp, 0.0, dst.sk.get_bone_rest(dst.names["Hip"]).origin)
 	return a
 
-## Сокет в пространстве скелета: начало — центр хвата кулака, +Y — ось рукояти
-## (от мизинца к указательному, к навершию), +X — от запястья к пальцам (лезвие),
-## масштаб — метры (1 / MODEL_UNIT_M).
-func _socket_global_rest(dst: Rig) -> Transform3D:
+## Сокет в пространстве скелета. Считается по СЖАТОМУ кулаку (эталон FIST_REF):
+## начало — центр отверстия кулака (центр окружности через суставы согнутых пальцев,
+## усреднённый по указательному..мизинцу), +Y — ось рукояти от мизинца к указательному
+## (сторона большого пальца -> голова инструмента), +X — от запястья к костяшкам
+## (лезвие/боёк смотрит туда же, куда костяшки), масштаб — метры (1 / MODEL_UNIT_M).
+## Сокет — дочерняя кость Hand.r, поэтому положение в кулаке переносится в rest-позу кисти.
+func _socket_global_rest(dst: Rig, fist: Animation) -> Transform3D:
 	var sk := dst.sk
-	var g := func(n: String) -> Vector3: return sk.get_bone_global_rest(sk.find_bone(n)).origin
-	var hand: Vector3 = g.call("Hand.r")
-	var knuckles: Vector3 = (g.call("Index1.r") + g.call("Middle1.r") + g.call("Ring1.r") + g.call("Pinky1.r")) / 4.0
-	var y: Vector3 = (g.call("Index1.r") - g.call("Pinky1.r")).normalized()
-	var x: Vector3 = knuckles - hand
-	x = (x - y * x.dot(y)).normalized()
+	var glob: Array = _fk(dst, fist, 0.0)
+	var hand_i := sk.find_bone("Hand.r")
+	var inv: Transform3D = (glob[hand_i] as Transform3D).affine_inverse()
+	var lp := func(n: String) -> Vector3: return inv * (glob[sk.find_bone(n)] as Transform3D).origin
+	var centers: Array[Vector3] = []
+	for f in ["Index", "Middle", "Ring", "Pinky"]:
+		centers.append(_circumcenter(lp.call(f + "1.r"), lp.call(f + "2.r"), lp.call(f + "3.r")))
+	var origin := Vector3.ZERO
+	for c in centers:
+		origin += c
+	origin /= centers.size()
+	var y: Vector3 = (lp.call("Index1.r") - lp.call("Pinky1.r")).normalized()
+	var knuckles: Vector3 = (lp.call("Index1.r") + lp.call("Middle1.r") + lp.call("Ring1.r") + lp.call("Pinky1.r")) / 4.0
+	var x: Vector3 = knuckles - y * knuckles.dot(y)
+	x = x.normalized()
 	var z := x.cross(y).normalized()
-	# Ладонь — сторона большого пальца.
-	var thumb: Vector3 = g.call("Thumb1.r") - hand
-	var palm_sign := 1.0 if thumb.dot(z) > 0.0 else -1.0
-	var hand_len := (knuckles - hand).length()
-	var origin := hand + (knuckles - hand) * 1.25 + z * palm_sign * hand_len * 0.30
-	var b := Basis(x, y, z).scaled(Vector3.ONE / MODEL_UNIT_M)
-	return Transform3D(b, origin)
+	var local := Transform3D(Basis(x, y, z).scaled(Vector3.ONE / MODEL_UNIT_M), origin)
+	print("grip socket (Hand.r local): origin=%s radius=%.3f" % [origin, (lp.call("Middle2.r") - centers[1]).length()])
+	return sk.get_bone_global_rest(hand_i) * local
+
+func _circumcenter(a: Vector3, b: Vector3, c: Vector3) -> Vector3:
+	var ab := b - a
+	var ac := c - a
+	var n := ab.cross(ac)
+	if n.length_squared() < 1e-12:
+		return (a + b + c) / 3.0
+	return a + (n.cross(ab) * ac.length_squared() + ac.cross(n) * ab.length_squared()) / (2.0 * n.length_squared())
 
 func _split_pickaxe(body: MeshInstance3D, sk: Skeleton3D, socket_global: Transform3D) -> MeshInstance3D:
 	var mesh := body.mesh as ArrayMesh
@@ -669,8 +724,9 @@ func _split_pickaxe(body: MeshInstance3D, sk: Skeleton3D, socket_global: Transfo
 	var blade := Vector3(hd_max.x - hd_min.x, 0, hd_max.z - hd_min.z)
 	var px := (blade - py * blade.dot(py)).normalized()
 	var pz := px.cross(py).normalized()
-	# Хват — на 40% длины рукояти от низа (как у остальных инструментов).
-	var grip := handle_bottom + (handle_top - handle_bottom) * 0.40
+	# Хват одной рукой — у конца рукояти (15% длины от низа): при ударе кирка
+	# продолжает предплечье, а не торчит из середины кулака.
+	var grip := handle_bottom + (handle_top - handle_bottom) * 0.15
 	var pframe := Transform3D(Basis(px, py, pz), grip)
 	var to_local := pframe.affine_inverse()
 	# Новый меш кирки (статический, в метрах, в системе сокета).
@@ -824,36 +880,3 @@ func _set_owner_recursive(node: Node, root_node: Node) -> void:
 	for child in node.get_children():
 		child.owner = root_node
 		_set_owner_recursive(child, root_node)
-
-## Ретаргет даёт правой ступне постоянное смещение ~+15° (видно в idle).
-## Лечим источник, а не следствие: Foot.r = зеркало Foot.l, носок контрится,
-## чтобы мировая ориентация пальцев не менялась. Концы mine правим в .tres.
-func _mirror_right_foot(anim: Animation) -> void:
-	var tr_l := -1
-	var tr_r := -1
-	var tr_t := -1
-	for tr in anim.get_track_count():
-		if anim.track_get_type(tr) != Animation.TYPE_ROTATION_3D:
-			continue
-		var bn := String(anim.track_get_path(tr)).get_slice(":", 1)
-		if bn == "Foot.l":
-			tr_l = tr
-		elif bn == "Foot.r":
-			tr_r = tr
-		elif bn == "Toe.r":
-			tr_t = tr
-	if tr_l == -1 or tr_r == -1:
-		return
-	var q_old0: Quaternion = anim.track_get_key_value(tr_r, 0)
-	for k in anim.track_get_key_count(tr_r):
-		var t := anim.track_get_key_time(tr_r, k)
-		var ql: Quaternion = anim.rotation_track_interpolate(tr_l, t)
-		anim.track_set_key_value(tr_r, k, Quaternion(ql.x, -ql.y, -ql.z, ql.w).normalized())
-	if tr_t == -1:
-		return
-	var q_ideal0: Quaternion = anim.rotation_track_interpolate(tr_l, anim.track_get_key_time(tr_r, 0))
-	q_ideal0 = Quaternion(q_ideal0.x, -q_ideal0.y, -q_ideal0.z, q_ideal0.w).normalized()
-	var qf: Quaternion = (q_ideal0 * q_old0.inverse()).normalized().inverse()
-	for k in anim.track_get_key_count(tr_t):
-		var qt: Quaternion = anim.track_get_key_value(tr_t, k)
-		anim.track_set_key_value(tr_t, k, (qf * qt).normalized())

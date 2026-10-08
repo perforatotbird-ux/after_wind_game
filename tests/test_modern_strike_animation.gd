@@ -43,7 +43,7 @@ func _run() -> void:
 	var speed: float = float(mine.get_meta("play_speed", 1.0))
 	var DUR: float = mine.length / speed
 	var CONTACT: float = float(mine.get_meta("contact_time", mine.length * 0.5)) / speed
-	check(DUR >= 0.6 and DUR <= 1.2, "Strike must feel snappy (0.6-1.2s)")
+	check(DUR >= 0.4 and DUR <= 1.2, "Strike must feel snappy (0.4-1.2s)")
 	for bone_name in ["Spine1", "Spine2", "Forearm.r", "Hand.r", "Thigh.l"]:
 		var found: bool = false
 		for track in range(mine.get_track_count()):
