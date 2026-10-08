@@ -2,7 +2,7 @@
 
 > Проект: `k:\After Wind`  
 > Репозиторий: `https://github.com/perforatotbird-ux/after_wind_game.git`  
-> Движок: **Godot Engine 4.3+**  
+> Движок: **Godot Engine 4.7.3**  
 > Текущий статус: **Глава 1: Base Restored (Все 13 этапов 100% завершены)**
 
 ---
@@ -155,7 +155,7 @@
 .\start.bat --test
 
 # Либо напрямую через консольный бинарник:
-Godot_v4.7.2-stable_win64.exe --headless --path . -s tests/test_stage13_polish_and_finale.gd
+Godot_v4.7.3-stable_win64.exe --headless --path . -s tests/test_stage13_polish_and_finale.gd
 ```
 
 - **11 этапных** тестов (`test_stage2_time_and_fatigue.gd`, `test_stage4_thermal_processing.gd`, `test_stage5_buildings.gd`, `test_stage6_water_network.gd`, `test_stage7_npc_contracts.gd`, `test_stage8_farming.gd`, `test_stage9_weather.gd`, `test_stage10_electricity.gd`, `test_stage11_tool_upgrades.gd`, `test_stage12_classes_and_save.gd`, `test_stage13_polish_and_finale.gd`).

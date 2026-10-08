@@ -5,8 +5,8 @@ set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 set "GODOT_EXE="
 
-if exist "%SCRIPT_DIR%\Godot_v4.7.2-stable_win64.exe" set "GODOT_EXE=%SCRIPT_DIR%\Godot_v4.7.2-stable_win64.exe"
-if "%GODOT_EXE%"=="" if exist "K:\Godot_v4.7.2-stable_win64.exe" set "GODOT_EXE=K:\Godot_v4.7.2-stable_win64.exe"
+if exist "%SCRIPT_DIR%\Godot_v4.7.3-stable_win64.exe" set "GODOT_EXE=%SCRIPT_DIR%\Godot_v4.7.3-stable_win64.exe"
+if "%GODOT_EXE%"=="" if exist "%SCRIPT_DIR%\Godot_v4.7.2-stable_win64.exe" set "GODOT_EXE=%SCRIPT_DIR%\Godot_v4.7.2-stable_win64.exe"
 if "%GODOT_EXE%"=="" if exist "%SCRIPT_DIR%\..\TankCity\.godot-bin\Godot_v4.3-stable_win64.exe" set "GODOT_EXE=%SCRIPT_DIR%\..\TankCity\.godot-bin\Godot_v4.3-stable_win64.exe"
 if "%GODOT_EXE%"=="" if exist "K:\Test\TankCity\.godot-bin\Godot_v4.3-stable_win64.exe" set "GODOT_EXE=K:\Test\TankCity\.godot-bin\Godot_v4.3-stable_win64.exe"
 if "%GODOT_EXE%"=="" (
@@ -21,7 +21,7 @@ if "%GODOT_EXE%"=="" (
 
 if "%GODOT_EXE%"=="" (
     echo [ERROR] Godot engine executable was not found.
-    echo Please place a Godot 4.3+ executable in this directory:
+    echo Please place a Godot 4.7.3 executable in this directory:
     echo   %SCRIPT_DIR%
     pause
     exit /b 1

@@ -1,6 +1,6 @@
 # After The Storm («После бури» / After Wind)
 
-[![Engine: Godot 4.3+](https://img.shields.io/badge/Engine-Godot%204.3%2B-blue.svg)](https://godotengine.org)
+[![Engine: Godot 4.7.3](https://img.shields.io/badge/Engine-Godot%204.7.3-blue.svg)](https://godotengine.org)
 [![Status: Chapter 1 Finished](https://img.shields.io/badge/Status-Chapter%201%20%7C%20Base%20Restored-brightgreen.svg)]()
 [![Tests: 18/18 Passing](https://img.shields.io/badge/Tests-18%2F18%20Passed-success.svg)]()
 
