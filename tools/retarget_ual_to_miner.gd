@@ -94,7 +94,7 @@ const CLIPS: Dictionary = {
 	"jog": [UAL1_GLB, "Jog_Fwd_Loop", 0, -1, true, 1.0],
 	"run": [UAL1_GLB, "Sprint_Loop", 0, -1, true, 1.0],
 	# Удар киркой сверху вниз: замах за голову -> удар перед собой (контакт ~0.42 c).
-	"mine": [UAL2_GLB, "OverhandThrow", 0, 36, false, 1.2],
+	"mine": [UAL2_GLB, "OverhandThrow", 0, 36, false, 2.4],
 	# Рубка топором (горизонтальный удар).
 	"chop": [UAL2_GLB, "TreeChopping_Loop", 0, -1, false, 1.0],
 	# Вскопка лопатой и набор воды ведром: наклон к земле перед собой.
@@ -262,6 +262,8 @@ func _run() -> bool:
 		if anim == null:
 			continue
 		_reduce_keys(anim)
+		if clip_name == "idle":
+			_mirror_right_foot(anim)
 		anim.set_meta("play_speed", float(c[5]))
 		if clip_name in STRIKE_CLIPS:
 			anim.set_meta("contact_time", _contact_time(dst, anim))
@@ -822,3 +824,36 @@ func _set_owner_recursive(node: Node, root_node: Node) -> void:
 	for child in node.get_children():
 		child.owner = root_node
 		_set_owner_recursive(child, root_node)
+
+## Ретаргет даёт правой ступне постоянное смещение ~+15° (видно в idle).
+## Лечим источник, а не следствие: Foot.r = зеркало Foot.l, носок контрится,
+## чтобы мировая ориентация пальцев не менялась. Концы mine правим в .tres.
+func _mirror_right_foot(anim: Animation) -> void:
+	var tr_l := -1
+	var tr_r := -1
+	var tr_t := -1
+	for tr in anim.get_track_count():
+		if anim.track_get_type(tr) != Animation.TYPE_ROTATION_3D:
+			continue
+		var bn := String(anim.track_get_path(tr)).get_slice(":", 1)
+		if bn == "Foot.l":
+			tr_l = tr
+		elif bn == "Foot.r":
+			tr_r = tr
+		elif bn == "Toe.r":
+			tr_t = tr
+	if tr_l == -1 or tr_r == -1:
+		return
+	var q_old0: Quaternion = anim.track_get_key_value(tr_r, 0)
+	for k in anim.track_get_key_count(tr_r):
+		var t := anim.track_get_key_time(tr_r, k)
+		var ql: Quaternion = anim.rotation_track_interpolate(tr_l, t)
+		anim.track_set_key_value(tr_r, k, Quaternion(ql.x, -ql.y, -ql.z, ql.w).normalized())
+	if tr_t == -1:
+		return
+	var q_ideal0: Quaternion = anim.rotation_track_interpolate(tr_l, anim.track_get_key_time(tr_r, 0))
+	q_ideal0 = Quaternion(q_ideal0.x, -q_ideal0.y, -q_ideal0.z, q_ideal0.w).normalized()
+	var qf: Quaternion = (q_ideal0 * q_old0.inverse()).normalized().inverse()
+	for k in anim.track_get_key_count(tr_t):
+		var qt: Quaternion = anim.track_get_key_value(tr_t, k)
+		anim.track_set_key_value(tr_t, k, (qf * qt).normalized())
