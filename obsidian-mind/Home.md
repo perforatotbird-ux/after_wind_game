@@ -6,6 +6,10 @@ tags:
 
 # Home
 
+## After The Storm (игра)
+
+- [[After The Storm]] — ссылки на актуальную документацию в `docs/DOCUMENTATION.md`
+
 ## CloudByte (TGCloud) Knowledge Base
 
 - [[2026-07-27 CloudByte Project Context|Project Context & Executive Summary]]
