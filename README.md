@@ -2,7 +2,7 @@
 
 [![Engine: Godot 4.7.x](https://img.shields.io/badge/Engine-Godot%204.7.x-blue.svg)](https://godotengine.org)
 [![Status: Chapter 1 Finished](https://img.shields.io/badge/Status-Chapter%201%20%7C%20Base%20Restored-brightgreen.svg)]()
-[![Godot regression tests](https://github.com/perforatotbird-ux/after_wind_game/actions/workflows/tests.yml/badge.svg)](https://github.com/perforatotbird-ux/after_wind_game/actions/workflows/tests.yml)
+[![Tests: 22](https://img.shields.io/badge/Godot_tests-22-blue.svg)](tests/)
 
 > Изометрический 3D-симулятор выживания, сбора ресурсов, переработки, сельского хозяйства, электрогенерации и восстановления разрушенного поселения после природного катаклизма.
 
@@ -98,7 +98,9 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 если Godot вернул код 0. Логи и итоговый JSON: `outputs/test-results/`.
 Пять Python-тестов проверяют обработку ошибок самим запуском.
 
-GitHub Actions выполняет импорт, Python-тесты и весь набор Godot-тестов на Linux.
-Результат CI смотрите в **Actions**, а не по статическому числу в README.
+Workflow GitHub Actions для импорта и всех тестов подготовлен отдельно. Его
+нужно добавить в `.github/workflows/tests.yml` подключением с правом **Workflows**:
+текущее подключение не разрешило запись workflow. До этого автоматический CI
+не установлен; числа выше отражают локальную проверку.
 
 Подробности исправлений и оставшихся рисков: [CODE_AUDIT.md](docs/CODE_AUDIT.md).
