@@ -17,7 +17,6 @@ func _process(_delta: float) -> bool:
 	if _test_executed:
 		return false
 	_test_executed = true
-	
 	_run_tests()
 	return true
 
@@ -30,46 +29,38 @@ func _run_tests() -> void:
 	print("=================================================================")
 	print("🧪 ЗАПУСК ТЕСТОВ ЭТАПА 13: GAME FEEL, АУДИО, ПАУЗА И BASE RESTORED")
 	print("=================================================================")
-	
+
 	var world = root.get_node_or_null("World")
 	if not world:
 		_fail("Узел World не найден в сцене")
 		return
-	
 	var player = world.get_node_or_null("Player")
 	if not player:
 		_fail("Player отсутствует в сцене")
 		return
-	
 	var hud = world.get_node_or_null("HUD")
 	if not hud:
 		_fail("HUD не найден")
 		return
-	
 	var inv = player.get("inventory")
 	if not inv:
 		_fail("Инвентарь игрока не найден")
 		return
 
-	# -------------------------------------------------------------
-	# 1. Проверка процедурного AudioManager
-	# -------------------------------------------------------------
+	# 1. Процедурный AudioManager
 	print("\n--- Проверка 1: Процедурный AudioManager и генерация звуков ---")
 	var audio_mgr = world.find_child("AudioManager", true, false)
 	if not audio_mgr:
 		_fail("AudioManager не найден среди дочерних узлов World")
 		return
-	
 	if not AudioManager.instance:
 		_fail("Статический экземпляр AudioManager.instance равен null")
 		return
-	
 	var expected_sounds: Array[String] = [
 		"hit_wood", "hit_stone", "till_soil", "harvest",
 		"machine_start", "coins", "water_splash", "ui_click",
 		"victory_fanfare", "wind_ambient", "rain_ambient"
 	]
-	
 	for s_name in expected_sounds:
 		if not audio_mgr._sounds.has(s_name):
 			_fail("Звуковой эффект '%s' отсутствует в реестре AudioManager" % s_name)
@@ -79,16 +70,141 @@ func _run_tests() -> void:
 			_fail("Аудиопоток '%s' пуст или не сгенерирован" % s_name)
 			return
 		print("  • Звук '%s': %d байт PCM, mix_rate: %d Гц" % [s_name, stream.data.size(), stream.mix_rate])
-	
-	# Проверка вызова воспроизведения и регулировки громкости
 	AudioManager.play("hit_wood", 1.05)
 	AudioManager.play("coins", 1.0)
 	AudioManager.play("ui_click")
-	
 	audio_mgr.set_sfx_vol(0.5)
 	if abs(audio_mgr.sfx_volume - 0.5) > 0.01:
 		_fail("Регулировка sfx_volume не сработала")
 		return
-	
 	audio_mgr.set_ambient_vol(0.7)
-	if abs(audio
+	if abs(audio_mgr.ambient_volume - 0.7) > 0.01:
+		_fail("Регулировка ambient_volume не сработала")
+		return
+	audio_mgr.set_weather_rain(true, 0.8)
+	audio_mgr.set_weather_rain(false)
+	print("✅ Все 11 процедурных звуковых эффектов сгенерированы и воспроизводятся.")
+
+	# 2. Меню паузы
+	print("\n--- Проверка 2: Меню паузы PauseWindow и управление по ESC ---")
+	if not hud.pause_window:
+		_fail("PauseWindow отсутствует в HUD")
+		return
+	if not hud.pause_button:
+		_fail("PauseButton отсутствует в HUD")
+		return
+	hud.toggle_pause_menu()
+	if not hud.pause_window.visible:
+		_fail("PauseWindow должно быть видимым после toggle_pause_menu()")
+		return
+	if not paused:
+		_fail("Дерево сцены SceneTree должно встать на паузу при открытии PauseWindow")
+		return
+	if not hud.base_progress_label or hud.base_progress_label.text.is_empty():
+		_fail("BaseProgressLabel в меню паузы не обновлен")
+		return
+	print("  • Индикатор прогресса в меню паузы: '%s'" % hud.base_progress_label.text)
+	if not hud.pause_tasks_list or hud.pause_tasks_list.get_child_count() != 8:
+		_fail("Чек-лист вех восстановления базы должен содержать 8 пунктов, факт: %d" % (hud.pause_tasks_list.get_child_count() if hud.pause_tasks_list else 0))
+		return
+	print("  • Чек-лист вех в меню паузы успешно отрисован (8 задач).")
+	if hud.sfx_slider:
+		hud.sfx_slider.value = 0.65
+		if abs(audio_mgr.sfx_volume - 0.65) > 0.01:
+			_fail("Слайдер sfx_slider не синхронизировался с AudioManager")
+			return
+	hud.close_pause_menu()
+	if hud.pause_window.visible:
+		_fail("PauseWindow должно закрыться после close_pause_menu()")
+		return
+	if paused:
+		_fail("Пауза должна быть снята после закрытия PauseWindow")
+		return
+	print("✅ Меню паузы и чек-лист восстановления базы функционируют штатно.")
+
+	# 3. VictoryManager
+	print("\n--- Проверка 3: Менеджер оценки условий финала VictoryManager ---")
+	ContractDB.reset_completed()
+	var house = world.find_child("RepairableHouse", true, false)
+	var storage = world.find_child("RepairableStorage", true, false)
+	if house: house.current_stage = 0
+	if storage: storage.current_stage = 0
+	var machines: Array = []
+	for m_name in ["StoneCrusher", "Workbench", "Smelter"]:
+		var m = world.find_child(m_name, true, false)
+		if not m and m_name == "StoneCrusher":
+			m = world.find_child("Crusher", true, false)
+		if not m or not ("completed_runs" in m):
+			_fail("Машина %s не найдена или не имеет completed_runs" % m_name)
+			return
+		m.completed_runs = 0
+		machines.append(m)
+
+	var initial_eval = VictoryManager.evaluate_base_restored(world)
+	print("  • Начальное состояние базы: выполнено %d/%d вех (%d%%), финал: %s" % [
+		initial_eval.completed_count, initial_eval.total_count, initial_eval.progress_pct, str(initial_eval.is_victory)
+	])
+	if initial_eval.is_victory:
+		_fail("База не должна считаться восстановленной на нулевых стадиях")
+		return
+
+	if house: house.current_stage = 2
+	if storage: storage.current_stage = 2
+	var plot1 = world.find_child("FarmlandPlot1", true, false)
+	if plot1:
+		plot1.soil_state = 1
+	ContractDB.completed_contracts["contract_wood"] = true
+	ContractDB.completed_contracts["contract_bricks"] = true
+	inv.upgrade_tool("iron_axe")
+
+	# Машины есть в сцене, но ещё ничего не произвели — финала быть не должно.
+	var idle_eval = VictoryManager.evaluate_base_restored(world)
+	print("  • Без продукции машин: %d/%d вех" % [idle_eval.completed_count, idle_eval.total_count])
+	if idle_eval.is_victory or idle_eval.completed_count != 5:
+		_fail("Без завершённых циклов машин должно быть ровно 5/8 вех и не быть финала (факт %d)" % idle_eval.completed_count)
+		return
+
+	for m in machines:
+		m.completed_runs = 1
+	var complete_eval = VictoryManager.evaluate_base_restored(world)
+	print("  • Состояние после завершения всех работ: выполнено %d/%d вех (%d%%), финал: %s" % [
+		complete_eval.completed_count, complete_eval.total_count, complete_eval.progress_pct, str(complete_eval.is_victory)
+	])
+	if not complete_eval.is_victory:
+		_fail("Все 8 условий выполнены, но evaluate_base_restored вернул is_victory == false")
+		return
+	if complete_eval.progress_pct != 100 or complete_eval.completed_count != 8:
+		_fail("Прогресс должен быть 100%% (8/8 вех)")
+		return
+	print("✅ VictoryManager корректно верифицировал все 8 критериев финала.")
+
+	# 4. VictoryWindow
+	print("\n--- Проверка 4: Окно триумфа VictoryWindow (BASE RESTORED) ---")
+	if not hud.victory_window:
+		_fail("VictoryWindow отсутствует в HUD")
+		return
+	hud._victory_shown = false
+	var triggered = hud.check_and_show_victory_if_earned()
+	if not triggered:
+		_fail("check_and_show_victory_if_earned() должно вернуть true при 100% готовности")
+		return
+	if not hud.victory_window.visible:
+		_fail("VictoryWindow должно стать видимым")
+		return
+	if not paused:
+		_fail("Игра должна быть на паузе во время победного экрана")
+		return
+	print("  • Победное окно «BASE RESTORED» успешно активировано.")
+	hud.close_victory_window()
+	if hud.victory_window.visible:
+		_fail("VictoryWindow должно закрыться после close_victory_window()")
+		return
+	if paused:
+		_fail("Пауза должна быть снята для перехода в режим свободной песочницы")
+		return
+	print("✅ Переход в свободный режим песочницы после победного окна работает.")
+
+	print("\n=================================================================")
+	print("🎉 ВСЕ ТЕСТЫ ЭТАПА 13 УСПЕШНО ПРОЙДЕНЫ! (CODE 0)")
+	print("=================================================================")
+	quit(0)
