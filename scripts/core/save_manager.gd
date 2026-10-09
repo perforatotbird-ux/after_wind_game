@@ -2,10 +2,10 @@ class_name SaveManager
 extends RefCounted
 
 ## Централизованный менеджер сохранения и загрузки игры (Этап 12, разделы 81, 88).
-## Сериализует состояние мира, персонажа, инвентаря, грядок, зданий, машин,
-## ресурсных узлов и прогресса в JSON. Формат версионируется (meta.format_version);
-## старые сохранения мигрируют в _migrate_save_data. Описание формата —
-## docs/DOCUMENTATION.md, раздел «Сохранения».
+## Сериализует состояние мира, персонажа, инвентаря, грядок, зданий, машин (включая
+## партии), ресурсных узлов, выброшенных предметов и прогресса в JSON. Формат
+## версионируется (meta.format_version); старые сохранения мигрируют в _migrate_save_data.
+## Описание формата — docs/DOCUMENTATION.md, раздел «Сохранения».
 
 const SAVE_FILE_NAME: String = "user://savegame.json"
 ## Текущая версия формата. v1 — сохранения без format_version (до унификации).
@@ -13,6 +13,7 @@ const SAVE_FORMAT_VERSION: int = 2
 const FarmlandPlot = preload("res://scripts/farming/farmland_plot.gd")
 const ProductionMachine = preload("res://scripts/crafting/production_machine.gd")
 const ResourceNodeScript = preload("res://scripts/resources/resource_node.gd")
+const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
@@ -131,11 +132,12 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		"victory_shown": bool(hud._victory_shown) if (hud and "_victory_shown" in hud) else false
 	}
 	
-	# 12. Машины (незавершённое производство, счётчик циклов, ожидающая продукция),
-	# торговцы и ресурсные узлы.
+	# 12. Машины (незавершённое производство и партия, счётчик циклов, ожидающая
+	# продукция), торговцы, ресурсные узлы и выброшенные предметы.
 	var machines: Array = []
 	var traders: Dictionary = {}
 	var resources: Array = []
+	var dropped: Array = []
 	for node in world.find_children("*", "", true, false):
 		if node is ProductionMachine:
 			machines.append({
@@ -144,7 +146,10 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"timer": node.process_timer,
 				"duration": node.process_duration,
 				"completed_runs": node.completed_runs,
-				"pending_outputs": node.pending_outputs.duplicate(true)
+				"pending_outputs": node.pending_outputs.duplicate(true),
+				"batch_total": node.batch_cycles_total,
+				"batch_done": node.batch_cycles_done,
+				"batch_to_buffer": node.batch_to_buffer
 			})
 		elif node is ResourceNodeScript:
 			resources.append({
@@ -153,11 +158,21 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"respawn_timer": maxf(0.0, float(node.respawn_timer)),
 				"current_hits": maxi(0, int(node.current_hits))
 			})
+		elif node.is_in_group(DroppedItemScript.GROUP) and "item_id" in node and not node.is_queued_for_deletion():
+			if int(node.amount) > 0:
+				dropped.append({
+					"item_id": str(node.item_id),
+					"amount": int(node.amount),
+					"x": node.global_position.x,
+					"y": node.global_position.y,
+					"z": node.global_position.z
+				})
 		if "starter_seeds_given" in node:
 			traders[str(world.get_path_to(node))] = node.starter_seeds_given
 	save_data["machines"] = machines
 	save_data["traders"] = traders
 	save_data["resources"] = resources
+	save_data["dropped_items"] = dropped
 
 	# Пишем во временный файл: не обнуляем последнее сохранение при сбое записи.
 	var json_str: String = JSON.stringify(save_data, "\t")
@@ -193,6 +208,8 @@ static func get_format_version(data: Dictionary) -> int:
 	return 1
 
 ## Приводит данные старых версий к текущему формату (без изменения мира).
+## Новые необязательные поля v2 (machines.batch_total / batch_done / batch_to_buffer,
+## секция dropped_items) версию не меняют: без них действуют значения по умолчанию.
 static func _migrate_save_data(data: Dictionary, from_version: int) -> Dictionary:
 	var migrated: Dictionary = data.duplicate(true)
 	if from_version < 2:
@@ -412,12 +429,23 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		var recipe: Dictionary = RecipeDB.get_recipe(state.get("recipe_id", ""))
 		if not recipe.is_empty() and recipe.get("machine", "") != machine.machine_type:
 			continue
+		var running: bool = not recipe.is_empty()
 		machine.active_recipe = recipe
 		machine.process_timer = float(state["timer"])
 		machine.process_duration = float(state["duration"])
-		machine.is_machine_running = not recipe.is_empty()
+		machine.is_machine_running = running
 		machine._last_user = player
 		machine.completed_runs = int(state.get("completed_runs", 0))
+		# Партия: без полей — одиночный запуск (как до появления партий).
+		if running:
+			var total: int = clampi(int(state.get("batch_total", 1)), 1, ProductionMachine.MAX_BATCH_CYCLES)
+			machine.batch_cycles_total = total
+			machine.batch_cycles_done = clampi(int(state.get("batch_done", 0)), 0, total - 1)
+			machine.batch_to_buffer = bool(state.get("batch_to_buffer", false))
+		else:
+			machine.batch_cycles_total = 0
+			machine.batch_cycles_done = 0
+			machine.batch_to_buffer = false
 		var pending: Dictionary = {}
 		var saved_pending: Dictionary = state.get("pending_outputs", {})
 		for item_id in saved_pending:
@@ -426,6 +454,8 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		machine.pending_outputs = pending
 		if machine.visual_node:
 			machine.visual_node.position = machine._original_pos
+		if machine.has_signal("outputs_changed"):
+			machine.outputs_changed.emit()
 	
 	# 11. Торговцы
 	for path in save_data.get("traders", {}):
@@ -443,6 +473,15 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			res_node._set_depleted(depleted)
 		res_node.respawn_timer = float(r_state.get("respawn_timer", 0.0))
 		res_node.current_hits = clampi(int(r_state.get("current_hits", res_node.current_hits)), 0, maxi(0, int(res_node.max_hits)))
+	
+	# 13. Выброшенные предметы: текущие кучки убираются, сохранённые создаются заново.
+	# В старых сохранениях секции нет — тогда кучки тоже убираются (их не было).
+	for node in world.find_children("*", "", true, false):
+		if node.is_in_group(DroppedItemScript.GROUP) and node.has_method("consume"):
+			node.consume()
+	for d_state in save_data.get("dropped_items", []):
+		var pos := Vector3(float(d_state.get("x", 0.0)), float(d_state.get("y", 0.0)), float(d_state.get("z", 0.0)))
+		DroppedItemScript.spawn(world, str(d_state["item_id"]), int(d_state["amount"]), pos)
 
 	if player and player.has_method("notify"):
 		player.notify("📂 Игра успешно загружена!")
@@ -585,6 +624,12 @@ static func _validate_save_data(data: Dictionary) -> bool:
 				for item_id in state["pending_outputs"]:
 					if ItemDB.get_item(item_id).is_empty() or not _is_integer(state["pending_outputs"][item_id]):
 						return false
+			if state.has("batch_total") and not _is_integer(state["batch_total"], 0.0, float(ProductionMachine.MAX_BATCH_CYCLES)):
+				return false
+			if state.has("batch_done") and not _is_integer(state["batch_done"], 0.0, float(ProductionMachine.MAX_BATCH_CYCLES)):
+				return false
+			if state.has("batch_to_buffer") and not state["batch_to_buffer"] is bool:
+				return false
 	for path in data.get("traders", {}):
 		if not _is_relative_path(path) or not data["traders"][path] is bool:
 			return false
@@ -600,6 +645,20 @@ static func _validate_save_data(data: Dictionary) -> bool:
 				return false
 			if r_state.has("current_hits") and not _is_integer(r_state["current_hits"]):
 				return false
+	if data.has("dropped_items"):
+		if not data["dropped_items"] is Array:
+			return false
+		for d_state in data["dropped_items"]:
+			if not d_state is Dictionary:
+				return false
+			var d_id = d_state.get("item_id", "")
+			if not d_id is String or ItemDB.get_item(d_id).is_empty():
+				return false
+			if not _is_integer(d_state.get("amount"), 1.0):
+				return false
+			for axis in ["x", "y", "z"]:
+				if not _is_number(d_state.get(axis)):
+					return false
 	return true
 
 static func _is_relative_path(value: Variant) -> bool:
