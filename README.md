@@ -1,8 +1,8 @@
 # After The Storm («После бури» / After Wind)
 
-[![Engine: Godot 4.7.3](https://img.shields.io/badge/Engine-Godot%204.7.3-blue.svg)](https://godotengine.org)
+[![Engine: Godot 4.7.x](https://img.shields.io/badge/Engine-Godot%204.7.x-blue.svg)](https://godotengine.org)
 [![Status: Chapter 1 Finished](https://img.shields.io/badge/Status-Chapter%201%20%7C%20Base%20Restored-brightgreen.svg)]()
-[![Tests: 21/21 Passing](https://img.shields.io/badge/Tests-21%2F21%20Passed-success.svg)]()
+[![Godot regression tests](https://github.com/perforatotbird-ux/after_wind_game/actions/workflows/tests.yml/badge.svg)](https://github.com/perforatotbird-ux/after_wind_game/actions/workflows/tests.yml)
 
 > Изометрический 3D-симулятор выживания, сбора ресурсов, переработки, сельского хозяйства, электрогенерации и восстановления разрушенного поселения после природного катаклизма.
 
@@ -44,11 +44,11 @@ start.bat --test
 
 ## 📚 Документация и передача проекта
 
-- 📖 **[DEVELOPER_HANDOVER.md](file:///k:/After%20Wind/DEVELOPER_HANDOVER.md)** — Полное руководство по разработке, архитектуре и кодовой базе.
-- 📋 **[PHASES_SUMMARY.md](file:///k:/After%20Wind/docs/PHASES_SUMMARY.md)** — Сводка всех 13 завершенных фаз разработки (Этапы 0–13).
-- 🧭 **[CONTROLS_AND_SYSTEMS.md](file:///k:/After%20Wind/docs/CONTROLS_AND_SYSTEMS.md)** — Памятка по системам и управлению.
-- 🗺️ **[After The Storm — Документация и Роадмап.md](file:///k:/After%20Wind/docs/After%20The%20Storm%20%E2%80%94%20%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B8%20%D0%A0%D0%BE%D0%B0%D0%B4%D0%BC%D0%B0%D0%BF.md)** — Мастер-документ проекта.
-- 🧠 **[obsidian-mind/](file:///k:/After%20Wind/obsidian-mind)** — Полное хранилище базы знаний Obsidian. Открывается через Obsidian: *Open Folder as Vault* -> выберите папку `obsidian-mind`.
+- 📖 **[DEVELOPER_HANDOVER.md](DEVELOPER_HANDOVER.md)** — Полное руководство по разработке, архитектуре и кодовой базе.
+- 📋 **[PHASES_SUMMARY.md](docs/PHASES_SUMMARY.md)** — Сводка всех 13 завершенных фаз разработки (Этапы 0–13).
+- 🧭 **[CONTROLS_AND_SYSTEMS.md](docs/CONTROLS_AND_SYSTEMS.md)** — Памятка по системам и управлению.
+- 🗺️ **[After The Storm — Документация и Роадмап.md](docs/After%20The%20Storm%20%E2%80%94%20%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B8%20%D0%A0%D0%BE%D0%B0%D0%B4%D0%BC%D0%B0%D0%BF.md)** — Мастер-документ проекта.
+- 🧠 **[obsidian-mind/](obsidian-mind/)** — Полное хранилище базы знаний Obsidian. Открывается через Obsidian: *Open Folder as Vault* -> выберите папку `obsidian-mind`.
 
 ---
 
@@ -62,7 +62,7 @@ start.bat --test
 6. **NPC и экономика**: караванщик Степан, доска объявлений, заказы и контракты.
 7. **Ремонт базы**: 4 визуальные стадии жилого дома и склада продукции.
 8. **Ролевая система**: 3 специализации (Шахтёр, Фермер, Учёный) с уникальными перками.
-9. **Сохранения**: полная сериализация мира в JSON (`F5`/`F9`, автосейв при сне).
+9. **Сохранения**: сериализация основных систем мира в JSON (`F5`/`F9`, автосейв при сне).
 10. **Game Feel и аудио**: 11 процедурно синтезированных звуков (без тяжелых ассетов).
 11. **Финал Главы 1**: победный триумф **«BASE RESTORED»** по 8 критериям дизайн-документа.
 12. **Анимации главного героя**: ретаргет Universal Animation Library 1/2 на модель шахтёра (`tools/retarget_ual_to_miner.gd`) — idle / walk / jog / run, удар киркой сверху вниз, рубка топором, вскопка, набор воды, полив, еда и др.; темп шага подгоняется под скорость.
@@ -74,11 +74,31 @@ start.bat --test
 
 ## 🧪 Запуск тестов
 
+Нужны **Godot 4.7.x** и **Python 3.9+**. Проверено на Godot **4.7.2 stable** под Linux.
+Blender не требуется для игры и тестов: используются готовые GLB/TSCN, импорт
+исходников `.blend` отключён. Для работы с ними в редакторе включите
+`filesystem/import/blender/enabled` и настройте Blender.
+
 ```bash
+# Linux / macOS (или передайте полный путь к Godot):
+python3 tools/run_tests.py --godot godot
+
+# Windows:
 .\start.bat --test
+
+# Самопроверка тестового запуска:
+python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-Все **20** автотестов выполняются в headless-режиме со 100% успехом (код возврата 0):
+Запускаются все **22 GDScript-теста**: 11 этапных, 10 фичевых и один новый
+тест регрессий аудита. Каждый — отдельным процессом, с ограничением времени
+и отдельными пользовательскими сохранениями. На Windows/macOS для этого создаётся
+временная копия проекта с уникальным именем; этот путь требует отдельной проверки
+на этих платформах. Запуск не считает тест успешным при `ERROR` / `SCRIPT ERROR`, даже
+если Godot вернул код 0. Логи и итоговый JSON: `outputs/test-results/`.
+Пять Python-тестов проверяют обработку ошибок самим запуском.
 
-- **11 этапных** регрессионных тестов (`test_stage2…13`) — покрывают этапы 2, 4–13.
-- **10 фичевых** тестов (`test_orbit_camera`, `test_miner_and_pickaxe`, `test_pickaxe_swing_and_lmb`, `test_modern_strike_animation`, `test_stardew_character`, `test_equipped_tools`, `test_hero_animations_ingame`, `test_hero_grip_and_feet`, `test_rocks`, `test_trees`) — покрывают модели персонажей, анимацию удара, орбитальную камеру, динамическую экипировку инструментов (топор/кирка/лопата/ведро в руке по активному слоту), проигрывание анимаций героя в игре, постановку стоп, хват инструментов в кулаке камни и лес на карте.
+GitHub Actions выполняет импорт, Python-тесты и весь набор Godot-тестов на Linux.
+Результат CI смотрите в **Actions**, а не по статическому числу в README.
+
+Подробности исправлений и оставшихся рисков: [CODE_AUDIT.md](docs/CODE_AUDIT.md).

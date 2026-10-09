@@ -58,8 +58,13 @@ start "" "%GODOT_EXE%" -e --path "%SCRIPT_DIR%"
 goto done
 
 :do_test
-echo Running test suite headless...
-"%GODOT_EXE%" --headless --path "%SCRIPT_DIR%" -s "tests/test_stage13_polish_and_finale.gd"
-goto done
+echo Running full test suite headless (Python 3 required)...
+where python >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] Python 3 is required for the test runner.
+    exit /b 1
+)
+python "%SCRIPT_DIR%\tools\run_tests.py" --godot "%GODOT_EXE%"
+exit /b %ERRORLEVEL%
 
 :done

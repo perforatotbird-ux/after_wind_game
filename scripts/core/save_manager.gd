@@ -6,6 +6,10 @@ extends RefCounted
 
 const SAVE_FILE_NAME: String = "user://savegame.json"
 const FarmlandPlot = preload("res://scripts/farming/farmland_plot.gd")
+const ProductionMachine = preload("res://scripts/crafting/production_machine.gd")
+const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
+const ItemDB = preload("res://scripts/inventory/item_db.gd")
+const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
 
 static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	if not world or not is_instance_valid(world):
@@ -109,15 +113,43 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		"completed": ContractDB.completed_contracts.duplicate(true)
 	}
 	
-	# Запись в файл
+	# Незавершённое производство: сырьё уже списано, поэтому сохраняем и процесс.
+	var machines: Array = []
+	var traders: Dictionary = {}
+	for node in world.find_children("*", "", true, false):
+		if node is ProductionMachine:
+			machines.append({
+				"path": str(world.get_path_to(node)),
+				"recipe_id": node.active_recipe.get("id", "") if node.is_machine_running else "",
+				"timer": node.process_timer,
+				"duration": node.process_duration
+			})
+		if "starter_seeds_given" in node:
+			traders[str(world.get_path_to(node))] = node.starter_seeds_given
+	save_data["machines"] = machines
+	save_data["traders"] = traders
+
+	# Пишем во временный файл: не обнуляем последнее сохранение при сбое записи.
 	var json_str: String = JSON.stringify(save_data, "\t")
-	var file = FileAccess.open(file_path, FileAccess.WRITE)
+	var temp_path: String = file_path + ".tmp"
+	var file = FileAccess.open(temp_path, FileAccess.WRITE)
 	if not file:
 		push_error("SaveManager: Ошибка открытия файла для записи: " + file_path)
 		return false
 	
 	file.store_string(json_str)
+	file.flush()
+	var write_error: Error = file.get_error()
 	file.close()
+	if write_error != OK:
+		DirAccess.remove_absolute(temp_path)
+		push_error("SaveManager: ошибка записи сохранения: %d" % write_error)
+		return false
+	var rename_error: Error = DirAccess.rename_absolute(temp_path, file_path)
+	if rename_error != OK:
+		DirAccess.remove_absolute(temp_path)
+		push_error("SaveManager: ошибка замены сохранения: %d" % rename_error)
+		return false
 	
 	if player and player.has_method("notify"):
 		player.notify("💾 Игра успешно сохранена!")
@@ -152,6 +184,11 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		push_error("SaveManager: некорректный формат данных сохранения")
 		return false
 	
+	# Валидация ВСЕХ секций до первого изменения мира.
+	if not _validate_save_data(save_data):
+		push_warning("SaveManager: некорректные поля сохранения")
+		return false
+
 	# 1. Восстановление игрока и инвентаря
 	var player = world.find_child("Player", true, false)
 	if player and is_instance_valid(player) and save_data.has("player"):
@@ -196,8 +233,11 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 					loaded_tools.append(str(t))
 				inv.tools = loaded_tools
 			if inv_data.has("equipped_tool"):
-				inv.equipped_tool = inv_data["equipped_tool"]
-				inv.equip_tool(inv.equipped_tool)
+				var saved_tool: String = inv_data["equipped_tool"]
+				if inv.equipped_tool == saved_tool:
+					inv._notify_tool_changed()
+				else:
+					inv.equip_tool(saved_tool)
 			if inv_data.has("max_slots"):
 				inv.max_slots = int(inv_data["max_slots"])
 			if inv_data.has("max_weight"):
@@ -230,7 +270,7 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		var weather_mgr = world.find_child("WeatherManager", true, false)
 		if weather_mgr and is_instance_valid(weather_mgr) and w_data.has("current_weather"):
 			if weather_mgr.has_method("set_weather"):
-				weather_mgr.set_weather(w_data["current_weather"])
+				weather_mgr.set_weather(int(w_data["current_weather"]))
 	
 	# 4. Здания
 	if save_data.has("buildings"):
@@ -284,7 +324,7 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			var p_name = p_state.get("name", "")
 			var plot = plots_by_name.get(p_name, null)
 			if plot and is_instance_valid(plot):
-				plot.soil_state = p_state.get("soil_state", 0)
+				plot.soil_state = int(p_state.get("soil_state", 0))
 				plot.crop_type = p_state.get("crop_type", "")
 				plot.moisture = float(p_state.get("moisture", 0.0))
 				plot.growth_progress = float(p_state.get("growth_progress", 0.0))
@@ -300,6 +340,26 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		if c_data.has("completed"):
 			ContractDB.completed_contracts = c_data["completed"].duplicate(true)
 	
+	# Старые сохранения без этих секций продолжают загружаться.
+	for state in save_data.get("machines", []):
+		var machine = world.get_node_or_null(NodePath(state["path"]))
+		if not machine is ProductionMachine:
+			continue
+		var recipe: Dictionary = RecipeDB.get_recipe(state["recipe_id"])
+		if not recipe.is_empty() and recipe.get("machine", "") != machine.machine_type:
+			continue
+		machine.active_recipe = recipe
+		machine.process_timer = float(state["timer"])
+		machine.process_duration = float(state["duration"])
+		machine.is_machine_running = not recipe.is_empty()
+		machine._last_user = player
+		if machine.visual_node:
+			machine.visual_node.position = machine._original_pos
+	for path in save_data.get("traders", {}):
+		var trader = world.get_node_or_null(NodePath(path))
+		if trader and "starter_seeds_given" in trader:
+			trader.starter_seeds_given = save_data["traders"][path]
+
 	if player and player.has_method("notify"):
 		player.notify("📂 Игра успешно загружена!")
 	
@@ -313,3 +373,112 @@ static func delete_save(file_path: String = SAVE_FILE_NAME) -> bool:
 		var err = DirAccess.remove_absolute(file_path)
 		return err == OK
 	return false
+
+# JSON numbers are floats, including values that were originally integers.
+static func _is_number(value: Variant, minimum: float = -INF, maximum: float = INF) -> bool:
+	return (typeof(value) in [TYPE_INT, TYPE_FLOAT]
+		and is_finite(float(value)) and value >= minimum and value <= maximum)
+
+static func _is_integer(value: Variant, minimum: float = 0.0, maximum: float = INF) -> bool:
+	return _is_number(value, minimum, maximum) and float(value) == floor(float(value))
+
+static func _validate_save_data(data: Dictionary) -> bool:
+	for section in ["meta", "player", "inventory", "day_night", "weather", "buildings", "energy", "water", "contracts", "traders"]:
+		if data.has(section) and not data[section] is Dictionary:
+			return false
+	var p: Dictionary = data.get("player", {})
+	if p.has("character_class"):
+		if not p["character_class"] is String or CharacterClassDB.get_class_data(p["character_class"]).is_empty():
+			return false
+	for key in ["energy", "thirst", "hunger", "wetness"]:
+		if p.has(key) and not _is_number(p[key], 0.0):
+			return false
+	if p.has("position"):
+		if not p["position"] is Dictionary:
+			return false
+		for axis in ["x", "y", "z"]:
+			if p["position"].has(axis) and not _is_number(p["position"][axis]):
+				return false
+	var inv: Dictionary = data.get("inventory", {})
+	if inv.has("items"):
+		if not inv["items"] is Dictionary:
+			return false
+		for key in inv["items"]:
+			if ItemDB.get_item(key).is_empty() or not _is_integer(inv["items"][key]):
+				return false
+	if inv.has("tools"):
+		if not inv["tools"] is Array:
+			return false
+		for tool in inv["tools"]:
+			if not tool is String or ItemDB.get_item(tool).get("category", "") not in ["tool", "equipment"]:
+				return false
+	if inv.has("equipped_tool"):
+		if not inv["equipped_tool"] is String or ItemDB.get_item(inv["equipped_tool"]).is_empty():
+			return false
+		if inv.has("tools") and not inv["tools"].has(inv["equipped_tool"]):
+			return false
+	for key in ["max_slots", "credits"]:
+		if inv.has(key) and not _is_integer(inv[key]):
+			return false
+	if inv.has("max_weight") and not _is_number(inv["max_weight"], 0.0):
+		return false
+	var dn: Dictionary = data.get("day_night", {})
+	if dn.has("current_day") and not _is_integer(dn["current_day"], 1.0):
+		return false
+	for key in ["current_hour", "time_of_day"]:
+		if dn.has(key) and not _is_number(dn[key], 0.0, 24.0):
+			return false
+	var weather: Dictionary = data.get("weather", {})
+	if weather.has("current_weather") and not _is_integer(weather["current_weather"], 0.0, 3.0):
+		return false
+	var buildings: Dictionary = data.get("buildings", {})
+	for key in ["house_stage", "storage_stage"]:
+		if buildings.has(key) and not _is_integer(buildings[key], 0.0, 3.0):
+			return false
+	var energy: Dictionary = data.get("energy", {})
+	if energy.has("stored_energy") and not _is_number(energy["stored_energy"], 0.0):
+		return false
+	var water: Dictionary = data.get("water", {})
+	if water.has("current_water") and not _is_integer(water["current_water"]):
+		return false
+	if data.has("farmland"):
+		if not data["farmland"] is Array:
+			return false
+		for plot in data["farmland"]:
+			if not plot is Dictionary or not plot.get("name", "") is String:
+				return false
+			if not _is_integer(plot.get("soil_state", 0), 0.0, 1.0):
+				return false
+			if plot.get("crop_type", "") not in ["", "carrot", "potato", "wheat"]:
+				return false
+			for key in ["moisture", "growth_progress"]:
+				if not _is_number(plot.get(key, 0.0), 0.0, 100.0):
+					return false
+			for key in ["is_ripe", "is_fertilized"]:
+				if not plot.get(key, false) is bool:
+					return false
+	var contracts: Dictionary = data.get("contracts", {})
+	if contracts.has("completed"):
+		if not contracts["completed"] is Dictionary:
+			return false
+		for key in contracts["completed"]:
+			if not contracts["completed"][key] is bool:
+				return false
+	if data.has("machines"):
+		if not data["machines"] is Array:
+			return false
+		for state in data["machines"]:
+			if not state is Dictionary or not _is_relative_path(state.get("path", "")):
+				return false
+			var recipe_id = state.get("recipe_id", "")
+			if not recipe_id is String or (recipe_id != "" and RecipeDB.get_recipe(recipe_id).is_empty()):
+				return false
+			if not _is_number(state.get("duration"), 0.01) or not _is_number(state.get("timer"), 0.0, state["duration"]):
+				return false
+	for path in data.get("traders", {}):
+		if not _is_relative_path(path) or not data["traders"][path] is bool:
+			return false
+	return true
+
+static func _is_relative_path(value: Variant) -> bool:
+	return value is String and not value.is_empty() and not value.begins_with("/") and not ".." in value.split("/") and not ":" in value
