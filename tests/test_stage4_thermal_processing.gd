@@ -80,22 +80,22 @@ func _run_tests() -> void:
 	print("✅ Обжиг кирпича: 2 сырых кирпича + 1 брикет -> 2 прочных обожженных кирпича.")
 	
 	# 4. Тест рецепта 2: Выплавка стекла (2 sand + 1 fuel_briquette -> 1 glass)
-	inv.add_item("sand", 2)
+	inv.add_item("sand", 3)
 	inv.add_item("fuel_briquette", 1)
 	var ok_smelt2 = smelter.start_recipe("smelt_glass", player)
 	if not ok_smelt2: _fail("Не удалось запустить smelt_glass")
 	smelter._complete_process()
 	if inv.get_item_count("glass") != 1: _fail("Стекло не выдано игроку")
-	print("✅ Выплавка стекла: 2 песка + 1 брикет -> 1 лист закаленного стекла.")
+	print("✅ Выплавка стекла: 3 песка + 1 брикет -> 1 лист закаленного стекла.")
 	
-	# 5. Тест рецепта 3: Переплавка железа (2 metal_scrap + 2 fuel_briquette -> 1 iron_ingot)
-	inv.add_item("metal_scrap", 2)
+	# 5. Тест рецепта 3: Переплавка железа (3 metal_scrap + 2 fuel_briquette -> 1 iron_ingot)
+	inv.add_item("metal_scrap", 3)
 	inv.add_item("fuel_briquette", 2)
 	var ok_smelt3 = smelter.start_recipe("smelt_iron", player)
 	if not ok_smelt3: _fail("Не удалось запустить smelt_iron")
 	smelter._complete_process()
 	if inv.get_item_count("iron_ingot") != 1: _fail("Железный слиток не выдан игроку")
-	print("✅ Переплавка металла: 2 металлолома + 2 брикета -> 1 слиток железа.")
+	print("✅ Переплавка металла: 3 металлолома + 2 брикета -> 1 слиток железа.")
 	
 	# 6. Проверка экономики и сбыта новой термопродукции
 	var init_credits = inv.credits

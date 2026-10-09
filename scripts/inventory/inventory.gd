@@ -78,6 +78,7 @@ var items: Dictionary = {
 	"water": 0,
 	"stone_dust": 0,
 	"sawdust": 0,
+	"mortar": 0,
 	"poor_brick": 0,
 	"fuel_briquette": 0,
 	"fired_brick": 0,

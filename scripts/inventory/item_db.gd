@@ -165,6 +165,16 @@ const ITEMS: Dictionary = {
 	},
 
 	# --- Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6) ---
+	"mortar": {
+		"id": "mortar",
+		"name": "Строительный раствор",
+		"icon": "🪣",
+		"category": "material",
+		"weight": 1.2,
+		"max_stack": 30,
+		"sell_price": 3,
+		"description": "Раствор из каменной пыли, песка и воды. Скрепляет кирпичную кладку при ремонте зданий."
+	},
 	"poor_brick": {
 		"id": "poor_brick",
 		"name": "Говённый кирпич",

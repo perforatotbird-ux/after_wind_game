@@ -138,8 +138,15 @@ func _run_tests() -> void:
 	
 	inv.add_item("copper_wire", 4)
 	inv.add_item("battery_cell", 2)
+	inv.add_item("street_lamp_item", 1)
+	# Заказ третьей волны: открывается после 3 выполненных заказов.
+	if ContractDB.can_fulfill(contract, inv):
+		_fail("Заказ электрификации не должен быть доступен до 3 выполненных заказов")
+		return
+	for done_id in ["contract_fortify", "contract_fuel_reserve", "contract_fresh_harvest"]:
+		ContractDB.completed_contracts[done_id] = true
 	if not ContractDB.can_fulfill(contract, inv):
-		_fail("Контракт должен быть готов к сдаче при наличии 4 проводов и 2 аккумуляторов")
+		_fail("Контракт должен быть готов к сдаче при наличии 4 проводов, 2 аккумуляторов и фонаря")
 		return
 	
 	player.inventory.credits = 100

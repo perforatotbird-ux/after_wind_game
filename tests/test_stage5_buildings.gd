@@ -67,9 +67,9 @@ func _run_tests() -> void:
 	if check0.get("missing_credits", 0) <= 0: _fail("Должно не хватать кредитов")
 	print("✅ Блокировка улучшения при нехватке материалов и кредитов проверена.")
 	
-	# 2. Улучшение дома до стадии 1 (wood: 6, stone: 4, cr: 20)
-	inv.add_item("wood", 6)
-	inv.add_item("stone", 4)
+	# 2. Улучшение дома до стадии 1 (wood: 8, stone: 6, cr: 20)
+	inv.add_item("wood", 8)
+	inv.add_item("stone", 6)
 	inv.add_credits(20)
 	
 	var check1 = house.can_upgrade(player)
@@ -83,10 +83,12 @@ func _run_tests() -> void:
 	if inv.credits != 0: _fail("Кредиты не списаны")
 	print("✅ Стадия 1 Дома: каркас возведен, списание ресурсов корректно.")
 	
-	# 3. Улучшение дома до стадии 2 (wood: 10, poor_brick: 6, cr: 50)
+	# 3. Улучшение дома до стадии 2 (wood: 10, poor_brick: 8, mortar: 4, cr: 60)
 	inv.add_item("wood", 10)
-	inv.add_item("poor_brick", 6)
-	inv.add_credits(50)
+	inv.add_item("poor_brick", 8)
+	inv.add_credits(60)
+	if house.can_upgrade(player).get("can_upgrade", false): _fail("Дом ур. 2 строится без строительного раствора")
+	inv.add_item("mortar", 4)
 	
 	var ok_up2 = house.upgrade(player)
 	if not ok_up2: _fail("house.upgrade вернул false для стадии 2")
@@ -100,9 +102,9 @@ func _run_tests() -> void:
 	if player.energy < 99.9: _fail("Сон не восстановил энергию игрока")
 	print("✅ Механика сна: энергия восстановлена на 100%.")
 	
-	# 5. Улучшение Склада до стадии 1 (wood: 4, stone: 4, cr: 15)
+	# 5. Улучшение Склада до стадии 1 (wood: 6, stone: 4, cr: 15)
 	var prev_max_weight = inv.max_weight
-	inv.add_item("wood", 4)
+	inv.add_item("wood", 6)
 	inv.add_item("stone", 4)
 	inv.add_credits(15)
 	

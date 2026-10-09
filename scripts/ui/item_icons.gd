@@ -24,6 +24,7 @@ const STYLES: Dictionary = {
 	"water": ["drop", Color(0.25, 0.55, 0.9), Color(0.7, 0.88, 1.0)],
 	"stone_dust": ["pile", Color(0.7, 0.7, 0.72), Color(0.92, 0.92, 0.94)],
 	"sawdust": ["pile", Color(0.82, 0.66, 0.42), Color(0.95, 0.85, 0.62)],
+	"mortar": ["sack", Color(0.62, 0.6, 0.56), Color(0.85, 0.83, 0.78)],
 	"poor_brick": ["brick", Color(0.6, 0.4, 0.32), Color(0.42, 0.3, 0.25)],
 	"fuel_briquette": ["block", Color(0.25, 0.22, 0.2), Color(0.5, 0.36, 0.24)],
 	"fired_brick": ["brick", Color(0.75, 0.3, 0.2), Color(0.52, 0.24, 0.18)],

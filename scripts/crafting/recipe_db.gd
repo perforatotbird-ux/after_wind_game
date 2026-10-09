@@ -11,7 +11,7 @@ const RECIPES: Dictionary = {
 		"machine": "crusher",
 		"inputs": {"stone": 2},
 		"outputs": {"stone_dust": 1},
-		"duration": 6.0,
+		"duration": 20.0,
 		"energy_cost": 2.0,
 		"description": "Измельчает 2 камня в 1 порцию тонкой каменной пыли."
 	},
@@ -20,30 +20,40 @@ const RECIPES: Dictionary = {
 		"name": "Древесина → Опилки",
 		"machine": "crusher",
 		"inputs": {"wood": 2},
-		"outputs": {"sawdust": 4},
-		"duration": 6.0,
+		"outputs": {"sawdust": 3},
+		"duration": 18.0,
 		"energy_cost": 2.0,
-		"description": "Перемалывает 2 бревна в 4 порции древесных опилок."
+		"description": "Перемалывает 2 бревна в 3 порции древесных опилок."
 	},
 	"craft_brick": {
 		"id": "craft_brick",
 		"name": "Формовка: Говённый кирпич (x2)",
 		"machine": "workbench",
-		"inputs": {"stone_dust": 2, "clay": 1, "water": 1},
+		"inputs": {"stone_dust": 1, "clay": 2, "water": 1},
 		"outputs": {"poor_brick": 2},
-		"duration": 5.0,
+		"duration": 30.0,
 		"energy_cost": 3.0,
-		"description": "Замес глины с каменной пылью и водой в формы для сырого кирпича."
+		"description": "Замес двух порций глины с каменной пылью и водой в формы для сырого кирпича."
+	},
+	"craft_mortar": {
+		"id": "craft_mortar",
+		"name": "Замес: Строительный раствор (x2)",
+		"machine": "workbench",
+		"inputs": {"stone_dust": 2, "sand": 1, "water": 1},
+		"outputs": {"mortar": 2},
+		"duration": 25.0,
+		"energy_cost": 2.0,
+		"description": "Каменная пыль, песок и вода — раствор для кладки. Без него кирпичные стены дома и склада не встанут."
 	},
 	"craft_briquette": {
 		"id": "craft_briquette",
 		"name": "Прессование: Топливные брикеты (x2)",
 		"machine": "workbench",
-		"inputs": {"sawdust": 4, "water": 1},
+		"inputs": {"sawdust": 4, "clay": 1},
 		"outputs": {"fuel_briquette": 2},
-		"duration": 5.0,
+		"duration": 30.0,
 		"energy_cost": 3.0,
-		"description": "Прессование опилок с водой в высококалорийные блоки топлива."
+		"description": "Прессование опилок с глиной-связкой в плотные блоки топлива. Угольные брикеты выгоднее."
 	},
 	"smelt_brick": {
 		"id": "smelt_brick",
@@ -51,7 +61,7 @@ const RECIPES: Dictionary = {
 		"machine": "furnace",
 		"inputs": {"poor_brick": 2, "fuel_briquette": 1},
 		"outputs": {"fired_brick": 2},
-		"duration": 5.0,
+		"duration": 50.0,
 		"energy_cost": 2.0,
 		"description": "Закалка сырых необожженных кирпичей в раскаленной печи с топливом."
 	},
@@ -59,21 +69,21 @@ const RECIPES: Dictionary = {
 		"id": "smelt_glass",
 		"name": "Выплавка: Листовое стекло (x1)",
 		"machine": "furnace",
-		"inputs": {"sand": 2, "fuel_briquette": 1},
+		"inputs": {"sand": 3, "fuel_briquette": 1},
 		"outputs": {"glass": 1},
-		"duration": 5.5,
-		"energy_cost": 2.0,
-		"description": "Высокотемпературное плавление кварцевого песка в прозрачное стекло."
+		"duration": 55.0,
+		"energy_cost": 2.5,
+		"description": "Высокотемпературное плавление трёх порций кварцевого песка в прозрачное стекло."
 	},
 	"smelt_iron": {
 		"id": "smelt_iron",
 		"name": "Переплавка: Железный слиток (x1)",
 		"machine": "furnace",
-		"inputs": {"metal_scrap": 2, "fuel_briquette": 2},
+		"inputs": {"metal_scrap": 3, "fuel_briquette": 2},
 		"outputs": {"iron_ingot": 1},
-		"duration": 6.5,
+		"duration": 75.0,
 		"energy_cost": 3.0,
-		"description": "Переплавка собранного ржавого металлолома в чистый прочный слиток железа."
+		"description": "Переплавка ржавого металлолома в слиток: дорого по топливу — руда с углём выгоднее."
 	},
 	"smelt_iron_ore": {
 		"id": "smelt_iron_ore",
@@ -81,7 +91,7 @@ const RECIPES: Dictionary = {
 		"machine": "furnace",
 		"inputs": {"iron_ore": 2, "coal": 1},
 		"outputs": {"iron_ingot": 1},
-		"duration": 7.0,
+		"duration": 60.0,
 		"energy_cost": 3.0,
 		"description": "Выплавка железа из руды жилы на угле — основной источник слитков после металлолома."
 	},
@@ -91,7 +101,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"coal": 2, "sawdust": 1},
 		"outputs": {"fuel_briquette": 3},
-		"duration": 4.0,
+		"duration": 25.0,
 		"energy_cost": 2.0,
 		"description": "Угольная крошка с опилками прессуется в плотные топливные брикеты."
 	},
@@ -101,7 +111,7 @@ const RECIPES: Dictionary = {
 		"machine": "water_filter",
 		"inputs": {"water": 2, "sand": 1},
 		"outputs": {"clean_water": 2},
-		"duration": 4.5,
+		"duration": 30.0,
 		"energy_cost": 1.5,
 		"description": "Очистка мутной сырой воды через слой кварцевого песка в чистую питьевую воду."
 	},
@@ -111,7 +121,7 @@ const RECIPES: Dictionary = {
 		"machine": "water_filter",
 		"inputs": {"water": 3, "sand": 1, "stone_dust": 1},
 		"outputs": {"clean_water": 4},
-		"duration": 5.0,
+		"duration": 45.0,
 		"energy_cost": 2.0,
 		"description": "Многоступенчатая фильтрация песком и каменной пылью с повышенным выходом чистой воды."
 	},
@@ -121,7 +131,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"clean_water": 1, "glass": 1},
 		"outputs": {"bottled_water": 1},
-		"duration": 3.0,
+		"duration": 15.0,
 		"energy_cost": 1.0,
 		"description": "Розлив фильтрованной воды в герметичные стеклянные бутылки для длительного хранения и продажи."
 	},
@@ -131,7 +141,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"clay": 1, "sawdust": 2, "water": 1},
 		"outputs": {"fertilizer": 2},
-		"duration": 4.0,
+		"duration": 30.0,
 		"energy_cost": 2.0,
 		"description": "Смешивание обогащенной глины, органических опилок и воды в стимулирующее био-удобрение."
 	},
@@ -141,7 +151,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"carrot": 1},
 		"outputs": {"seeds_carrot": 2},
-		"duration": 3.0,
+		"duration": 15.0,
 		"energy_cost": 1.0,
 		"description": "Сбор и сушка отборных сортовых семян из выращенной моркови для повторного посева."
 	},
@@ -151,7 +161,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"potato": 1},
 		"outputs": {"seeds_potato": 2},
-		"duration": 3.0,
+		"duration": 15.0,
 		"energy_cost": 1.0,
 		"description": "Отбор и деление клубней картофеля на пророщенный посадочный материал."
 	},
@@ -161,7 +171,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"wheat": 1},
 		"outputs": {"seeds_wheat": 3},
-		"duration": 3.0,
+		"duration": 15.0,
 		"energy_cost": 1.0,
 		"description": "Ручной обмолот пшеничного снопа для получения чистого посевного зерна."
 	},
@@ -171,7 +181,7 @@ const RECIPES: Dictionary = {
 		"machine": "furnace",
 		"inputs": {"wheat": 2, "clean_water": 1, "fuel_briquette": 1},
 		"outputs": {"bread": 2},
-		"duration": 6.0,
+		"duration": 45.0,
 		"energy_cost": 2.5,
 		"description": "Замес теста из молотой пшеницы и чистой воды с последующей выпечкой подового хлеба в печи."
 	},
@@ -183,7 +193,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"metal_scrap": 1},
 		"outputs": {"copper_wire": 2},
-		"duration": 3.0,
+		"duration": 25.0,
 		"energy_cost": 1.0,
 		"description": "Вытяжка и изоляция медной электропроводки из цветных обрезков лома на верстаке."
 	},
@@ -193,7 +203,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"iron_ingot": 1},
 		"outputs": {"iron_plate": 2},
-		"duration": 3.5,
+		"duration": 35.0,
 		"energy_cost": 1.5,
 		"description": "Холодная ковка и прокатка железного слитка в две плоские конструкционные пластины."
 	},
@@ -203,7 +213,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"iron_ingot": 1, "metal_scrap": 1},
 		"outputs": {"gear": 2},
-		"duration": 4.0,
+		"duration": 45.0,
 		"energy_cost": 2.0,
 		"description": "Выпиливание и шлифовка прочных зубчатых колес для поворотного механизма и вала ветряка."
 	},
@@ -211,11 +221,11 @@ const RECIPES: Dictionary = {
 		"id": "craft_battery_cell",
 		"name": "Сборка: Аккумуляторный элемент (x1)",
 		"machine": "workbench",
-		"inputs": {"iron_plate": 1, "copper_wire": 2, "clay": 1},
+		"inputs": {"iron_plate": 1, "copper_wire": 2, "clay": 1, "coal": 1},
 		"outputs": {"battery_cell": 1},
-		"duration": 4.5,
+		"duration": 60.0,
 		"energy_cost": 2.0,
-		"description": "Электролитная ячейка в герметичном металлическом корпусе с глиняным сепаратором и клеммами."
+		"description": "Электролитная ячейка в металлическом корпусе: угольный электрод, глиняный сепаратор и медные клеммы."
 	},
 	"craft_street_lamp": {
 		"id": "craft_street_lamp",
@@ -223,7 +233,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"wood": 2, "glass": 1, "copper_wire": 1, "iron_plate": 1},
 		"outputs": {"street_lamp_item": 1},
-		"duration": 5.0,
+		"duration": 60.0,
 		"energy_cost": 2.5,
 		"description": "Изготовление уличного фонарного столба с защитным стеклянным плафоном и проводкой."
 	},
@@ -233,9 +243,9 @@ const RECIPES: Dictionary = {
 		"id": "craft_wooden_handle",
 		"name": "Выточка: Деревянная рукоять (x2)",
 		"machine": "workbench",
-		"inputs": {"wood": 1},
+		"inputs": {"wood": 2},
 		"outputs": {"wooden_handle": 2},
-		"duration": 2.5,
+		"duration": 20.0,
 		"energy_cost": 1.0,
 		"description": "Вытачивание гладких эргономичных деревянных рукоятей для инструментов из обтесанного полена."
 	},
@@ -245,7 +255,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"metal_scrap": 1},
 		"outputs": {"bolt": 2},
-		"duration": 2.5,
+		"duration": 20.0,
 		"energy_cost": 1.0,
 		"description": "Нарезка резьбы и ковка металлических болтов с гайками из отборного металлического лома."
 	},
@@ -253,9 +263,9 @@ const RECIPES: Dictionary = {
 		"id": "craft_fabric",
 		"name": "Плетение: Плотная ткань (x1)",
 		"machine": "workbench",
-		"inputs": {"wheat": 2},
+		"inputs": {"wheat": 3},
 		"outputs": {"fabric": 1},
-		"duration": 3.5,
+		"duration": 40.0,
 		"energy_cost": 1.5,
 		"description": "Плетение и прессование плотного растительного парусинового волокна из стеблей пшеницы."
 	},
@@ -265,7 +275,7 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"fabric": 1, "metal_scrap": 1},
 		"outputs": {"leather_strap": 2},
-		"duration": 3.0,
+		"duration": 30.0,
 		"energy_cost": 1.0,
 		"description": "Изготовление усиленных ремней и стяжек с металлическими пряжками."
 	},
@@ -273,40 +283,40 @@ const RECIPES: Dictionary = {
 		"id": "upgrade_iron_axe",
 		"name": "Кузница: Железный топор Lv.2",
 		"machine": "workbench",
-		"inputs": {"iron_ingot": 2, "wooden_handle": 1, "bolt": 1},
+		"inputs": {"iron_ingot": 2, "wooden_handle": 1, "bolt": 2},
 		"outputs": {"iron_axe": 1},
-		"duration": 6.0,
-		"energy_cost": 3.0,
+		"duration": 90.0,
+		"energy_cost": 4.0,
 		"description": "Ковка и сборка тяжелого железного топора Lv.2: рубит в 2 раза быстрее, дает +1 древесину и экономит 35% сил."
 	},
 	"upgrade_iron_pickaxe": {
 		"id": "upgrade_iron_pickaxe",
 		"name": "Кузница: Железная кирка Lv.2",
 		"machine": "workbench",
-		"inputs": {"iron_ingot": 2, "wooden_handle": 1, "bolt": 1},
+		"inputs": {"iron_ingot": 3, "wooden_handle": 1, "bolt": 2},
 		"outputs": {"iron_pickaxe": 1},
-		"duration": 6.0,
-		"energy_cost": 3.0,
+		"duration": 100.0,
+		"energy_cost": 4.0,
 		"description": "Сборка закаленной железной кирки Lv.2: раскалывает породу вдвое быстрее, дает +1 ресурс и тратит меньше сил."
 	},
 	"upgrade_iron_shovel": {
 		"id": "upgrade_iron_shovel",
 		"name": "Кузница: Железная лопата Lv.2",
 		"machine": "workbench",
-		"inputs": {"iron_ingot": 1, "wooden_handle": 1, "bolt": 1},
+		"inputs": {"iron_ingot": 1, "iron_plate": 1, "wooden_handle": 1, "bolt": 1},
 		"outputs": {"iron_shovel": 1},
-		"duration": 5.0,
-		"energy_cost": 2.5,
+		"duration": 80.0,
+		"energy_cost": 3.5,
 		"description": "Ковка усиленной железной лопаты Lv.2: снижает трату энергии на вскопку вдвое (-50% сил) и ускоряет добычу глины."
 	},
 	"upgrade_reinforced_bucket": {
 		"id": "upgrade_reinforced_bucket",
 		"name": "Сборка: Усиленное ведро Lv.2",
 		"machine": "workbench",
-		"inputs": {"iron_plate": 1, "bolt": 2, "wood": 1},
+		"inputs": {"iron_plate": 2, "bolt": 2, "wood": 1},
 		"outputs": {"reinforced_bucket": 1},
-		"duration": 5.0,
-		"energy_cost": 2.5,
+		"duration": 70.0,
+		"energy_cost": 3.0,
 		"description": "Сборка герметичного ведра со стальными обручами: черпает сразу удвоенную порцию чистой воды из резервуара."
 	},
 	"upgrade_large_backpack": {
@@ -315,8 +325,8 @@ const RECIPES: Dictionary = {
 		"machine": "workbench",
 		"inputs": {"fabric": 3, "leather_strap": 2, "bolt": 2},
 		"outputs": {"large_backpack": 1},
-		"duration": 7.0,
-		"energy_cost": 3.5,
+		"duration": 120.0,
+		"energy_cost": 4.0,
 		"description": "Пошив вместительного экспедиционного рюкзака: расширяет вместимость до 20 слотов и грузоподъемность до 75 кг."
 	}
 }

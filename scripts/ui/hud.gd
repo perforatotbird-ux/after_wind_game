@@ -806,7 +806,7 @@ func _on_quick_sell_pressed() -> void:
 		return
 	
 	var to_sell: Dictionary = {}
-	for product_id in ["poor_brick", "fuel_briquette", "fired_brick", "glass", "iron_ingot", "clean_water", "bottled_water", "carrot", "potato", "wheat", "bread"]:
+	for product_id in ["poor_brick", "mortar", "fuel_briquette", "fired_brick", "glass", "iron_ingot", "clean_water", "bottled_water", "carrot", "potato", "wheat", "bread"]:
 		var c: int = inv.get_item_count(product_id)
 		if c > 0:
 			to_sell[product_id] = c
@@ -983,7 +983,7 @@ func _refresh_contract_window() -> void:
 	if _current_active_npc and "greeting_text" in _current_active_npc:
 		var n_name: String = _current_active_npc.npc_name if "npc_name" in _current_active_npc else "Степан (Снабженец)"
 		contract_title_label.text = "👨‍🌾 " + n_name
-		contract_dialogue_label.text = _current_active_npc.greeting_text
+		contract_dialogue_label.text = ContractDB.get_story_greeting() if _current_active_npc.get("is_trader") == true else _current_active_npc.greeting_text
 	else:
 		contract_title_label.text = "📜 Доска заказов и контрактов"
 		contract_dialogue_label.text = "Срочные поставки стройматериалов и снабжения для окрестных жителей. Оплата производится сразу при сдаче партии!"
@@ -999,6 +999,9 @@ func _refresh_contract_window() -> void:
 		var c_id: String = contract.get("id", "")
 		var is_done: bool = ContractDB.is_completed(c_id)
 		var can_do: bool = ContractDB.can_fulfill(contract, inv)
+		if not is_done and not ContractDB.is_unlocked(contract):
+			contracts_list.add_child(_make_locked_contract_card(contract))
+			continue
 		
 		var card: PanelContainer = PanelContainer.new()
 		var card_style: StyleBoxFlat = StyleBoxFlat.new()
@@ -1077,6 +1080,29 @@ func _refresh_contract_window() -> void:
 		vbox.add_child(btn)
 		
 		contracts_list.add_child(card)
+
+## Карточка заказа следующей волны: заказчик и условие открытия, без требований.
+func _make_locked_contract_card(contract: Dictionary) -> PanelContainer:
+	var card := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.1, 0.11, 0.13, 0.8)
+	style.border_color = Color(0.3, 0.32, 0.36, 0.6)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(6)
+	card.add_theme_stylebox_override("panel", style)
+	var margin := MarginContainer.new()
+	for side in ["left", "top", "right", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 10)
+	card.add_child(margin)
+	var lbl := Label.new()
+	var need: int = int(contract.get("unlock_after", 0))
+	lbl.text = "🔒 %s — %s\nОткроется после %d выполненных заказов (сдано %d)." % [
+		contract.get("title", "Заказ"), contract.get("client", "Округа"), need, ContractDB.get_completed_count()]
+	lbl.add_theme_font_size_override("font_size", 11)
+	lbl.add_theme_color_override("font_color", Color(0.6, 0.63, 0.68))
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	margin.add_child(lbl)
+	return card
 
 func _on_fulfill_contract_pressed(contract_id: String) -> void:
 	if not _bound_player:

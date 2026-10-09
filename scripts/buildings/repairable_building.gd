@@ -58,8 +58,8 @@ func _init_default_stages() -> void:
 					"perks": "Базовая защита от осадков и ветра.",
 					"cost_credits": 20,
 					"cost_materials": {
-						"wood": 6,
-						"stone": 4
+						"wood": 8,
+						"stone": 6
 					}
 				},
 				{
@@ -67,10 +67,11 @@ func _init_default_stages() -> void:
 					"name": "Восстановленный дом",
 					"description": "Возведены крепкие стены и надежная кровля. Установлена походная кровать.",
 					"perks": "🛏️ Доступен полноценный сон и восстановление энергии (100%).",
-					"cost_credits": 50,
+					"cost_credits": 60,
 					"cost_materials": {
 						"wood": 10,
-						"poor_brick": 6
+						"poor_brick": 8,
+						"mortar": 4
 					}
 				},
 				{
@@ -78,10 +79,11 @@ func _init_default_stages() -> void:
 					"name": "Капитальная резиденция",
 					"description": "Утепленный фасад, кирпичная печь с дымоходом, остекление и стеллажи.",
 					"perks": "🛏️ Комфортный сон + 📦 Вместительный домашний склад (+15 кг к лимиту веса).",
-					"cost_credits": 100,
+					"cost_credits": 120,
 					"cost_materials": {
-						"wood": 14,
-						"poor_brick": 10,
+						"fired_brick": 10,
+						"mortar": 6,
+						"glass": 2,
 						"fuel_briquette": 4
 					}
 				}
@@ -103,7 +105,7 @@ func _init_default_stages() -> void:
 					"perks": "📦 Дополнительное хранение (+10 кг к грузоподъемности).",
 					"cost_credits": 15,
 					"cost_materials": {
-						"wood": 4,
+						"wood": 6,
 						"stone": 4
 					}
 				},
@@ -112,21 +114,23 @@ func _init_default_stages() -> void:
 					"name": "Крытый амбар",
 					"description": "Глухие деревянные стены и водонепроницаемый настил.",
 					"perks": "📦 Капитальное сухое хранилище (+20 кг к грузоподъемности).",
-					"cost_credits": 40,
+					"cost_credits": 45,
 					"cost_materials": {
-						"wood": 8,
-						"poor_brick": 5
+						"wood": 10,
+						"poor_brick": 6,
+						"mortar": 2
 					}
 				},
 				{
 					"stage": 3,
 					"name": "Логистический комплекс",
-					"description": "Капитальный каменный фундамент, стеллажи и сортировочная зона.",
+					"description": "Капитальный каменный фундамент, стеллажи, сортировочная зона и ручной подъёмник на шестернях.",
 					"perks": "📦 Максимальная логистика (+35 кг к грузоподъемности).",
-					"cost_credits": 80,
+					"cost_credits": 100,
 					"cost_materials": {
-						"wood": 12,
-						"poor_brick": 8,
+						"fired_brick": 6,
+						"iron_plate": 2,
+						"gear": 2,
 						"stone_dust": 6
 					}
 				}

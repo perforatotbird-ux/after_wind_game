@@ -23,6 +23,13 @@ var _last_emitted_con: float = -1.0
 var _last_emitted_has_power: bool = false
 
 func _ready() -> void:
+	# Ветряк, батарея и фонари добавляются в группы в своих _ready, которые идут
+	# после сети (она выше в сцене): сканируем, когда весь мир готов.
+	_scan_grid_devices()
+	_update_grid(0.0)
+	_rescan_when_ready.call_deferred()
+
+func _rescan_when_ready() -> void:
 	_scan_grid_devices()
 	_update_grid(0.0)
 

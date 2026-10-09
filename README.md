@@ -2,7 +2,7 @@
 
 [![Engine: Godot 4.7.2](https://img.shields.io/badge/Engine-Godot%204.7.2-blue.svg)](https://godotengine.org)
 [![Status: Chapter 1](https://img.shields.io/badge/Status-Chapter%201%20%7C%20Base%20Restored-brightgreen.svg)]()
-[![Tests: 27](https://img.shields.io/badge/Godot_tests-27-blue.svg)](tests/)
+[![Tests: 28](https://img.shields.io/badge/Godot_tests-28-blue.svg)](tests/)
 
 > Изометрический 3D-симулятор выживания, добычи, переработки, фермерства, электрогенерации и восстановления разрушенного поселения после катаклизма.
 
@@ -29,6 +29,7 @@ Linux / macOS: `python3 tools/run_tests.py --godot godot`.
 - [Инвентарь и грузоподъёмность](docs/DOCUMENTATION.md#инвентарь-и-грузоподъёмность) — клеточный рюкзак с иконками, вес, выброс и подбор предметов
 - [Производство и база](docs/DOCUMENTATION.md#производство-и-база) — окно станка, партии «произвести N единиц»
 - [Жилы и копание](docs/DOCUMENTATION.md#жилы-и-копание) — разрушаемые блоки грунта, песок, глина, уголь, железная руда
+- [Баланс и прогрессия Главы 1](docs/DOCUMENTATION.md#баланс-и-прогрессия-главы-1) — время рецептов, ремонт, заказы волнами, ферма
 - [Финал Главы 1](docs/DOCUMENTATION.md#финал-главы-1)
 - [Сохранения](docs/DOCUMENTATION.md#сохранения) — автосохранение + 3 слота, формат v2 и миграции
 - [Тесты](docs/DOCUMENTATION.md#тесты)

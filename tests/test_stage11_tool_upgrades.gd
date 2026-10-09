@@ -321,10 +321,13 @@ func _run_tests() -> void:
 		return
 	
 	inv.items["wooden_handle"] = 2
-	inv.items["bolt"] = 4
+	inv.items["bolt"] = 6
 	inv.items["fabric"] = 2
-	inv.items["iron_ingot"] = 2
+	inv.items["iron_ingot"] = 3
 	inv.credits = 0
+	# Заказ третьей волны: открывается после 3 выполненных заказов.
+	for done_id in ["contract_fortify", "contract_fuel_reserve", "contract_fresh_harvest"]:
+		ContractDB.completed_contracts[done_id] = true
 
 	if not ContractDB.can_fulfill(contract, inv):
 		_fail("Контракт должен быть доступен для сдачи при наличии ресурсов")

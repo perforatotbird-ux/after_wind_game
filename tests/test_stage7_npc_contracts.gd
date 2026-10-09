@@ -91,7 +91,7 @@ func _run_tests() -> void:
 		return
 	print("✅ Информационный щит / Доска заказов также открывает интерфейс контрактов.")
 	
-	# 4. Проверка сдачи Контракта 1: «Первичное укрепление» (4 poor_brick, 6 wood -> +95 кредитов)
+	# 4. Контракт 1 «Первичное укрепление» (6 poor_brick, 8 wood -> +100 кр.), первая волна
 	var c1 = ContractDB.get_contract("contract_fortify")
 	if c1.is_empty():
 		_fail("Контракт contract_fortify не найден")
@@ -99,9 +99,24 @@ func _run_tests() -> void:
 	if ContractDB.can_fulfill(c1, inv):
 		_fail("Контракт 1 не должен быть доступен для сдачи при пустом инвентаре")
 		return
+	# Вторая волна закрыта, пока не сдан ни один заказ.
+	inv.add_item("clean_water", 4)
+	inv.add_item("bottled_water", 2)
+	if ContractDB.can_fulfill(ContractDB.get_contract("contract_pure_water"), inv):
+		_fail("Заказ второй волны доступен до первого выполненного заказа")
+		return
+	hud._refresh_contract_window()
+	var locked_text: String = ""
+	for card in hud.contracts_list.get_children():
+		for lbl in card.find_children("*", "Label", true, false):
+			if lbl.text.begins_with("🔒"):
+				locked_text = lbl.text
+	if locked_text == "":
+		_fail("Закрытые заказы не показаны карточками с замком")
+		return
 	
-	inv.add_item("poor_brick", 4)
-	inv.add_item("wood", 6)
+	inv.add_item("poor_brick", 6)
+	inv.add_item("wood", 8)
 	if not ContractDB.can_fulfill(c1, inv):
 		_fail("Контракт 1 должен быть готов к сдаче после добавления материалов")
 		return
@@ -114,17 +129,15 @@ func _run_tests() -> void:
 	if inv.get_item_count("poor_brick") != 0 or inv.get_item_count("wood") != 0:
 		_fail("Ресурсы контракта 1 не списались из инвентаря")
 		return
-	if inv.credits != creds_before + 95:
-		_fail("Награда за контракт 1 не начислена корректно (+95 кр., баланс: %d)" % inv.credits)
+	if inv.credits != creds_before + 100:
+		_fail("Награда за контракт 1 не начислена корректно (+100 кр., баланс: %d)" % inv.credits)
 		return
 	if not ContractDB.is_completed("contract_fortify"):
 		_fail("Контракт 1 не помечен как выполненный")
 		return
-	print("✅ Контракт 1 (Укрепление времянки): списано 4 кирпича и 6 бревен, получено +95 кредитов.")
+	print("✅ Контракт 1 (Укрепление времянки): списано 6 кирпичей и 8 бревен, получено +100 кредитов.")
 	
-	# 5. Проверка сдачи Контракта 3: «Питьевая вода для разведки» (3 clean_water, 1 bottled_water -> +140 кр.)
-	inv.add_item("clean_water", 3)
-	inv.add_item("bottled_water", 1)
+	# 5. Контракт «Питьевая вода» (4 clean_water, 2 bottled_water -> +150 кр.) — открылся второй волной
 	creds_before = inv.credits
 	ok = ContractDB.fulfill_contract("contract_pure_water", player)
 	if not ok:
@@ -133,24 +146,35 @@ func _run_tests() -> void:
 	if inv.get_item_count("clean_water") != 0 or inv.get_item_count("bottled_water") != 0:
 		_fail("Водные ресурсы не списались при сдаче контракта 3")
 		return
-	if inv.credits != creds_before + 140:
-		_fail("Награда за контракт чистой воды не начислена (+140 кр.)")
+	if inv.credits != creds_before + 150:
+		_fail("Награда за контракт чистой воды не начислена (+150 кр.)")
 		return
-	print("✅ Контракт 3 (Вода для разведки): сдана партия фильтрованной воды, получено +140 кредитов.")
+	print("✅ Контракт (Вода для разведки): получено +150 кредитов.")
 	
-	# 6. Проверка сдачи Контракта 4: «Капитальные стройматериалы» (4 fired_brick, 2 glass, 1 iron_ingot -> +260 кр.)
-	inv.add_item("fired_brick", 4)
+	# 6. «Капитальные стройматериалы» — третья волна, нужно 3 выполненных заказа
+	inv.add_item("fired_brick", 6)
 	inv.add_item("glass", 2)
+	inv.add_item("mortar", 4)
 	inv.add_item("iron_ingot", 1)
+	if ContractDB.fulfill_contract("contract_heavy_masonry", player):
+		_fail("Заказ третьей волны сдан после 2 выполненных заказов")
+		return
+	inv.add_item("fuel_briquette", 8)
+	if not ContractDB.fulfill_contract("contract_fuel_reserve", player):
+		_fail("Ошибка выполнения контракта на брикеты")
+		return
 	creds_before = inv.credits
 	ok = ContractDB.fulfill_contract("contract_heavy_masonry", player)
 	if not ok:
 		_fail("Ошибка выполнения контракта стройматериалов")
 		return
-	if inv.credits != creds_before + 260:
-		_fail("Награда за контракт 4 не начислена (+260 кр.)")
+	if inv.credits != creds_before + 280:
+		_fail("Награда за контракт 4 не начислена (+280 кр.)")
 		return
-	print("✅ Контракт 4 (Обожженный кирпич, стекло и слиток): получено +260 кредитов!")
+	print("✅ Контракт (Обожженный кирпич, раствор, стекло и слиток): получено +280 кредитов!")
+	if ContractDB.get_story_greeting() == ContractDB.STORY_GREETINGS[0]:
+		_fail("Реплика Степана не меняется по мере выполненных заказов")
+		return
 	
 	# 7. Проверка обновления карточек в HUD
 	hud._refresh_contract_window()

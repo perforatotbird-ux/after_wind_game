@@ -22,7 +22,12 @@ enum SoilState {
 @export var initial_state: SoilState = SoilState.UNTILLED
 @export var max_moisture: float = 100.0
 @export var moisture_decay_rate: float = 0.6
+## Запасное время роста (с) для культур без записи в CROP_GROWTH_TIME.
 @export var growth_time_total: float = 40.0
+## Время созревания по культурам (с, полив без удобрения). Сутки — 480 с:
+## морковь — четверть дня, пшеница — больше трети. Полного полива (100%) хватает
+## примерно на 165 с, поэтому пшеницу за рост нужно полить дважды (или дождь).
+const CROP_GROWTH_TIME: Dictionary = {"carrot": 120.0, "potato": 150.0, "wheat": 180.0}
 
 var soil_state: SoilState = SoilState.UNTILLED
 var moisture: float = 0.0
@@ -113,7 +118,7 @@ func _process(delta: float) -> void:
 		if _cached_player and "character_class" in _cached_player and _cached_player.character_class == "farmer":
 			speed_mult *= 1.35
 		
-		var step: float = (100.0 / maxf(0.1, growth_time_total)) * speed_mult * delta
+		var step: float = (100.0 / maxf(0.1, get_growth_time())) * speed_mult * delta
 		growth_progress = min(100.0, growth_progress + step)
 		
 		if growth_progress >= 100.0:
@@ -435,3 +440,7 @@ func _play_water_ripple() -> void:
 	var tw: Tween = create_tween()
 	tw.tween_property(tilled_mesh, "scale:y", 1.15, 0.1)
 	tw.tween_property(tilled_mesh, "scale:y", 1.0, 0.15)
+
+## Полное время роста текущей культуры (без бонусов полива, удобрения и класса).
+func get_growth_time() -> float:
+	return float(CROP_GROWTH_TIME.get(crop_type, growth_time_total))
