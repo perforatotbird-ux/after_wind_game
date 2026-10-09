@@ -65,11 +65,11 @@ func _on_interacted(player: Node) -> void:
 	machine_opened.emit(self)
 
 func start_recipe(recipe_id: String, player: Node) -> bool:
-	if is_machine_running:
+	if is_machine_running or not is_instance_valid(player):
 		return false
 	
 	var recipe: Dictionary = RecipeDB.get_recipe(recipe_id)
-	if recipe.is_empty():
+	if recipe.is_empty() or recipe.get("machine", "") != machine_type:
 		return false
 	
 	var inv = player.get("inventory") if "inventory" in player else null

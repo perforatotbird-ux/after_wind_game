@@ -18,6 +18,10 @@ config/name="After The Storm"
 run/main_scene="res://scenes/world/world.tscn"
 config/features=PackedStringArray("4.7")
 
+[filesystem]
+
+import/blender/enabled=false
+
 [input]
 
 interact={
