@@ -1,10 +1,15 @@
 class_name VictoryManager
 extends RefCounted
 
-## Менеджер финальной цели Первого этапа «Base Restored» (Разделы 85, 91, 92 дизайн-документа)
+## Менеджер финальной цели Первого этапа «Base Restored» (Разделы 85, 91, 92 дизайн-документа).
 ## Проверяет выполнение всех ключевых условий восстановления базы и хозяйства.
+## Машины (дробилка, верстак, плавильня) засчитываются только после первого
+## завершённого цикла производства — наличия в сцене недостаточно.
 
 const ContractDB = preload("res://scripts/economy/contract_db.gd")
+
+static func _machine_has_output(machine: Node) -> bool:
+	return machine != null and is_instance_valid(machine) and "completed_runs" in machine and int(machine.completed_runs) > 0
 
 static func evaluate_base_restored(world: Node) -> Dictionary:
 	var tasks: Array[Dictionary] = []
@@ -18,56 +23,53 @@ static func evaluate_base_restored(world: Node) -> Dictionary:
 			"tasks": tasks
 		}
 	
-	# 1. Восстановление жилого дома (Стадия 2)
+	# 1. Восстановление жилого дома (стадия 2 из 3)
 	var house = world.find_child("RepairableHouse", true, false)
 	var house_done: bool = (house != null and "current_stage" in house and house.current_stage >= 2)
 	tasks.append({
 		"id": "house",
-		"title": "Восстановить дом до стадии 2/2 (кровать и укрытие)",
+		"title": "Восстановить дом до стадии 2 из 3 (кровать и укрытие)",
 		"icon": "🏠",
 		"done": house_done
 	})
 	
-	# 2. Восстановление склада (Стадия 2)
+	# 2. Восстановление склада (стадия 2 из 3)
 	var storage = world.find_child("RepairableStorage", true, false)
 	var storage_done: bool = (storage != null and "current_stage" in storage and storage.current_stage >= 2)
 	tasks.append({
 		"id": "storage",
-		"title": "Восстановить склад до стадии 2/2 (хранилище базы)",
+		"title": "Восстановить склад до стадии 2 из 3 (хранилище базы)",
 		"icon": "📦",
 		"done": storage_done
 	})
 	
-	# 3. Восстановление производственного узла (Дробилка)
+	# 3. Дробилка: получить первую продукцию
 	var crusher = world.find_child("StoneCrusher", true, false)
 	if not crusher:
 		crusher = world.find_child("Crusher", true, false)
-	var crusher_done: bool = (crusher != null and is_instance_valid(crusher))
 	tasks.append({
 		"id": "crusher",
-		"title": "Запустить дробилку для измельчения камня и глины",
+		"title": "Запустить дробилку и получить первую продукцию",
 		"icon": "⚙️",
-		"done": crusher_done
+		"done": _machine_has_output(crusher)
 	})
 	
-	# 4. Восстановление верстака
+	# 4. Верстак: первый изготовленный предмет
 	var bench = world.find_child("Workbench", true, false)
-	var bench_done: bool = (bench != null and is_instance_valid(bench))
 	tasks.append({
 		"id": "workbench",
-		"title": "Оборудовать верстак для крафта оснастки и инструментов",
+		"title": "Изготовить первый предмет на верстаке",
 		"icon": "🔨",
-		"done": bench_done
+		"done": _machine_has_output(bench)
 	})
 	
-	# 5. Восстановление плавильной печи
+	# 5. Плавильня: первая плавка
 	var smelter = world.find_child("Smelter", true, false)
-	var smelter_done: bool = (smelter != null and is_instance_valid(smelter))
 	tasks.append({
 		"id": "smelter",
-		"title": "Ввести в строй высокотемпературную печь-плавильню",
+		"title": "Провести первую плавку в печи-плавильне",
 		"icon": "🔥",
-		"done": smelter_done
+		"done": _machine_has_output(smelter)
 	})
 	
 	# 6. Восстановление фермерского хозяйства
@@ -98,14 +100,16 @@ static func evaluate_base_restored(world: Node) -> Dictionary:
 		"done": contracts_done
 	})
 	
-	# 8. Создание инструмента мастера Lv.2 или большого рюкзака
+	# 8. Инструмент мастера Lv.2 или большой рюкзак
 	var player = world.find_child("Player", true, false)
 	var inv = player.get("inventory") if player else null
 	var upgrades_done: bool = false
 	if inv:
 		if inv.has_method("get_tool_level"):
-			if inv.get_tool_level("axe") >= 2 or inv.get_tool_level("pickaxe") >= 2 or inv.get_tool_level("shovel") >= 2 or inv.get_tool_level("bucket") >= 2 or inv.get_tool_level("backpack") >= 2:
-				upgrades_done = true
+			for t_type in ["axe", "pickaxe", "shovel", "bucket", "backpack"]:
+				if inv.get_tool_level(t_type) >= 2:
+					upgrades_done = true
+					break
 		elif "max_slots" in inv and inv.max_slots > 12:
 			upgrades_done = true
 	tasks.append({

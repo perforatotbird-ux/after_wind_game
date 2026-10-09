@@ -1,15 +1,22 @@
 class_name SaveManager
 extends RefCounted
 
-## Централизованный менеджер сохранения и загрузки игры (Этап 12, разделы 81, 88)
-## Сериализует полное состояние мира, персонажа, инвентаря, грядок, зданий и прогресса в JSON
+## Централизованный менеджер сохранения и загрузки игры (Этап 12, разделы 81, 88).
+## Сериализует состояние мира, персонажа, инвентаря, грядок, зданий, машин,
+## ресурсных узлов и прогресса в JSON. Формат версионируется (meta.format_version);
+## старые сохранения мигрируют в _migrate_save_data. Описание формата —
+## docs/DOCUMENTATION.md, раздел «Сохранения».
 
 const SAVE_FILE_NAME: String = "user://savegame.json"
+## Текущая версия формата. v1 — сохранения без format_version (до унификации).
+const SAVE_FORMAT_VERSION: int = 2
 const FarmlandPlot = preload("res://scripts/farming/farmland_plot.gd")
 const ProductionMachine = preload("res://scripts/crafting/production_machine.gd")
+const ResourceNodeScript = preload("res://scripts/resources/resource_node.gd")
 const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
+const ContractDB = preload("res://scripts/economy/contract_db.gd")
 
 static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	if not world or not is_instance_valid(world):
@@ -20,9 +27,10 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	
 	# 1. Метаданные сохранения
 	save_data["meta"] = {
+		"format_version": SAVE_FORMAT_VERSION,
 		"version": "1.0.0",
 		"timestamp": Time.get_datetime_string_from_system(),
-		"engine": Engine.get_version_info().get("string", "Godot 4.3")
+		"engine": Engine.get_version_info().get("string", "unknown")
 	}
 	
 	# 2. Игрок и специализация
@@ -41,7 +49,7 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			"wetness": player.wetness if "wetness" in player else 0.0
 		}
 		
-		# 3. Инвентарь
+		# 3. Инвентарь (max_slots / max_weight — справочно: при загрузке пересчитываются)
 		var inv = player.get("inventory") if "inventory" in player else null
 		if inv and is_instance_valid(inv):
 			save_data["inventory"] = {
@@ -61,12 +69,17 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			"current_hour": day_cycle.current_hour if "current_hour" in day_cycle else 8.0
 		}
 	
-	# 5. Погода WeatherManager
+	# 5. Погода WeatherManager (включая фазу автоцикла)
 	var weather_mgr = world.find_child("WeatherManager", true, false)
 	if weather_mgr and is_instance_valid(weather_mgr):
-		save_data["weather"] = {
+		var w_save: Dictionary = {
 			"current_weather": int(weather_mgr.current_weather) if "current_weather" in weather_mgr else 0
 		}
+		if "_timer" in weather_mgr:
+			w_save["timer"] = maxf(0.0, float(weather_mgr._timer))
+		if "_cycle_index" in weather_mgr:
+			w_save["cycle_index"] = int(weather_mgr._cycle_index)
+		save_data["weather"] = w_save
 	
 	# 6. Здания (House & Storage)
 	var buildings_data: Dictionary = {}
@@ -108,26 +121,43 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	save_data["farmland"] = plots_array
 	
 	# 10. Контракты
-	const ContractDB = preload("res://scripts/economy/contract_db.gd")
 	save_data["contracts"] = {
 		"completed": ContractDB.completed_contracts.duplicate(true)
 	}
 	
-	# Незавершённое производство: сырьё уже списано, поэтому сохраняем и процесс.
+	# 11. Прогресс финала
+	var hud = world.find_child("HUD", true, false)
+	save_data["progress"] = {
+		"victory_shown": bool(hud._victory_shown) if (hud and "_victory_shown" in hud) else false
+	}
+	
+	# 12. Машины (незавершённое производство, счётчик циклов, ожидающая продукция),
+	# торговцы и ресурсные узлы.
 	var machines: Array = []
 	var traders: Dictionary = {}
+	var resources: Array = []
 	for node in world.find_children("*", "", true, false):
 		if node is ProductionMachine:
 			machines.append({
 				"path": str(world.get_path_to(node)),
 				"recipe_id": node.active_recipe.get("id", "") if node.is_machine_running else "",
 				"timer": node.process_timer,
-				"duration": node.process_duration
+				"duration": node.process_duration,
+				"completed_runs": node.completed_runs,
+				"pending_outputs": node.pending_outputs.duplicate(true)
+			})
+		elif node is ResourceNodeScript:
+			resources.append({
+				"path": str(world.get_path_to(node)),
+				"is_depleted": bool(node.is_depleted),
+				"respawn_timer": maxf(0.0, float(node.respawn_timer)),
+				"current_hits": maxi(0, int(node.current_hits))
 			})
 		if "starter_seeds_given" in node:
 			traders[str(world.get_path_to(node))] = node.starter_seeds_given
 	save_data["machines"] = machines
 	save_data["traders"] = traders
+	save_data["resources"] = resources
 
 	# Пишем во временный файл: не обнуляем последнее сохранение при сбое записи.
 	var json_str: String = JSON.stringify(save_data, "\t")
@@ -156,6 +186,24 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	
 	return true
 
+static func get_format_version(data: Dictionary) -> int:
+	var meta = data.get("meta", {})
+	if meta is Dictionary and meta.has("format_version"):
+		return int(meta["format_version"])
+	return 1
+
+## Приводит данные старых версий к текущему формату (без изменения мира).
+static func _migrate_save_data(data: Dictionary, from_version: int) -> Dictionary:
+	var migrated: Dictionary = data.duplicate(true)
+	if from_version < 2:
+		# v1 -> v2: новые секции (resources, progress, weather.timer/cycle_index,
+		# machines.completed_runs/pending_outputs) необязательны; лимиты инвентаря
+		# больше не берутся из файла, а пересчитываются по рюкзаку и зданиям.
+		if not migrated.has("meta"):
+			migrated["meta"] = {}
+		migrated["meta"]["format_version"] = 2
+	return migrated
+
 static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	if not world or not is_instance_valid(world):
 		push_error("SaveManager: узел World не передан")
@@ -179,15 +227,21 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		push_error("SaveManager: Ошибка парсинга JSON сохранения: %d" % parse_err)
 		return false
 	
-	var save_data = test_json.data
-	if typeof(save_data) != TYPE_DICTIONARY:
+	var raw_data = test_json.data
+	if typeof(raw_data) != TYPE_DICTIONARY:
 		push_error("SaveManager: некорректный формат данных сохранения")
 		return false
 	
 	# Валидация ВСЕХ секций до первого изменения мира.
-	if not _validate_save_data(save_data):
+	if not _validate_save_data(raw_data):
 		push_warning("SaveManager: некорректные поля сохранения")
 		return false
+	
+	var format_version: int = get_format_version(raw_data)
+	if format_version > SAVE_FORMAT_VERSION:
+		push_warning("SaveManager: сохранение создано более новой версией игры (формат %d > %d)" % [format_version, SAVE_FORMAT_VERSION])
+		return false
+	var save_data: Dictionary = _migrate_save_data(raw_data, format_version)
 
 	# 1. Восстановление игрока и инвентаря
 	var player = world.find_child("Player", true, false)
@@ -220,34 +274,38 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			player.wetness = p_data["wetness"]
 			if player.has_signal("wetness_changed"):
 				player.wetness_changed.emit(player.wetness, player.max_wetness)
-		
-		# Инвентарь
-		var inv = player.get("inventory") if "inventory" in player else null
-		if inv and is_instance_valid(inv) and save_data.has("inventory"):
-			var inv_data: Dictionary = save_data["inventory"]
-			if inv_data.has("items"):
-				inv.items = inv_data["items"].duplicate(true)
-			if inv_data.has("tools"):
-				var loaded_tools: Array[String] = []
-				for t in inv_data["tools"]:
-					loaded_tools.append(str(t))
-				inv.tools = loaded_tools
-			if inv_data.has("equipped_tool"):
-				var saved_tool: String = inv_data["equipped_tool"]
-				if inv.equipped_tool == saved_tool:
-					inv._notify_tool_changed()
-				else:
-					inv.equip_tool(saved_tool)
-			if inv_data.has("max_slots"):
-				inv.max_slots = int(inv_data["max_slots"])
-			if inv_data.has("max_weight"):
-				inv.max_weight = float(inv_data["max_weight"])
-			if inv_data.has("credits"):
-				inv.credits = int(inv_data["credits"])
-				if inv.has_signal("credits_changed"):
-					inv.credits_changed.emit(inv.credits)
-			if inv.has_signal("inventory_updated"):
-				inv.inventory_updated.emit()
+	
+	var inv = null
+	if player and is_instance_valid(player) and "inventory" in player:
+		inv = player.get("inventory")
+	if inv and is_instance_valid(inv) and save_data.has("inventory"):
+		var inv_data: Dictionary = save_data["inventory"]
+		if inv_data.has("items"):
+			var loaded_items: Dictionary = {}
+			for key in inv_data["items"]:
+				loaded_items[key] = int(inv_data["items"][key])
+			inv.items = loaded_items
+		if inv_data.has("tools"):
+			var loaded_tools: Array[String] = []
+			for t in inv_data["tools"]:
+				loaded_tools.append(str(t))
+			inv.tools = loaded_tools
+		if inv_data.has("equipped_tool"):
+			var saved_tool: String = inv_data["equipped_tool"]
+			if inv.equipped_tool == saved_tool:
+				inv._notify_tool_changed()
+			else:
+				inv.equip_tool(saved_tool)
+		if inv_data.has("credits"):
+			inv.credits = int(inv_data["credits"])
+			if inv.has_signal("credits_changed"):
+				inv.credits_changed.emit(inv.credits)
+	if inv and is_instance_valid(inv):
+		# Лимиты не доверяем файлу: пересчитываем по рюкзаку на поясе.
+		if inv.has_method("recalculate_capacity"):
+			inv.recalculate_capacity()
+		if inv.has_signal("inventory_updated"):
+			inv.inventory_updated.emit()
 	
 	# 2. Суточный цикл
 	if save_data.has("day_night"):
@@ -264,33 +322,34 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				if "current_hour" in day_cycle:
 					day_cycle.current_hour = s_hour
 	
-	# 3. Погода
+	# 3. Погода (set_weather может сбросить таймер — фазу цикла выставляем после)
 	if save_data.has("weather"):
 		var w_data: Dictionary = save_data["weather"]
 		var weather_mgr = world.find_child("WeatherManager", true, false)
-		if weather_mgr and is_instance_valid(weather_mgr) and w_data.has("current_weather"):
-			if weather_mgr.has_method("set_weather"):
+		if weather_mgr and is_instance_valid(weather_mgr):
+			if w_data.has("current_weather") and weather_mgr.has_method("set_weather"):
 				weather_mgr.set_weather(int(w_data["current_weather"]))
+			if w_data.has("timer") and "_timer" in weather_mgr:
+				weather_mgr._timer = float(w_data["timer"])
+			if w_data.has("cycle_index") and "_cycle_index" in weather_mgr:
+				var max_idx: int = 6
+				if "_cycle_sequence" in weather_mgr:
+					max_idx = maxi(0, weather_mgr._cycle_sequence.size() - 1)
+				weather_mgr._cycle_index = clampi(int(w_data["cycle_index"]), 0, max_idx)
 	
 	# 4. Здания
+	var house = world.find_child("RepairableHouse", true, false)
+	var storage = world.find_child("RepairableStorage", true, false)
 	if save_data.has("buildings"):
 		var b_data: Dictionary = save_data["buildings"]
-		var house = world.find_child("RepairableHouse", true, false)
 		if house and is_instance_valid(house) and b_data.has("house_stage"):
-			var target_stage = int(b_data["house_stage"])
-			house.current_stage = target_stage
-			if house.has_method("_update_visuals"):
-				house._update_visuals()
-			if house.has_method("_update_prompt_text"):
-				house._update_prompt_text()
-		var storage = world.find_child("RepairableStorage", true, false)
+			_restore_building_stage(house, int(b_data["house_stage"]))
 		if storage and is_instance_valid(storage) and b_data.has("storage_stage"):
-			var target_stage = int(b_data["storage_stage"])
-			storage.current_stage = target_stage
-			if storage.has_method("_update_visuals"):
-				storage._update_visuals()
-			if storage.has_method("_update_prompt_text"):
-				storage._update_prompt_text()
+			_restore_building_stage(storage, int(b_data["storage_stage"]))
+	# Бонусы грузоподъёмности от зданий выставляются всегда (идемпотентно).
+	for building in [house, storage]:
+		if building and is_instance_valid(building) and building.has_method("apply_capacity_bonus"):
+			building.apply_capacity_bonus(player)
 	
 	# 5. Энергетика
 	if save_data.has("energy"):
@@ -336,16 +395,21 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	# 8. Контракты
 	if save_data.has("contracts"):
 		var c_data: Dictionary = save_data["contracts"]
-		const ContractDB = preload("res://scripts/economy/contract_db.gd")
 		if c_data.has("completed"):
 			ContractDB.completed_contracts = c_data["completed"].duplicate(true)
 	
-	# Старые сохранения без этих секций продолжают загружаться.
+	# 9. Прогресс финала
+	if save_data.has("progress"):
+		var hud = world.find_child("HUD", true, false)
+		if hud and "_victory_shown" in hud:
+			hud._victory_shown = bool(save_data["progress"].get("victory_shown", false))
+	
+	# 10. Машины (старые сохранения без этих секций продолжают загружаться)
 	for state in save_data.get("machines", []):
 		var machine = world.get_node_or_null(NodePath(state["path"]))
 		if not machine is ProductionMachine:
 			continue
-		var recipe: Dictionary = RecipeDB.get_recipe(state["recipe_id"])
+		var recipe: Dictionary = RecipeDB.get_recipe(state.get("recipe_id", ""))
 		if not recipe.is_empty() and recipe.get("machine", "") != machine.machine_type:
 			continue
 		machine.active_recipe = recipe
@@ -353,17 +417,45 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		machine.process_duration = float(state["duration"])
 		machine.is_machine_running = not recipe.is_empty()
 		machine._last_user = player
+		machine.completed_runs = int(state.get("completed_runs", 0))
+		var pending: Dictionary = {}
+		var saved_pending: Dictionary = state.get("pending_outputs", {})
+		for item_id in saved_pending:
+			if int(saved_pending[item_id]) > 0:
+				pending[item_id] = int(saved_pending[item_id])
+		machine.pending_outputs = pending
 		if machine.visual_node:
 			machine.visual_node.position = machine._original_pos
+	
+	# 11. Торговцы
 	for path in save_data.get("traders", {}):
 		var trader = world.get_node_or_null(NodePath(path))
 		if trader and "starter_seeds_given" in trader:
 			trader.starter_seeds_given = save_data["traders"][path]
+	
+	# 12. Ресурсные узлы (деревья, камни и т.п.)
+	for r_state in save_data.get("resources", []):
+		var res_node = world.get_node_or_null(NodePath(r_state["path"]))
+		if not res_node is ResourceNodeScript:
+			continue
+		var depleted: bool = bool(r_state.get("is_depleted", false))
+		if bool(res_node.is_depleted) != depleted:
+			res_node._set_depleted(depleted)
+		res_node.respawn_timer = float(r_state.get("respawn_timer", 0.0))
+		res_node.current_hits = clampi(int(r_state.get("current_hits", res_node.current_hits)), 0, maxi(0, int(res_node.max_hits)))
 
 	if player and player.has_method("notify"):
 		player.notify("📂 Игра успешно загружена!")
 	
 	return true
+
+static func _restore_building_stage(building: Node, stage: int) -> void:
+	var max_s: int = int(building.max_stage) if "max_stage" in building else stage
+	building.current_stage = clampi(stage, 0, max_s)
+	if building.has_method("_update_visuals"):
+		building._update_visuals()
+	if building.has_method("_update_prompt_text"):
+		building._update_prompt_text()
 
 static func has_save(file_path: String = SAVE_FILE_NAME) -> bool:
 	return FileAccess.file_exists(file_path)
@@ -383,9 +475,12 @@ static func _is_integer(value: Variant, minimum: float = 0.0, maximum: float = I
 	return _is_number(value, minimum, maximum) and float(value) == floor(float(value))
 
 static func _validate_save_data(data: Dictionary) -> bool:
-	for section in ["meta", "player", "inventory", "day_night", "weather", "buildings", "energy", "water", "contracts", "traders"]:
+	for section in ["meta", "player", "inventory", "day_night", "weather", "buildings", "energy", "water", "contracts", "traders", "progress"]:
 		if data.has(section) and not data[section] is Dictionary:
 			return false
+	var meta: Dictionary = data.get("meta", {})
+	if meta.has("format_version") and not _is_integer(meta["format_version"], 1.0):
+		return false
 	var p: Dictionary = data.get("player", {})
 	if p.has("character_class"):
 		if not p["character_class"] is String or CharacterClassDB.get_class_data(p["character_class"]).is_empty():
@@ -431,6 +526,10 @@ static func _validate_save_data(data: Dictionary) -> bool:
 	var weather: Dictionary = data.get("weather", {})
 	if weather.has("current_weather") and not _is_integer(weather["current_weather"], 0.0, 3.0):
 		return false
+	if weather.has("timer") and not _is_number(weather["timer"], 0.0):
+		return false
+	if weather.has("cycle_index") and not _is_integer(weather["cycle_index"], 0.0, 6.0):
+		return false
 	var buildings: Dictionary = data.get("buildings", {})
 	for key in ["house_stage", "storage_stage"]:
 		if buildings.has(key) and not _is_integer(buildings[key], 0.0, 3.0):
@@ -464,6 +563,9 @@ static func _validate_save_data(data: Dictionary) -> bool:
 		for key in contracts["completed"]:
 			if not contracts["completed"][key] is bool:
 				return false
+	var progress: Dictionary = data.get("progress", {})
+	if progress.has("victory_shown") and not progress["victory_shown"] is bool:
+		return false
 	if data.has("machines"):
 		if not data["machines"] is Array:
 			return false
@@ -475,9 +577,29 @@ static func _validate_save_data(data: Dictionary) -> bool:
 				return false
 			if not _is_number(state.get("duration"), 0.01) or not _is_number(state.get("timer"), 0.0, state["duration"]):
 				return false
+			if state.has("completed_runs") and not _is_integer(state["completed_runs"]):
+				return false
+			if state.has("pending_outputs"):
+				if not state["pending_outputs"] is Dictionary:
+					return false
+				for item_id in state["pending_outputs"]:
+					if ItemDB.get_item(item_id).is_empty() or not _is_integer(state["pending_outputs"][item_id]):
+						return false
 	for path in data.get("traders", {}):
 		if not _is_relative_path(path) or not data["traders"][path] is bool:
 			return false
+	if data.has("resources"):
+		if not data["resources"] is Array:
+			return false
+		for r_state in data["resources"]:
+			if not r_state is Dictionary or not _is_relative_path(r_state.get("path", "")):
+				return false
+			if r_state.has("is_depleted") and not r_state["is_depleted"] is bool:
+				return false
+			if r_state.has("respawn_timer") and not _is_number(r_state["respawn_timer"], 0.0):
+				return false
+			if r_state.has("current_hits") and not _is_integer(r_state["current_hits"]):
+				return false
 	return true
 
 static func _is_relative_path(value: Variant) -> bool:

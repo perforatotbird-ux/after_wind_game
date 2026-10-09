@@ -6,6 +6,10 @@ extends "res://scripts/interaction/interactable.gd"
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 
+## Суммарный бонус к допустимому весу рюкзака по стадиям (индекс = стадия).
+const STORAGE_WEIGHT_BONUS: Array[float] = [0.0, 10.0, 20.0, 35.0]
+const HOUSE_WEIGHT_BONUS: Array[float] = [0.0, 0.0, 0.0, 15.0]
+
 signal building_opened(building: Node)
 signal stage_upgraded(building: Node, new_stage: int)
 
@@ -26,6 +30,8 @@ func _ready() -> void:
 	
 	if stages_config.is_empty():
 		_init_default_stages()
+	# max_stage не может превышать число описанных стадий.
+	max_stage = mini(max_stage, stages_config.size() - 1)
 	
 	if not visuals_root:
 		visuals_root = get_node_or_null("Visuals")
@@ -263,19 +269,25 @@ func upgrade(player: Node) -> bool:
 	
 	return true
 
-func _apply_stage_perks(player: Node, stage_data: Dictionary) -> void:
+func _apply_stage_perks(player: Node, _stage_data: Dictionary) -> void:
+	apply_capacity_bonus(player)
+
+## Суммарный бонус к допустимому весу рюкзака на текущей стадии.
+func get_weight_bonus() -> float:
+	var idx: int = clampi(current_stage, 0, 3)
+	match building_id:
+		"storage":
+			return STORAGE_WEIGHT_BONUS[idx]
+		"house":
+			return HOUSE_WEIGHT_BONUS[idx]
+	return 0.0
+
+## Идемпотентно выставляет бонус грузоподъёмности игроку (вызывается при улучшении
+## и после загрузки сохранения).
+func apply_capacity_bonus(player: Node) -> void:
 	var inv = player.get("inventory") if player else null
-	if not inv:
-		return
-	
-	# Перки вместимости для склада или дома
-	if building_id == "storage":
-		match current_stage:
-			1: inv.max_weight += 10.0
-			2: inv.max_weight += 10.0
-			3: inv.max_weight += 15.0
-	elif building_id == "house" and current_stage == 3:
-		inv.max_weight += 15.0
+	if inv and inv.has_method("set_weight_bonus"):
+		inv.set_weight_bonus("building:" + building_id, get_weight_bonus())
 
 func _update_visuals() -> void:
 	if not visuals_root:

@@ -1,17 +1,60 @@
 class_name Inventory
 extends Node
 
-## Компонент инвентаря игрока (Разделы 14, 15, 66, 67)
+## Компонент инвентаря игрока (Разделы 14, 15, 66, 67).
+##
+## Модель вместимости (подробно — docs/DOCUMENTATION.md, «Инвентарь и грузоподъёмность»):
+## * Рюкзак задаёт число слотов (max_slots) и допустимый вес (max_weight).
+## * Стек занимает ceil(количество / max_stack) слотов; нестакаемые предметы
+##   (max_stack = 1 или stackable = false) занимают слот на штуку. Инструменты и
+##   снаряжение висят на поясе и слотов рюкзака не занимают.
+## * Нехватка слотов — жёсткий лимит: предмет не подбирается (сигнал item_rejected).
+## * Вес — мягкий лимит: выше max_weight — перегруз (замедление, нет спринта,
+##   повышенный расход энергии при движении); от max_weight * OVERLOAD_CRITICAL_RATIO —
+##   критический перегруз (персонаж обездвижен).
+## * Восстановленные склад и дом дают бонус к допустимому весу (set_weight_bonus).
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 
+enum LoadState { NORMAL, OVERLOADED, CRITICAL }
+
+## Порог критического перегруза относительно допустимого веса.
+const OVERLOAD_CRITICAL_RATIO: float = 1.25
+## Множитель скорости ходьбы при перегрузе.
+const OVERLOAD_SPEED_MULT: float = 0.6
+## Дополнительный расход энергии (ед./сек) при движении с перегрузом.
+const OVERLOAD_MOVE_ENERGY_PER_SEC: float = 2.5
+## Размер стека по умолчанию, если в ItemDB не задан max_stack.
+const DEFAULT_MAX_STACK: int = 99
+## Допустимый вес рюкзаков, если в ItemDB не задан ключ max_weight.
+const BACKPACK_WEIGHT_LIMITS: Dictionary = {
+	"backpack": 50.0,
+	"large_backpack": 75.0
+}
+const DEFAULT_SLOTS: int = 12
+const DEFAULT_MAX_WEIGHT: float = 50.0
+
 signal inventory_updated()
 signal item_added(item_id: String, amount: int, new_total: int)
+signal item_rejected(item_id: String, amount: int, reason: String)
 signal tool_changed(tool_id: String, tool_name: String)
 signal credits_changed(total: int)
+signal load_state_changed(state: int)
 
-@export var max_slots: int = 12
-@export var max_weight: float = 50.0
+@export var max_slots: int = DEFAULT_SLOTS
+## Допустимый вес самого рюкзака (без бонусов зданий).
+@export var base_max_weight: float = DEFAULT_MAX_WEIGHT
+
+## Бонусы к допустимому весу: { источник: кг }, например { "building:storage": 20.0 }.
+var weight_bonuses: Dictionary = {}
+
+## Итоговый допустимый вес = рюкзак + бонусы. Присваивание меняет базу рюкзака,
+## сохраняя бонусы (обратная совместимость со старым кодом и тестами).
+var max_weight: float:
+	get:
+		return base_max_weight + get_weight_bonus_total()
+	set(value):
+		base_max_weight = maxf(0.0, value - get_weight_bonus_total())
 
 ## Финансы
 var credits: int = 0
@@ -62,14 +105,31 @@ var items: Dictionary = {
 	"large_backpack": 0
 }
 
+var _load_state: int = LoadState.NORMAL
+var _base_walk_speed: float = -1.0
+var _base_sprint_speed: float = -1.0
+
 func clear() -> void:
 	for k in items.keys():
 		items[k] = 0
+	_update_load_state()
 	inventory_updated.emit()
 
 func _ready() -> void:
 	# Начальный инструмент по умолчанию
 	call_deferred("_notify_tool_changed")
+
+func _physics_process(delta: float) -> void:
+	# Предметы могут меняться напрямую (загрузка, тесты) — состояние сверяем каждый тик.
+	_update_load_state()
+	if _load_state != LoadState.OVERLOADED:
+		return
+	var owner_body = get_parent()
+	if owner_body is CharacterBody3D and owner_body.has_method("consume_energy"):
+		var horizontal: Vector3 = owner_body.velocity
+		horizontal.y = 0.0
+		if horizontal.length_squared() > 0.04:
+			owner_body.consume_energy(OVERLOAD_MOVE_ENERGY_PER_SEC * delta)
 
 func _notify_tool_changed() -> void:
 	var tool_data: Dictionary = ItemDB.get_item(equipped_tool)
@@ -126,8 +186,6 @@ func upgrade_tool(tool_id: String) -> bool:
 		return false
 	
 	if t_type == "backpack":
-		max_slots = item_data.get("slots", 20)
-		max_weight = 75.0
 		var b_idx: int = tools.find("backpack")
 		if b_idx != -1:
 			tools[b_idx] = tool_id
@@ -135,6 +193,7 @@ func upgrade_tool(tool_id: String) -> bool:
 			tools.append(tool_id)
 		if equipped_tool == "backpack":
 			equipped_tool = tool_id
+		recalculate_capacity()
 		inventory_updated.emit()
 		_notify_tool_changed()
 		return true
@@ -161,6 +220,147 @@ func upgrade_tool(tool_id: String) -> bool:
 	inventory_updated.emit()
 	return true
 
+# ---------------------------------------------------------------------------
+# Вместимость рюкзака
+# ---------------------------------------------------------------------------
+
+## Пересчитывает слоты и базовый вес по лучшему рюкзаку на поясе.
+func recalculate_capacity() -> void:
+	var best_slots: int = DEFAULT_SLOTS
+	var best_weight: float = DEFAULT_MAX_WEIGHT
+	var best_level: int = 0
+	for t in tools:
+		var d: Dictionary = ItemDB.get_item(t)
+		if d.get("tool_type", "") != "backpack":
+			continue
+		var lvl: int = int(d.get("level", 1))
+		if lvl < best_level:
+			continue
+		best_level = lvl
+		best_slots = int(d.get("slots", DEFAULT_SLOTS))
+		best_weight = float(d.get("max_weight", BACKPACK_WEIGHT_LIMITS.get(t, DEFAULT_MAX_WEIGHT)))
+	max_slots = best_slots
+	base_max_weight = best_weight
+	_update_load_state()
+
+## Устанавливает (или снимает при kg <= 0) бонус к допустимому весу от источника.
+func set_weight_bonus(source: String, kg: float) -> void:
+	if kg <= 0.0:
+		weight_bonuses.erase(source)
+	else:
+		weight_bonuses[source] = kg
+	_update_load_state()
+	inventory_updated.emit()
+
+func get_weight_bonus_total() -> float:
+	var total: float = 0.0
+	for k in weight_bonuses:
+		total += float(weight_bonuses[k])
+	return total
+
+## Занимает ли предмет слоты рюкзака (инструменты и снаряжение — на поясе).
+func item_uses_slots(item_id: String) -> bool:
+	var cat: String = ItemDB.get_item(item_id).get("category", "")
+	return cat not in ["tool", "equipment"]
+
+func get_max_stack(item_id: String) -> int:
+	var data: Dictionary = ItemDB.get_item(item_id)
+	if data.has("max_stack"):
+		return maxi(1, int(data["max_stack"]))
+	if data.get("stackable", true) == false:
+		return 1
+	return DEFAULT_MAX_STACK
+
+func get_slots_for(item_id: String, count: int) -> int:
+	if count <= 0 or not item_uses_slots(item_id):
+		return 0
+	return ceili(float(count) / float(get_max_stack(item_id)))
+
+func get_used_slots() -> int:
+	var used: int = 0
+	for item_id in items.keys():
+		used += get_slots_for(item_id, int(items[item_id]))
+	return used
+
+func get_free_slots() -> int:
+	return maxi(0, max_slots - get_used_slots())
+
+## Хватит ли слотов, чтобы положить amount предметов item_id.
+func can_add_item(item_id: String, amount: int) -> bool:
+	if amount <= 0 or ItemDB.get_item(item_id).is_empty():
+		return false
+	var current: int = int(items.get(item_id, 0))
+	var extra_slots: int = get_slots_for(item_id, current + amount) - get_slots_for(item_id, current)
+	return extra_slots <= 0 or extra_slots <= get_free_slots()
+
+func get_total_weight() -> float:
+	var total: float = 0.0
+	for item_id in items.keys():
+		var count: int = items[item_id]
+		if count > 0:
+			var data: Dictionary = ItemDB.get_item(item_id)
+			var w: float = data.get("weight", 1.0)
+			total += w * count
+	return total
+
+func get_load_ratio() -> float:
+	var limit: float = max_weight
+	if limit <= 0.0:
+		return INF if get_total_weight() > 0.0 else 0.0
+	return get_total_weight() / limit
+
+func get_load_state() -> int:
+	var ratio: float = get_load_ratio()
+	if ratio >= OVERLOAD_CRITICAL_RATIO:
+		return LoadState.CRITICAL
+	if ratio > 1.0:
+		return LoadState.OVERLOADED
+	return LoadState.NORMAL
+
+func is_overloaded() -> bool:
+	return get_load_state() != LoadState.NORMAL
+
+func _update_load_state() -> void:
+	var state: int = get_load_state()
+	if state == _load_state:
+		return
+	_load_state = state
+	_apply_load_penalty(state)
+	load_state_changed.emit(state)
+	var owner_body = get_parent()
+	if owner_body and owner_body.has_method("notify"):
+		match state:
+			LoadState.NORMAL:
+				owner_body.notify("🎒 Нагрузка в норме.")
+			LoadState.OVERLOADED:
+				owner_body.notify("⚠️ Перегруз: %.0f/%.0f кг — вы идёте медленнее и быстрее устаёте." % [get_total_weight(), max_weight])
+			LoadState.CRITICAL:
+				owner_body.notify("⛔ Критический перегруз: %.0f/%.0f кг — вы не можете двигаться. Выложите часть груза." % [get_total_weight(), max_weight])
+
+## Штраф к скорости применяется к персонажу-владельцу через его walk_speed / sprint_speed.
+func _apply_load_penalty(state: int) -> void:
+	var owner_body = get_parent()
+	if owner_body == null or not ("walk_speed" in owner_body and "sprint_speed" in owner_body):
+		return
+	if _base_walk_speed < 0.0:
+		_base_walk_speed = owner_body.walk_speed
+		_base_sprint_speed = owner_body.sprint_speed
+	match state:
+		LoadState.NORMAL:
+			owner_body.walk_speed = _base_walk_speed
+			owner_body.sprint_speed = _base_sprint_speed
+		LoadState.OVERLOADED:
+			# Спринт с перегрузом не даёт прироста скорости.
+			owner_body.walk_speed = _base_walk_speed * OVERLOAD_SPEED_MULT
+			owner_body.sprint_speed = owner_body.walk_speed
+		LoadState.CRITICAL:
+			owner_body.walk_speed = 0.0
+			owner_body.sprint_speed = 0.0
+
+# ---------------------------------------------------------------------------
+# Предметы
+# ---------------------------------------------------------------------------
+
 func add_item(item_id: String, amount: int) -> bool:
 	if amount <= 0:
 		return false
@@ -168,6 +368,10 @@ func add_item(item_id: String, amount: int) -> bool:
 	var item_data: Dictionary = ItemDB.get_item(item_id)
 	if item_data.is_empty():
 		push_warning("Попытка добавить неизвестный предмет: " + item_id)
+		return false
+	
+	if not can_add_item(item_id, amount):
+		item_rejected.emit(item_id, amount, "no_slots")
 		return false
 	
 	var current: int = items.get(item_id, 0)
@@ -180,6 +384,7 @@ func add_item(item_id: String, amount: int) -> bool:
 		upgrade_tool(item_id)
 	
 	item_added.emit(item_id, amount, new_amount)
+	_update_load_state()
 	inventory_updated.emit()
 	return true
 
@@ -192,28 +397,12 @@ func remove_item(item_id: String, amount: int) -> bool:
 		return false
 	
 	items[item_id] = current - amount
+	_update_load_state()
 	inventory_updated.emit()
 	return true
 
 func get_item_count(item_id: String) -> int:
 	return items.get(item_id, 0)
-
-func get_total_weight() -> float:
-	var total: float = 0.0
-	for item_id in items.keys():
-		var count: int = items[item_id]
-		if count > 0:
-			var data: Dictionary = ItemDB.get_item(item_id)
-			var w: float = data.get("weight", 1.0)
-			total += w * count
-	return total
-
-func get_used_slots() -> int:
-	var count: int = 0
-	for item_id in items.keys():
-		if items[item_id] > 0:
-			count += 1
-	return count
 
 func add_credits(amount: int) -> void:
 	if amount > 0:
