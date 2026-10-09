@@ -3,7 +3,7 @@ extends RefCounted
 
 ## Централизованный менеджер сохранения и загрузки игры (Этап 12, разделы 81, 88).
 ## Сериализует состояние мира, персонажа, инвентаря, грядок, зданий, машин (включая
-## партии), ресурсных узлов, выброшенных предметов и прогресса в JSON. Формат
+## партии), ресурсных узлов, жил (выкопанные блоки), выброшенных предметов и прогресса в JSON. Формат
 ## версионируется (meta.format_version); старые сохранения мигрируют в _migrate_save_data.
 ## Описание формата — docs/DOCUMENTATION.md, раздел «Сохранения».
 
@@ -14,6 +14,7 @@ const FarmlandPlot = preload("res://scripts/farming/farmland_plot.gd")
 const ProductionMachine = preload("res://scripts/crafting/production_machine.gd")
 const ResourceNodeScript = preload("res://scripts/resources/resource_node.gd")
 const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
+const VoxelDepositScript = preload("res://scripts/world/voxel_deposit.gd")
 const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
@@ -139,6 +140,7 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	var traders: Dictionary = {}
 	var resources: Array = []
 	var dropped: Array = []
+	var deposits: Array = []
 	for node in world.find_children("*", "", true, false):
 		if node is ProductionMachine:
 			machines.append({
@@ -159,6 +161,10 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"respawn_timer": maxf(0.0, float(node.respawn_timer)),
 				"current_hits": maxi(0, int(node.current_hits))
 			})
+		elif node is VoxelDepositScript:
+			var dep_state: Dictionary = node.get_save_state()
+			dep_state["path"] = str(world.get_path_to(node))
+			deposits.append(dep_state)
 		elif node.is_in_group(DroppedItemScript.GROUP) and "item_id" in node and not node.is_queued_for_deletion():
 			if int(node.amount) > 0:
 				dropped.append({
@@ -174,6 +180,7 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	save_data["traders"] = traders
 	save_data["resources"] = resources
 	save_data["dropped_items"] = dropped
+	save_data["deposits"] = deposits
 
 	# Пишем во временный файл: не обнуляем последнее сохранение при сбое записи.
 	var json_str: String = JSON.stringify(save_data, "\t")
@@ -479,7 +486,13 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		res_node.respawn_timer = float(r_state.get("respawn_timer", 0.0))
 		res_node.current_hits = clampi(int(r_state.get("current_hits", res_node.current_hits)), 0, maxi(0, int(res_node.max_hits)))
 	
-	# 13. Выброшенные предметы: текущие кучки убираются, сохранённые создаются заново.
+	# 13. Жилы: выкопанные блоки и найденные ресурсы (в старых сохранениях секции нет).
+	for dep_state in save_data.get("deposits", []):
+		var deposit = world.get_node_or_null(NodePath(dep_state["path"]))
+		if deposit is VoxelDepositScript:
+			deposit.apply_save_state(dep_state)
+
+	# 14. Выброшенные предметы: текущие кучки убираются, сохранённые создаются заново.
 	# В старых сохранениях секции нет — тогда кучки тоже убираются (их не было).
 	for node in world.find_children("*", "", true, false):
 		if node.is_in_group(DroppedItemScript.GROUP) and node.has_method("consume"):
@@ -655,6 +668,14 @@ static func _validate_save_data(data: Dictionary) -> bool:
 			if r_state.has("respawn_timer") and not _is_number(r_state["respawn_timer"], 0.0):
 				return false
 			if r_state.has("current_hits") and not _is_integer(r_state["current_hits"]):
+				return false
+	if data.has("deposits"):
+		if not data["deposits"] is Array:
+			return false
+		for dep_state in data["deposits"]:
+			if not dep_state is Dictionary or not _is_relative_path(dep_state.get("path", "")):
+				return false
+			if not VoxelDepositScript.is_valid_save_state(dep_state):
 				return false
 	if data.has("dropped_items"):
 		if not data["dropped_items"] is Array:

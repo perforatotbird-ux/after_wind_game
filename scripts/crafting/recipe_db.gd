@@ -75,6 +75,26 @@ const RECIPES: Dictionary = {
 		"energy_cost": 3.0,
 		"description": "Переплавка собранного ржавого металлолома в чистый прочный слиток железа."
 	},
+	"smelt_iron_ore": {
+		"id": "smelt_iron_ore",
+		"name": "Плавка руды: Железный слиток (x1)",
+		"machine": "furnace",
+		"inputs": {"iron_ore": 2, "coal": 1},
+		"outputs": {"iron_ingot": 1},
+		"duration": 7.0,
+		"energy_cost": 3.0,
+		"description": "Выплавка железа из руды жилы на угле — основной источник слитков после металлолома."
+	},
+	"press_coal_briquette": {
+		"id": "press_coal_briquette",
+		"name": "Прессование: Угольные брикеты (x3)",
+		"machine": "workbench",
+		"inputs": {"coal": 2, "sawdust": 1},
+		"outputs": {"fuel_briquette": 3},
+		"duration": 4.0,
+		"energy_cost": 2.0,
+		"description": "Угольная крошка с опилками прессуется в плотные топливные брикеты."
+	},
 	"filter_water": {
 		"id": "filter_water",
 		"name": "Песчаная фильтрация: Чистая вода (x2)",

@@ -73,6 +73,8 @@ var items: Dictionary = {
 	"stone": 0,
 	"clay": 0,
 	"sand": 0,
+	"coal": 0,
+	"iron_ore": 0,
 	"water": 0,
 	"stone_dust": 0,
 	"sawdust": 0,

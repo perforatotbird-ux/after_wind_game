@@ -108,6 +108,26 @@ const ITEMS: Dictionary = {
 		"max_stack": 50,
 		"description": "Мелкий речной песок. Необходим для растворов и восстановления построек."
 	},
+	"coal": {
+		"id": "coal",
+		"name": "Уголь",
+		"icon": "⚫",
+		"category": "resource",
+		"weight": 0.8,
+		"max_stack": 50,
+		"sell_price": 3,
+		"description": "Каменный уголь из жилы. Топливо для печи: плавка руды и прессование брикетов."
+	},
+	"iron_ore": {
+		"id": "iron_ore",
+		"name": "Железная руда",
+		"icon": "🟤",
+		"category": "resource",
+		"weight": 1.8,
+		"max_stack": 30,
+		"sell_price": 4,
+		"description": "Порода с рыжими прожилками железа. В печи с углём переплавляется в слиток."
+	},
 	"water": {
 		"id": "water",
 		"name": "Сырая вода",

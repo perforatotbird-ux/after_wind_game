@@ -40,6 +40,8 @@ const SaveManager = preload("res://scripts/core/save_manager.gd")
 const STRIKE_CONTACT_TIME: float = 0.15
 const STRIKE_BUFFER_WINDOW: float = 0.12
 const STRIKE_HIT_PAUSE: float = 0.025
+## Высота уступа жилы, на который персонаж поднимается сам (блок 0.5 м + запас).
+const STEP_HEIGHT: float = 0.55
 const STRIKE_CONTACT_FRACTION_LONG: float = 0.55
 const STRIKE_CONTACT_FRACTION_SHORT: float = 0.38
 const STRIKE_LONG_ANIM_THRESHOLD: float = 0.8
@@ -196,6 +198,7 @@ func _physics_process(delta: float) -> void:
 	_handle_wetness(delta)
 	_update_best_interactable()
 	_handle_interaction_input()
+	_try_step_up(delta)
 	move_and_slide()
 	_update_character_animation()
 	_check_bounds()
@@ -628,7 +631,10 @@ func _update_best_interactable() -> void:
 		facing_dir = Vector3.FORWARD
 	
 	for item in nearby_interactables:
-		var to_item: Vector3 = item.global_position - global_position
+		# Жилы (VoxelDeposit) выбирают блок под прицелом; без блока в досягаемости не участвуют.
+		if item.has_method("update_aim") and not item.update_aim(self):
+			continue
+		var to_item: Vector3 = _interaction_point(item) - global_position
 		to_item.y = 0.0
 		var dist: float = to_item.length()
 		var dot: float = 1.0
@@ -641,6 +647,44 @@ func _update_best_interactable() -> void:
 			best_item = item
 			
 	_set_current_interactable(best_item)
+	# Подсказка жилы меняется вместе с блоком под прицелом.
+	if is_instance_valid(best_item) and best_item.has_method("consume_prompt_dirty") and best_item.consume_prompt_dirty():
+		focused_interactable_changed.emit(best_item)
+
+## Точка, к которой персонаж поворачивается и от которой меряется дистанция.
+func _interaction_point(item: Node3D) -> Vector3:
+	if item.has_method("get_interaction_point"):
+		return item.get_interaction_point()
+	return item.global_position
+
+## Шаг на уступ высотой в блок жилы (0.5 м): иначе из ямы не выбраться.
+## Работает только для тел группы voxel_terrain — заборы и стены остаются препятствием.
+func _try_step_up(delta: float) -> bool:
+	if not is_on_floor():
+		return false
+	var horiz := Vector3(velocity.x, 0.0, velocity.z)
+	if horiz.length_squared() < 0.04:
+		return false
+	var motion: Vector3 = horiz * maxf(delta, 1.0 / 60.0)
+	var hit := KinematicCollision3D.new()
+	if not test_move(global_transform, motion, hit, 0.001, false, 4):
+		return false
+	var wall: bool = false
+	for i in hit.get_collision_count():
+		var collider: Object = hit.get_collider(i)
+		if collider is Node and collider.is_in_group("voxel_terrain") and hit.get_normal(i).y < 0.7:
+			wall = true
+			break
+	if not wall:
+		return false
+	var up: Vector3 = Vector3.UP * STEP_HEIGHT
+	if test_move(global_transform, up):
+		return false
+	var raised: Transform3D = global_transform.translated(up)
+	if test_move(raised, horiz.normalized() * 0.3):
+		return false
+	global_position += up
+	return true
 
 func _set_current_interactable(new_target: Area3D) -> void:
 	if current_interactable != new_target:
@@ -694,7 +738,7 @@ func trigger_tool_strike() -> void:
 		return
 	_strike_target = current_interactable if is_instance_valid(current_interactable) else null
 	if is_instance_valid(_strike_target) and visual_root:
-		var dir_to_target: Vector3 = _strike_target.global_position - global_position
+		var dir_to_target: Vector3 = _interaction_point(_strike_target) - global_position
 		dir_to_target.y = 0.0
 		if dir_to_target.length_squared() > 0.001:
 			var current_facing: Vector3 = -visual_root.global_transform.basis.z
@@ -730,7 +774,10 @@ func _update_strike(delta: float) -> void:
 func _apply_strike_contact() -> void:
 	if not is_instance_valid(_strike_target) or _strike_target.get("is_interactable") == false:
 		return
-	if global_position.distance_to(_strike_target.global_position) > 2.5:
+	if _strike_target.has_method("is_in_reach"):
+		if not _strike_target.is_in_reach(self):
+			return
+	elif global_position.distance_to(_strike_target.global_position) > 2.5:
 		return
 	var old_hits = _strike_target.get("current_hits")
 	_strike_target.interact(self)

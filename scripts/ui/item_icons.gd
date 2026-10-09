@@ -19,6 +19,8 @@ const STYLES: Dictionary = {
 	"stone": ["rock", Color(0.55, 0.56, 0.58), Color(0.78, 0.8, 0.82)],
 	"clay": ["clay", Color(0.72, 0.42, 0.28), Color(0.88, 0.6, 0.45)],
 	"sand": ["pile", Color(0.9, 0.8, 0.52), Color(1.0, 0.93, 0.7)],
+	"coal": ["coal", Color(0.16, 0.15, 0.16), Color(0.55, 0.56, 0.62)],
+	"iron_ore": ["ore", Color(0.5, 0.48, 0.46), Color(0.78, 0.45, 0.24)],
 	"water": ["drop", Color(0.25, 0.55, 0.9), Color(0.7, 0.88, 1.0)],
 	"stone_dust": ["pile", Color(0.7, 0.7, 0.72), Color(0.92, 0.92, 0.94)],
 	"sawdust": ["pile", Color(0.82, 0.66, 0.42), Color(0.95, 0.85, 0.62)],
@@ -295,6 +297,23 @@ static func _shape(img: Image, shape: String, base: Color, accent: Color, g: flo
 			_rect(img, 19, 17, 11, 12, accent, g)
 			if d:
 				_rect(img, 22, 20, 5, 6, base.darkened(0.4))
+		"coal":
+			_ellipse(img, 17, 30, 10, 8, base, g)
+			_ellipse(img, 30, 27, 11, 9, base, g)
+			_ellipse(img, 24, 19, 8, 6, base, g)
+			if d:
+				_ellipse(img, 14, 27, 3, 1.5, accent)
+				_ellipse(img, 27, 23, 4, 1.5, accent)
+				_ellipse(img, 22, 17, 2.5, 1.2, accent)
+				_line(img, 24, 25, 28, 33, 1.0, base.lightened(0.15))
+		"ore":
+			_ellipse(img, 25, 26, 17, 12, base, g)
+			_ellipse(img, 15, 32, 9, 7, base, g)
+			if d:
+				_ellipse(img, 20, 21, 6, 3, base.lightened(0.25))
+				for p in [Vector2(18, 28), Vector2(29, 23), Vector2(32, 31), Vector2(24, 33), Vector2(13, 33)]:
+					_ellipse(img, p.x, p.y, 2.6, 2.0, accent)
+					_ellipse(img, p.x - 0.8, p.y - 0.8, 1.0, 0.8, accent.lightened(0.35))
 		"clay":
 			_ellipse(img, 24, 30, 17, 10, base, g)
 			_ellipse(img, 21, 23, 9, 7, base, g)
