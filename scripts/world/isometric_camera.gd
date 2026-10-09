@@ -15,6 +15,9 @@ extends Camera3D
 @export var max_pitch: float = deg_to_rad(80.0)
 @export var mouse_sensitivity: float = 0.005
 @export var rotation_damping: float = 16.0
+## Зум только с зажатым Ctrl (Cmd на macOS): обычное колесо листает инструменты
+## на поясе (scripts/ui/gameplay_ui_controller.gd).
+@export var zoom_requires_ctrl: bool = true
 
 var yaw: float = 0.0
 var pitch: float = 0.832 # ~47.7 градусов (atan2(11, 10))
@@ -40,6 +43,12 @@ func _notification(what: int) -> void:
 			is_orbiting = false
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
+## Колесо с модификатором — зум; без него событие остаётся для смены инструмента.
+func is_zoom_event(mb: InputEventMouseButton) -> bool:
+	if mb.button_index != MOUSE_BUTTON_WHEEL_UP and mb.button_index != MOUSE_BUTTON_WHEEL_DOWN:
+		return false
+	return not zoom_requires_ctrl or mb.ctrl_pressed or mb.meta_pressed
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb: InputEventMouseButton = event as InputEventMouseButton
@@ -50,10 +59,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				is_orbiting = false
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		elif mb.button_index == MOUSE_BUTTON_WHEEL_UP and mb.pressed:
-			target_distance = clampf(target_distance - zoom_step, min_distance, max_distance)
-		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN and mb.pressed:
-			target_distance = clampf(target_distance + zoom_step, min_distance, max_distance)
+		elif mb.pressed and is_zoom_event(mb):
+			if mb.button_index == MOUSE_BUTTON_WHEEL_UP:
+				target_distance = clampf(target_distance - zoom_step, min_distance, max_distance)
+			else:
+				target_distance = clampf(target_distance + zoom_step, min_distance, max_distance)
+			if is_inside_tree() and get_viewport():
+				get_viewport().set_input_as_handled()
 			
 	elif event is InputEventMouseMotion and is_orbiting:
 		var mm: InputEventMouseMotion = event as InputEventMouseMotion

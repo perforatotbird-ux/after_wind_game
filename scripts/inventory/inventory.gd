@@ -13,6 +13,8 @@ extends Node
 ##   повышенный расход энергии при движении); от max_weight * OVERLOAD_CRITICAL_RATIO —
 ##   критический перегруз (персонаж обездвижен).
 ## * Восстановленные склад и дом дают бонус к допустимому весу (set_weight_bonus).
+## * Окно рюкзака показывает каждый стек отдельной клеткой (get_slot_stacks);
+##   предметы можно выбросить на землю (drop_item + DroppedItem).
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 
@@ -148,6 +150,31 @@ func equip_tool(tool_id: String) -> void:
 func equip_slot(slot_index: int) -> void:
 	if slot_index >= 0 and slot_index < tools.size():
 		equip_tool(tools[slot_index])
+
+## Инструменты пояса, между которыми листает колесо мыши. Рюкзак пропускается:
+## его не берут в руки, слот 5 открывает окно инвентаря.
+func get_cyclable_tools() -> Array[String]:
+	var result: Array[String] = []
+	for t in tools:
+		if t == "backpack" or ItemDB.get_item(t).get("tool_type", "") == "backpack":
+			continue
+		result.append(t)
+	return result
+
+## Колесо мыши: следующий (direction > 0) или предыдущий (direction < 0)
+## инструмент по кругу. Возвращает id инструмента в руках после переключения.
+func cycle_tool(direction: int) -> String:
+	var cyclable: Array[String] = get_cyclable_tools()
+	if cyclable.is_empty() or direction == 0:
+		return equipped_tool
+	var idx: int = cyclable.find(equipped_tool)
+	var next_idx: int = 0
+	if idx == -1:
+		next_idx = 0 if direction > 0 else cyclable.size() - 1
+	else:
+		next_idx = posmod(idx + signi(direction), cyclable.size())
+	equip_tool(cyclable[next_idx])
+	return equipped_tool
 
 func is_tool_equipped(tool_id_or_type: String) -> bool:
 	if equipped_tool == tool_id_or_type:
@@ -293,6 +320,38 @@ func can_add_item(item_id: String, amount: int) -> bool:
 	var extra_slots: int = get_slots_for(item_id, current + amount) - get_slots_for(item_id, current)
 	return extra_slots <= 0 or extra_slots <= get_free_slots()
 
+## Сколько штук item_id (не больше amount) поместится в рюкзак: остаток
+## неполных стеков + свободные слоты. Для частичного подбора и выдачи продукции.
+func get_max_addable(item_id: String, amount: int) -> int:
+	if amount <= 0 or ItemDB.get_item(item_id).is_empty():
+		return 0
+	if not item_uses_slots(item_id):
+		return amount
+	var current: int = int(items.get(item_id, 0))
+	var stack: int = get_max_stack(item_id)
+	var capacity: int = (get_slots_for(item_id, current) + get_free_slots()) * stack - current
+	return clampi(capacity, 0, amount)
+
+## Раскладка рюкзака по клеткам окна инвентаря: каждый стек — отдельная клетка
+## { "item_id": String, "count": int }. Порядок стабилен (порядок ключей items),
+## полные стеки идут первыми. Инструменты пояса в раскладку не входят.
+func get_slot_stacks() -> Array[Dictionary]:
+	var cells: Array[Dictionary] = []
+	for item_id in items.keys():
+		var count: int = int(items[item_id])
+		if count <= 0 or not item_uses_slots(item_id):
+			continue
+		var stack: int = get_max_stack(item_id)
+		while count > 0:
+			var n: int = mini(count, stack)
+			cells.append({"item_id": item_id, "count": n})
+			count -= n
+	return cells
+
+## Вес одной штуки предмета, кг.
+func get_item_weight(item_id: String) -> float:
+	return float(ItemDB.get_item(item_id).get("weight", 1.0))
+
 func get_total_weight() -> float:
 	var total: float = 0.0
 	for item_id in items.keys():
@@ -400,6 +459,13 @@ func remove_item(item_id: String, amount: int) -> bool:
 	_update_load_state()
 	inventory_updated.emit()
 	return true
+
+## Убирает предметы из рюкзака, чтобы выбросить их на землю (см. DroppedItem).
+## Инструменты и снаряжение с пояса не выбрасываются.
+func drop_item(item_id: String, amount: int) -> bool:
+	if ItemDB.get_item(item_id).is_empty() or not item_uses_slots(item_id):
+		return false
+	return remove_item(item_id, amount)
 
 func get_item_count(item_id: String) -> int:
 	return items.get(item_id, 0)
