@@ -182,19 +182,30 @@ func test_mouse_motion_and_pitch_clamping() -> void:
 	print("✅ Вращение мышью и границы наклона работают корректно.")
 
 func test_mouse_wheel_zoom_and_clamps() -> void:
-	print("\n--- Проверка 4: Плавное масштабирование (Zoom In / Out) колесом мыши ---")
+	print("\n--- Проверка 4: Масштабирование (Zoom In / Out) через Ctrl + колесо мыши ---")
 	var init_dist: float = cam.target_distance
 	
-	# Колесо вверх (приближение)
+	# Обычное колесо листает инструменты и не должно менять зум
+	var plain_wheel = InputEventMouseButton.new()
+	plain_wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+	plain_wheel.pressed = true
+	cam._unhandled_input(plain_wheel)
+	if abs(cam.target_distance - init_dist) > 0.001:
+		_fail("Колесо без Ctrl не должно менять дистанцию камеры (оно переключает инструменты)")
+		return
+	print("  • Колесо без Ctrl: дистанция не изменилась (%.2f м)" % cam.target_distance)
+	
+	# Ctrl + колесо вверх (приближение)
 	var wheel_up = InputEventMouseButton.new()
 	wheel_up.button_index = MOUSE_BUTTON_WHEEL_UP
 	wheel_up.pressed = true
+	wheel_up.ctrl_pressed = true
 	cam._unhandled_input(wheel_up)
 	
 	if abs(cam.target_distance - (init_dist - cam.zoom_step)) > 0.001:
 		_fail("Дистанция должна уменьшиться на zoom_step, ожидалось %.2f, получено %.2f" % [init_dist - cam.zoom_step, cam.target_distance])
 		return
-	print("  • Колесо вверх: target_distance = %.2f м (было %.2f м)" % [cam.target_distance, init_dist])
+	print("  • Ctrl + колесо вверх: target_distance = %.2f м (было %.2f м)" % [cam.target_distance, init_dist])
 	
 	# Многократное колесо вверх до упора
 	for i in range(25):
@@ -204,10 +215,11 @@ func test_mouse_wheel_zoom_and_clamps() -> void:
 		return
 	print("  • Ограничение приближения: min_distance = %.2f м" % cam.target_distance)
 	
-	# Колесо вниз (отдаление) до упора
+	# Ctrl + колесо вниз (отдаление) до упора
 	var wheel_down = InputEventMouseButton.new()
 	wheel_down.button_index = MOUSE_BUTTON_WHEEL_DOWN
 	wheel_down.pressed = true
+	wheel_down.ctrl_pressed = true
 	for i in range(30):
 		cam._unhandled_input(wheel_down)
 	if cam.target_distance != cam.max_distance:
@@ -215,7 +227,7 @@ func test_mouse_wheel_zoom_and_clamps() -> void:
 		return
 	print("  • Ограничение отдаления: max_distance = %.2f м" % cam.target_distance)
 	
-	print("✅ Зум колесом мыши и его граничные значения функционируют идеально.")
+	print("✅ Зум через Ctrl + колесо и его граничные значения работают корректно.")
 
 func test_focus_out_safety() -> void:
 	print("\n--- Проверка 5: Безопасный сброс захвата при потере фокуса окна ---")
