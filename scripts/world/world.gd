@@ -1,6 +1,22 @@
 extends Node3D
 
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
+const GameSettings = preload("res://scripts/core/game_settings.gd")
+const GameSession = preload("res://scripts/core/game_session.gd")
+const SaveSlots = preload("res://scripts/core/save_slots.gd")
+const MainMenu = preload("res://scripts/ui/main_menu.gd")
+const PauseMenuController = preload("res://scripts/ui/pause_menu_controller.gd")
+
+## Интервал автосохранения в секундах реального времени (только во время игры, не в паузе и не в меню).
+const AUTOSAVE_INTERVAL: float = 300.0
+
+## Стартовое меню показывается только когда мир — главная сцена и есть окно.
+## В headless-тестах (мир добавляется в root вручную) мир сразу играбелен.
+@export var enable_main_menu: bool = true
+
+var is_in_main_menu: bool = false
+var _session_active: bool = false
+var _autosave_timer: float = 0.0
 
 @onready var player: CharacterBody3D = $Player
 @onready var camera: Camera3D = $IsometricCamera
@@ -46,6 +62,55 @@ func _ready() -> void:
 		hud.update_power_display(power_grid.current_stored, power_grid.max_capacity, power_grid.current_generation, power_grid.current_consumption, power_grid.has_power)
 	
 	_connect_interactive_stations()
+	_init_session.call_deferred()
+
+# --- Сессия: настройки, стартовое меню, загрузка слота ---
+
+func _init_session() -> void:
+	if not enable_main_menu or get_tree().current_scene != self:
+		return
+	if DisplayServer.get_name() == "headless":
+		return
+	_session_active = true
+	GameSettings.load_settings()
+	GameSettings.apply(get_tree())
+	if hud:
+		var controller = PauseMenuController.new()
+		controller.name = "PauseMenuController"
+		controller.setup(hud, self)
+		hud.add_child(controller)
+
+	var request: Dictionary = GameSession.consume(get_tree())
+	if not request.get("skip_menu", false):
+		_show_main_menu()
+		return
+	var slot_id: String = str(request.get("load_slot", ""))
+	if slot_id != "" and not SaveSlots.load_from_slot(self, slot_id):
+		if hud and hud.has_method("show_notification"):
+			hud.show_notification("⚠️ Не удалось загрузить %s — начата новая игра" % SaveSlots.get_slot_title(slot_id))
+
+func _show_main_menu() -> void:
+	is_in_main_menu = true
+	# Мир живёт (погода, сутки, звук), но игрок, камера и HUD выключены.
+	for node in [player, hud, camera]:
+		if node:
+			node.process_mode = Node.PROCESS_MODE_DISABLED
+	if hud:
+		hud.visible = false
+	var menu = MainMenu.new()
+	menu.name = "MainMenu"
+	menu.world = self
+	add_child(menu)
+
+func _process(delta: float) -> void:
+	if not _session_active or is_in_main_menu or get_tree().paused:
+		return
+	_autosave_timer += delta
+	if _autosave_timer >= AUTOSAVE_INTERVAL:
+		_autosave_timer = 0.0
+		SaveSlots.save_to_slot(self, SaveSlots.AUTOSAVE_ID)
+
+# --- Подключение станций и погоды ---
 
 func _connect_interactive_stations() -> void:
 	if not hud:
