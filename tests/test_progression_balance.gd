@@ -91,7 +91,7 @@ func _initialize() -> void:
 		longest = maxf(longest, machine_time[m])
 		total_time += machine_time[m]
 	print("Всего сырья: %d ед., станки суммарно %.1f мин, самый загруженный %.1f мин" % [total_raw, total_time / 60.0, longest / 60.0])
-	# Ощутимо, но конечно: ~1–2 игровых дня (сутки 8 мин) с параллельной работой станков.
+	# Ощутимо, но конечно: ~1 игровой день (сутки 24 мин, 1 игровой час = 1 мин) с параллельной работой станков.
 	check(total_raw >= 80 and total_raw <= 220, "Сырья до победы %d — вне 80–220" % total_raw)
 	check(longest >= 300.0 and longest <= 1500.0, "Самый загруженный станок %.0f с — вне 5–25 мин" % longest)
 	check(int(raw.get("stone", 0)) <= 70, "Слишком много камня до победы: %d" % raw.get("stone", 0))

@@ -9,8 +9,10 @@ signal day_passed(new_day: int)
 signal phase_changed(new_phase: String)
 
 @export_group("Time Settings")
-## Длительность полных суток в секундах реального времени (480 сек = 8 мин)
-@export var day_duration_seconds: float = 480.0
+## Длительность полных суток в секундах реального времени.
+## По умолчанию 1 игровой час = 1 минута (сутки = 24 мин); меняется в настройках
+## («Длительность игрового часа», GameSettings.seconds_per_game_hour).
+@export var day_duration_seconds: float = 1440.0
 @export var current_day: int = 1
 @export var current_hour: float = 8.0
 @export var time_scale: float = 1.0
@@ -23,7 +25,10 @@ var current_phase: String = "Утро"
 var _sky_material: ProceduralSkyMaterial = null
 var _last_reported_minute: int = -1
 
+const GROUP: String = "day_night_cycle"
+
 func _ready() -> void:
+	add_to_group(GROUP)
 	if not sun_light:
 		sun_light = get_parent().get_node_or_null("DirectionalLight3D")
 	
@@ -35,10 +40,19 @@ func _ready() -> void:
 	
 	_update_lighting_and_sky(true)
 
+## Игровых часов за секунду реального времени (24 игровых часа за day_duration_seconds).
+func get_hours_per_second() -> float:
+	return (24.0 / max(1.0, day_duration_seconds)) * time_scale
+
+## Сколько реальных секунд длится один игровой час.
+func get_seconds_per_game_hour() -> float:
+	return max(1.0, day_duration_seconds) / 24.0
+
+func set_seconds_per_game_hour(seconds: float) -> void:
+	day_duration_seconds = maxf(1.0, seconds) * 24.0
+
 func _process(delta: float) -> void:
-	# Скорость изменения времени (24 игровых часа за day_duration_seconds)
-	var hours_per_second: float = (24.0 / max(1.0, day_duration_seconds)) * time_scale
-	current_hour += hours_per_second * delta
+	current_hour += get_hours_per_second() * delta
 	
 	if current_hour >= 24.0:
 		current_hour -= 24.0

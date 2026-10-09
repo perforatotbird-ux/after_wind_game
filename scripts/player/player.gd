@@ -714,6 +714,9 @@ func _is_mining_resource(target: Area3D) -> bool:
 	# через прямое взаимодействие без замаха киркой.
 	if target.get("is_machine") == true or target.get("is_container") == true:
 		return false
+	# Пень срубленного дерева: посадка саженца без замаха топором.
+	if target.get("is_depleted") == true:
+		return false
 	var req: Variant = target.get("required_tool") if "required_tool" in target else null
 	if req == null:
 		return false

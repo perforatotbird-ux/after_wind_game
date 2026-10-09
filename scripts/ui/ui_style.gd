@@ -60,6 +60,11 @@ static func make_button(text: String, min_size: Vector2 = Vector2(0, 36), primar
 	b.text = text
 	b.custom_minimum_size = min_size
 	b.focus_mode = Control.FOCUS_ALL
+	style_button(b, primary, danger, font_size)
+	return b
+
+## Применяет оформление HUD к существующей кнопке (в т.ч. из сцены hud.tscn).
+static func style_button(b: Button, primary: bool = false, danger: bool = false, font_size: int = 14) -> void:
 	var normal_bg: Color = Color(0.16, 0.2, 0.26, 0.95)
 	var normal_border: Color = COLOR_BORDER
 	if primary:
@@ -81,7 +86,45 @@ static func make_button(text: String, min_size: Vector2 = Vector2(0, 36), primar
 	b.add_theme_color_override("font_focus_color", COLOR_TEXT)
 	b.add_theme_color_override("font_disabled_color", COLOR_DIM)
 	b.add_theme_font_size_override("font_size", font_size)
-	return b
+
+## Минимальный размер шрифта в окнах (логические пиксели базы 1600×900).
+const MIN_FONT_LABEL: int = 13
+const MIN_FONT_BUTTON: int = 14
+
+## Делает текст окна читаемым и не вылезающим за края: прокрутка только по
+## вертикали, перенос строк у меток (кроме коротких подписей в строках HBox),
+## минимальный кегль, оформление кнопок, обрезка «…» у длинных подписей в строках.
+static func polish_text(node: Node) -> void:
+	if node is ScrollContainer:
+		(node as ScrollContainer).horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	elif node is Label:
+		var l := node as Label
+		var fs: int = l.get_theme_font_size("font_size")
+		if fs < MIN_FONT_LABEL:
+			l.add_theme_font_size_override("font_size", MIN_FONT_LABEL)
+		var parent := l.get_parent()
+		# Подписи в строках, сетках и потоках не переносим: там ширину задаёт сам текст.
+		var in_row: bool = parent is HBoxContainer or parent is ProgressBar or parent is FlowContainer or parent is GridContainer or parent is CenterContainer
+		if not in_row:
+			if l.autowrap_mode == TextServer.AUTOWRAP_OFF:
+				l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		elif (l.size_flags_horizontal & Control.SIZE_EXPAND) != 0:
+			l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			l.clip_text = true
+			l.tooltip_text = l.text
+			l.mouse_filter = Control.MOUSE_FILTER_PASS
+	elif node is Button and not (node is OptionButton or node is CheckButton or node is CheckBox):
+		var b := node as Button
+		var fs_b: int = maxi(MIN_FONT_BUTTON, b.get_theme_font_size("font_size"))
+		if not b.has_theme_stylebox_override("normal"):
+			style_button(b, false, false, fs_b)
+		else:
+			b.add_theme_font_size_override("font_size", fs_b)
+		b.custom_minimum_size.y = maxf(b.custom_minimum_size.y, 34.0)
+		if b.get_parent() is VBoxContainer and b.text.length() > 24:
+			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	for child in node.get_children():
+		polish_text(child)
 
 ## Полноэкранное затемнение под модальным окном (перехватывает клики).
 static func make_overlay() -> ColorRect:

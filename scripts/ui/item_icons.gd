@@ -38,6 +38,7 @@ const STYLES: Dictionary = {
 	"seeds_wheat": ["seeds", Color(0.88, 0.75, 0.4), Color(1.0, 0.93, 0.62)],
 	"carrot": ["carrot", Color(0.95, 0.5, 0.15), Color(0.35, 0.7, 0.25)],
 	"potato": ["potato", Color(0.75, 0.6, 0.38), Color(0.9, 0.8, 0.6)],
+	"sapling": ["sapling", Color(0.35, 0.7, 0.3), Color(0.5, 0.34, 0.2)],
 	"wheat": ["wheat", Color(0.92, 0.78, 0.35), Color(0.7, 0.55, 0.2)],
 	"bread": ["bread", Color(0.72, 0.45, 0.2), Color(0.88, 0.65, 0.35)],
 	"fertilizer": ["sack", Color(0.55, 0.45, 0.3), Color(0.4, 0.66, 0.3)],
@@ -230,6 +231,16 @@ static func _shape(img: Image, shape: String, base: Color, accent: Color, g: flo
 					var y2: float = 13.0 + i * 5.0
 					_ellipse(img, 19, y2 - 1, 1, 2, accent)
 					_ellipse(img, 27, y2 - 1, 1, 2, accent)
+		"sapling":
+			_ellipse(img, 24, 40, 13, 5, accent, g)
+			_line(img, 24, 40, 24, 14, 2.5, accent, g)
+			_ellipse(img, 16, 24, 7, 3.5, base, g)
+			_ellipse(img, 32, 19, 7, 3.5, base, g)
+			_ellipse(img, 24, 11, 4, 6, base, g)
+			if d:
+				_line(img, 11, 24, 21, 24, 1.0, dark)
+				_line(img, 27, 19, 37, 19, 1.0, dark)
+				_ellipse(img, 20, 39, 3, 1.2, accent.lightened(0.25))
 		"bread":
 			_ellipse(img, 24, 29, 18, 11, base, g)
 			_ellipse(img, 24, 25, 16, 9, accent, g)

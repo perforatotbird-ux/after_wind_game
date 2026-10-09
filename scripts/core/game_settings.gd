@@ -1,6 +1,6 @@
 extends RefCounted
 
-## Настройки игры: звук, экран, чувствительность камеры.
+## Настройки игры: звук, экран, интерфейс, чувствительность камеры и скорость времени.
 ## Хранятся в user://settings.cfg (ConfigFile, секция [settings]) и применяются
 ## при запуске мира (world.gd) и при каждом изменении в окне настроек.
 ## В headless-режиме параметры окна не трогаются.
@@ -13,6 +13,14 @@ const SECTION: String = "settings"
 const BASE_MOUSE_SENSITIVITY: float = 0.005
 const MOUSE_SENSITIVITY_MIN: float = 0.25
 const MOUSE_SENSITIVITY_MAX: float = 3.0
+## Скорость игрового времени: сколько реальных секунд длится 1 игровой час.
+## По умолчанию 60 с (1 игровой час = 1 минута, сутки = 24 мин).
+const GAME_HOUR_PRESETS: Array = [20.0, 30.0, 45.0, 60.0, 90.0, 120.0, 180.0]
+const GAME_HOUR_MIN: float = 10.0
+const GAME_HOUR_MAX: float = 600.0
+## Масштаб интерфейса поверх автоматического (окно растягивается от базы 1600×900).
+const UI_SCALE_MIN: float = 0.75
+const UI_SCALE_MAX: float = 1.5
 const RESOLUTIONS: Array = [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080), Vector2i(2560, 1440)]
 
 ## resolution_index = -1 — не менять размер окна (как в project.godot).
@@ -24,6 +32,8 @@ const DEFAULTS: Dictionary = {
 	"resolution_index": -1,
 	"vsync": true,
 	"mouse_sensitivity": 1.0,
+	"seconds_per_game_hour": 60.0,
+	"ui_scale": 1.0,
 }
 
 ## Путь можно подменить в тестах.
@@ -70,6 +80,33 @@ static func reset_to_defaults(tree: SceneTree = null) -> void:
 static func get_mouse_sensitivity() -> float:
 	return BASE_MOUSE_SENSITIVITY * float(get_value("mouse_sensitivity"))
 
+static func get_seconds_per_game_hour() -> float:
+	return float(get_value("seconds_per_game_hour"))
+
+## Подписи пресетов скорости времени для выпадающего списка настроек.
+static func get_game_hour_labels() -> Array[String]:
+	var labels: Array[String] = []
+	for sec in GAME_HOUR_PRESETS:
+		labels.append(format_game_hour(float(sec)))
+	return labels
+
+## «1 мин — сутки 24 мин»: длительность часа и суток в реальном времени.
+static func format_game_hour(sec: float) -> String:
+	var hour_text: String = ("%d с" % int(sec)) if sec < 60.0 else (("%d мин" % int(sec / 60.0)) if is_equal_approx(fmod(sec, 60.0), 0.0) else ("%.1f мин" % (sec / 60.0)))
+	var day_min: float = sec * 24.0 / 60.0
+	var day_text: String = ("%d мин" % int(round(day_min))) if day_min < 60.0 else ("%.1f ч" % (day_min / 60.0)).replace(".0 ч", " ч")
+	var suffix: String = " (по умолчанию)" if is_equal_approx(sec, float(DEFAULTS["seconds_per_game_hour"])) else ""
+	return "%s — сутки %s%s" % [hour_text, day_text, suffix]
+
+## Индекс ближайшего пресета к текущему значению.
+static func get_game_hour_preset_index() -> int:
+	var cur: float = get_seconds_per_game_hour()
+	var best: int = 0
+	for i in GAME_HOUR_PRESETS.size():
+		if absf(float(GAME_HOUR_PRESETS[i]) - cur) < absf(float(GAME_HOUR_PRESETS[best]) - cur):
+			best = i
+	return best
+
 static func get_resolution_labels() -> Array[String]:
 	var labels: Array[String] = ["Как в проекте"]
 	for r in RESOLUTIONS:
@@ -81,7 +118,9 @@ static func get_resolution_labels() -> Array[String]:
 static func apply(tree: SceneTree = null) -> void:
 	apply_audio()
 	apply_display()
+	apply_ui_scale(tree)
 	apply_camera(tree)
+	apply_time(tree)
 
 static func apply_key(key: String, tree: SceneTree = null) -> void:
 	match key:
@@ -91,6 +130,25 @@ static func apply_key(key: String, tree: SceneTree = null) -> void:
 			apply_display()
 		"mouse_sensitivity":
 			apply_camera(tree)
+		"seconds_per_game_hour":
+			apply_time(tree)
+		"ui_scale":
+			apply_ui_scale(tree)
+
+## Длительность игрового часа -> DayNightCycle (группа "day_night_cycle").
+static func apply_time(tree: SceneTree = null) -> void:
+	if tree == null:
+		return
+	var sec: float = get_seconds_per_game_hour()
+	for cycle in tree.get_nodes_in_group("day_night_cycle"):
+		if cycle.has_method("set_seconds_per_game_hour"):
+			cycle.set_seconds_per_game_hour(sec)
+
+## Дополнительный множитель масштаба интерфейса (база растяжения — project.godot).
+static func apply_ui_scale(tree: SceneTree = null) -> void:
+	if tree == null or tree.root == null:
+		return
+	tree.root.content_scale_factor = float(get_value("ui_scale"))
 
 static func apply_audio() -> void:
 	var am = AudioManager.instance
@@ -141,6 +199,12 @@ static func _sanitize(key: String, value: Variant) -> Variant:
 		"mouse_sensitivity":
 			if _is_number(value):
 				return clampf(float(value), MOUSE_SENSITIVITY_MIN, MOUSE_SENSITIVITY_MAX)
+		"seconds_per_game_hour":
+			if _is_number(value):
+				return clampf(float(value), GAME_HOUR_MIN, GAME_HOUR_MAX)
+		"ui_scale":
+			if _is_number(value):
+				return clampf(float(value), UI_SCALE_MIN, UI_SCALE_MAX)
 		"fullscreen", "vsync":
 			if typeof(value) == TYPE_BOOL:
 				return value

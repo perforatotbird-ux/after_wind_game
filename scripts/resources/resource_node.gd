@@ -22,17 +22,39 @@ signal node_respawned()
 @export var energy_cost: float = 3.0
 @export var respawn_time: float = 40.0
 
+@export_group("Planting")
+## Деревья не восстанавливаются сами: на пень нужно посадить саженец.
+## По умолчанию включено для узлов из группы "trees" (см. _ready).
+@export var requires_planting: bool = false
+## Сколько саженцев выпадает при полной вырубке дерева.
+@export var sapling_yield: int = 1
+## Время роста саженца до взрослого дерева в игровых часах.
+@export var growth_hours: float = 8.0
+
 @export_group("Visuals")
 @export var visual_node: Node3D
 @export var depleted_visual_node: Node3D
 
+const SAPLING_ID: String = "sapling"
+## Масштаб модели только что посаженного саженца.
+const SAPLING_START_SCALE: float = 0.18
+## Запасная скорость времени, если в сцене нет DayNightCycle (1 игровой час = 60 с).
+const FALLBACK_HOURS_PER_SECOND: float = 1.0 / 60.0
+
 var is_depleted: bool = false
 var respawn_timer: float = 0.0
+## Саженец посажен на пень и растёт.
+var is_growing: bool = false
+## Сколько игровых часов саженец уже растёт.
+var growth_progress_hours: float = 0.0
 var _original_scale: Vector3 = Vector3.ONE
+var _day_cycle: Node = null
 
 func _ready() -> void:
 	super._ready()
 	current_hits = max_hits
+	if is_in_group("trees"):
+		requires_planting = true
 	object_name = resource_display_name
 	prompt_action = action_verb
 	
@@ -47,12 +69,76 @@ func _ready() -> void:
 		depleted_visual_node.visible = false
 
 func _process(delta: float) -> void:
-	if is_depleted and respawn_time > 0:
+	if not is_depleted:
+		return
+	if requires_planting:
+		if is_growing:
+			advance_growth(delta * _get_hours_per_second())
+		return
+	if respawn_time > 0:
 		respawn_timer -= delta
 		if respawn_timer <= 0.0:
 			respawn()
 
+## Скорость игрового времени из DayNightCycle (часов за секунду реального времени).
+func _get_hours_per_second() -> float:
+	if not is_instance_valid(_day_cycle):
+		_day_cycle = null
+		var tree := get_tree()
+		if tree:
+			_day_cycle = tree.get_first_node_in_group("day_night_cycle")
+	if _day_cycle and _day_cycle.has_method("get_hours_per_second"):
+		return float(_day_cycle.get_hours_per_second())
+	return FALLBACK_HOURS_PER_SECOND
+
+## Рост саженца на hours игровых часов; при достижении growth_hours дерево снова можно рубить.
+func advance_growth(hours: float) -> void:
+	if not is_growing:
+		return
+	growth_progress_hours = minf(growth_hours, growth_progress_hours + maxf(0.0, hours))
+	_update_growth_visual()
+	if growth_progress_hours >= growth_hours:
+		is_growing = false
+		growth_progress_hours = 0.0
+		respawn()
+
+func get_growth_ratio() -> float:
+	if not is_growing:
+		return 1.0 if not is_depleted else 0.0
+	return clampf(growth_progress_hours / maxf(0.01, growth_hours), 0.0, 1.0)
+
+## Сажает саженец на пень. Возвращает true, если посадка удалась.
+func plant_sapling(player: Node) -> bool:
+	if not requires_planting or not is_depleted or is_growing:
+		return false
+	var inv = player.get("inventory") if player and "inventory" in player else null
+	if inv == null or not inv.has_method("remove_item") or not inv.remove_item(SAPLING_ID, 1):
+		if player and player.has_method("notify"):
+			player.notify("🌱 Нужен саженец: он выпадает при рубке деревьев.")
+		return false
+	is_growing = true
+	growth_progress_hours = 0.0
+	if depleted_visual_node:
+		depleted_visual_node.visible = false
+	if visual_node:
+		visual_node.visible = true
+	_update_growth_visual()
+	AudioManager.play("hit_wood", 1.3)
+	if player and player.has_method("notify"):
+		player.notify("🌱 Саженец посажен! %s вырастет через %d игр. ч." % [resource_display_name, int(ceil(growth_hours))])
+	return true
+
+func _update_growth_visual() -> void:
+	if not visual_node or not is_growing:
+		return
+	var k: float = lerpf(SAPLING_START_SCALE, 0.9, get_growth_ratio())
+	visual_node.scale = _original_scale * k
+
 func get_prompt() -> String:
+	if is_depleted and requires_planting:
+		if is_growing:
+			return "🌱 Саженец растёт: %d%% (ещё ~%d игр. ч.)" % [int(get_growth_ratio() * 100.0), int(ceil(growth_hours - growth_progress_hours))]
+		return "[E] Посадить саженец (пень: %s)" % resource_display_name
 	if is_depleted:
 		return "Ресурс истощён (восстанавливается...)"
 	
@@ -70,6 +156,13 @@ func get_prompt() -> String:
 	]
 
 func _on_interacted(player: Node) -> void:
+	if is_depleted and requires_planting:
+		if is_growing:
+			if player.has_method("notify"):
+				player.notify("🌱 Саженец ещё растёт: %d%%" % int(get_growth_ratio() * 100.0))
+		else:
+			plant_sapling(player)
+		return
 	if is_depleted:
 		if player.has_method("notify"):
 			player.notify("⏳ Месторождение истощено и восстанавливается...")
@@ -141,6 +234,13 @@ func _on_interacted(player: Node) -> void:
 		var msg_depleted: String = "✅ %s %s +%d! Жила полностью выработана." % [
 			item_icon, resource_display_name, gained
 		]
+		if requires_planting:
+			var saplings: int = maxi(0, sapling_yield)
+			if inv and saplings > 0:
+				inv.add_item(SAPLING_ID, saplings)
+			msg_depleted = "✅ %s %s +%d, 🌱 саженец +%d. Дерево не отрастёт само — посадите саженец на пень." % [
+				item_icon, resource_display_name, gained, saplings
+			]
 		if player.has_method("notify"):
 			player.notify(msg_depleted)
 	else:
@@ -168,7 +268,11 @@ func _play_hit_effect() -> void:
 
 func _set_depleted(depleted: bool) -> void:
 	is_depleted = depleted
-	is_interactable = not depleted
+	# Пень дерева остаётся интерактивным: на него сажают саженец.
+	is_interactable = (not depleted) or requires_planting
+	if not depleted:
+		is_growing = false
+		growth_progress_hours = 0.0
 	# Твёрдое тело (валун) исчезает вместе с моделью: по щебню можно пройти.
 	var solid := get_node_or_null("SolidBody/SolidShape") as CollisionShape3D
 	if solid:
@@ -180,7 +284,7 @@ func _set_depleted(depleted: bool) -> void:
 			# Плавное сжатие
 			var tw: Tween = create_tween()
 			tw.tween_property(visual_node, "scale", Vector3(0.01, 0.01, 0.01), 0.3)
-			tw.finished.connect(func(): if is_depleted and visual_node: visual_node.visible = false)
+			tw.finished.connect(func(): if is_depleted and not is_growing and visual_node: visual_node.visible = false)
 		if depleted_visual_node:
 			depleted_visual_node.visible = true
 			depleted_visual_node.scale = Vector3(0.1, 0.1, 0.1)

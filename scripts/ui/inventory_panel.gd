@@ -53,7 +53,7 @@ func _ready() -> void:
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 	var panel := UI.make_panel(UI.COLOR_BG, UI.COLOR_ACCENT, 2)
-	panel.custom_minimum_size = Vector2(880, 0)
+	panel.custom_minimum_size = Vector2(940, 0)
 	center.add_child(panel)
 	var margin := UI.make_margin(18)
 	panel.add_child(margin)
@@ -99,7 +99,9 @@ func _ready() -> void:
 	load_row.add_child(_slots_label)
 	
 	# Пояс инструментов
-	root.add_child(UI.make_section_header("🛠 Пояс — клик берёт инструмент в руки (колесо мыши в игре делает то же)"))
+	var belt_header := UI.make_section_header("🛠 Пояс — клик берёт инструмент в руки (колесо мыши в игре делает то же)")
+	belt_header.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	root.add_child(belt_header)
 	_belt = HBoxContainer.new()
 	_belt.add_theme_constant_override("separation", 6)
 	root.add_child(_belt)
@@ -140,8 +142,9 @@ func _ready() -> void:
 	_d_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	details.add_child(_d_icon)
 	_d_name = UI.make_label("", 17, UI.COLOR_TITLE)
+	_d_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	details.add_child(_d_name)
-	_d_desc = UI.make_label("", 13, UI.COLOR_MUTED)
+	_d_desc = UI.make_label("", 14, UI.COLOR_MUTED)
 	_d_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_d_desc.custom_minimum_size = Vector2(270, 0)
 	details.add_child(_d_desc)
@@ -159,7 +162,9 @@ func _ready() -> void:
 	_drop_btn.pressed.connect(func(): _open_drop_dialog(_selected))
 	details.add_child(_drop_btn)
 	
-	root.add_child(UI.make_label("ЛКМ — выбрать · перетащить — переложить · двойной клик — съесть/выпить · ПКМ или перетащить за окно — выбросить · ESC / TAB / I — закрыть", 12, UI.COLOR_DIM))
+	var footer := UI.make_label("ЛКМ — выбрать · перетащить — переложить · двойной клик — съесть/выпить · ПКМ или перетащить за окно — выбросить · ESC / TAB / I — закрыть", 13, UI.COLOR_DIM)
+	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	root.add_child(footer)
 	
 	if inventory:
 		inventory.inventory_updated.connect(_refresh)

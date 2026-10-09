@@ -159,7 +159,9 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"path": str(world.get_path_to(node)),
 				"is_depleted": bool(node.is_depleted),
 				"respawn_timer": maxf(0.0, float(node.respawn_timer)),
-				"current_hits": maxi(0, int(node.current_hits))
+				"current_hits": maxi(0, int(node.current_hits)),
+				"is_growing": bool(node.is_growing),
+				"growth_hours": maxf(0.0, float(node.growth_progress_hours))
 			})
 		elif node is VoxelDepositScript:
 			var dep_state: Dictionary = node.get_save_state()
@@ -485,6 +487,16 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			res_node._set_depleted(depleted)
 		res_node.respawn_timer = float(r_state.get("respawn_timer", 0.0))
 		res_node.current_hits = clampi(int(r_state.get("current_hits", res_node.current_hits)), 0, maxi(0, int(res_node.max_hits)))
+		# Посаженный на пень саженец (в старых сохранениях полей нет).
+		res_node.is_growing = false
+		res_node.growth_progress_hours = 0.0
+		if depleted and bool(r_state.get("is_growing", false)) and res_node.requires_planting:
+			res_node.is_growing = true
+			if res_node.depleted_visual_node:
+				res_node.depleted_visual_node.visible = false
+			if res_node.visual_node:
+				res_node.visual_node.visible = true
+			res_node.advance_growth(clampf(float(r_state.get("growth_hours", 0.0)), 0.0, float(res_node.growth_hours)))
 	
 	# 13. Жилы: выкопанные блоки и найденные ресурсы (в старых сохранениях секции нет).
 	for dep_state in save_data.get("deposits", []):
@@ -668,6 +680,10 @@ static func _validate_save_data(data: Dictionary) -> bool:
 			if r_state.has("respawn_timer") and not _is_number(r_state["respawn_timer"], 0.0):
 				return false
 			if r_state.has("current_hits") and not _is_integer(r_state["current_hits"]):
+				return false
+			if r_state.has("is_growing") and not r_state["is_growing"] is bool:
+				return false
+			if r_state.has("growth_hours") and not _is_number(r_state["growth_hours"], 0.0):
 				return false
 	if data.has("deposits"):
 		if not data["deposits"] is Array:

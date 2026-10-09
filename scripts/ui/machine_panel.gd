@@ -53,7 +53,7 @@ func _ready() -> void:
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 	var panel := UI.make_panel(UI.COLOR_BG, UI.COLOR_ACCENT, 2)
-	panel.custom_minimum_size = Vector2(1080, 0)
+	panel.custom_minimum_size = Vector2(1200, 0)
 	center.add_child(panel)
 	var margin := UI.make_margin(16)
 	panel.add_child(margin)
@@ -94,7 +94,7 @@ func _ready() -> void:
 	body.add_child(col_rec)
 	col_rec.add_child(UI.make_section_header("📜 Рецепты"))
 	var rec_scroll := ScrollContainer.new()
-	rec_scroll.custom_minimum_size = Vector2(320, 440)
+	rec_scroll.custom_minimum_size = Vector2(390, 440)
 	rec_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	col_rec.add_child(rec_scroll)
 	_recipe_list = VBoxContainer.new()
@@ -112,7 +112,8 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 8)
 	cm.add_child(col)
 	col.add_child(UI.make_section_header("🏭 Заказ"))
-	_recipe_name = UI.make_label("", 15)
+	_recipe_name = UI.make_label("", 16)
+	_recipe_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_recipe_name)
 	_inputs_box = VBoxContainer.new()
 	_inputs_box.add_theme_constant_override("separation", 4)
@@ -139,14 +140,15 @@ func _ready() -> void:
 	
 	_info = UI.make_label("", 13, UI.COLOR_MUTED)
 	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_info.custom_minimum_size = Vector2(340, 0)
+	_info.custom_minimum_size = Vector2(360, 0)
 	col.add_child(_info)
 	_start_btn = UI.make_button("▶ Старт", Vector2(0, 40), true, false, 16)
 	_start_btn.pressed.connect(_on_start)
 	col.add_child(_start_btn)
 	
 	col.add_child(UI.make_section_header("⏱ Состояние"))
-	_status_label = UI.make_label("", 13)
+	_status_label = UI.make_label("", 14)
+	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_status_label)
 	_progress = ProgressBar.new()
 	_progress.max_value = 1.0
@@ -169,7 +171,9 @@ func _ready() -> void:
 	_collect_btn.pressed.connect(_on_collect)
 	col.add_child(_collect_btn)
 	
-	root.add_child(UI.make_label("Количество кратно выходу одного цикла · сырьё и энергия на всю партию списываются при старте · отмена не возвращает сырьё · ESC — закрыть", 12, UI.COLOR_DIM))
+	var footer := UI.make_label("Количество кратно выходу одного цикла · сырьё и энергия на всю партию списываются при старте · отмена не возвращает сырьё · ESC — закрыть", 13, UI.COLOR_DIM)
+	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	root.add_child(footer)
 	
 	if inventory:
 		inventory.inventory_updated.connect(_refresh)
@@ -211,7 +215,10 @@ func _build_recipe_cards() -> void:
 		var max_c: int = PM.get_max_cycles(r, inventory)
 		var text: String = "%s\n%s → %s×%d · %.0f с" % [str(r.get("name", r.get("id", ""))), ", ".join(ins), ItemDB.get_item_name(main_out), PM.get_output_per_cycle(r), float(r.get("duration", 6.0))]
 		var selected: bool = str(r.get("id", "")) == str(_selected_recipe.get("id", ""))
-		var b := UI.make_button(text, Vector2(300, 58), selected, false, 13)
+		var b := UI.make_button(text, Vector2(0, 58), selected, false, 14)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# Длинные рецепты (3–4 ингредиента) переносятся, а не вылезают за колонку.
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.icon = ItemIcons.get_texture(main_out)
 		b.expand_icon = false
@@ -313,7 +320,10 @@ func _make_line(item_id: String, text: String, color: Color) -> HBoxContainer:
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	row.add_child(icon)
-	row.add_child(UI.make_label(text, 13, color))
+	var l := UI.make_label(text, 14, color)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	row.add_child(l)
 	return row
 
 func _process(_delta: float) -> void:

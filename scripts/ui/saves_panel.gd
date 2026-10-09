@@ -31,7 +31,7 @@ func _ready() -> void:
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 	var panel := UI.make_panel(UI.COLOR_BG, UI.COLOR_ACCENT, 2)
-	panel.custom_minimum_size = Vector2(640, 0)
+	panel.custom_minimum_size = Vector2(700, 0)
 	center.add_child(panel)
 	var margin := UI.make_margin(18)
 	panel.add_child(margin)
@@ -54,7 +54,8 @@ func _ready() -> void:
 	vbox.add_child(_list)
 
 	var hint_text := "Автосохранение пишется каждые 5 минут, при сне и по F5."
-	var hint := UI.make_label(hint_text, 11, UI.COLOR_DIM)
+	var hint := UI.make_label(hint_text, 13, UI.COLOR_DIM)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(hint)
 	refresh()
 
@@ -84,7 +85,7 @@ func _make_row(info: Dictionary) -> Control:
 	info_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(info_box)
 	info_box.add_child(UI.make_label(str(info.get("title", "")), 15, UI.COLOR_TITLE if exists else UI.COLOR_TEXT))
-	var details := UI.make_label(SaveSlots.format_slot_details(info), 11, UI.COLOR_DANGER if broken else UI.COLOR_MUTED)
+	var details := UI.make_label(SaveSlots.format_slot_details(info), 13, UI.COLOR_DANGER if broken else UI.COLOR_MUTED)
 	details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_box.add_child(details)
 

@@ -6,6 +6,23 @@ const ContractDB = preload("res://scripts/economy/contract_db.gd")
 const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 const VictoryManager = preload("res://scripts/core/victory_manager.gd")
+const UI = preload("res://scripts/ui/ui_style.gd")
+
+## Желаемые размеры окон HUD в логических пикселях (база растяжения 1600×900,
+## см. project.godot). Если окно игры меньше, окно ужимается, а списки
+## прокручиваются (_layout_windows).
+const WINDOW_SIZES: Dictionary = {
+	"InventoryWindow": Vector2(620, 520),
+	"MachineWindow": Vector2(640, 560),
+	"SalesWindow": Vector2(680, 500),
+	"RepairWindow": Vector2(680, 560),
+	"ContractWindow": Vector2(760, 700),
+	"ClassSelectWindow": Vector2(780, 660),
+	"PauseWindow": Vector2(640, 700),
+	"VictoryWindow": Vector2(760, 560),
+}
+const WINDOW_SCREEN_MARGIN: float = 24.0
+const HOTBAR_SLOT_SIZE: Vector2 = Vector2(118, 46)
 
 @onready var prompt_container: PanelContainer = $PromptContainer
 @onready var prompt_label: Label = $PromptContainer/MarginContainer/PromptLabel
@@ -197,6 +214,119 @@ func _ready() -> void:
 		victory_continue_button.pressed.connect(close_victory_window)
 	
 	_init_styles()
+	_apply_hud_layout()
+	_layout_windows()
+	get_viewport().size_changed.connect(_layout_windows)
+
+# --- Раскладка и читаемость интерфейса ---
+
+## Размеры постоянных панелей HUD: крупнее шрифты, хотбар по ширине подписей.
+func _apply_hud_layout() -> void:
+	var top_left := get_node_or_null("TopLeftUI") as Control
+	if top_left:
+		top_left.offset_right = top_left.offset_left + 300.0
+		top_left.offset_bottom = top_left.offset_top + 186.0
+	for bar in [health_bar, energy_bar, hunger_bar, thirst_bar, wetness_bar]:
+		if bar:
+			bar.custom_minimum_size.y = 20.0
+	for lbl in [health_label, energy_label, hunger_label, thirst_label, wetness_label]:
+		if lbl:
+			lbl.add_theme_font_size_override("font_size", 13)
+	if class_button:
+		class_button.add_theme_font_size_override("font_size", 14)
+		class_button.custom_minimum_size.y = 26.0
+	var top_right := get_node_or_null("TopRightUI") as Control
+	if top_right:
+		top_right.offset_left = top_right.offset_right - 300.0
+		top_right.offset_bottom = top_right.offset_top + 176.0
+	for pair in [[time_label, 15], [weather_label, 15], [money_label, 16], [power_label, 14]]:
+		if pair[0]:
+			(pair[0] as Label).add_theme_font_size_override("font_size", pair[1])
+	var save_lbl := get_node_or_null("TopRightUI/Panel/Margin/VBox/SaveLoadLabel") as Label
+	if save_lbl:
+		save_lbl.add_theme_font_size_override("font_size", 12)
+	if pause_button:
+		pause_button.add_theme_font_size_override("font_size", 13)
+		pause_button.custom_minimum_size.y = 24.0
+	var res_bar := get_node_or_null("ResourceBarUI") as Control
+	if res_bar:
+		res_bar.offset_left = -360.0
+		res_bar.offset_right = 360.0
+		res_bar.offset_bottom = res_bar.offset_top + 44.0
+	for lbl in [wood_label, stone_label, clay_label, sand_label, water_label]:
+		if lbl:
+			lbl.add_theme_font_size_override("font_size", 15)
+	var hotbar := get_node_or_null("HotbarUI") as Control
+	if hotbar:
+		var n: int = slot_buttons.size()
+		var w: float = n * HOTBAR_SLOT_SIZE.x + maxi(0, n - 1) * 8.0 + 16.0
+		hotbar.offset_left = -w * 0.5
+		hotbar.offset_right = w * 0.5
+		hotbar.offset_top = -(HOTBAR_SLOT_SIZE.y + 12.0) - 15.0
+	for btn in slot_buttons:
+		if btn:
+			btn.custom_minimum_size = HOTBAR_SLOT_SIZE
+			btn.add_theme_font_size_override("font_size", 15)
+			btn.clip_text = true
+			btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	if prompt_container:
+		prompt_container.offset_left = -320.0
+		prompt_container.offset_right = 320.0
+		prompt_container.offset_top = -(HOTBAR_SLOT_SIZE.y + 12.0) - 15.0 - 62.0
+		prompt_container.offset_bottom = prompt_container.offset_top + 46.0
+		prompt_container.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	if prompt_label:
+		prompt_label.add_theme_font_size_override("font_size", 15)
+		prompt_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if notification_container:
+		notification_container.offset_left = -360.0
+		notification_container.offset_right = 360.0
+	if notification_label:
+		notification_label.add_theme_font_size_override("font_size", 15)
+		notification_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	for path in ["PauseWindow/Margin/VBox/SfxHBox/SfxText", "PauseWindow/Margin/VBox/AmbHBox/AmbText"]:
+		var l := get_node_or_null(path) as Label
+		if l:
+			l.custom_minimum_size.x = 240.0
+	for slider in [sfx_slider, amb_slider]:
+		if slider:
+			slider.custom_minimum_size = Vector2(200, 24)
+	for win in _all_windows():
+		UI.polish_text(win)
+
+func _all_windows() -> Array:
+	var out: Array = []
+	for win_name in WINDOW_SIZES.keys():
+		var win := get_node_or_null(NodePath(win_name)) as Control
+		if win:
+			out.append(win)
+	return out
+
+## Центрирует окна и ужимает их до размеров экрана (логические пиксели).
+func _layout_windows() -> void:
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	for win_name in WINDOW_SIZES.keys():
+		var win := get_node_or_null(NodePath(win_name)) as Control
+		if not win:
+			continue
+		var want: Vector2 = WINDOW_SIZES[win_name]
+		var w: float = minf(want.x, maxf(320.0, vp.x - WINDOW_SCREEN_MARGIN * 2.0))
+		var h: float = minf(want.y, maxf(240.0, vp.y - WINDOW_SCREEN_MARGIN * 2.0))
+		win.set_anchors_preset(Control.PRESET_CENTER)
+		win.offset_left = -w * 0.5
+		win.offset_right = w * 0.5
+		win.offset_top = -h * 0.5
+		win.offset_bottom = h * 0.5
+		win.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		win.grow_vertical = Control.GROW_DIRECTION_BOTH
+		# Списки внутри окна забирают свободную высоту, остальное — по содержимому.
+		for scroll in win.find_children("*", "ScrollContainer", true, false):
+			scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+## Вызывается после перестройки содержимого окна.
+func _polish(win: Control) -> void:
+	if win:
+		UI.polish_text(win)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -756,6 +886,7 @@ func _refresh_sales_window() -> void:
 			var item_icon: String = ItemDB.get_item_icon(item_id)
 			
 			var row: HBoxContainer = HBoxContainer.new()
+			row.add_theme_constant_override("separation", 8)
 			
 			var l_title: Label = Label.new()
 			l_title.text = "%s %s" % [item_icon, item_name]
@@ -765,7 +896,7 @@ func _refresh_sales_window() -> void:
 			
 			var l_info: Label = Label.new()
 			l_info.text = "x%d  (цена: %d кр.)" % [count, price]
-			l_info.custom_minimum_size = Vector2(120, 0)
+			l_info.custom_minimum_size = Vector2(170, 0)
 			l_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			l_info.add_theme_font_size_override("font_size", 13)
 			l_info.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
@@ -773,13 +904,13 @@ func _refresh_sales_window() -> void:
 			
 			var btn_sell_1: Button = Button.new()
 			btn_sell_1.text = "+1 шт"
-			btn_sell_1.custom_minimum_size = Vector2(55, 28)
+			btn_sell_1.custom_minimum_size = Vector2(80, 34)
 			btn_sell_1.pressed.connect(_on_sell_goods_pressed.bind(item_id, 1))
 			row.add_child(btn_sell_1)
 			
 			var btn_sell_all: Button = Button.new()
 			btn_sell_all.text = "Все (x%d)" % count
-			btn_sell_all.custom_minimum_size = Vector2(75, 28)
+			btn_sell_all.custom_minimum_size = Vector2(110, 34)
 			btn_sell_all.pressed.connect(_on_sell_goods_pressed.bind(item_id, count))
 			row.add_child(btn_sell_all)
 			
@@ -792,6 +923,7 @@ func _refresh_sales_window() -> void:
 		empty_lbl.add_theme_font_size_override("font_size", 13)
 		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		sales_goods_list.add_child(empty_lbl)
+	_polish(sales_window)
 
 func _on_sell_goods_pressed(item_id: String, amount: int) -> void:
 	if _current_active_station and _current_active_station.has_method("sell_goods"):
@@ -913,6 +1045,7 @@ func _refresh_repair_window() -> void:
 	var can_up: bool = check.get("can_upgrade", false)
 	repair_upgrade_button.disabled = not can_up
 	repair_upgrade_button.text = "🔨 Восстановить (Уровень %d)" % (curr_stage + 1)
+	_polish(repair_window)
 
 func _on_upgrade_building_pressed() -> void:
 	if not _current_active_building or not _bound_player:
@@ -1048,7 +1181,9 @@ func _refresh_contract_window() -> void:
 		
 		# Требования к ресурсам
 		var reqs: Dictionary = contract.get("requirements", {})
-		var h_reqs: HBoxContainer = HBoxContainer.new()
+		var h_reqs: HFlowContainer = HFlowContainer.new()
+		h_reqs.add_theme_constant_override("h_separation", 14)
+		h_reqs.add_theme_constant_override("v_separation", 4)
 		for item_id in reqs.keys():
 			var needed: int = reqs[item_id]
 			var count: int = inv.get_item_count(item_id) if inv else 0
@@ -1080,6 +1215,7 @@ func _refresh_contract_window() -> void:
 		vbox.add_child(btn)
 		
 		contracts_list.add_child(card)
+	_polish(contract_window)
 
 ## Карточка заказа следующей волны: заказчик и условие открытия, без требований.
 func _make_locked_contract_card(contract: Dictionary) -> PanelContainer:
@@ -1196,6 +1332,7 @@ func _populate_class_cards() -> void:
 		vbox.add_child(btn)
 		
 		classes_list.add_child(card)
+	_polish(class_window)
 
 # --- Меню паузы и звука (Этап 13) ---
 func toggle_pause_menu() -> void:
@@ -1241,6 +1378,7 @@ func _refresh_pause_menu() -> void:
 		sfx_slider.value = AudioManager.instance.sfx_volume
 	if amb_slider and AudioManager.instance:
 		amb_slider.value = AudioManager.instance.ambient_volume
+	_polish(pause_window)
 
 func _on_pause_save_pressed() -> void:
 	AudioManager.play("ui_click")
