@@ -11,9 +11,10 @@ tags:
 
 - [Мастер-документ](../../../docs/DOCUMENTATION.md)
 - [Управление](../../../docs/DOCUMENTATION.md#управление)
+- [Меню и настройки](../../../docs/DOCUMENTATION.md#меню-и-настройки)
 - [Инвентарь и грузоподъёмность](../../../docs/DOCUMENTATION.md#инвентарь-и-грузоподъёмность)
 - [Финал Главы 1](../../../docs/DOCUMENTATION.md#финал-главы-1)
-- [Сохранения (формат v2)](../../../docs/DOCUMENTATION.md#сохранения)
+- [Сохранения (слоты, формат v2)](../../../docs/DOCUMENTATION.md#сохранения)
 - [Тесты](../../../docs/DOCUMENTATION.md#тесты)
 - [README](../../../README.md) · [DEVELOPER_HANDOVER](../../../DEVELOPER_HANDOVER.md)
 
