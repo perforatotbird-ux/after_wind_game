@@ -6,6 +6,10 @@ extends GridContainer
 
 signal cell_pressed(item_id: String, count: int, index: int)
 signal cell_right_clicked(item_id: String, count: int, index: int)
+## Двойной клик по клетке (использовать: съесть / выпить).
+signal cell_activated(item_id: String, count: int, index: int)
+## Стек перетащен мышью из клетки from_index в клетку to_index.
+signal cell_moved(from_index: int, to_index: int)
 
 const UI = preload("res://scripts/ui/ui_style.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
@@ -16,6 +20,10 @@ var cell_size: Vector2 = Vector2(64, 64)
 var selected_item: String = ""
 ## Подсветка предметов { item_id: Color } (например, сырьё выбранного рецепта).
 var highlight_items: Dictionary = {}
+## Разрешить перетаскивание стеков между клетками (окно рюкзака).
+var drag_enabled: bool = false
+## Тип данных drag-and-drop клетки (принимает и окно рюкзака: «выбросить»).
+const DRAG_TYPE: String = "inventory_cell"
 
 var _cells: Array[Button] = []
 var _stacks: Array = []
@@ -38,7 +46,9 @@ func set_stacks(stacks: Array, total_cells: int = -1) -> void:
 		if i < n:
 			_fill_cell(cell, stacks[i] if i < stacks.size() else {})
 
-func get_stack(index: int) -> Dictionary:
+## Не называть get_stack(): это встроенная функция GDScript (стек вызовов),
+## и вызов get_stack(index) не компилируется — весь рюкзак оставался пустым.
+func get_cell_stack(index: int) -> Dictionary:
 	if index < 0 or index >= _stacks.size():
 		return {}
 	return _stacks[index]
@@ -81,6 +91,7 @@ func _make_cell(index: int) -> Button:
 	b.add_child(lbl)
 	b.pressed.connect(_on_cell_pressed.bind(index))
 	b.gui_input.connect(_on_cell_gui_input.bind(index))
+	b.set_drag_forwarding(_get_cell_drag_data.bind(index), _can_drop_on_cell.bind(index), _drop_on_cell.bind(index))
 	add_child(b)
 	return b
 
@@ -96,7 +107,8 @@ func _fill_cell(cell: Button, stack: Dictionary) -> void:
 		_apply_style(cell, UI.COLOR_CARD_EMPTY, Color(0.25, 0.28, 0.32, 0.5), 1)
 		return
 	icon.texture = ItemIcons.get_texture(item_id)
-	lbl.text = str(count)
+	# Как принято: число на клетке только для стека больше одной штуки.
+	lbl.text = str(count) if count > 1 else ""
 	var w: float = float(ItemDB.get_item(item_id).get("weight", 1.0))
 	cell.tooltip_text = "%s %s\nКоличество: %d\nВес: %.1f кг (%.2f кг/шт.)" % [ItemDB.get_item_icon(item_id), ItemDB.get_item_name(item_id), count, w * count, w]
 	var bg: Color = ItemIcons.get_color(item_id).darkened(0.7)
@@ -115,14 +127,50 @@ func _apply_style(cell: Button, bg: Color, border: Color, width: int) -> void:
 	cell.add_theme_stylebox_override("disabled", UI.make_stylebox(bg, border, width))
 
 func _on_cell_pressed(index: int) -> void:
-	var s: Dictionary = get_stack(index)
+	var s: Dictionary = get_cell_stack(index)
 	if s.is_empty():
 		return
 	cell_pressed.emit(str(s["item_id"]), int(s["count"]), index)
 
 func _on_cell_gui_input(event: InputEvent, index: int) -> void:
+	if event is InputEventMouseButton and event.pressed and event.double_click and event.button_index == MOUSE_BUTTON_LEFT:
+		var st: Dictionary = get_cell_stack(index)
+		if not st.is_empty():
+			cell_activated.emit(str(st["item_id"]), int(st["count"]), index)
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
-		var s: Dictionary = get_stack(index)
+		var s: Dictionary = get_cell_stack(index)
 		if not s.is_empty():
 			cell_right_clicked.emit(str(s["item_id"]), int(s["count"]), index)
 		accept_event()
+
+# --- Перетаскивание (drag-and-drop) ---
+
+func _get_cell_drag_data(_at: Vector2, index: int) -> Variant:
+	if not drag_enabled:
+		return null
+	var st: Dictionary = get_cell_stack(index)
+	if st.is_empty() or str(st.get("item_id", "")) == "":
+		return null
+	var preview := TextureRect.new()
+	preview.texture = ItemIcons.get_texture(str(st["item_id"]))
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	preview.size = cell_size * 0.9
+	preview.modulate = Color(1, 1, 1, 0.85)
+	var holder := Control.new()
+	holder.add_child(preview)
+	preview.position = -preview.size * 0.5
+	if _cells[index].get_viewport() and _cells[index].get_viewport().gui_is_dragging():
+		_cells[index].set_drag_preview(holder)
+	else:
+		holder.free() # вызов вне реального перетаскивания (тесты)
+	return {"type": DRAG_TYPE, "grid": self, "index": index, "item_id": str(st["item_id"]), "count": int(st["count"])}
+
+func _can_drop_on_cell(_at: Vector2, data: Variant, _index: int) -> bool:
+	return drag_enabled and data is Dictionary and data.get("type", "") == DRAG_TYPE and data.get("grid") == self
+
+func _drop_on_cell(_at: Vector2, data: Variant, index: int) -> void:
+	var from: int = int(data.get("index", -1))
+	if from != index and from >= 0:
+		cell_moved.emit(from, index)

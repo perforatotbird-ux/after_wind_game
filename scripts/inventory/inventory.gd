@@ -13,8 +13,10 @@ extends Node
 ##   повышенный расход энергии при движении); от max_weight * OVERLOAD_CRITICAL_RATIO —
 ##   критический перегруз (персонаж обездвижен).
 ## * Восстановленные склад и дом дают бонус к допустимому весу (set_weight_bonus).
-## * Окно рюкзака показывает каждый стек отдельной клеткой (get_slot_stacks);
-##   предметы можно выбросить на землю (drop_item + DroppedItem).
+## * Окно рюкзака показывает каждый стек отдельной клеткой с постоянным местом
+##   (get_slot_cells / slot_layout): стеки перетаскиваются мышью (move_slot),
+##   есть сортировка (sort_slots); предметы можно выбросить на землю
+##   (drop_item + DroppedItem).
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 
@@ -114,6 +116,7 @@ var _base_sprint_speed: float = -1.0
 func clear() -> void:
 	for k in items.keys():
 		items[k] = 0
+	slot_layout.clear()
 	_update_load_state()
 	inventory_updated.emit()
 
@@ -347,6 +350,123 @@ func get_slot_stacks() -> Array[Dictionary]:
 			cells.append({"item_id": item_id, "count": n})
 			count -= n
 	return cells
+
+# ---------------------------------------------------------------------------
+# Раскладка по клеткам (как в Minecraft / Stardew / Valheim): у каждого стека своя
+# постоянная клетка. Игрок перетаскивает стеки мышью, новые предметы ложатся в
+# первую свободную клетку, кнопка «Сортировать» упорядочивает рюкзак.
+# Источник истины по количеству — items; slot_layout хранит только, какой
+# предмет в какой клетке (item_id или "" для пустой).
+# ---------------------------------------------------------------------------
+
+var slot_layout: Array[String] = []
+
+## Приводит slot_layout в соответствие с items: лишние клетки предмета
+## освобождаются (с конца), недостающие стеки занимают первые свободные клетки.
+func _reconcile_layout() -> void:
+	var need: Dictionary = {}
+	var order: Array[String] = []
+	for item_id in items.keys():
+		var n: int = get_slots_for(item_id, int(items[item_id]))
+		if n > 0:
+			need[item_id] = n
+			order.append(item_id)
+	var size: int = maxi(max_slots, 0)
+	var total_need: int = 0
+	for k in need:
+		total_need += int(need[k])
+	size = maxi(size, total_need)
+	while slot_layout.size() < size:
+		slot_layout.append("")
+	# 1. Освобождаем клетки предметов, которых стало меньше (с последних клеток).
+	var have: Dictionary = {}
+	for i in range(slot_layout.size()):
+		var id: String = slot_layout[i]
+		if id == "":
+			continue
+		have[id] = int(have.get(id, 0)) + 1
+	for i in range(slot_layout.size() - 1, -1, -1):
+		var id: String = slot_layout[i]
+		if id == "":
+			continue
+		if int(have.get(id, 0)) > int(need.get(id, 0)):
+			slot_layout[i] = ""
+			have[id] = int(have[id]) - 1
+	# 2. Новые стеки — в первые свободные клетки (в порядке items).
+	for id in order:
+		var missing: int = int(need[id]) - int(have.get(id, 0))
+		var i: int = 0
+		while missing > 0 and i < slot_layout.size():
+			if slot_layout[i] == "":
+				slot_layout[i] = id
+				missing -= 1
+			i += 1
+	# 3. Лишние пустые клетки за пределами рюкзака убираем.
+	while slot_layout.size() > size and slot_layout[slot_layout.size() - 1] == "":
+		slot_layout.pop_back()
+
+## Клетки рюкзака по порядку: { "item_id", "count" } или {} для пустой клетки.
+## Полные стеки предмета идут в его первых клетках, неполный остаток — в последней.
+func get_slot_cells() -> Array[Dictionary]:
+	_reconcile_layout()
+	var left: Dictionary = {}
+	for item_id in items.keys():
+		left[item_id] = int(items[item_id])
+	var cells: Array[Dictionary] = []
+	for id in slot_layout:
+		if id == "":
+			cells.append({})
+			continue
+		var n: int = mini(int(left.get(id, 0)), get_max_stack(id))
+		left[id] = int(left.get(id, 0)) - n
+		cells.append({"item_id": id, "count": n})
+	return cells
+
+## Перетаскивание: меняет местами содержимое клеток from и to (в пустую — просто перенос).
+func move_slot(from_index: int, to_index: int) -> bool:
+	_reconcile_layout()
+	if from_index == to_index or from_index < 0 or to_index < 0:
+		return false
+	if from_index >= slot_layout.size() or to_index >= slot_layout.size():
+		return false
+	if slot_layout[from_index] == "":
+		return false
+	var tmp: String = slot_layout[to_index]
+	slot_layout[to_index] = slot_layout[from_index]
+	slot_layout[from_index] = tmp
+	inventory_updated.emit()
+	return true
+
+const SORT_CATEGORY_ORDER: Array[String] = ["resource", "material", "product", "component", "building", "crop", "food", "seeds", "farming"]
+
+## Сортировка рюкзака: по категории, затем по названию; одинаковые стеки рядом.
+func sort_slots() -> void:
+	var ids: Array = []
+	for item_id in items.keys():
+		if get_slots_for(item_id, int(items[item_id])) > 0:
+			ids.append(item_id)
+	ids.sort_custom(func(a, b):
+		var ca: int = SORT_CATEGORY_ORDER.find(str(ItemDB.get_item(a).get("category", "")))
+		var cb: int = SORT_CATEGORY_ORDER.find(str(ItemDB.get_item(b).get("category", "")))
+		if ca == -1: ca = 99
+		if cb == -1: cb = 99
+		if ca != cb:
+			return ca < cb
+		return ItemDB.get_item_name(a) < ItemDB.get_item_name(b))
+	slot_layout.clear()
+	for id in ids:
+		for k in get_slots_for(id, int(items[id])):
+			slot_layout.append(id)
+	_reconcile_layout()
+	inventory_updated.emit()
+
+## Восстановление раскладки из сохранения (неизвестные предметы отбрасываются).
+func set_slot_layout(layout: Array) -> void:
+	slot_layout.clear()
+	for v in layout:
+		var id: String = str(v)
+		slot_layout.append(id if id == "" or not ItemDB.get_item(id).is_empty() else "")
+	_reconcile_layout()
 
 ## Вес одной штуки предмета, кг.
 func get_item_weight(item_id: String) -> float:

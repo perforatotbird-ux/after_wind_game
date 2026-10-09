@@ -45,7 +45,10 @@ func setup(p_player: Node) -> void:
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(UI.make_overlay())
+	# Затемнение вокруг окна: перетащить стек сюда (за окно) = выбросить на землю.
+	var overlay := UI.make_overlay()
+	overlay.set_drag_forwarding(Callable(), _can_drop_outside, _drop_outside)
+	add_child(overlay)
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
@@ -67,6 +70,10 @@ func _ready() -> void:
 	header.add_child(sp)
 	_credits_label = UI.make_label("", 15, UI.COLOR_ACCENT)
 	header.add_child(_credits_label)
+	var sort_btn := UI.make_button("⇅ Сортировать", Vector2(130, 32))
+	sort_btn.tooltip_text = "Упорядочить рюкзак по типу и названию"
+	sort_btn.pressed.connect(_on_sort_pressed)
+	header.add_child(sort_btn)
 	var close_btn := UI.make_button("✕", Vector2(40, 32))
 	close_btn.tooltip_text = "Закрыть (ESC)"
 	close_btn.pressed.connect(close)
@@ -111,8 +118,11 @@ func _ready() -> void:
 	_grid = ItemGrid.new()
 	_grid.columns = 6
 	scroll.add_child(_grid)
+	_grid.drag_enabled = true
 	_grid.cell_pressed.connect(_on_cell_pressed)
 	_grid.cell_right_clicked.connect(_on_cell_right_clicked)
+	_grid.cell_moved.connect(_on_cell_moved)
+	_grid.cell_activated.connect(_on_cell_activated)
 	
 	var card := UI.make_panel(UI.COLOR_CARD, UI.COLOR_BORDER, 1)
 	card.custom_minimum_size = Vector2(300, 0)
@@ -149,7 +159,7 @@ func _ready() -> void:
 	_drop_btn.pressed.connect(func(): _open_drop_dialog(_selected))
 	details.add_child(_drop_btn)
 	
-	root.add_child(UI.make_label("ЛКМ — выбрать · ПКМ — выбросить · выброшенное лежит на земле и подбирается [E] · ESC / TAB / I — закрыть", 12, UI.COLOR_DIM))
+	root.add_child(UI.make_label("ЛКМ — выбрать · перетащить — переложить · двойной клик — съесть/выпить · ПКМ или перетащить за окно — выбросить · ESC / TAB / I — закрыть", 12, UI.COLOR_DIM))
 	
 	if inventory:
 		inventory.inventory_updated.connect(_refresh)
@@ -169,7 +179,7 @@ func _refresh() -> void:
 	if _selected != "" and inventory.get_item_count(_selected) <= 0:
 		_selected = ""
 	_grid.selected_item = _selected
-	_grid.set_stacks(inventory.get_slot_stacks(), inventory.max_slots)
+	_grid.set_stacks(inventory.get_slot_cells(), inventory.max_slots)
 	var total: float = inventory.get_total_weight()
 	var limit: float = inventory.max_weight
 	_weight_label.text = "⚖️ Вес: %.1f / %.0f кг" % [total, limit]
@@ -238,6 +248,32 @@ func _on_cell_pressed(item_id: String, _count: int, _index: int) -> void:
 	AudioManager.play("ui_click")
 	_selected = item_id
 	_refresh()
+
+func _on_cell_moved(from_index: int, to_index: int) -> void:
+	if inventory and inventory.move_slot(from_index, to_index):
+		AudioManager.play("ui_click")
+
+func _on_cell_activated(item_id: String, _count: int, _index: int) -> void:
+	_selected = item_id
+	var data: Dictionary = ItemDB.get_item(item_id)
+	if item_id in DRINK_ITEMS or str(data.get("category", "")) == "food":
+		_on_use_pressed()
+	else:
+		_refresh()
+
+func _on_sort_pressed() -> void:
+	AudioManager.play("ui_click")
+	if inventory:
+		inventory.sort_slots()
+
+func _can_drop_outside(_at: Vector2, data: Variant) -> bool:
+	return data is Dictionary and data.get("type", "") == ItemGrid.DRAG_TYPE and data.get("grid") == _grid
+
+func _drop_outside(_at: Vector2, data: Variant) -> void:
+	var item_id: String = str(data.get("item_id", ""))
+	_selected = item_id
+	_refresh()
+	_open_drop_dialog(item_id)
 
 func _on_cell_right_clicked(item_id: String, _count: int, _index: int) -> void:
 	_selected = item_id

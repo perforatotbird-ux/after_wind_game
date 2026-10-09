@@ -274,7 +274,7 @@ func _refresh_order() -> void:
 		_recipe_name.text = "У этого станка нет рецептов"
 		_info.text = ""
 		_start_btn.disabled = true
-		_grid.set_stacks(inventory.get_slot_stacks(), inventory.max_slots)
+		_grid.set_stacks(inventory.get_slot_cells(), inventory.max_slots)
 		return
 	var cycles: int = _cycles()
 	var enough_all: bool = cycles > 0
@@ -291,7 +291,7 @@ func _refresh_order() -> void:
 	var outputs: Dictionary = _selected_recipe.get("outputs", {})
 	for item_id in outputs.keys():
 		_inputs_box.add_child(_make_line(item_id, "→ %s ×%d" % [ItemDB.get_item_name(item_id), int(outputs[item_id]) * maxi(cycles, 1)], UI.COLOR_TITLE))
-	_grid.set_stacks(inventory.get_slot_stacks(), inventory.max_slots)
+	_grid.set_stacks(inventory.get_slot_cells(), inventory.max_slots)
 	
 	var params: Dictionary = machine.get_cycle_params(_selected_recipe, player) if machine else {"duration": 0.0, "energy": 0.0}
 	var energy_total: float = float(params["energy"]) * maxi(cycles, 1)
