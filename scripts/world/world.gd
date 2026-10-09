@@ -6,6 +6,7 @@ const GameSession = preload("res://scripts/core/game_session.gd")
 const SaveSlots = preload("res://scripts/core/save_slots.gd")
 const MainMenu = preload("res://scripts/ui/main_menu.gd")
 const PauseMenuController = preload("res://scripts/ui/pause_menu_controller.gd")
+const GameplayUIController = preload("res://scripts/ui/gameplay_ui_controller.gd")
 
 ## Интервал автосохранения в секундах реального времени (только во время игры, не в паузе и не в меню).
 const AUTOSAVE_INTERVAL: float = 300.0
@@ -79,6 +80,11 @@ func _init_session() -> void:
 		controller.name = "PauseMenuController"
 		controller.setup(hud, self)
 		hud.add_child(controller)
+		# Клеточный рюкзак, окно станка с партиями, смена инструмента колесом.
+		var gameplay_ui = GameplayUIController.new()
+		gameplay_ui.name = "GameplayUIController"
+		gameplay_ui.setup(hud, self, player)
+		hud.add_child(gameplay_ui)
 
 	var request: Dictionary = GameSession.consume(get_tree())
 	if not request.get("skip_menu", false):
@@ -116,7 +122,8 @@ func _connect_interactive_stations() -> void:
 	if not hud:
 		return
 	
-	# Автоматическое подключение всех производственных машин, станций, зданий и NPC к окнам HUD
+	# Автоматическое подключение всех производственных машин, станций, зданий и NPC к окнам HUD.
+	# В игре GameplayUIController переключает machine_opened на новое окно станка.
 	for child in find_children("*", "Area3D", true, false):
 		if child.has_signal("machine_opened") and hud.has_method("open_machine_window"):
 			if not child.machine_opened.is_connected(hud.open_machine_window):
