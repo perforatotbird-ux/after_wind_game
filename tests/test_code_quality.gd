@@ -99,6 +99,8 @@ func _process(_delta: float) -> bool:
 	check(is_equal_approx(crusher.process_timer, 2.0), "production progress restored")
 	var before = inv.get_item_count("stone_dust")
 	crusher._complete_process()
+	check(int(crusher.pending_outputs.get("stone_dust", 0)) == 1, "restored production stores output in machine")
+	crusher.collect_outputs(player)
 	check(inv.get_item_count("stone_dust") == before + 1, "restored production delivers output once")
 
 	SaveManager.delete_save(SAVE_PATH)

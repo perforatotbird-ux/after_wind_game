@@ -109,6 +109,9 @@ func _run_tests() -> void:
 	if not start_res: _fail("Не удалось запустить рецепт filter_water в песчаном фильтре")
 	water_filter.process_timer = water_filter.process_duration
 	water_filter._complete_process()
+	if water_filter.pending_outputs.get("clean_water", 0) != 2:
+		_fail("Чистая вода должна накопиться в фильтре")
+	water_filter.collect_outputs(player)
 	
 	if inv.get_item_count("clean_water") != 2:
 		_fail("После filter_water ожидалось 2 clean_water, получено: %d" % inv.get_item_count("clean_water"))
@@ -119,6 +122,9 @@ func _run_tests() -> void:
 	if not start_res: _fail("Не удалось запустить рецепт mineral_filter_water в фильтре")
 	water_filter.process_timer = water_filter.process_duration
 	water_filter._complete_process()
+	if water_filter.pending_outputs.get("clean_water", 0) != 4:
+		_fail("Дополнительная вода должна накопиться в фильтре")
+	water_filter.collect_outputs(player)
 	
 	if inv.get_item_count("clean_water") != 6:
 		_fail("После mineral_filter_water ожидалось 6 clean_water, получено: %d" % inv.get_item_count("clean_water"))
@@ -142,6 +148,9 @@ func _run_tests() -> void:
 	if not start_res: _fail("Не удалось запустить рецепт bottle_water на верстаке")
 	workbench.process_timer = workbench.process_duration
 	workbench._complete_process()
+	if workbench.pending_outputs.get("bottled_water", 0) != 1:
+		_fail("Бутилированная вода должна накопиться в верстаке")
+	workbench.collect_outputs(player)
 	
 	if inv.get_item_count("bottled_water") != 1:
 		_fail("Ожидалась 1 бутилированная вода, получено: %d" % inv.get_item_count("bottled_water"))

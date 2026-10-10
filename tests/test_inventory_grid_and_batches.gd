@@ -60,6 +60,7 @@ func _run() -> void:
 	for step in [
 		test_icons, test_tool_cycle, test_slot_stacks, test_drop_merge_pickup,
 		test_cycles_for_amount, test_batch_stone_dust, test_cancel_without_refund,
+		test_machine_inventory_storage,
 		test_save_validation, test_save_load_batch_and_drops, test_ui_smoke
 	]:
 		step.call()
@@ -69,6 +70,9 @@ func _run() -> void:
 	quit(0)
 
 func _reset_inventory() -> void:
+	var hud: Node = world.find_child("HUD", true, false) if world else null
+	if hud and hud.has_method("close_machine_window"):
+		hud.close_machine_window()
 	inv.clear()
 	var t: Array[String] = ["axe", "pickaxe", "shovel", "bucket", "backpack"]
 	inv.tools = t
@@ -215,6 +219,36 @@ func test_cancel_without_refund() -> void:
 	crusher.collect_outputs(player)
 	_reset_inventory()
 	print("✅ Отмена: сырьё не вернулось, готовая пыль сохранена")
+
+func test_machine_inventory_storage() -> void:
+	print("\n--- 7b. Продукция в инвентаре станка и отсутствие автосбора при [E] ---")
+	_reset_inventory()
+	inv.add_item("stone", 2)
+	crusher.pending_outputs = {}
+	if not _check(crusher.start_recipe("crush_stone", player), "одиночный запуск crush_stone должен сработать"):
+		return
+	crusher._complete_process()
+	if not _check(int(crusher.pending_outputs.get("stone_dust", 0)) == 1, "готовая продукция должна оказаться в инвентаре станка"):
+		return
+	if not _check(inv.get_item_count("stone_dust") == 0, "продукция НЕ должна попадать в рюкзак игрока автоматически"):
+		return
+	
+	# Проверка взаимодействия [E]: не должно автоматически вычищать инвентарь станка в рюкзак
+	var opened_emitted: Array = [false]
+	var cb := func(_m): opened_emitted[0] = true
+	crusher.machine_opened.connect(cb, CONNECT_ONE_SHOT)
+	crusher._on_interacted(player)
+	if not _check(opened_emitted[0], "взаимодействие должно слать machine_opened"):
+		return
+	if not _check(int(crusher.pending_outputs.get("stone_dust", 0)) == 1 and inv.get_item_count("stone_dust") == 0, "при взаимодействии [E] продукция остаётся в станке"):
+		return
+	
+	# Точечный забор предмета (клик по ячейке в окне)
+	var taken: int = crusher.collect_output_item("stone_dust", player)
+	if not _check(taken == 1 and crusher.pending_outputs.is_empty() and inv.get_item_count("stone_dust") == 1, "collect_output_item должен перенести предмет в рюкзак"):
+		return
+	_reset_inventory()
+	print("✅ Готовая продукция надёжно хранится в станке и забирается игроком по требованию")
 
 # --- Сохранения ---
 

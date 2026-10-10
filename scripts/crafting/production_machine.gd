@@ -5,11 +5,10 @@ extends "res://scripts/interaction/interactable.gd"
 ## Соответствует разделам 18, 19, 20, 21, 29, 30, 68 дизайн-документа.
 ##
 ## Два режима запуска:
-## * start_recipe — один цикл, продукция сразу кладётся в рюкзак (старое поведение,
-##   на него опираются тесты и сохранения прежних версий);
+## * start_recipe — один цикл, продукция складывается в инвентарь станка (pending_outputs);
 ## * start_batch — партия из N циклов (окно станка, machine_panel.gd): сырьё на всю
 ##   партию списывается из рюкзака при старте, циклы идут подряд, продукция копится
-##   в станке (pending_outputs) и забирается по E или кнопкой «Забрать».
+##   в станке (pending_outputs) и забирается в окне станка.
 ##   cancel_batch останавливает партию без возврата сырья.
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
@@ -96,12 +95,14 @@ func get_prompt() -> String:
 			return "[E] %s (В работе: %s, цикл %d/%d, %d%%)" % [object_name, r_name, batch_cycles_done + 1, batch_cycles_total, pct]
 		return "[E] %s (В работе: %s %d%%)" % [object_name, r_name, pct]
 	if not pending_outputs.is_empty():
-		return "[E] Забрать продукцию: %s" % object_name
+		var total_items: int = 0
+		for cnt in pending_outputs.values():
+			total_items += int(cnt)
+		return "[E] Открыть %s (продукция: %d шт.)" % [object_name, total_items]
 	return "[E] Открыть %s" % object_name
 
 func _on_interacted(player: Node) -> void:
 	_last_user = player
-	_deliver_pending(player)
 	machine_opened.emit(self)
 
 # ---------------------------------------------------------------------------
@@ -155,7 +156,7 @@ func get_cycle_params(recipe: Dictionary, player: Node) -> Dictionary:
 # Запуск
 # ---------------------------------------------------------------------------
 
-## Одиночный цикл: продукция сразу в рюкзак (совместимость со старым кодом).
+## Одиночный цикл: продукция копится в станке (pending_outputs).
 func start_recipe(recipe_id: String, player: Node) -> bool:
 	if is_machine_running or not is_instance_valid(player):
 		return false
@@ -186,7 +187,7 @@ func start_recipe(recipe_id: String, player: Node) -> bool:
 	
 	batch_cycles_total = 1
 	batch_cycles_done = 0
-	batch_to_buffer = false
+	batch_to_buffer = true
 	_begin_cycle(recipe, params["duration"], player)
 	
 	if player.has_method("notify"):
@@ -269,49 +270,25 @@ func _complete_process() -> void:
 	var recipe_id: String = active_recipe.get("id", "")
 	var user_valid: bool = _last_user != null and is_instance_valid(_last_user)
 	
-	if batch_to_buffer:
-		for item_id in outputs.keys():
-			pending_outputs[item_id] = int(pending_outputs.get(item_id, 0)) + int(outputs[item_id])
-		batch_cycles_done += 1
-		AudioManager.play("harvest", 1.25)
-		process_completed.emit(recipe_id, outputs)
-		outputs_changed.emit()
-		if batch_cycles_done < batch_cycles_total:
-			process_timer = 0.0
-			_last_emitted_progress = -1.0
-			return
-		var cycles: int = batch_cycles_total
-		_finish_run()
-		if user_valid and _last_user.has_method("notify"):
-			var main_out: String = get_main_output(ItemDB.get_item("") if false else {"outputs": outputs})
-			_last_user.notify("✅ Партия готова: %s %s ×%d — заберите в «%s» [E]" % [
-				ItemDB.get_item_icon(main_out), ItemDB.get_item_name(main_out),
-				int(pending_outputs.get(main_out, 0)), object_name
-			])
-		batch_finished.emit(recipe_id, cycles)
-		return
-	
-	# Одиночный запуск: продукция игроку; не поместившееся ждёт в машине.
-	var inv = null
-	if user_valid and "inventory" in _last_user:
-		inv = _last_user.get("inventory")
-	var stored_any: bool = false
 	for item_id in outputs.keys():
-		var amount: int = int(outputs[item_id])
-		if inv and inv.add_item(item_id, amount):
-			if _last_user.has_method("notify"):
-				_last_user.notify("✅ Готово! %s %s +%d" % [ItemDB.get_item_icon(item_id), ItemDB.get_item_name(item_id), amount])
-		else:
-			pending_outputs[item_id] = int(pending_outputs.get(item_id, 0)) + amount
-			stored_any = true
-	if stored_any and user_valid and _last_user.has_method("notify"):
-		_last_user.notify("📦 Рюкзак полон — продукция ждёт в машине «%s»." % object_name)
-	
+		pending_outputs[item_id] = int(pending_outputs.get(item_id, 0)) + int(outputs[item_id])
+	batch_cycles_done += 1
 	AudioManager.play("harvest", 1.25)
 	process_completed.emit(recipe_id, outputs)
+	outputs_changed.emit()
+	if batch_cycles_done < batch_cycles_total:
+		process_timer = 0.0
+		_last_emitted_progress = -1.0
+		return
+	var cycles: int = batch_cycles_total
 	_finish_run()
-	if stored_any:
-		outputs_changed.emit()
+	if user_valid and _last_user.has_method("notify"):
+		var main_out: String = get_main_output(ItemDB.get_item("") if false else {"outputs": outputs})
+		_last_user.notify("✅ Готово: %s %s ×%d — заберите в «%s» [E]" % [
+			ItemDB.get_item_icon(main_out), ItemDB.get_item_name(main_out),
+			int(pending_outputs.get(main_out, 0)), object_name
+		])
+	batch_finished.emit(recipe_id, cycles)
 
 func _finish_run() -> void:
 	is_machine_running = false
@@ -332,6 +309,37 @@ func _finish_run() -> void:
 func collect_outputs(player: Node) -> bool:
 	_deliver_pending(player)
 	return pending_outputs.is_empty()
+
+## Забрать конкретный предмет из станка в рюкзак игрока.
+## Возвращает количество перенесённых единиц.
+func collect_output_item(item_id: String, player: Node, max_amount: int = -1) -> int:
+	if not pending_outputs.has(item_id) or not is_instance_valid(player):
+		return 0
+	var inv = player.get("inventory") if "inventory" in player else null
+	if not inv:
+		return 0
+	var available: int = int(pending_outputs.get(item_id, 0))
+	if available <= 0:
+		pending_outputs.erase(item_id)
+		outputs_changed.emit()
+		return 0
+	var amount: int = available if max_amount <= 0 else mini(available, max_amount)
+	var fit: int = amount
+	if inv.has_method("get_max_addable"):
+		fit = inv.get_max_addable(item_id, amount)
+	if fit <= 0 or not inv.add_item(item_id, fit):
+		if player.has_method("notify"):
+			player.notify("⚠️ В рюкзаке нет места для %s" % ItemDB.get_item_name(item_id))
+		return 0
+	
+	if fit >= available:
+		pending_outputs.erase(item_id)
+	else:
+		pending_outputs[item_id] = available - fit
+	if player.has_method("notify"):
+		player.notify("📦 Забрано из машины: %s %s +%d" % [ItemDB.get_item_icon(item_id), ItemDB.get_item_name(item_id), fit])
+	outputs_changed.emit()
+	return fit
 
 ## Выдаёт игроку накопленную продукцию; если места мало — выдаёт сколько влезет.
 func _deliver_pending(player: Node) -> void:

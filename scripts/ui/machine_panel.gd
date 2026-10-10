@@ -166,6 +166,7 @@ func _ready() -> void:
 	_out_grid = ItemGrid.new()
 	_out_grid.columns = 5
 	_out_grid.cell_size = Vector2(56, 56)
+	_out_grid.cell_pressed.connect(_on_out_cell_pressed)
 	col.add_child(_out_grid)
 	_collect_btn = UI.make_button("📦 Забрать всё", Vector2(0, 34), true)
 	_collect_btn.pressed.connect(_on_collect)
@@ -363,9 +364,19 @@ func _on_cancel_pressed() -> void:
 	_modal = d
 	add_child(d)
 
+func _on_out_cell_pressed(item_id: String, _count: int, _index: int) -> void:
+	if machine and player and not item_id.is_empty():
+		if machine.has_method("collect_output_item"):
+			machine.collect_output_item(item_id, player)
+		else:
+			machine.collect_outputs(player)
+		AudioManager.play("ui_click")
+		_refresh()
+
 func _on_collect() -> void:
 	if machine and player:
 		machine.collect_outputs(player)
+		AudioManager.play("ui_click")
 	_refresh()
 
 func _input(event: InputEvent) -> void:

@@ -76,6 +76,8 @@ func _run_tests() -> void:
 		_fail("Сырьё для кирпичей не списалось")
 	
 	smelter._complete_process() # завершение цикла
+	if smelter.pending_outputs.get("fired_brick", 0) != 2: _fail("Готовые обожженные кирпичи должны быть в инвентаре печи")
+	smelter.collect_outputs(player)
 	if inv.get_item_count("fired_brick") != 2: _fail("Готовые обожженные кирпичи не выданы игроку")
 	print("✅ Обжиг кирпича: 2 сырых кирпича + 1 брикет -> 2 прочных обожженных кирпича.")
 	
@@ -85,6 +87,8 @@ func _run_tests() -> void:
 	var ok_smelt2 = smelter.start_recipe("smelt_glass", player)
 	if not ok_smelt2: _fail("Не удалось запустить smelt_glass")
 	smelter._complete_process()
+	if smelter.pending_outputs.get("glass", 0) != 1: _fail("Готовое стекло должно быть в инвентаре печи")
+	smelter.collect_outputs(player)
 	if inv.get_item_count("glass") != 1: _fail("Стекло не выдано игроку")
 	print("✅ Выплавка стекла: 3 песка + 1 брикет -> 1 лист закаленного стекла.")
 	
@@ -94,6 +98,8 @@ func _run_tests() -> void:
 	var ok_smelt3 = smelter.start_recipe("smelt_iron", player)
 	if not ok_smelt3: _fail("Не удалось запустить smelt_iron")
 	smelter._complete_process()
+	if smelter.pending_outputs.get("iron_ingot", 0) != 1: _fail("Готовый железный слиток должен быть в инвентаре печи")
+	smelter.collect_outputs(player)
 	if inv.get_item_count("iron_ingot") != 1: _fail("Железный слиток не выдан игроку")
 	print("✅ Переплавка металла: 3 металлолома + 2 брикета -> 1 слиток железа.")
 	
