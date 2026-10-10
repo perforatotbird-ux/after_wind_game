@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1960" height="1160" viewBox="0 0 1960 1160">
+<defs><pattern id="haz" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="14" height="28" fill="#1d1d1d"/><rect x="14" width="14" height="28" fill="#e2b11f"/></pattern><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfd8dc"/><stop offset="1" stop-color="#eef0ea"/></linearGradient><linearGradient id="yel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e7b733"/><stop offset="1" stop-color="#b98a18"/></linearGradient></defs>
+<rect width="1960" height="1160" fill="url(#sky)"/>
+<text x="40" y="62" font-family="Arial" font-size="40" fill="#2d2a26" font-weight="bold" text-anchor="start">Дробилка камня — референс</text>
+<text x="40" y="98" font-family="Arial" font-size="20" fill="#2d2a26" font-weight="normal" text-anchor="start">Щековая дробилка «После бури»: жёлтый корпус со сколами, чугунные маховики, мотор с ремнём, бункер с камнями, лоток со щебнем. Масштаб 1 м = 300 px.</text>
+<text x="600" y="140" font-family="Arial" font-size="24" fill="#2d2a26" font-weight="bold" text-anchor="middle">Вид спереди (к двору, +Z в Godot)</text>
+<rect x="40" y="1000" width="1120" height="20" fill="#6f8f3a"/>
+<polygon points="300.0,1000.0 900.0,1000.0 900.0,958.0 300.0,958.0" fill="#8a7a64" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="447.0,958.0 483.0,958.0 483.0,952.0 467.4,952.0 467.4,916.0 483.0,916.0 483.0,910.0 447.0,910.0 447.0,916.0 462.6,916.0 462.6,952.0 447.0,952.0" fill="#7b4a2a" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polygon points="717.0,958.0 753.0,958.0 753.0,952.0 737.4,952.0 737.4,916.0 753.0,916.0 753.0,910.0 717.0,910.0 717.0,916.0 732.6,916.0 732.6,952.0 717.0,952.0" fill="#7b4a2a" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polygon points="435.0,910.0 765.0,910.0 765.0,904.0 435.0,904.0" fill="#5a5d61" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="414.0,841.0 387.0,841.0 387.0,529.0 414.0,529.0" fill="#2b2d30" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="426.0,712.0 360.0,712.0 360.0,658.0 426.0,658.0" fill="#3b3e42" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="786.0,841.0 813.0,841.0 813.0,529.0 786.0,529.0" fill="#2b2d30" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="774.0,712.0 840.0,712.0 840.0,658.0 774.0,658.0" fill="#3b3e42" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="354.0,694.0 846.0,694.0 846.0,676.0 354.0,676.0" fill="#6d7278" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polygon points="456.0,904.0 744.0,904.0 744.0,664.0 456.0,664.0" fill="url(#yel)" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="517.5,865.0 532.5,865.0 532.5,664.0 517.5,664.0" fill="#a97c14" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polygon points="592.5,865.0 607.5,865.0 607.5,664.0 592.5,664.0" fill="#a97c14" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polygon points="667.5,865.0 682.5,865.0 682.5,664.0 667.5,664.0" fill="#a97c14" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polygon points="480.0,904.0 720.0,904.0 720.0,865.0 480.0,865.0" fill="#3a3632" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="624.0,814.0 699.0,820.0 705.0,742.0 630.0,736.0" fill="#6b6f73" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<circle cx="633.0" cy="808.0" r="4.2" fill="#8d9298" stroke="#2a2622" stroke-width="1.5" />
+<circle cx="693.0" cy="811.0" r="4.2" fill="#8d9298" stroke="#2a2622" stroke-width="1.5" />
+<circle cx="696.0" cy="748.0" r="4.2" fill="#8d9298" stroke="#2a2622" stroke-width="1.5" />
+<circle cx="636.0" cy="745.0" r="4.2" fill="#8d9298" stroke="#2a2622" stroke-width="1.5" />
+<circle cx="474.0" cy="880.0" r="4.2" fill="#8d9298" stroke="#2a2622" stroke-width="1.5" />
+<circle cx="726.0" cy="880.0" r="4.2" fill="#8d9298" stroke="#2a2622" stroke-width="1.5" />
+<circle cx="474.0" cy="685.0" r="4.2" fill="#8d9298" stroke="#2a2622" stroke-width="1.5" />
+<circle cx="726.0" cy="685.0" r="4.2" fill="#8d9298" stroke="#2a2622" stroke-width="1.5" />
+<circle cx="468.0" cy="730.0" r="9.0" fill="#4a4642" stroke="#2a2622" stroke-width="0" />
+<circle cx="660.0" cy="676.0" r="7.5" fill="#4a4642" stroke="#2a2622" stroke-width="0" />
+<circle cx="570.0" cy="850.0" r="6.0" fill="#4a4642" stroke="#2a2622" stroke-width="0" />
+<circle cx="738.0" cy="820.0" r="6.0" fill="#4a4642" stroke="#2a2622" stroke-width="0" />
+<polyline points="474.0,700.0 475.5,766.0" fill="none" stroke="#8a4a22" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+<polyline points="726.0,700.0 727.5,766.0" fill="none" stroke="#8a4a22" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+<polyline points="636.0,700.0 637.5,766.0" fill="none" stroke="#8a4a22" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+<polygon points="480.0,664.0 720.0,664.0 795.0,493.0 405.0,493.0" fill="url(#yel)" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="402.0,493.0 798.0,493.0 801.0,472.0 399.0,472.0" fill="url(#haz)" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polyline points="455.2,607.6 744.8,607.6" fill="none" stroke="#8d6a12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="430.5,551.1 769.5,551.1" fill="none" stroke="#8d6a12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+<circle cx="420.0" cy="502.0" r="3.0" fill="#8d9298" stroke="#2a2622" stroke-width="1" />
+<circle cx="465.0" cy="502.0" r="3.0" fill="#8d9298" stroke="#2a2622" stroke-width="1" />
+<circle cx="510.0" cy="502.0" r="3.0" fill="#8d9298" stroke="#2a2622" stroke-width="1" />
+<circle cx="555.0" cy="502.0" r="3.0" fill="#8d9298" stroke="#2a2622" stroke-width="1" />
+<circle cx="600.0" cy="502.0" r="3.0" fill="#8d9298" stroke="#2a2622" stroke-width="1" />
+<circle cx="645.0" cy="502.0" r="3.0" fill="#8d9298" stroke="#2a2622" stroke-width="1" />
+<circle cx="690.0" cy="502.0" r="3.0" fill="#8d9298" stroke="#2a2622" stroke-width="1" />
+<circle cx="735.0" cy="502.0" r="3.0" fill="#8d9298" stroke="#2a2622" stroke-width="1" />
+<circle cx="780.0" cy="502.0" r="3.0" fill="#8d9298" stroke="#2a2622" stroke-width="1" />
+<circle cx="465.0" cy="460.0" r="24.0" fill="#8e8a83" stroke="#2a2622" stroke-width="2" />
+<circle cx="525.0" cy="451.0" r="30.0" fill="#8e8a83" stroke="#2a2622" stroke-width="2" />
+<circle cx="594.0" cy="460.0" r="27.0" fill="#8e8a83" stroke="#2a2622" stroke-width="2" />
+<circle cx="660.0" cy="448.0" r="33.0" fill="#8e8a83" stroke="#2a2622" stroke-width="2" />
+<circle cx="726.0" cy="463.0" r="24.0" fill="#8e8a83" stroke="#2a2622" stroke-width="2" />
+<circle cx="615.0" cy="436.0" r="21.0" fill="#8e8a83" stroke="#2a2622" stroke-width="2" />
+<polygon points="534.0,610.0 666.0,610.0 666.0,568.0 534.0,568.0" fill="#efeae0" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<text x="600" y="599.5" font-family="Arial" font-size="22" fill="#2b2826" font-weight="bold" text-anchor="middle">ДРОБИЛКА</text>
+<polygon points="510.0,874.0 690.0,874.0 696.0,940.0 504.0,940.0" fill="#9aa3a8" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="522.0,886.0 678.0,886.0 684.0,928.0 516.0,928.0" fill="#8d8b86" stroke="#2a2622" stroke-width="0" stroke-linejoin="round" />
+<polygon points="450.0,1000.0 525.0,964.0 600.0,952.0 684.0,967.0 756.0,1000.0" fill="#8d8b86" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="324.0,1000.0 336.0,1000.0 336.0,745.0 324.0,745.0" fill="#5a5d61" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polygon points="300.0,745.0 360.0,745.0 360.0,676.0 300.0,676.0" fill="#b23a2a" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<circle cx="330.0" cy="664.0" r="10.5" fill="#57e36b" stroke="#2a2622" stroke-width="2" />
+<circle cx="330.0" cy="718.0" r="12.0" fill="#e04030" stroke="#2a2622" stroke-width="2" />
+<line x1="780.0" y1="472.0" x2="880" y2="430" stroke="#2d2a26" stroke-width="1.5"/>
+<text x="886" y="436" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">бункер, полосы на кромке, камни</text>
+<line x1="804.0" y1="760.0" x2="900" y2="670" stroke="#2d2a26" stroke-width="1.5"/>
+<text x="906" y="676" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">маховики Ø1.05 м (вращаются)</text>
+<line x1="675.0" y1="790.0" x2="900" y2="800" stroke="#2d2a26" stroke-width="1.5"/>
+<text x="906" y="806" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">сварная заплата, болты</text>
+<line x1="660.0" y1="910.0" x2="900" y2="930" stroke="#2d2a26" stroke-width="1.5"/>
+<text x="906" y="936" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">лоток: сыплется щебень и пыль</text>
+<line x1="330.0" y1="664.0" x2="320" y2="580" stroke="#2d2a26" stroke-width="1.5"/>
+<text x="314" y="586" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="end">пульт: зелёная лампа «работа»</text>
+<line x1="375.0" y1="979.0" x2="320" y2="970" stroke="#2d2a26" stroke-width="1.5"/>
+<text x="314" y="976" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="end">двутавры на шпалах</text>
+<text x="1450" y="140" font-family="Arial" font-size="24" fill="#2d2a26" font-weight="bold" text-anchor="middle">Вид сбоку (справа): привод и анимация</text>
+<rect x="970" y="1000" width="960" height="20" fill="#6f8f3a"/>
+<polygon points="1234.0,1000.0 1306.0,1000.0 1306.0,958.0 1234.0,958.0" fill="#8a7a64" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="1684.0,1000.0 1756.0,1000.0 1756.0,958.0 1684.0,958.0" fill="#8a7a64" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="1195.0,958.0 1825.0,958.0 1825.0,910.0 1195.0,910.0" fill="#7b4a2a" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="1300.0,904.0 1630.0,904.0 1630.0,814.0 1585.0,715.0 1465.0,715.0 1465.0,664.0 1300.0,664.0" fill="url(#yel)" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="1352.5,904.0 1367.5,904.0 1367.5,664.0 1352.5,664.0" fill="#a97c14" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polygon points="1442.5,904.0 1457.5,904.0 1457.5,664.0 1442.5,664.0" fill="#a97c14" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polygon points="1532.5,904.0 1547.5,904.0 1547.5,718.0 1532.5,718.0" fill="#a97c14" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polygon points="1307.5,664.0 1472.5,664.0 1540.0,493.0 1240.0,493.0" fill="url(#yel)" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="1237.0,493.0 1543.0,493.0 1543.0,472.0 1237.0,472.0" fill="url(#haz)" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<circle cx="1285.0" cy="460.0" r="24.0" fill="#8e8a83" stroke="#2a2622" stroke-width="2" />
+<circle cx="1360.0" cy="448.0" r="30.0" fill="#8e8a83" stroke="#2a2622" stroke-width="2" />
+<circle cx="1435.0" cy="460.0" r="27.0" fill="#8e8a83" stroke="#2a2622" stroke-width="2" />
+<circle cx="1495.0" cy="463.0" r="21.0" fill="#8e8a83" stroke="#2a2622" stroke-width="2" />
+<polygon points="1690.0,910.0 1810.0,910.0 1810.0,898.0 1690.0,898.0" fill="#5a5d61" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<circle cx="1750.0" cy="835.0" r="48.0" fill="#4f6b4a" stroke="#2a2622" stroke-width="3" />
+<polyline points="1798.0,835.0 1807.0,835.0" fill="none" stroke="#3d5539" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1783.9,801.1 1790.3,794.7" fill="none" stroke="#3d5539" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1750.0,787.0 1750.0,778.0" fill="none" stroke="#3d5539" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1716.1,801.1 1709.7,794.7" fill="none" stroke="#3d5539" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1702.0,835.0 1693.0,835.0" fill="none" stroke="#3d5539" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1716.1,868.9 1709.7,875.3" fill="none" stroke="#3d5539" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1750.0,883.0 1750.0,892.0" fill="none" stroke="#3d5539" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1783.9,868.9 1790.3,875.3" fill="none" stroke="#3d5539" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polygon points="1726.0,787.0 1774.0,787.0 1774.0,760.0 1726.0,760.0" fill="#3d5539" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polyline points="1663.7,607.3 1781.4,817.4" fill="none" stroke="#151515" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1506.6,842.9 1745.8,870.8" fill="none" stroke="#151515" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+<circle cx="1750.0" cy="835.0" r="33.0" fill="#55595e" stroke="#2a2622" stroke-width="3" />
+<circle cx="1750.0" cy="835.0" r="9.0" fill="#2b2d30" stroke="#2a2622" stroke-width="3" />
+<circle cx="1525.0" cy="685.0" r="159.0" fill="none" stroke="#151515" stroke-width="10" />
+<circle cx="1525.0" cy="685.0" r="156.0" fill="none" stroke="#2b2d30" stroke-width="18" />
+<polyline points="1552.0,685.0 1565.5,679.5 1578.1,671.6 1590.1,663.2 1602.5,656.7 1616.4,654.4 1631.9,658.0 1648.0,668.4 1663.0,685.0" fill="none" stroke="#2b2d30" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1538.5,661.6 1540.5,647.2 1539.9,632.3 1538.6,617.7 1539.3,603.7 1544.2,590.6 1555.1,578.9 1572.2,570.2 1594.0,565.5" fill="none" stroke="#2b2d30" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1511.5,661.6 1500.0,652.6 1486.8,645.7 1473.6,639.6 1461.8,632.0 1452.8,621.2 1448.2,605.9 1449.1,586.8 1456.0,565.5" fill="none" stroke="#2b2d30" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1498.0,685.0 1484.5,690.5 1471.9,698.4 1459.9,706.8 1447.5,713.3 1433.6,715.6 1418.1,712.0 1402.0,701.6 1387.0,685.0" fill="none" stroke="#2b2d30" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1511.5,708.4 1509.5,722.8 1510.1,737.7 1511.4,752.3 1510.7,766.3 1505.8,779.4 1494.9,791.1 1477.8,799.8 1456.0,804.5" fill="none" stroke="#2b2d30" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1538.5,708.4 1550.0,717.4 1563.2,724.3 1576.4,730.4 1588.2,738.0 1597.2,748.8 1601.8,764.1 1600.9,783.2 1594.0,804.5" fill="none" stroke="#2b2d30" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+<circle cx="1525.0" cy="685.0" r="27.0" fill="#3b3e42" stroke="#2a2622" stroke-width="3" />
+<circle cx="1525.0" cy="685.0" r="12.0" fill="#6d7278" stroke="#2a2622" stroke-width="2" />
+<polygon points="1513.0,544.0 1537.0,544.0 1537.0,526.0 1513.0,526.0" fill="#d9a520" stroke="#2a2622" stroke-width="2" stroke-linejoin="round" />
+<polygon points="1324.0,865.0 1324.0,886.0 1156.0,949.0 1156.0,922.0" fill="#9aa3a8" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<polygon points="1030.0,1000.0 1090.0,970.0 1135.0,961.0 1195.0,1000.0" fill="#8d8b86" stroke="#2a2622" stroke-width="3" stroke-linejoin="round" />
+<circle cx="1144.0" cy="940.0" r="3.6" fill="#77746f" stroke="#2a2622" stroke-width="0" />
+<circle cx="1135.0" cy="955.0" r="3.6" fill="#77746f" stroke="#2a2622" stroke-width="0" />
+<circle cx="1126.0" cy="970.0" r="3.6" fill="#77746f" stroke="#2a2622" stroke-width="0" />
+<circle cx="1141.0" cy="979.0" r="3.6" fill="#77746f" stroke="#2a2622" stroke-width="0" />
+<polyline points="1627.0,508.3 1614.4,501.6 1601.4,495.9 1588.0,491.0 1574.4,487.1 1560.4,484.1 1546.3,482.1 1532.1,481.1 1517.9,481.1 1503.7,482.1 1489.6,484.1 1475.6,487.1 1462.0,491.0 1448.6,495.9 1435.6,501.6 1423.0,508.3 1410.9,515.9 1399.4,524.2 1388.5,533.4 1378.3,543.3 1368.7,553.9" fill="none" stroke="#c0392b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="10,6"/>
+<text x="1376.7269336037284" y="553.871327623946" font-family="Arial" font-size="18" fill="#c0392b" font-weight="bold" text-anchor="start">≈1.6 об/с</text>
+<polyline points="1789.0,902.5 1794.7,898.9 1800.1,894.8 1805.2,890.2 1809.8,885.1 1813.9,879.7 1817.5,874.0 1820.7,868.0 1823.3,861.7 1825.3,855.2 1826.8,848.5 1827.7,841.8 1828.0,835.0 1827.7,828.2 1826.8,821.5 1825.3,814.8 1823.3,808.3 1820.7,802.0 1817.5,796.0 1813.9,790.3 1809.8,784.9" fill="none" stroke="#c0392b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="10,6"/>
+<text x="1817.7514665632802" y="784.86256644445" font-family="Arial" font-size="18" fill="#c0392b" font-weight="bold" text-anchor="start">×4.8</text>
+<text x="1000" y="610.0" font-family="Arial" font-size="18" fill="#c0392b" font-weight="bold" text-anchor="start">шатун ходит</text>
+<text x="1000" y="632.0" font-family="Arial" font-size="18" fill="#c0392b" font-weight="normal" text-anchor="start">по эксцентрику ±3 см</text>
+<text x="1780" y="715.0" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">мотор, шкив,</text>
+<text x="1780" y="737.0" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">клиновой ремень</text>
+<rect x="60" y="1080" width="40" height="40" rx="6" fill="#d9a520" stroke="#2a2622" stroke-width="2"/>
+<text x="110" y="1107" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">краска</text>
+<rect x="245" y="1080" width="40" height="40" rx="6" fill="#4a4642" stroke="#2a2622" stroke-width="2"/>
+<text x="295" y="1107" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">сколы</text>
+<rect x="430" y="1080" width="40" height="40" rx="6" fill="#8a4a22" stroke="#2a2622" stroke-width="2"/>
+<text x="480" y="1107" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">ржавчина</text>
+<rect x="615" y="1080" width="40" height="40" rx="6" fill="#2b2d30" stroke="#2a2622" stroke-width="2"/>
+<text x="665" y="1107" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">чугун</text>
+<rect x="800" y="1080" width="40" height="40" rx="6" fill="#9aa3a8" stroke="#2a2622" stroke-width="2"/>
+<text x="850" y="1107" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">оцинковка</text>
+<rect x="985" y="1080" width="40" height="40" rx="6" fill="#4f6b4a" stroke="#2a2622" stroke-width="2"/>
+<text x="1035" y="1107" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">мотор</text>
+<rect x="1170" y="1080" width="40" height="40" rx="6" fill="#8a7a64" stroke="#2a2622" stroke-width="2"/>
+<text x="1220" y="1107" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">шпалы</text>
+<rect x="1355" y="1080" width="40" height="40" rx="6" fill="#8d8b86" stroke="#2a2622" stroke-width="2"/>
+<text x="1405" y="1107" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">щебень</text>
+<rect x="1540" y="1080" width="40" height="40" rx="6" fill="#151515" stroke="#2a2622" stroke-width="2"/>
+<text x="1590" y="1107" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">резина</text>
+<rect x="1725" y="1080" width="40" height="40" rx="6" fill="#57e36b" stroke="#2a2622" stroke-width="2"/>
+<text x="1775" y="1107" font-family="Arial" font-size="18" fill="#2d2a26" font-weight="normal" text-anchor="start">лампа</text>
+</svg>

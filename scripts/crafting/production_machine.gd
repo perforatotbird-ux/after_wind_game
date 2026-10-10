@@ -33,6 +33,8 @@ signal outputs_changed()
 @export var machine_type: String = "crusher"
 @export var machine_display_name: String = "Дробилка камня"
 @export var visual_node: Node3D
+## Сила дрожания корпуса в работе (0 — не дрожит; у дробилки движутся сами детали).
+@export_range(0.0, 2.0) var shake_strength: float = 1.0
 
 var is_machine_running: bool = false
 var is_machine: bool = true
@@ -74,7 +76,7 @@ func _process(delta: float) -> void:
 				randf_range(-0.02, 0.02),
 				randf_range(-0.01, 0.02),
 				randf_range(-0.02, 0.02)
-			)
+			) * shake_strength
 			visual_node.position = _original_pos + shake_offset
 		
 		if process_timer >= process_duration:
