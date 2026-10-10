@@ -35,3 +35,6 @@ outputs/
 # Python tooling caches
 __pycache__/
 *.py[cod]
+
+# Сборка моделей из Blender (tools/create_smelter_model.py)
+smelter_build/
