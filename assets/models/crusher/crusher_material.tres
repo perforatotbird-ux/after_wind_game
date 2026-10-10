@@ -1,0 +1,20 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/models/crusher/crusher_albedo.tres" id="1_7s122"]
+[ext_resource type="Texture2D" path="res://assets/models/crusher/crusher_orm.tres" id="2_lfroj"]
+[ext_resource type="Texture2D" path="res://assets/models/crusher/crusher_normal.tres" id="3_mymid"]
+
+[resource]
+resource_name = "CrusherAtlas"
+albedo_texture = ExtResource("1_7s122")
+metallic = 1.0
+metallic_texture = ExtResource("2_lfroj")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_lfroj")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_mymid")
+ao_enabled = true
+ao_light_affect = 0.35
+ao_texture = ExtResource("2_lfroj")
+texture_filter = 5
