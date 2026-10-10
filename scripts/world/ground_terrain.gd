@@ -4,14 +4,18 @@ extends StaticBody3D
 ##
 ## Исходные меш и коллизия Ground — один ящик 80×1×80. Если в мире есть жилы,
 ## ящик заменяется полосами-ящиками вокруг их участков (get_footprint_rect):
-## внутри выреза землю изображает и держит сама жила. Трава земли — тот же
-## пиксельный тайл, что и на верху жил (VoxelTextures.get_ground_material).
+## внутри выреза землю изображает и держит сама жила. Земля — шейдер луга
+## (meadow_ground.gd): тот же пиксельный тайл травы, что и на верху жил, с
+## пятнами сочной/сухой травы, проплешинами и вытоптанным двором базы.
 
 const VoxelDepositScript = preload("res://scripts/world/voxel_deposit.gd")
 const VoxelTextures = preload("res://scripts/world/voxel_textures.gd")
+const MeadowGround = preload("res://scripts/world/meadow_ground.gd")
 
 @export var ground_size: Vector2 = Vector2(80, 80)
 @export var thickness: float = 1.0
+## Вытоптанный двор базы (мировые x, z, размер) — рисуется шейдером луга.
+@export var yard_rect: Rect2 = MeadowGround.DEFAULT_YARD
 
 var _pieces: Array[Node] = []
 
@@ -39,12 +43,12 @@ func rebuild_holes() -> void:
 	var src_col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if src_mesh:
 		src_mesh.visible = rects.is_empty()
-		src_mesh.material_override = VoxelTextures.get_ground_material()
+		src_mesh.material_override = MeadowGround.get_material(yard_rect)
 	if src_col:
 		src_col.disabled = not rects.is_empty()
 	if rects.is_empty():
 		return
-	var material: Material = VoxelTextures.get_ground_material()
+	var material: Material = MeadowGround.get_material(yard_rect)
 	var half: Vector2 = ground_size * 0.5
 	var xs: Array[float] = [-half.x, half.x]
 	var zs: Array[float] = [-half.y, half.y]

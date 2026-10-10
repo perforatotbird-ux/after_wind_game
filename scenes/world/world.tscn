@@ -5,8 +5,6 @@
 [ext_resource type="PackedScene" uid="uid://c6v2n7j5w1q8p" path="res://scenes/player/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" uid="uid://b0yqv2w6km7xr" path="res://scenes/ui/hud.tscn" id="4_hud"]
 [ext_resource type="PackedScene" uid="uid://df7s6x1y3m8qa" path="res://scenes/resources/rock_node.tscn" id="7_rock"]
-[ext_resource type="PackedScene" uid="uid://c8v4m2k7xax1a" path="res://scenes/resources/clay_node.tscn" id="8_clay"]
-[ext_resource type="PackedScene" uid="uid://df3lax7w1m2qa" path="res://scenes/resources/sand_node.tscn" id="9_sand"]
 [ext_resource type="PackedScene" uid="uid://b2x7w1m8q4k3a" path="res://scenes/resources/water_node.tscn" id="10_water"]
 [ext_resource type="PackedScene" uid="uid://dm4k8v2y1yaqa" path="res://scenes/machines/crusher.tscn" id="11_crusher"]
 [ext_resource type="PackedScene" uid="uid://c7x2v1m4k8raa" path="res://scenes/machines/workbench.tscn" id="12_bench"]
@@ -35,6 +33,7 @@
 [ext_resource type="PackedScene" path="res://scenes/resources/tree_pine_wide.tscn" id="35_pine_wide"]
 [ext_resource type="Script" path="res://scripts/world/ground_terrain.gd" id="36_ground"]
 [ext_resource type="Script" path="res://scripts/world/voxel_deposit.gd" id="37_deposit"]
+[ext_resource type="Script" path="res://scripts/world/meadow_decor.gd" id="38_meadow"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.36, 0.54, 0.75, 1)
@@ -63,14 +62,6 @@ roughness = 0.95
 [sub_resource type="BoxMesh" id="BoxMesh_ground"]
 material = SubResource("StandardMaterial3D_grass")
 size = Vector3(80, 1, 80)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dirt"]
-albedo_color = Color(0.38, 0.3, 0.22, 1)
-roughness = 0.9
-
-[sub_resource type="BoxMesh" id="BoxMesh_dirt"]
-material = SubResource("StandardMaterial3D_dirt")
-size = Vector3(22, 0.15, 16)
 
 [node name="World" type="Node3D" unique_id=885266309]
 script = ExtResource("1_world")
@@ -102,10 +93,6 @@ shape = SubResource("BoxShape3D_ground")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Ground" unique_id=1200031459]
 mesh = SubResource("BoxMesh_ground")
-
-[node name="DirtYard" type="MeshInstance3D" parent="." unique_id=464614225]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, -1)
-mesh = SubResource("BoxMesh_dirt")
 
 [node name="Player" parent="." unique_id=412396496 instance=ExtResource("3_player")]
 
@@ -196,18 +183,6 @@ transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 8.5, 0, 5)
 
 [node name="Rock3" parent="Resources" unique_id=1350360747 instance=ExtResource("7_rock")]
 transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, 7, 0, 8.2)
-
-[node name="Clay1" parent="Resources" unique_id=1598095560 instance=ExtResource("8_clay")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0, 6.8)
-
-[node name="Clay2" parent="Resources" unique_id=213549718 instance=ExtResource("8_clay")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 1.2, 0, 9.2)
-
-[node name="Sand1" parent="Resources" unique_id=1576772670 instance=ExtResource("9_sand")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0, 9)
-
-[node name="Sand2" parent="Resources" unique_id=2075794033 instance=ExtResource("9_sand")]
-transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, -4, 0, 11)
 
 [node name="WaterWell" parent="Resources" unique_id=1404619995 instance=ExtResource("10_water")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0, 3.8)
@@ -483,3 +458,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0, -2)
 script = ExtResource("37_deposit")
 deposit_name = "Западная жила"
 deposit_seed = 37
+
+[node name="Meadow" type="Node3D" parent="." unique_id=1730042010]
+script = ExtResource("38_meadow")
