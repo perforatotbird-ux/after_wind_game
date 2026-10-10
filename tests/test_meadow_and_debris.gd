@@ -73,16 +73,19 @@ func _run() -> void:
 		check(MeadowGround.yard_signed_distance(p) > 0.5, "Куст %s во дворе" % b.name)
 		for r in blocked:
 			check(not r.has_point(p), "Куст %s стоит на станке/жиле" % b.name)
-	# 6. Ни травинки и ни соринки внутри станков и жил.
+	# 6. Ни травинки и ни соринки внутри станков; на жилах растёт только трава
+	# (она прячется при раскопке), прочий декор жилы обходит.
+	var prop_rects: Array[Rect2] = blocked.slice(world.get_tree().get_nodes_in_group(VoxelDeposit.GROUP).size())
 	var bad := 0
 	var total := 0
 	for mmi in meadow.find_children("*", "MultiMeshInstance3D", true, false):
 		var mm: MultiMesh = mmi.multimesh
+		var rects: Array[Rect2] = prop_rects if String(mmi.name).begins_with("Grass") else blocked
 		for i in mm.instance_count:
 			var o: Vector3 = mmi.global_transform * mm.get_instance_transform(i).origin
 			var p := Vector2(o.x, o.z)
 			total += 1
-			for r in blocked:
+			for r in rects:
 				if r.has_point(p):
 					bad += 1
 					break

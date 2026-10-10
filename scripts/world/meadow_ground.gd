@@ -1,11 +1,9 @@
 extends RefCounted
 
-## Материал земли-луга: пиксельный тайл травы жил (VoxelTextures, тот же шаг 0.5 м)
+## Материал земли-луга: гладкий мох под пучками травы (meadow_grass.gd)
 ## плюс крупные пятна в мировых координатах — сочная и подсохшая трава,
 ## проплешины, тени от кочек — и вытоптанный двор базы с рваным краем.
 ## Шейдер собирается из строки один раз и кэшируется.
-
-const VoxelTextures = preload("res://scripts/world/voxel_textures.gd")
 
 ## Двор базы (x, z, ширина, глубина) — утоптанная земля вместо травы.
 const DEFAULT_YARD: Rect2 = Rect2(-11.0, -9.0, 22.0, 16.0)
@@ -14,10 +12,7 @@ const SHADER_CODE: String = """
 shader_type spatial;
 render_mode diffuse_burley;
 
-uniform sampler2D grass_tex : source_color, filter_nearest_mipmap, repeat_enable;
-uniform sampler2D soil_tex : source_color, filter_nearest_mipmap, repeat_enable;
 uniform vec4 yard_rect = vec4(-11.0, -9.0, 11.0, 7.0);
-uniform float tile_step = 0.5;
 
 varying vec3 world_pos;
 
@@ -52,9 +47,13 @@ void vertex() {
 
 void fragment() {
 	vec2 p = world_pos.xz;
-	vec2 uv = p / tile_step;
-	vec3 grass = texture(grass_tex, uv).rgb;
-	vec3 soil = texture(soil_tex, uv).rgb;
+	// Мох и подшёрсток под пучками травы — гладкий, без пикселей (как в референсе).
+	float fine = vnoise(p * 7.0) * 0.5 + vnoise(p * 17.0) * 0.5;
+	vec3 grass = mix(vec3(0.09, 0.17, 0.045), vec3(0.17, 0.29, 0.075), clamp(fbm(p * 1.1) * 0.7 + fine * 0.45, 0.0, 1.0));
+	// Утоптанная земля с мелкими камешками.
+	vec3 soil = mix(vec3(0.25, 0.17, 0.10), vec3(0.38, 0.28, 0.18), fbm(p * 1.6 + vec2(9.0, 3.0)));
+	soil = mix(soil, vec3(0.5, 0.45, 0.38), step(0.86, vnoise(p * 13.0)) * 0.5);
+	soil *= 0.9 + 0.2 * vnoise(p * 30.0);
 
 	// Крупные пятна: сочная зелень / подсохшая трава / тень от кочек.
 	float lush = fbm(p * 0.07);
@@ -96,17 +95,9 @@ static func get_material(yard: Rect2 = DEFAULT_YARD) -> ShaderMaterial:
 		shader.code = SHADER_CODE
 		var m := ShaderMaterial.new()
 		m.shader = shader
-		m.set_shader_parameter("grass_tex", _tile_texture(VoxelTextures.Tile.GRASS_TOP))
-		m.set_shader_parameter("soil_tex", _tile_texture(VoxelTextures.Tile.SOIL))
-		m.set_shader_parameter("tile_step", VoxelTextures.VOXEL_STEP)
 		_material = m
 	_material.set_shader_parameter("yard_rect", Vector4(yard.position.x, yard.position.y, yard.end.x, yard.end.y))
 	return _material
-
-static func _tile_texture(tile: int) -> ImageTexture:
-	var img: Image = VoxelTextures.get_tile_image(tile)
-	img.generate_mipmaps()
-	return ImageTexture.create_from_image(img)
 
 ## CPU-копия края двора (без шума) — для раскладки травы и мусора.
 static func yard_signed_distance(p: Vector2, yard: Rect2 = DEFAULT_YARD) -> float:

@@ -22,6 +22,8 @@ const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
 signal voxel_dug(cell: Vector3i, material: int)
 signal resource_discovered(item_id: String)
+## Меш и коллизия пересобраны (после копания или загрузки) — луг прячет траву над ямами.
+signal terrain_rebuilt
 
 const GROUP: String = "voxel_deposits"
 ## Группа твёрдых тел вокселей: на их уступы персонаж умеет шагать (player._try_step_up).
@@ -647,6 +649,7 @@ func rebuild() -> void:
 		mesh.surface_set_material(0, VoxelTextures.get_material())
 	_mesh_instance.mesh = mesh
 	_body_shape.set_faces(faces)
+	terrain_rebuilt.emit()
 
 func _emit_face(verts: PackedVector3Array, normals: PackedVector3Array, uvs: PackedVector2Array, colors: PackedColorArray, faces: Variant, f: int, base: Vector3, size: Vector3, tile: int, shade: float, tint: Color = Color.WHITE) -> void:
 	var corners: Array = _FACE_CORNERS[f]

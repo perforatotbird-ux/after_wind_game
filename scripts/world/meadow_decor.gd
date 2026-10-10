@@ -8,6 +8,7 @@ extends Node3D
 ## Трава, цветы и мусор — MultiMesh (без коллизии и теней), кусты — StaticBody3D.
 
 const MeadowGround = preload("res://scripts/world/meadow_ground.gd")
+const MeadowGrass = preload("res://scripts/world/meadow_grass.gd")
 const VoxelDepositScript = preload("res://scripts/world/voxel_deposit.gd")
 
 const GROUP: String = "meadow_decor"
@@ -16,15 +17,21 @@ const BUSH_GROUP: String = "bushes"
 ## Флаги клеток маски раскладки (шаг MASK_RES м).
 const NO_GRASS: int = 1
 const NO_PROPS: int = 2
+## Верх жилы: трава есть, но прячется над выкопанными блоками.
+const DEPOSIT: int = 4
+const GRASS_GROUP: String = "meadow_grass"
 const MASK_RES: float = 0.25
 ## Чанки травы для отсечения по камере.
-const CHUNK: float = 20.0
+const CHUNK: float = 12.0
 ## Объекты крупнее этого (лопасти ветряка и т.п.) режутся до квадрата вокруг узла.
 const MAX_FOOTPRINT: float = 9.0
 
 @export var decor_seed: int = 4242
 @export var area_size: Vector2 = Vector2(78, 78)
-@export var grass_count: int = 12000
+## Шаг сетки пучков травы, м (≈ 7 пучков на м²).
+@export var grass_step: float = 0.36
+## Дальше этого расстояния от камеры — упрощённая трава.
+@export var grass_lod_distance: float = 36.0
 @export var flower_count: int = 900
 @export var bush_count: int = 46
 @export var pebble_count: int = 380
@@ -46,6 +53,7 @@ var _noise := FastNoiseLite.new()
 ## Сколько экземпляров каждого вида создано (для тестов и отладки).
 var counts: Dictionary = {}
 var bush_positions: Array[Vector3] = []
+var _deposit_grass: Array = []
 
 static var _mesh_cache: Dictionary = {}
 static var _grass_material: ShaderMaterial = null
@@ -175,7 +183,8 @@ func _build_mask() -> void:
 	# Жилы — сплошной вырез.
 	for d in get_tree().get_nodes_in_group(VoxelDepositScript.GROUP):
 		if d.has_method("get_footprint_rect"):
-			_mark_rect((d.get_footprint_rect() as Rect2).grow(0.3), NO_GRASS | NO_PROPS)
+			_mark_rect((d.get_footprint_rect() as Rect2).grow(0.3), NO_PROPS)
+			_mark_rect(d.get_footprint_rect() as Rect2, DEPOSIT)
 	# Станки, здания, грядки, фонари, декоративные скалы.
 	var props := world.get_node_or_null("Props")
 	if props:
@@ -208,34 +217,138 @@ func _density(p: Vector2) -> float:
 # --- Трава и цветы -------------------------------------------------------------
 
 func _spawn_grass() -> void:
-	var chunks: Dictionary = {}
+	# Сплошной ковёр: пучки по сетке с дрожанием (шаг grass_step), вид пучка —
+	# по шуму: сочный луг, дикие высокие куртины, короткая трава у двора и на жилах.
+	var kinds := MeadowGrass.Kind
+	var lists: Dictionary = {} # "chunk|kind|variant" -> [[xf, color], ...]
+	var far_lists: Dictionary = {}
+	var deposit_refs: Dictionary = {} # тот же ключ -> [[индекс, жила], ...]
+	var deposits: Array = get_tree().get_nodes_in_group(VoxelDepositScript.GROUP)
 	var placed: int = 0
-	var attempts: int = 0
-	while placed < grass_count and attempts < grass_count * 4:
-		attempts += 1
-		var p: Vector2 = _random_point()
-		if get_mask_at(p) & NO_GRASS:
-			continue
-		var sd: float = _yard_distance(p)
-		var keep: float = 0.25 + 0.75 * _density(p)
-		if sd < 1.5:
-			keep *= clampf((sd + 0.3) / 1.8, 0.0, 1.0) * 0.6
-		if _rng.randf() > keep:
-			continue
-		var s: float = _rng.randf_range(0.7, 1.25) * (0.85 + 0.4 * _density(p))
-		var basis := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(s, s * _rng.randf_range(0.85, 1.25), s))
-		var xf := Transform3D(basis, Vector3(p.x, 0.0, p.y))
-		var dry: float = clampf(_noise.get_noise_2d(p.x * 1.7 + 50.0, p.y * 1.7) * 0.9 + 0.2, 0.0, 1.0)
-		var col: Color = Color(0.9, 1.0, 0.85).lerp(Color(1.25, 1.12, 0.7), dry * 0.6) * _rng.randf_range(0.88, 1.1)
-		col.a = 1.0
-		var key := Vector2i(int(floor(p.x / CHUNK)), int(floor(p.y / CHUNK)))
-		if not chunks.has(key):
-			chunks[key] = []
-		chunks[key].append([xf, col])
-		placed += 1
-	for key in chunks.keys():
-		_add_multimesh("Grass_%d_%d" % [key.x, key.y], _get_mesh("grass"), _get_grass_material(), chunks[key], false)
+	var clover: int = 0
+	var nx: int = int(area_size.x / grass_step)
+	var ny: int = int(area_size.y / grass_step)
+	for gy in ny:
+		for gx in nx:
+			var p := Vector2(-area_size.x * 0.5 + (gx + _rng.randf()) * grass_step, -area_size.y * 0.5 + (gy + _rng.randf()) * grass_step)
+			var m: int = get_mask_at(p)
+			if m & NO_GRASS:
+				continue
+			var sd: float = _yard_distance(p)
+			if sd < -0.4:
+				continue
+			var on_deposit: bool = (m & DEPOSIT) != 0
+			var dens: float = _density(p)
+			var wild: float = _noise.get_noise_2d(p.x * 0.9 + 200.0, p.y * 0.9 - 40.0) * 0.5 + 0.5
+			var dry: float = clampf(_noise.get_noise_2d(p.x * 1.7 + 50.0, p.y * 1.7) * 0.9 + 0.2, 0.0, 1.0)
+			# У края двора — редкая примятая трава.
+			var edge: float = clampf((sd + 0.4) / 2.6, 0.0, 1.0)
+			if _rng.randf() > 0.25 + 0.75 * edge:
+				continue
+			var kind: int = kinds.LUSH
+			var size: float = _rng.randf_range(0.8, 1.2) * (0.85 + 0.35 * dens)
+			if on_deposit:
+				pass # обычный луг: жилу выдают только камешки-выходы породы
+			elif edge < 0.7:
+				kind = kinds.SHORT
+				size *= 1.0 + 0.6 * edge
+			elif wild > 0.68 and _rng.randf() < 0.5:
+				kind = kinds.TALL
+			elif _rng.randf() < 0.22:
+				kind = kinds.LUSH_WIDE
+			elif dens < 0.3 and _rng.randf() < 0.5:
+				kind = kinds.SHORT
+				size *= 1.5
+			var variant: int = _rng.randi() % int(MeadowGrass.VARIANTS[kind])
+			var basis := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(size, size * _rng.randf_range(0.85, 1.2), size))
+			var xf := Transform3D(basis, Vector3(p.x, 0.0, p.y))
+			var col: Color = Color(1.0, 1.0, 1.0).lerp(Color(1.18, 1.05, 0.62), dry * 0.55) * _rng.randf_range(0.9, 1.08)
+			col = col.lerp(Color(0.85, 0.95, 0.8), (1.0 - dens) * 0.3)
+			col.a = 1.0
+			var chunk := Vector2i(int(floor(p.x / CHUNK)), int(floor(p.y / CHUNK)))
+			var key := "%d|%d|%d|%d" % [chunk.x, chunk.y, kind, variant]
+			if not lists.has(key):
+				lists[key] = []
+			if on_deposit:
+				if not deposit_refs.has(key):
+					deposit_refs[key] = []
+				deposit_refs[key].append([lists[key].size(), _deposit_at(p, deposits)])
+			lists[key].append([xf, col])
+			placed += 1
+			# Дальний план: каждый третий пучок — простой широкий, без жил.
+			if placed % 3 == 0:
+				var fk := "%d|%d" % [chunk.x, chunk.y]
+				if not far_lists.has(fk):
+					far_lists[fk] = []
+				var fxf := Transform3D(basis.scaled(Vector3(1.35, 1.0, 1.35)), xf.origin)
+				if on_deposit:
+					if not deposit_refs.has("far|" + fk):
+						deposit_refs["far|" + fk] = []
+					deposit_refs["far|" + fk].append([far_lists[fk].size(), _deposit_at(p, deposits), fxf])
+				far_lists[fk].append([fxf, col])
+			# Клевер пятнами у корней.
+			if not on_deposit and edge > 0.6:
+				var cl: float = _noise.get_noise_2d(p.x * 1.3 - 90.0, p.y * 1.3 + 15.0)
+				if cl > 0.2 and _rng.randf() < 0.55:
+					var cp: Vector2 = p + Vector2(_rng.randf_range(-0.15, 0.15), _rng.randf_range(-0.15, 0.15))
+					var ck := "%d|%d|%d|%d" % [chunk.x, chunk.y, kinds.CLOVER, clover % 2]
+					if not lists.has(ck):
+						lists[ck] = []
+					var cs: float = _rng.randf_range(0.8, 1.25)
+					lists[ck].append([Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(cs, cs, cs)), Vector3(cp.x, 0.0, cp.y)), Color(1, 1, 1) * _rng.randf_range(0.85, 1.1)])
+					clover += 1
+	_deposit_grass.clear()
+	for key in lists.keys():
+		var parts: PackedStringArray = (key as String).split("|")
+		var kind: int = int(parts[2])
+		var mat: Material = MeadowGrass.get_clover_material() if kind == kinds.CLOVER else MeadowGrass.get_grass_material()
+		var mmi := _add_multimesh("Grass_%s" % (key as String).replace("|", "_"), MeadowGrass.get_mesh(kind, int(parts[3])), mat, lists[key], false)
+		mmi.visibility_range_end = grass_lod_distance + 4.0
+		mmi.visibility_range_end_margin = 2.0
+		mmi.add_to_group(GRASS_GROUP)
+		if deposit_refs.has(key):
+			for ref in deposit_refs[key]:
+				if ref[1] != null:
+					_deposit_grass.append([mmi, ref[0], ref[1], (lists[key][ref[0]][0] as Transform3D)])
+	for fk in far_lists.keys():
+		var far := _add_multimesh("GrassFar_%s" % (fk as String).replace("|", "_"), MeadowGrass.get_mesh(kinds.FAR, 0), MeadowGrass.get_grass_material(), far_lists[fk], false)
+		far.visibility_range_begin = grass_lod_distance
+		far.visibility_range_begin_margin = 2.0
+		if deposit_refs.has("far|" + fk):
+			for ref in deposit_refs["far|" + fk]:
+				if ref[1] != null:
+					_deposit_grass.append([far, ref[0], ref[1], ref[2]])
 	counts["grass"] = placed
+	counts["clover"] = clover
+	_connect_deposits(deposits)
+	sync_with_deposits()
+
+func _deposit_at(p: Vector2, deposits: Array) -> Node:
+	for d in deposits:
+		if (d.get_footprint_rect() as Rect2).has_point(p):
+			return d
+	return null
+
+func _connect_deposits(deposits: Array) -> void:
+	for d in deposits:
+		if d.has_signal("terrain_rebuilt") and not d.terrain_rebuilt.is_connected(sync_with_deposits):
+			d.terrain_rebuilt.connect(sync_with_deposits)
+
+## Прячет траву над выкопанными блоками верхнего слоя жил (после копания и загрузки).
+func sync_with_deposits() -> void:
+	var hidden: int = 0
+	for ref in _deposit_grass:
+		var mmi: MultiMeshInstance3D = ref[0]
+		var d: Node = ref[2]
+		if not is_instance_valid(mmi) or not is_instance_valid(d):
+			continue
+		var xf: Transform3D = ref[3]
+		var cell: Vector3i = d.global_to_cell(Vector3(xf.origin.x, -0.25, xf.origin.z))
+		var gone: bool = not d.is_solid(cell)
+		mmi.multimesh.set_instance_transform(ref[1], Transform3D(Basis().scaled(Vector3.ZERO), xf.origin) if gone else xf)
+		if gone:
+			hidden += 1
+	counts["grass_hidden"] = hidden
 
 func _spawn_flowers() -> void:
 	var palette: Array[Color] = [Color(0.96, 0.96, 0.92), Color(1.0, 0.86, 0.22), Color(0.4, 0.55, 1.0), Color(0.72, 0.42, 0.88), Color(0.95, 0.55, 0.7)]
@@ -244,7 +357,7 @@ func _spawn_flowers() -> void:
 	while items.size() < flower_count and guard < flower_count * 6:
 		guard += 1
 		var center: Vector2 = _random_point()
-		if get_mask_at(center) & NO_GRASS or _yard_distance(center) < 3.0:
+		if get_mask_at(center) & (NO_GRASS | DEPOSIT) or _yard_distance(center) < 3.0:
 			continue
 		var color: Color = palette[_rng.randi() % palette.size()]
 		var n: int = _rng.randi_range(12, 34)
@@ -252,7 +365,7 @@ func _spawn_flowers() -> void:
 			if items.size() >= flower_count:
 				break
 			var p: Vector2 = center + Vector2(_rng.randfn(0.0, 1.3), _rng.randfn(0.0, 1.3))
-			if get_mask_at(p) & NO_GRASS or _yard_distance(p) < 1.5:
+			if get_mask_at(p) & (NO_GRASS | DEPOSIT) or _yard_distance(p) < 1.5:
 				continue
 			var s: float = _rng.randf_range(0.75, 1.2)
 			var xf := Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(s, s, s)), Vector3(p.x, 0.0, p.y))
@@ -393,11 +506,22 @@ func _add_multimesh(node_name: String, mesh: Mesh, material: Material, items: Ar
 	mm.use_custom_data = custom
 	mm.mesh = mesh
 	mm.instance_count = items.size()
+	# Буфер целиком быстрее, чем set_instance_* для десятков тысяч пучков.
+	var stride: int = 16 + (4 if custom else 0)
+	var buf := PackedFloat32Array()
+	buf.resize(items.size() * stride)
 	for i in items.size():
-		mm.set_instance_transform(i, items[i][0])
-		mm.set_instance_color(i, items[i][1])
+		var xf: Transform3D = items[i][0]
+		var c: Color = items[i][1]
+		var o: int = i * stride
+		buf[o] = xf.basis.x.x; buf[o + 1] = xf.basis.y.x; buf[o + 2] = xf.basis.z.x; buf[o + 3] = xf.origin.x
+		buf[o + 4] = xf.basis.x.y; buf[o + 5] = xf.basis.y.y; buf[o + 6] = xf.basis.z.y; buf[o + 7] = xf.origin.y
+		buf[o + 8] = xf.basis.x.z; buf[o + 9] = xf.basis.y.z; buf[o + 10] = xf.basis.z.z; buf[o + 11] = xf.origin.z
+		buf[o + 12] = c.r; buf[o + 13] = c.g; buf[o + 14] = c.b; buf[o + 15] = c.a
 		if custom:
-			mm.set_instance_custom_data(i, items[i][2])
+			var u: Color = items[i][2]
+			buf[o + 16] = u.r; buf[o + 17] = u.g; buf[o + 18] = u.b; buf[o + 19] = u.a
+	mm.buffer = buf
 	var mmi := MultiMeshInstance3D.new()
 	mmi.name = node_name
 	mmi.multimesh = mm

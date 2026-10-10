@@ -89,9 +89,9 @@ static func _draw_tile(t: int) -> Image:
 	rng.seed = 7919 + t * 104729
 	match t:
 		Tile.GRASS_TOP:
-			_grain(img, rng, Color(0.25, 0.345, 0.195), 0.06, 0.035)
+			_grain(img, rng, Color(0.22, 0.36, 0.11), 0.05, 0.03)
 			for i in 34:
-				var c: Color = Color(0.33, 0.45, 0.24) if rng.randf() < 0.6 else Color(0.2, 0.29, 0.16)
+				var c: Color = Color(0.29, 0.44, 0.14) if rng.randf() < 0.6 else Color(0.16, 0.27, 0.08)
 				var x: int = rng.randi_range(0, TILE - 1)
 				var y: int = rng.randi_range(0, TILE - 1)
 				_px(img, x, y, c)
