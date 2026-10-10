@@ -40,3 +40,4 @@ __pycache__/
 # Сборка моделей из Blender (tools/create_smelter_model.py, tools/create_crusher_model.py)
 smelter_build/
 crusher_build/
+storage_build/

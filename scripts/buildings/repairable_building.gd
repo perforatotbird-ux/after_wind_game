@@ -302,6 +302,12 @@ func _update_visuals() -> void:
 		var stage_node = visuals_root.get_node_or_null(node_name)
 		if stage_node:
 			stage_node.visible = (i == current_stage)
+	# Коллизии, которые есть только на одной стадии (StaticBody3D/Stage<N>…), — включены только на ней.
+	var body := get_node_or_null("StaticBody3D")
+	if body:
+		for shape in body.get_children():
+			if shape is CollisionShape3D and String(shape.name).begins_with("Stage"):
+				shape.set_deferred("disabled", not String(shape.name).begins_with("Stage%d" % current_stage))
 
 func _play_upgrade_effect() -> void:
 	if not visuals_root:
