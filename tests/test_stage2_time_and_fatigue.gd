@@ -94,7 +94,42 @@ func _run_tests() -> void:
 	if not player.can_sprint(): _fail("Спринт не разблокировался после сна")
 	print("✅ Механика сна в доме: время перемотано на День 2 (06:00, Утро), силы восстановлены на 100%!")
 	
-	# 5. Проверка обновления HUD
+	# 5. Проверка системы здоровья и урона от истощения
+	if player.health < 99.9: _fail("Здоровье игрока после сна не равно 100%")
+	player.take_damage(20.0, "test")
+	if abs(player.health - 80.0) > 0.1: _fail("take_damage не уменьшил здоровье до 80 (текущее: %.1f)" % player.health)
+	player.heal(10.0)
+	if abs(player.health - 90.0) > 0.1: _fail("heal не восстановил здоровье до 90 (текущее: %.1f)" % player.health)
+	player.heal(50.0)
+	if abs(player.health - 100.0) > 0.1: _fail("heal превысил max_health")
+	print("✅ Система здоровья (health, take_damage, heal) функционирует корректно.")
+	
+	# 6. Проверка дебафов депривации сна (> 24 ч и > 36 ч)
+	player.energy = 100.0
+	player.hours_without_sleep = 0.0
+	if player.is_sleep_deprived(): _fail("is_sleep_deprived() возвращает true при 0 часах без сна")
+	if player.get_effective_max_energy() != 100.0: _fail("Эффективный максимум энергии при 0 ч без сна != 100")
+	
+	# 25 часов без сна (> 24ч)
+	player.hours_without_sleep = 25.0
+	if not player.is_sleep_deprived(): _fail("is_sleep_deprived() возвращает false при 25 часах без сна")
+	if player.get_effective_max_energy() > 75.0: _fail("Максимум энергии не урезан до 75 при 25 ч без сна")
+	if player.get_speed_multiplier() > 0.85: _fail("Скорость не снизилась на 20%% при 24+ ч без сна")
+	
+	# 37 часов без сна (> 36ч)
+	player.hours_without_sleep = 37.0
+	if player.get_effective_max_energy() > 50.0: _fail("Максимум энергии не урезан до 50 при 36+ ч без сна")
+	if player.can_sprint(): _fail("Спринт должен быть заблокирован при 36+ ч без сна")
+	if player.get_speed_multiplier() > 0.70: _fail("Скорость недостаточно снижена при критической бессоннице")
+	
+	# Сон в доме сбрасывает бессонницу
+	house.sleep(player)
+	if player.hours_without_sleep > 0.01: _fail("Сон не сбросил hours_without_sleep в 0")
+	if player.is_sleep_deprived(): _fail("Персонаж все еще sleep_deprived после сна")
+	if player.get_effective_max_energy() < 99.9: _fail("Эффективный максимум энергии не восстановился до 100 после сна")
+	print("✅ Дебафы бессонницы (>24ч и >36ч) и их снятие сном успешно подтверждены.")
+	
+	# 7. Проверка обновления HUD
 	if hud.time_label.text.is_empty(): _fail("TimeLabel пуст")
 	print("✅ Отображение времени в интерфейсе HUD: '%s'." % hud.time_label.text)
 	

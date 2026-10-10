@@ -55,7 +55,7 @@ func _init_default_stages() -> void:
 					"stage": 1,
 					"name": "Расчищенный каркас",
 					"description": "Завалы строительного мусора убраны, балки укреплены, натянут плотный тент.",
-					"perks": "Базовая защита от осадков и ветра.",
+					"perks": "Базовая защита от осадков и ветра. 🛏️ Доступен базовый сон под тентом.",
 					"cost_credits": 20,
 					"cost_materials": {
 						"wood": 8,
@@ -312,7 +312,7 @@ func _play_upgrade_effect() -> void:
 	tw.tween_property(visuals_root, "scale", orig_scale, 0.18)
 
 func can_sleep() -> bool:
-	return building_id == "house" and current_stage >= 2
+	return building_id == "house" and current_stage >= 1
 
 func sleep(player: Node) -> void:
 	if not can_sleep():

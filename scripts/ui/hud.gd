@@ -395,8 +395,14 @@ func bind_player(player: Node) -> void:
 		player.focused_interactable_changed.connect(_on_focused_interactable_changed)
 	if player.has_signal("notification_received"):
 		player.notification_received.connect(show_notification)
+	if player.has_signal("health_changed"):
+		player.health_changed.connect(_on_health_changed)
+	if "health" in player and "max_health" in player:
+		_on_health_changed(player.health, player.max_health)
 	if player.has_signal("energy_changed"):
 		player.energy_changed.connect(_on_energy_changed)
+	if "energy" in player and "max_energy" in player:
+		_on_energy_changed(player.energy, player.max_energy)
 	if player.has_signal("inventory_toggle_requested"):
 		player.inventory_toggle_requested.connect(toggle_inventory)
 	if player.has_signal("thirst_changed"):
@@ -458,12 +464,34 @@ func _highlight_slot(active_index: int) -> void:
 			btn.add_theme_stylebox_override("normal", style_slot_normal)
 			btn.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
 
+func _on_health_changed(curr: float, max_v: float) -> void:
+	if health_bar:
+		health_bar.value = (curr / max_v) * 100.0
+	if health_label:
+		var pct: int = int((curr / max_v) * 100.0)
+		if pct <= 25:
+			health_label.text = "❤️ Здоровье %d%% (Опасно!)" % pct
+			health_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.25))
+		elif pct <= 50:
+			health_label.text = "❤️ Здоровье %d%% (Ранение)" % pct
+			health_label.add_theme_color_override("font_color", Color(1.0, 0.65, 0.25))
+		else:
+			health_label.text = "❤️ Здоровье %d%%" % pct
+			health_label.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+
 func _on_energy_changed(curr: float, max_v: float) -> void:
 	if energy_bar:
 		energy_bar.value = (curr / max_v) * 100.0
 	if energy_label:
 		var pct: int = int((curr / max_v) * 100.0)
-		if pct <= 0:
+		var is_deprived: bool = false
+		if _bound_player and _bound_player.has_method("is_sleep_deprived"):
+			is_deprived = _bound_player.is_sleep_deprived()
+		
+		if is_deprived:
+			energy_label.text = "⚡ Энергия %d%% (Бессонница!)" % pct
+			energy_label.add_theme_color_override("font_color", Color(0.9, 0.5, 0.95))
+		elif pct <= 0:
 			energy_label.text = "⚡ Энергия %d%% (Истощение!)" % pct
 			energy_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
 		elif pct < 20:

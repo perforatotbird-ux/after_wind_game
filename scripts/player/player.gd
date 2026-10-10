@@ -2,6 +2,7 @@ extends CharacterBody3D
 
 signal focused_interactable_changed(interactable: Area3D)
 signal notification_received(text: String)
+signal health_changed(current: float, max_val: float)
 signal energy_changed(current: float, max_val: float)
 signal thirst_changed(current: float, max_val: float)
 signal hunger_changed(current: float, max_val: float)
@@ -17,13 +18,16 @@ signal character_class_changed(class_id: String, c_name: String)
 @export var rotation_speed: float = 10.0
 
 @export_group("Stats")
+@export var max_health: float = 100.0
 @export var max_energy: float = 100.0
-@export var energy_recovery_rate: float = 2.0
+@export var energy_recovery_rate: float = 0.35
 @export var max_thirst: float = 100.0
 @export var thirst_decay_rate: float = 0.2
 @export var max_hunger: float = 100.0
 @export var hunger_decay_rate: float = 0.15
 @export var max_wetness: float = 100.0
+@export var sleep_deprivation_threshold: float = 24.0
+@export var critical_sleep_threshold: float = 36.0
 
 @export_group("Specialization")
 @export var character_class: String = "miner"
@@ -72,10 +76,13 @@ const LOCOMOTION_SPEED_SCALE_MAX: float = 1.6
 @onready var interaction_detector: Area3D = $InteractionDetector
 @onready var inventory: Node = $Inventory
 
+var health: float = 100.0
 var energy: float = 100.0
 var thirst: float = 100.0
 var hunger: float = 100.0
 var wetness: float = 0.0
+var hours_without_sleep: float = 0.0
+var _last_sleep_warning_hour: int = 0
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 var nearby_interactables: Array[Area3D] = []
 var current_interactable: Area3D = null
@@ -169,10 +176,14 @@ func _ready() -> void:
 	if inventory and inventory.has_signal("tool_changed"):
 		inventory.tool_changed.connect(_on_inventory_tool_changed)
 	
+	health = max_health
 	energy = max_energy
 	thirst = max_thirst
 	hunger = max_hunger
 	wetness = 0.0
+	hours_without_sleep = 0.0
+	_last_sleep_warning_hour = 0
+	health_changed.emit(health, max_health)
 	energy_changed.emit(energy, max_energy)
 	thirst_changed.emit(thirst, max_thirst)
 	hunger_changed.emit(hunger, max_hunger)
@@ -196,6 +207,8 @@ func _physics_process(delta: float) -> void:
 	_handle_thirst(delta)
 	_handle_hunger(delta)
 	_handle_wetness(delta)
+	_handle_sleep_need(delta)
+	_handle_health(delta)
 	_update_best_interactable()
 	_handle_interaction_input()
 	_try_step_up(delta)
@@ -295,6 +308,25 @@ func equip_slot(slot_index: int) -> void:
 		if current_interactable:
 			focused_interactable_changed.emit(current_interactable)
 
+func get_effective_max_energy() -> float:
+	if hours_without_sleep >= critical_sleep_threshold:
+		return 50.0
+	elif hours_without_sleep >= sleep_deprivation_threshold:
+		return 75.0
+	return max_energy
+
+func is_sleep_deprived() -> bool:
+	return hours_without_sleep >= sleep_deprivation_threshold
+
+func get_sleep_status_text() -> String:
+	if hours_without_sleep >= critical_sleep_threshold:
+		return "Критическое переутомление (без сна %.1f ч)" % hours_without_sleep
+	elif hours_without_sleep >= sleep_deprivation_threshold:
+		return "Бессонница (без сна %.1f ч)" % hours_without_sleep
+	elif hours_without_sleep >= 18.0:
+		return "Усталость (без сна %.1f ч)" % hours_without_sleep
+	return "Бодр"
+
 func get_speed_multiplier() -> float:
 	var e_mult: float = 1.0
 	if energy >= 50.0:
@@ -332,19 +364,47 @@ func get_speed_multiplier() -> float:
 	elif wetness >= 40.0:
 		w_mult = 0.92
 
+	# Дебаф от недостатка сна (> 24 часов)
+	var s_mult: float = 1.0
+	if hours_without_sleep >= critical_sleep_threshold:
+		s_mult = 0.65 # -35% скорости при критическом недосыпе
+	elif hours_without_sleep >= sleep_deprivation_threshold:
+		s_mult = 0.80 # -20% скорости если без сна более суток
+	elif hours_without_sleep >= 18.0:
+		s_mult = 0.92 # -8% легкая вялость под вечер
+
 	var mining_mult: float = 0.0 if (is_mining or is_digging or is_scooping) else 1.0
-	return e_mult * t_mult * h_mult * w_mult * mining_mult
+	return e_mult * t_mult * h_mult * w_mult * s_mult * mining_mult
 
 func can_sprint() -> bool:
-	return energy >= 20.0 and thirst > 10.0 and hunger > 10.0
+	if hours_without_sleep >= critical_sleep_threshold:
+		return false # при критической бессоннице (>36ч) спринт заблокирован
+	var min_e: float = 35.0 if hours_without_sleep >= sleep_deprivation_threshold else 20.0
+	return energy >= min_e and thirst > 10.0 and hunger > 10.0
 
 func _handle_energy_regen(delta: float) -> void:
 	var sprint_active: bool = Input.is_action_pressed("sprint") and can_sprint() and velocity.length_squared() > 1.0
 	if sprint_active:
-		consume_energy(5.0 * delta)
+		var drain: float = 6.0
+		if hours_without_sleep >= sleep_deprivation_threshold:
+			drain = 9.0 # при бессоннице бег истощает гораздо сильнее
+		consume_energy(drain * delta)
 	else:
-		if energy < max_energy:
+		var eff_max: float = get_effective_max_energy()
+		if energy > eff_max:
+			# Плавное снижение излишка при накатившей бессоннице
+			energy = move_toward(energy, eff_max, 2.0 * delta)
+			energy_changed.emit(energy, max_energy)
+		elif energy < eff_max:
+			# При бессоннице (>= 24 ч) или сильном голоде/жажде естественная регенерация полностью заблокирована
+			if hours_without_sleep >= sleep_deprivation_threshold or hunger < 20.0 or thirst < 20.0:
+				return
+			
 			var regen: float = energy_recovery_rate
+			# При ходьбе восстановление сил снижается в 4 раза (25%)
+			if velocity.length_squared() > 0.5:
+				regen *= 0.25
+			
 			# Ночью на открытом воздухе регенерация энергии снижается вдвое
 			if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
 				_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
@@ -353,7 +413,7 @@ func _handle_energy_regen(delta: float) -> void:
 			# Промокший персонаж восстанавливает силы медленнее
 			if wetness >= 50.0:
 				regen *= 0.7
-			energy = min(max_energy, energy + regen * delta)
+			energy = min(eff_max, energy + regen * delta)
 			energy_changed.emit(energy, max_energy)
 
 func _handle_thirst(delta: float) -> void:
@@ -438,8 +498,119 @@ func consume_energy(amount: float) -> void:
 		mult = 1.5 # мокрая тяжелая одежда забирает больше сил
 	elif wetness >= 40.0:
 		mult = 1.25
+	
+	if hours_without_sleep >= critical_sleep_threshold:
+		mult *= 1.6 # критическая бессонница
+	elif hours_without_sleep >= sleep_deprivation_threshold:
+		mult *= 1.35 # бессонница более суток
+	
 	energy = max(0.0, energy - amount * mult)
 	energy_changed.emit(energy, max_energy)
+
+func _handle_sleep_need(delta: float) -> void:
+	if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
+		_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
+	
+	var hours_increment: float = 0.0
+	if _day_cycle and _day_cycle.has_method("get_hours_per_second"):
+		hours_increment = _day_cycle.get_hours_per_second() * delta
+	else:
+		# Резервный расчет, если DayNightCycle не найден (600 сек на сутки = 0.04 ч/сек)
+		hours_increment = (24.0 / 600.0) * delta
+	
+	hours_without_sleep += hours_increment
+	
+	var current_h_int: int = int(hours_without_sleep)
+	if current_h_int >= 18 and _last_sleep_warning_hour < 18:
+		_last_sleep_warning_hour = 18
+		notify("🥱 Наваливается усталость. Пора подумать о сне (18+ ч без сна).")
+	elif current_h_int >= 24 and _last_sleep_warning_hour < 24:
+		_last_sleep_warning_hour = 24
+		notify("⚠️ Вы не спали более суток! Регенерация сил заблокирована, скорость снижена.")
+	elif current_h_int >= 36 and _last_sleep_warning_hour < 36:
+		_last_sleep_warning_hour = 36
+		notify("☠️ Критическое переутомление! Персонаж теряет здоровье от бессонницы.")
+	
+	if hours_without_sleep >= 48.0:
+		_on_sleep_collapse()
+
+func _on_sleep_collapse() -> void:
+	notify("😵 Вы потеряли сознание от предельного переутомления (48 часов без сна)!")
+	hours_without_sleep = 0.0
+	_last_sleep_warning_hour = 0
+	energy = 30.0
+	health = max(20.0, health - 25.0)
+	if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
+		_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
+	if _day_cycle and _day_cycle.has_method("skip_to_morning"):
+		_day_cycle.skip_to_morning(8.0)
+	energy_changed.emit(energy, max_energy)
+	health_changed.emit(health, max_health)
+
+func _handle_health(delta: float) -> void:
+	var old_health: float = health
+	
+	# 1. Урон от критических потребностей
+	var damage_rate: float = 0.0
+	if thirst <= 0.0:
+		damage_rate += 1.2 # Сильное обезвоживание
+	if hunger <= 0.0:
+		damage_rate += 0.8 # Голод
+	if hours_without_sleep >= critical_sleep_threshold:
+		damage_rate += 0.4 # Критическое переутомление от бессонницы (> 36 часов)
+	
+	if damage_rate > 0.0:
+		health = max(0.0, health - damage_rate * delta)
+		if health <= 0.0:
+			_on_collapse("exhaustion")
+	else:
+		# 2. Пассивное восстановление здоровья (если сыт, утолил жажду, есть силы и нет депривации сна)
+		if health < max_health and hunger >= 70.0 and thirst >= 70.0 and energy >= 40.0 and hours_without_sleep < sleep_deprivation_threshold:
+			var regen_rate: float = 0.4
+			health = min(max_health, health + regen_rate * delta)
+	
+	if abs(old_health - health) > 0.01:
+		health_changed.emit(health, max_health)
+
+func take_damage(amount: float, reason: String = "") -> void:
+	if amount <= 0.0:
+		return
+	health = max(0.0, health - amount)
+	health_changed.emit(health, max_health)
+	if health <= 0.0:
+		_on_collapse(reason)
+
+func heal(amount: float) -> void:
+	if amount <= 0.0 or health >= max_health:
+		return
+	health = min(max_health, health + amount)
+	health_changed.emit(health, max_health)
+
+func _on_collapse(reason: String = "") -> void:
+	if reason == "exhaustion":
+		notify("💀 Вы упали без сил от истощения...")
+	else:
+		notify("💀 Вы потеряли сознание...")
+	
+	health = 50.0
+	energy = 40.0
+	thirst = max(25.0, thirst)
+	hunger = max(25.0, hunger)
+	hours_without_sleep = 0.0
+	_last_sleep_warning_hour = 0
+	
+	if not is_instance_valid(_house) and get_tree() and get_tree().root:
+		_house = get_tree().root.find_child("RepairableHouse", true, false)
+	if _house:
+		global_position = _house.global_position + Vector3(0.0, 0.5, 2.0)
+	else:
+		global_position = Vector3(0.0, 0.5, 0.0)
+	velocity = Vector3.ZERO
+	
+	health_changed.emit(health, max_health)
+	energy_changed.emit(energy, max_energy)
+	thirst_changed.emit(thirst, max_thirst)
+	hunger_changed.emit(hunger, max_hunger)
 
 func drink_water(amount: float = 40.0, is_clean: bool = true, energy_bonus: float = 0.0) -> bool:
 	if thirst >= max_thirst:
@@ -494,7 +665,7 @@ func eat_food(food_item_id: String) -> bool:
 		notify("ℹ️ У вас нет этого продукта!")
 		return false
 	
-	if hunger >= max_hunger and energy >= max_energy:
+	if hunger >= max_hunger and energy >= max_energy and health >= max_health:
 		notify("🍽️ Вы не голодны и полны сил (Сытость 100%).")
 		return false
 	
@@ -502,6 +673,7 @@ func eat_food(food_item_id: String) -> bool:
 	var h_rec: float = item_data.get("hunger_recovery", 25.0)
 	var e_rec: float = item_data.get("energy_bonus", 10.0)
 	var t_rec: float = item_data.get("thirst_recovery", 0.0)
+	var hp_rec: float = item_data.get("health_bonus", 10.0)
 	var item_name: String = item_data.get("name", food_item_id)
 	var item_icon: String = item_data.get("icon", "🍎")
 
@@ -510,8 +682,12 @@ func eat_food(food_item_id: String) -> bool:
 	hunger = min(max_hunger, hunger + h_rec)
 	hunger_changed.emit(hunger, max_hunger)
 
+	if hp_rec > 0.0 and health < max_health:
+		health = min(max_health, health + hp_rec)
+		health_changed.emit(health, max_health)
+
 	if e_rec > 0.0:
-		energy = min(max_energy, energy + e_rec)
+		energy = min(get_effective_max_energy(), energy + e_rec)
 		energy_changed.emit(energy, max_energy)
 
 	if t_rec > 0.0:
@@ -539,8 +715,12 @@ func eat_from_inventory(preferred_item_id: String = "") -> bool:
 	return eat_food(target_item)
 
 func rest_in_bed(new_day: int = -1) -> void:
+	hours_without_sleep = 0.0
+	_last_sleep_warning_hour = 0
 	energy = max_energy
 	energy_changed.emit(energy, max_energy)
+	health = max_health
+	health_changed.emit(health, max_health)
 	if thirst < 35.0:
 		thirst = 35.0
 		thirst_changed.emit(thirst, max_thirst)
@@ -550,9 +730,9 @@ func rest_in_bed(new_day: int = -1) -> void:
 	wetness = 0.0
 	wetness_changed.emit(wetness, max_wetness)
 	if new_day > 0:
-		notify("💤 Вы отлично выспались в тепле! Наступил День %d. Энергия 100%%." % new_day)
+		notify("💤 Вы отлично выспались в тепле! Наступил День %d. Здоровье и энергия 100%%." % new_day)
 	else:
-		notify("💤 Вы отлично выспались и полностью восстановили силы! Энергия 100%.")
+		notify("💤 Вы отлично выспались и полностью восстановили силы! Здоровье и энергия 100%.")
 
 func _check_bounds() -> void:
 	if global_position.y < -5.0:

@@ -45,10 +45,12 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"y": player.global_position.y,
 				"z": player.global_position.z
 			},
+			"health": player.health if "health" in player else 100.0,
 			"energy": player.energy if "energy" in player else 100.0,
 			"thirst": player.thirst if "thirst" in player else 100.0,
 			"hunger": player.hunger if "hunger" in player else 100.0,
-			"wetness": player.wetness if "wetness" in player else 0.0
+			"wetness": player.wetness if "wetness" in player else 0.0,
+			"hours_without_sleep": player.hours_without_sleep if "hours_without_sleep" in player else 0.0
 		}
 		
 		# 3. Инвентарь (max_slots / max_weight — справочно: при загрузке пересчитываются)
@@ -285,6 +287,12 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				pos_dict.get("z", player.global_position.z)
 			)
 		
+		if p_data.has("health"):
+			player.health = p_data["health"]
+			if player.has_signal("health_changed"):
+				player.health_changed.emit(player.health, player.max_health)
+		if p_data.has("hours_without_sleep"):
+			player.hours_without_sleep = p_data["hours_without_sleep"]
 		if p_data.has("energy"):
 			player.energy = p_data["energy"]
 			if player.has_signal("energy_changed"):
@@ -554,7 +562,7 @@ static func _validate_save_data(data: Dictionary) -> bool:
 	if p.has("character_class"):
 		if not p["character_class"] is String or CharacterClassDB.get_class_data(p["character_class"]).is_empty():
 			return false
-	for key in ["energy", "thirst", "hunger", "wetness"]:
+	for key in ["energy", "thirst", "hunger", "wetness", "health", "hours_without_sleep"]:
 		if p.has(key) and not _is_number(p[key], 0.0):
 			return false
 	if p.has("position"):
