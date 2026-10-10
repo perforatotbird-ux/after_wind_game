@@ -1,0 +1,822 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+<defs>
+
+<!-- Фоновый студийный градиент -->
+<radialGradient id="bgStudio" cx="50%" cy="45%" r="70%">
+    <stop offset="0%" stop-color="#edf0f3"/>
+    <stop offset="60%" stop-color="#d6dadf"/>
+    <stop offset="100%" stop-color="#c4c9cf"/>
+</radialGradient>
+
+<!-- Мягкая контактная тень -->
+<radialGradient id="shadowFloor" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#181c20" stop-opacity="0.35"/>
+    <stop offset="50%" stop-color="#181c20" stop-opacity="0.15"/>
+    <stop offset="100%" stop-color="#181c20" stop-opacity="0.0"/>
+</radialGradient>
+
+<!-- Палитра: Чугун и темная сталь -->
+<linearGradient id="ironH" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#24272b"/>
+    <stop offset="35%" stop-color="#464b52"/>
+    <stop offset="70%" stop-color="#32353a"/>
+    <stop offset="100%" stop-color="#1c1e21"/>
+</linearGradient>
+
+<linearGradient id="ironV" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#464b52"/>
+    <stop offset="50%" stop-color="#32353a"/>
+    <stop offset="100%" stop-color="#1e2023"/>
+</linearGradient>
+
+<!-- Палитра: Состаренная латунь (шестерни, втулки, манометр) -->
+<linearGradient id="brassH" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#6e5318"/>
+    <stop offset="30%" stop-color="#c29837"/>
+    <stop offset="65%" stop-color="#e8be56"/>
+    <stop offset="100%" stop-color="#7a5b1c"/>
+</linearGradient>
+
+<!-- Палитра: Состаренная медь (трубы, клапаны) -->
+<linearGradient id="copperH" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#542416"/>
+    <stop offset="40%" stop-color="#9e4b30"/>
+    <stop offset="70%" stop-color="#be6244"/>
+    <stop offset="100%" stop-color="#5c2617"/>
+</linearGradient>
+
+<!-- Палитра: Серый гранит (жернова) -->
+<linearGradient id="graniteH" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#484a4d"/>
+    <stop offset="30%" stop-color="#73767a"/>
+    <stop offset="60%" stop-color="#888c91"/>
+    <stop offset="100%" stop-color="#525559"/>
+</linearGradient>
+
+<radialGradient id="graniteTop" cx="45%" cy="45%" r="55%">
+    <stop offset="0%" stop-color="#9ea2a8"/>
+    <stop offset="60%" stop-color="#767a7f"/>
+    <stop offset="100%" stop-color="#55585c"/>
+</radialGradient>
+
+<!-- Палитра: Выветренная древесина балок -->
+<linearGradient id="woodBeamV" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#342214"/>
+    <stop offset="25%" stop-color="#543924"/>
+    <stop offset="75%" stop-color="#63452c"/>
+    <stop offset="100%" stop-color="#3b2617"/>
+</linearGradient>
+
+<!-- Эффекты: пар и дым -->
+<radialGradient id="steamPuff" cx="40%" cy="40%" r="55%">
+    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+    <stop offset="50%" stop-color="#e2e6eb" stop-opacity="0.45"/>
+    <stop offset="100%" stop-color="#cbd0d6" stop-opacity="0.0"/>
+</radialGradient>
+
+<radialGradient id="smokePuff" cx="45%" cy="45%" r="55%">
+    <stop offset="0%" stop-color="#52565c" stop-opacity="0.75"/>
+    <stop offset="55%" stop-color="#3a3d42" stop-opacity="0.4"/>
+    <stop offset="100%" stop-color="#2a2c30" stop-opacity="0.0"/>
+</radialGradient>
+
+<radialGradient id="dustCloud" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#b8b3a7" stop-opacity="0.6"/>
+    <stop offset="50%" stop-color="#a39e93" stop-opacity="0.25"/>
+    <stop offset="100%" stop-color="#8e897e" stop-opacity="0.0"/>
+</radialGradient>
+
+<filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur stdDeviation="3" result="blur"/>
+    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+</filter>
+
+</defs>
+<rect width="1920" height="1080" fill="url(#bgStudio)"/>
+<rect x="25" y="22" width="368" height="308" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="195" cy="311.5" rx="199.5" ry="44.1" fill="url(#shadowFloor)"/>
+<polygon points="116.25,243.25 179.25,271.6 284.25,238.0 221.25,211.75" fill="#63666b" stroke="#2b2d30" stroke-width="2.1"/>
+<polygon points="116.25,243.25 179.25,271.6 179.25,303.1 116.25,274.75" fill="#4d5054" stroke="#2b2d30" stroke-width="2.1"/>
+<polygon points="179.25,271.6 284.25,238.0 284.25,269.5 179.25,303.1" fill="#383a3d" stroke="#2b2d30" stroke-width="2.1"/>
+<rect x="123.6" y="138.25" width="16.8" height="120.75" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="2.1"/>
+<rect x="192.9" y="124.6" width="16.8" height="131.25" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="2.1"/>
+<polygon points="119.39999999999999,138.25 213.9,124.6 213.9,141.4 119.39999999999999,155.05" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="2.1"/>
+<polygon points="123.6,155.05 142.5,151.9 123.6,169.75" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.5750000000000002"/>
+<circle cx="129.89999999999998" cy="160.3" r="2.1" fill="#787e87"/>
+<ellipse cx="168.75" cy="240.10000000000002" rx="50.400000000000006" ry="21.0" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="2.1"/>
+<path d="M 118.35 240.10000000000002 A 50.400000000000006 21.0 0 0 0 219.15 240.10000000000002 L 219.15 256.9 A 50.400000000000006 21.0 0 0 1 118.35 256.9 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="2.1"/>
+<path d="M 122.55 234.85 A 48.300000000000004 18.900000000000002 0 0 0 217.05 234.85 L 217.05 236.95 A 48.300000000000004 18.900000000000002 0 0 1 122.55 236.95 Z" fill="#151718"/>
+<path d="M 117.3 204.4 A 51.45 22.05 0 0 0 220.2 204.4 L 220.2 229.60000000000002 A 51.45 22.05 0 0 1 117.3 229.60000000000002 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="2.1"/>
+<ellipse cx="168.75" cy="204.4" rx="51.45" ry="22.05" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="2.1"/>
+<path d="M 117.3 214.9 A 51.45 22.05 0 0 0 220.2 214.9 L 220.2 221.20000000000002 A 51.45 22.05 0 0 1 117.3 221.20000000000002 Z" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.5750000000000002"/>
+<line x1="182.1" y1="207.1" x2="211.6" y2="212.8" stroke="#33363a" stroke-width="2.1"/>
+<line x1="173.8" y1="210.3" x2="184.9" y2="223.1" stroke="#33363a" stroke-width="2.1"/>
+<line x1="162.5" y1="210.1" x2="148.8" y2="222.5" stroke="#33363a" stroke-width="2.1"/>
+<line x1="154.9" y1="206.6" x2="124.3" y2="211.2" stroke="#33363a" stroke-width="2.1"/>
+<line x1="155.4" y1="201.7" x2="125.9" y2="196.0" stroke="#33363a" stroke-width="2.1"/>
+<line x1="163.7" y1="198.5" x2="152.6" y2="185.7" stroke="#33363a" stroke-width="2.1"/>
+<line x1="175.0" y1="198.7" x2="188.7" y2="186.3" stroke="#33363a" stroke-width="2.1"/>
+<line x1="182.6" y1="202.2" x2="213.2" y2="197.6" stroke="#33363a" stroke-width="2.1"/>
+<rect x="165.6" y="122.5" width="7.3500000000000005" height="84.0" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.5750000000000002"/>
+<polygon points="157.2,126.69999999999999 179.25,123.55 175.05,136.15 161.4,138.25" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.5750000000000002"/>
+<polygon points="179.25,123.55 181.35,138.25 189.75,135.1 187.65,120.4" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.5750000000000002"/>
+<polygon points="187.65,124.6 245.4,137.2 245.4,142.45 187.65,129.85" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.5750000000000002"/>
+<rect x="231.75" y="150.85" width="42.0" height="78.75" rx="5.25" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.1"/>
+<ellipse cx="252.75" cy="150.85" rx="21.0" ry="9.450000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.1"/>
+<path d="M 231.75 177.1 A 21.0 9.450000000000001 0 0 0 273.75 177.1" fill="none" stroke="url(#brassH)" stroke-width="4.2"/>
+<path d="M 231.75 208.6 A 21.0 9.450000000000001 0 0 0 273.75 208.6" fill="none" stroke="url(#brassH)" stroke-width="4.2"/>
+<circle cx="244.35" cy="168.7" r="8.4" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.26"/>
+<circle cx="244.35" cy="168.7" r="6.300000000000001" fill="#f6f3eb"/>
+<line x1="244.35" y1="168.7" x2="247.5" y2="164.5" stroke="#a82313" stroke-width="1.26"/>
+<rect x="240.15" y="77.35" width="14.700000000000001" height="75.60000000000001" fill="url(#ironH)" stroke="#181a1c" stroke-width="2.1"/>
+<rect x="238.05" y="124.6" width="18.900000000000002" height="5.25" fill="#222426"/>
+<polygon points="234.9,77.35 260.1,77.35 247.5,66.85" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.5750000000000002"/>
+<ellipse cx="255.9" cy="225.4" rx="31.5" ry="14.175" fill="none" stroke="url(#ironH)" stroke-width="6.300000000000001"/>
+<ellipse cx="255.9" cy="225.4" rx="8.4" ry="4.2" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.5750000000000002"/>
+<line x1="255.9" y1="225.4" x2="276.7" y2="234.8" stroke="url(#ironH)" stroke-width="2.625"/>
+<line x1="255.9" y1="225.4" x2="235.1" y2="234.8" stroke="url(#ironH)" stroke-width="2.625"/>
+<line x1="255.9" y1="225.4" x2="235.1" y2="216.0" stroke="url(#ironH)" stroke-width="2.625"/>
+<line x1="255.9" y1="225.4" x2="276.7" y2="216.0" stroke="url(#ironH)" stroke-width="2.625"/>
+<line x1="213.9" y1="231.7" x2="269.3" y2="231.3" stroke="url(#brassH)" stroke-width="3.6750000000000003"/>
+<circle cx="269.3" cy="231.3" r="3.1500000000000004" fill="#ebd076"/>
+<polygon points="130.95,70.0 200.25,62.65 187.65,117.25 143.55,121.45" fill="url(#ironV)" stroke="#1a1c1e" stroke-width="2.1"/>
+<polygon points="135.15,72.1 196.05,65.8 185.55,83.65 145.65,87.85" fill="#1c1e21"/>
+<polygon points="156.15,81.55 166.65,75.25 175.05,83.65 164.55,92.05" fill="#767980" stroke="#2a2c2e" stroke-width="1.5750000000000002"/>
+<polygon points="172.95,89.95 183.45,83.65 187.65,96.25 177.15,100.45" fill="#5a5d62" stroke="#2a2c2e" stroke-width="1.5750000000000002"/>
+<polygon points="134.1,246.4 98.39999999999999,267.4 108.89999999999999,277.9 144.6,256.9" fill="url(#ironH)" stroke="#181a1c" stroke-width="2.1"/>
+<polygon points="132.0,245.35000000000002 100.5,264.25 104.7,269.5 136.2,250.60000000000002" fill="#25272a"/>
+<ellipse cx="94.19999999999999" cy="286.3" rx="11.760000000000002" ry="5.880000000000001" fill="#63666b" stroke="#36383b" stroke-width="1.5750000000000002"/>
+<circle cx="90.83999999999999" cy="287.14" r="2.625" fill="#888c92"/>
+<circle cx="95.88" cy="285.04" r="2.625" fill="#888c92"/>
+<circle cx="98.39999999999999" cy="287.98" r="2.625" fill="#888c92"/>
+<circle cx="92.93999999999998" cy="284.2" r="2.625" fill="#888c92"/>
+<circle cx="247.5" cy="59.5" r="9.3" fill="url(#smokePuff)" opacity="0.41"/>
+<circle cx="264.3" cy="51.4" r="14.0" fill="url(#smokePuff)" opacity="0.33"/>
+<circle cx="269.4" cy="43.3" r="19.4" fill="url(#smokePuff)" opacity="0.25"/>
+<circle cx="272.8" cy="35.2" r="26.4" fill="url(#smokePuff)" opacity="0.16"/>
+<ellipse cx="232.8" cy="80.5" rx="2.1" ry="3.3600000000000003" fill="url(#steamPuff)" opacity="0.14"/>
+<ellipse cx="168.75" cy="222.25" rx="57.75" ry="23.1" fill="url(#dustCloud)" opacity="0.08"/>
+<ellipse cx="153.0" cy="230.65" rx="36.75" ry="15.75" fill="url(#dustCloud)" opacity="0.06"/>
+<rect x="403" y="22" width="368" height="308" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="575" cy="311.5" rx="199.5" ry="44.1" fill="url(#shadowFloor)"/>
+<polygon points="491.0,248.5 617.0,274.75 674.75,253.75 548.75,227.5" fill="#4d5054" stroke="#252729" stroke-width="2.1"/>
+<polygon points="491.0,248.5 617.0,274.75 617.0,301.0 491.0,274.75" fill="#3f4144" stroke="#252729" stroke-width="2.1"/>
+<polygon points="617.0,274.75 674.75,253.75 674.75,280.0 617.0,301.0" fill="#2e3033" stroke="#252729" stroke-width="2.1"/>
+<rect x="506.75" y="143.5" width="18.900000000000002" height="120.75" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="2.1"/>
+<rect x="590.75" y="127.75" width="18.900000000000002" height="120.75" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="2.1"/>
+<rect x="538.25" y="164.5" width="54.6" height="99.75" rx="6.300000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.1"/>
+<ellipse cx="565.55" cy="164.5" rx="27.3" ry="12.600000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.1"/>
+<rect x="558.2" y="59.5" width="16.8" height="105.0" fill="url(#ironH)" stroke="#181a1c" stroke-width="2.1"/>
+<path d="M 565.55 185.5 L 611.75 185.5 L 611.75 232.75" fill="none" stroke="url(#copperH)" stroke-width="4.2"/>
+<circle cx="627.5" cy="59.5" r="9.3" fill="url(#smokePuff)" opacity="0.41"/>
+<circle cx="644.3" cy="51.4" r="14.0" fill="url(#smokePuff)" opacity="0.33"/>
+<circle cx="649.4" cy="43.3" r="19.4" fill="url(#smokePuff)" opacity="0.25"/>
+<circle cx="652.8" cy="35.2" r="26.4" fill="url(#smokePuff)" opacity="0.16"/>
+<ellipse cx="612.8" cy="80.5" rx="2.1" ry="3.3600000000000003" fill="url(#steamPuff)" opacity="0.14"/>
+<rect x="781" y="22" width="368" height="308" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="955" cy="311.5" rx="199.5" ry="44.1" fill="url(#shadowFloor)"/>
+<rect x="876.25" y="264.25" width="157.5" height="42.0" fill="#525559" stroke="#252729" stroke-width="2.1"/>
+<rect x="886.75" y="133.0" width="23.1" height="136.5" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="2.1"/>
+<rect x="1000.15" y="133.0" width="23.1" height="136.5" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="2.1"/>
+<rect x="881.5" y="124.6" width="147.0" height="18.900000000000002" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="2.1"/>
+<rect x="900.4" y="219.1" width="109.2" height="39.9" rx="4.2" fill="url(#graniteH)" stroke="#222426" stroke-width="2.625"/>
+<rect x="904.6" y="210.7" width="100.80000000000001" height="8.4" fill="#1a1c1e"/>
+<rect x="898.3" y="170.8" width="113.4" height="39.9" rx="4.2" fill="url(#graniteH)" stroke="#222426" stroke-width="2.625"/>
+<rect x="897.25" y="183.4" width="115.5" height="10.5" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.5750000000000002"/>
+<rect x="947.65" y="106.75" width="14.700000000000001" height="68.25" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.1"/>
+<polygon points="936.1,106.75 973.9,106.75 967.6,122.5 942.4,122.5" fill="url(#brassH)" stroke="#523d11" stroke-width="1.5750000000000002"/>
+<polygon points="907.75,54.25 1002.25,54.25 981.25,101.5 928.75,101.5" fill="url(#ironV)" stroke="#181a1c" stroke-width="2.625"/>
+<polygon points="904.6,243.25 865.75,274.75 871.0,290.5 910.9,256.9" fill="url(#ironH)" stroke="#181a1c" stroke-width="2.1"/>
+<ellipse cx="862.6" cy="295.75" rx="14.700000000000001" ry="7.560000000000001" fill="#63666b" stroke="#383a3d" stroke-width="1.5750000000000002"/>
+<circle cx="920.4" cy="59.5" r="9.3" fill="url(#smokePuff)" opacity="0.41"/>
+<circle cx="937.1" cy="51.4" r="14.0" fill="url(#smokePuff)" opacity="0.33"/>
+<circle cx="942.2" cy="43.3" r="19.4" fill="url(#smokePuff)" opacity="0.25"/>
+<circle cx="945.7" cy="35.2" r="26.4" fill="url(#smokePuff)" opacity="0.16"/>
+<ellipse cx="905.65" cy="80.5" rx="2.1" ry="3.3600000000000003" fill="url(#steamPuff)" opacity="0.14"/>
+<ellipse cx="928.75" cy="222.25" rx="57.75" ry="23.1" fill="url(#dustCloud)" opacity="0.08"/>
+<ellipse cx="913.0" cy="230.65" rx="36.75" ry="15.75" fill="url(#dustCloud)" opacity="0.06"/>
+<rect x="1159" y="22" width="368" height="308" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="1335" cy="311.5" rx="199.5" ry="44.1" fill="url(#shadowFloor)"/>
+<rect x="1251.0" y="264.25" width="168.0" height="42.0" fill="#525559" stroke="#252729" stroke-width="2.1"/>
+<rect x="1272.0" y="143.5" width="57.75" height="120.75" rx="6.300000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.1"/>
+<path d="M 1272.0 143.5 Q 1300.875 122.5 1329.75 143.5" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.1"/>
+<rect x="1270.95" y="180.25" width="59.85" height="6.300000000000001" fill="url(#brassH)"/>
+<rect x="1270.95" y="222.25" width="59.85" height="6.300000000000001" fill="url(#brassH)"/>
+<circle cx="1287.75" cy="164.5" r="11.55" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.5750000000000002"/>
+<circle cx="1287.75" cy="164.5" r="8.4" fill="#f2efe9"/>
+<line x1="1287.75" y1="164.5" x2="1293.0" y2="159.25" stroke="#a82313" stroke-width="1.5750000000000002"/>
+<rect x="1290.9" y="59.5" width="18.900000000000002" height="73.5" fill="url(#ironH)" stroke="#181a1c" stroke-width="2.1"/>
+<polygon points="1284.6,59.5 1309.8,59.5 1300.35,46.900000000000006" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.5750000000000002"/>
+<rect x="1345.5" y="225.4" width="47.25" height="25.200000000000003" rx="3.1500000000000004" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.1"/>
+<line x1="1345.5" y1="238.0" x2="1333.95" y2="238.0" stroke="#8c929a" stroke-width="4.2"/>
+<circle cx="1361.25" cy="185.5" r="44.1" fill="none" stroke="url(#ironH)" stroke-width="8.4"/>
+<circle cx="1361.25" cy="185.5" r="12.600000000000001" fill="url(#brassH)" stroke="#3a2b09" stroke-width="2.1"/>
+<line x1="1361.25" y1="185.5" x2="1389.5" y2="213.7" stroke="url(#ironH)" stroke-width="3.6750000000000003"/>
+<line x1="1361.25" y1="185.5" x2="1350.9" y2="224.0" stroke="url(#ironH)" stroke-width="3.6750000000000003"/>
+<line x1="1361.25" y1="185.5" x2="1322.7" y2="195.8" stroke="url(#ironH)" stroke-width="3.6750000000000003"/>
+<line x1="1361.25" y1="185.5" x2="1333.0" y2="157.3" stroke="url(#ironH)" stroke-width="3.6750000000000003"/>
+<line x1="1361.25" y1="185.5" x2="1371.6" y2="147.0" stroke="url(#ironH)" stroke-width="3.6750000000000003"/>
+<line x1="1361.25" y1="185.5" x2="1399.8" y2="175.2" stroke="url(#ironH)" stroke-width="3.6750000000000003"/>
+<circle cx="1387.5" cy="59.5" r="9.3" fill="url(#smokePuff)" opacity="0.41"/>
+<circle cx="1404.3" cy="51.4" r="14.0" fill="url(#smokePuff)" opacity="0.33"/>
+<circle cx="1409.4" cy="43.3" r="19.4" fill="url(#smokePuff)" opacity="0.25"/>
+<circle cx="1412.8" cy="35.2" r="26.4" fill="url(#smokePuff)" opacity="0.16"/>
+<ellipse cx="1372.8" cy="80.5" rx="2.1" ry="3.3600000000000003" fill="url(#steamPuff)" opacity="0.14"/>
+<rect x="1537" y="22" width="368" height="308" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="1715" cy="311.5" rx="199.5" ry="44.1" fill="url(#shadowFloor)"/>
+<rect x="1599.5" y="70.0" width="231.0" height="210.0" rx="10.5" fill="#5a5d62" stroke="#36383b" stroke-width="2.1"/>
+<circle cx="1699.25" cy="175" r="78.75" fill="url(#graniteH)" stroke="#2b2d30" stroke-width="3.1500000000000004"/>
+<circle cx="1699.25" cy="175" r="71.4" fill="url(#graniteTop)" stroke="#222426" stroke-width="2.1"/>
+<line x1="1718.3" y1="183.9" x2="1762.1" y2="204.3" stroke="#36383b" stroke-width="2.625"/>
+<line x1="1711.3" y1="192.2" x2="1739.0" y2="231.8" stroke="#36383b" stroke-width="2.625"/>
+<line x1="1701.1" y1="195.9" x2="1705.3" y2="244.0" stroke="#36383b" stroke-width="2.625"/>
+<line x1="1690.4" y1="194.0" x2="1670.0" y2="237.8" stroke="#36383b" stroke-width="2.625"/>
+<line x1="1682.0" y1="187.0" x2="1642.5" y2="214.7" stroke="#36383b" stroke-width="2.625"/>
+<line x1="1678.3" y1="176.8" x2="1630.2" y2="181.0" stroke="#36383b" stroke-width="2.625"/>
+<line x1="1680.2" y1="166.1" x2="1636.4" y2="145.7" stroke="#36383b" stroke-width="2.625"/>
+<line x1="1687.2" y1="157.8" x2="1659.5" y2="118.2" stroke="#36383b" stroke-width="2.625"/>
+<line x1="1697.4" y1="154.1" x2="1693.2" y2="106.0" stroke="#36383b" stroke-width="2.625"/>
+<line x1="1708.1" y1="156.0" x2="1728.5" y2="112.2" stroke="#36383b" stroke-width="2.625"/>
+<line x1="1716.5" y1="163.0" x2="1756.0" y2="135.3" stroke="#36383b" stroke-width="2.625"/>
+<line x1="1720.2" y1="173.2" x2="1768.3" y2="169.0" stroke="#36383b" stroke-width="2.625"/>
+<polygon points="1662.5,122.5 1736.0,122.5 1725.5,217.0 1673.0,217.0" fill="url(#ironV)" stroke="#1a1c1e" stroke-width="2.625"/>
+<rect x="1678.25" y="138.25" width="52.5" height="57.75" fill="#202225"/>
+<polygon points="1694.0,154.0 1704.5,145.6 1715,156.1 1702.4,166.6" fill="#6b6f75" stroke="#333"/>
+<polygon points="1709.75,164.5 1723.4,154.0 1727.6,169.75 1717.1,180.25" fill="#54575c" stroke="#333"/>
+<circle cx="1788.5" cy="164.5" r="36.75" fill="url(#ironH)" stroke="#1f2124" stroke-width="2.1"/>
+<circle cx="1799.0" cy="154.0" r="12.600000000000001" fill="#1c1e21" stroke="#4c5056" stroke-width="2.1"/>
+<rect x="1780.1" y="211.75" width="16.8" height="52.5" rx="3.1500000000000004" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.5750000000000002"/>
+<rect x="25" y="345" width="226" height="285" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<rect x="131.0" y="402.0" width="14.0" height="80.0" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.0"/>
+<rect x="123.0" y="467.0" width="30.0" height="22.0" fill="url(#brassH)" stroke="#4a370e" stroke-width="2.0"/>
+<path d="M 73.0 482.0 A 65.0 28.0 0 0 0 203.0 482.0 L 203.0 515.0 A 65.0 28.0 0 0 1 73.0 515.0 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="2.5"/>
+<ellipse cx="138" cy="482.0" rx="65.0" ry="28.0" fill="url(#graniteTop)" stroke="#252729" stroke-width="2.5"/>
+<path d="M 72.0 497.0 A 66.0 28.0 0 0 0 204.0 497.0 L 204.0 505.0 A 66.0 28.0 0 0 1 72.0 505.0 Z" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.0"/>
+<line x1="156.0" y1="482.0" x2="198.0" y2="482.0" stroke="#2e3033" stroke-width="2.5"/>
+<line x1="153.6" y1="486.0" x2="190.0" y2="495.0" stroke="#2e3033" stroke-width="2.5"/>
+<line x1="147.0" y1="488.9" x2="168.0" y2="504.5" stroke="#2e3033" stroke-width="2.5"/>
+<line x1="138.0" y1="490.0" x2="138.0" y2="508.0" stroke="#2e3033" stroke-width="2.5"/>
+<line x1="129.0" y1="488.9" x2="108.0" y2="504.5" stroke="#2e3033" stroke-width="2.5"/>
+<line x1="122.4" y1="486.0" x2="86.0" y2="495.0" stroke="#2e3033" stroke-width="2.5"/>
+<line x1="120.0" y1="482.0" x2="78.0" y2="482.0" stroke="#2e3033" stroke-width="2.5"/>
+<line x1="122.4" y1="478.0" x2="86.0" y2="469.0" stroke="#2e3033" stroke-width="2.5"/>
+<line x1="129.0" y1="475.1" x2="108.0" y2="459.5" stroke="#2e3033" stroke-width="2.5"/>
+<line x1="138.0" y1="474.0" x2="138.0" y2="456.0" stroke="#2e3033" stroke-width="2.5"/>
+<line x1="147.0" y1="475.1" x2="168.0" y2="459.5" stroke="#2e3033" stroke-width="2.5"/>
+<line x1="153.6" y1="478.0" x2="190.0" y2="469.0" stroke="#2e3033" stroke-width="2.5"/>
+<rect x="263" y="345" width="226" height="285" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<rect x="301.0" y="512.0" width="150.0" height="45.0" rx="4.0" fill="#54575b" stroke="#252729" stroke-width="2.0"/>
+<path d="M 311.0 477.0 A 65.0 28.0 0 0 0 441.0 477.0 L 441.0 512.0 A 65.0 28.0 0 0 1 311.0 512.0 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="2.5"/>
+<ellipse cx="376" cy="477.0" rx="65.0" ry="28.0" fill="url(#graniteTop)" stroke="#252729" stroke-width="2.5"/>
+<rect x="316.0" y="492.0" width="15.0" height="30.0" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.5"/>
+<circle cx="323.5" cy="502.0" r="2.5" fill="#787e87"/>
+<rect x="421.0" y="492.0" width="15.0" height="30.0" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.5"/>
+<circle cx="428.5" cy="502.0" r="2.5" fill="#787e87"/>
+<rect x="501" y="345" width="226" height="285" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<rect x="608.0" y="407.0" width="12.0" height="140.0" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.0"/>
+<rect x="544.0" y="481.0" width="140.0" height="12.0" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.0"/>
+<rect x="629.0" y="467.0" width="32.0" height="40.0" rx="3.0" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.0"/>
+<polygon points="569.0,452.0 659.0,452.0 644.0,475.0 584.0,475.0" fill="url(#brassH)" stroke="#4a370e" stroke-width="2.0"/>
+<line x1="579.0" y1="452.0" x2="589.5" y2="475.0" stroke="#594312" stroke-width="2.0"/>
+<line x1="594.0" y1="452.0" x2="600.0" y2="475.0" stroke="#594312" stroke-width="2.0"/>
+<line x1="609.0" y1="452.0" x2="610.5" y2="475.0" stroke="#594312" stroke-width="2.0"/>
+<line x1="624.0" y1="452.0" x2="621.0" y2="475.0" stroke="#594312" stroke-width="2.0"/>
+<line x1="639.0" y1="452.0" x2="631.5" y2="475.0" stroke="#594312" stroke-width="2.0"/>
+<line x1="654.0" y1="452.0" x2="642.0" y2="475.0" stroke="#594312" stroke-width="2.0"/>
+<polygon points="579.0,442.0 602.0,457.0 602.0,517.0 579.0,532.0" fill="url(#brassH)" stroke="#4a370e" stroke-width="2.0"/>
+<line x1="579.0" y1="452.0" x2="602.0" y2="462.5" stroke="#594312" stroke-width="2.0"/>
+<line x1="579.0" y1="467.0" x2="602.0" y2="473.0" stroke="#594312" stroke-width="2.0"/>
+<line x1="579.0" y1="482.0" x2="602.0" y2="483.5" stroke="#594312" stroke-width="2.0"/>
+<line x1="579.0" y1="497.0" x2="602.0" y2="494.0" stroke="#594312" stroke-width="2.0"/>
+<line x1="579.0" y1="512.0" x2="602.0" y2="504.5" stroke="#594312" stroke-width="2.0"/>
+<line x1="579.0" y1="527.0" x2="602.0" y2="515.0" stroke="#594312" stroke-width="2.0"/>
+<rect x="739" y="345" width="226" height="285" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<circle cx="852" cy="487" r="62.0" fill="none" stroke="url(#ironH)" stroke-width="14.0"/>
+<circle cx="852" cy="487" r="69.0" fill="none" stroke="#1a1c1e" stroke-width="1.5"/>
+<circle cx="852" cy="487" r="55.0" fill="none" stroke="#1a1c1e" stroke-width="1.5"/>
+<circle cx="852" cy="487" r="18.0" fill="url(#brassH)" stroke="#4a370e" stroke-width="2.0"/>
+<circle cx="852" cy="487" r="6.0" fill="#1c1e21"/>
+<line x1="852" y1="487" x2="907.0" y2="487.0" stroke="url(#ironH)" stroke-width="5.0"/>
+<line x1="852" y1="487" x2="879.5" y2="534.6" stroke="url(#ironH)" stroke-width="5.0"/>
+<line x1="852" y1="487" x2="824.5" y2="534.6" stroke="url(#ironH)" stroke-width="5.0"/>
+<line x1="852" y1="487" x2="797.0" y2="487.0" stroke="url(#ironH)" stroke-width="5.0"/>
+<line x1="852" y1="487" x2="824.5" y2="439.4" stroke="url(#ironH)" stroke-width="5.0"/>
+<line x1="852" y1="487" x2="879.5" y2="439.4" stroke="url(#ironH)" stroke-width="5.0"/>
+<circle cx="877.5" cy="512.5" r="7.0" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.5"/>
+<circle cx="877.5" cy="512.5" r="3.0" fill="#ffffff"/>
+<rect x="977" y="345" width="226" height="285" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<rect x="1020.0" y="459.0" width="75.0" height="56.0" rx="4.0" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="2.0"/>
+<rect x="1025.0" y="465.0" width="65.0" height="44.0" fill="#202225"/>
+<rect x="1045.0" y="467.0" width="24.0" height="40.0" rx="2.0" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.5"/>
+<rect x="1069.0" y="482.0" width="38.0" height="10.0" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.5"/>
+<circle cx="1107.0" cy="487" r="9.0" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.5"/>
+<line x1="1107.0" y1="487" x2="1155.0" y2="512.0" stroke="url(#ironH)" stroke-width="7.0" stroke-linecap="round"/>
+<circle cx="1155.0" cy="512.0" r="8.0" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.5"/>
+<rect x="1215" y="345" width="226" height="285" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<polygon points="1263.0,427.0 1393.0,427.0 1356.0,522.0 1300.0,522.0" fill="url(#ironV)" stroke="#1a1c1e" stroke-width="2.5"/>
+<polygon points="1273.0,431.0 1383.0,431.0 1350.0,462.0 1306.0,462.0" fill="#1f2124"/>
+<line x1="1283.0" y1="431.0" x2="1313.0" y2="522.0" stroke="url(#ironH)" stroke-width="3.0"/>
+<line x1="1373.0" y1="431.0" x2="1343.0" y2="522.0" stroke="url(#ironH)" stroke-width="3.0"/>
+<circle cx="1273.0" cy="442.0" r="2.2" fill="#787e87"/>
+<circle cx="1383.0" cy="442.0" r="2.2" fill="#787e87"/>
+<circle cx="1280.0" cy="462.0" r="2.2" fill="#787e87"/>
+<circle cx="1376.0" cy="462.0" r="2.2" fill="#787e87"/>
+<circle cx="1287.0" cy="482.0" r="2.2" fill="#787e87"/>
+<circle cx="1369.0" cy="482.0" r="2.2" fill="#787e87"/>
+<circle cx="1294.0" cy="502.0" r="2.2" fill="#787e87"/>
+<circle cx="1362.0" cy="502.0" r="2.2" fill="#787e87"/>
+<polygon points="1306.0,439.0 1322.0,429.0 1336.0,442.0 1320.0,455.0" fill="#6b6f75" stroke="#25272a" stroke-width="1.5"/>
+<polygon points="1333.0,447.0 1350.0,439.0 1354.0,457.0 1340.0,465.0" fill="#52555a" stroke="#25272a" stroke-width="1.5"/>
+<rect x="1453" y="345" width="226" height="285" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<rect x="1550.0" y="402.0" width="32.0" height="155.0" fill="url(#ironH)" stroke="#181a1c" stroke-width="2.0"/>
+<rect x="1546.0" y="442.0" width="40.0" height="10.0" rx="2.0" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.5"/>
+<circle cx="1550.0" cy="447.0" r="2.0" fill="#888e96"/>
+<circle cx="1582.0" cy="447.0" r="2.0" fill="#888e96"/>
+<rect x="1546.0" y="497.0" width="40.0" height="10.0" rx="2.0" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.5"/>
+<circle cx="1550.0" cy="502.0" r="2.0" fill="#888e96"/>
+<circle cx="1582.0" cy="502.0" r="2.0" fill="#888e96"/>
+<rect x="1546.0" y="537.0" width="40.0" height="10.0" rx="2.0" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.5"/>
+<circle cx="1550.0" cy="542.0" r="2.0" fill="#888e96"/>
+<circle cx="1582.0" cy="542.0" r="2.0" fill="#888e96"/>
+<polygon points="1540.0,402.0 1592.0,402.0 1566,382.0" fill="url(#ironH)" stroke="#181a1c" stroke-width="2.0"/>
+<line x1="1550.0" y1="402.0" x2="1550.0" y2="412.0" stroke="#1c1e21" stroke-width="3.0"/>
+<line x1="1582.0" y1="402.0" x2="1582.0" y2="412.0" stroke="#1c1e21" stroke-width="3.0"/>
+<ellipse cx="1566" cy="372.0" rx="18.0" ry="12.0" fill="url(#smokePuff)" opacity="0.6"/>
+<rect x="1691" y="345" width="226" height="285" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<polygon points="1839.0,432.0 1759.0,477.0 1769.0,502.0 1849.0,457.0" fill="url(#ironH)" stroke="#181a1c" stroke-width="2.0"/>
+<polygon points="1834.0,435.0 1762.0,479.0 1766.0,489.0 1838.0,445.0" fill="#202225"/>
+<rect x="1819.0" y="462.0" width="12.0" height="40.0" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.5"/>
+<ellipse cx="1754.0" cy="522.0" rx="35.0" ry="16.0" fill="#63666b" stroke="#36383b" stroke-width="1.5"/>
+<circle cx="1742.0" cy="525.0" r="3.0" fill="#888c92"/>
+<circle cx="1752.0" cy="517.0" r="3.0" fill="#888c92"/>
+<circle cx="1762.0" cy="524.0" r="3.0" fill="#888c92"/>
+<circle cx="1736.0" cy="520.0" r="3.0" fill="#888c92"/>
+<circle cx="1769.0" cy="528.0" r="3.0" fill="#888c92"/>
+<rect x="25" y="645" width="226" height="415" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="138" cy="981.6" rx="174.8" ry="38.64" fill="url(#shadowFloor)"/>
+<polygon points="69.0,921.8 124.2,946.64 216.2,917.2 161.0,894.2" fill="#63666b" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="69.0,921.8 124.2,946.64 124.2,974.24 69.0,949.4" fill="#4d5054" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="124.2,946.64 216.2,917.2 216.2,944.8 124.2,974.24" fill="#383a3d" stroke="#2b2d30" stroke-width="1.84"/>
+<rect x="75.44" y="829.8" width="14.72" height="105.80000000000001" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<rect x="136.16" y="817.84" width="14.72" height="115.0" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="71.75999999999999,829.8 154.56,817.84 154.56,832.56 71.75999999999999,844.52" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="75.44,844.52 92.0,841.76 75.44,857.4" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<circle cx="80.96000000000001" cy="849.12" r="1.84" fill="#787e87"/>
+<ellipse cx="115.0" cy="919.04" rx="44.160000000000004" ry="18.400000000000002" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 70.84 919.04 A 44.160000000000004 18.400000000000002 0 0 0 159.16 919.04 L 159.16 933.76 A 44.160000000000004 18.400000000000002 0 0 1 70.84 933.76 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<path d="M 74.52 914.44 A 42.32 16.560000000000002 0 0 0 157.32 914.44 L 157.32 916.28 A 42.32 16.560000000000002 0 0 1 74.52 916.28 Z" fill="#151718"/>
+<path d="M 69.92 887.76 A 45.080000000000005 19.32 0 0 0 160.08 887.76 L 160.08 909.84 A 45.080000000000005 19.32 0 0 1 69.92 909.84 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<ellipse cx="115.0" cy="887.76" rx="45.080000000000005" ry="19.32" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 69.92 896.96 A 45.080000000000005 19.32 0 0 0 160.08 896.96 L 160.08 902.48 A 45.080000000000005 19.32 0 0 1 69.92 902.48 Z" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<line x1="127.9" y1="887.8" x2="156.4" y2="887.8" stroke="#33363a" stroke-width="1.84"/>
+<line x1="124.1" y1="891.7" x2="144.3" y2="900.1" stroke="#33363a" stroke-width="1.84"/>
+<line x1="115.0" y1="893.3" x2="115.0" y2="905.2" stroke="#33363a" stroke-width="1.84"/>
+<line x1="105.9" y1="891.7" x2="85.7" y2="900.1" stroke="#33363a" stroke-width="1.84"/>
+<line x1="102.1" y1="887.8" x2="73.6" y2="887.8" stroke="#33363a" stroke-width="1.84"/>
+<line x1="105.9" y1="883.9" x2="85.7" y2="875.4" stroke="#33363a" stroke-width="1.84"/>
+<line x1="115.0" y1="882.2" x2="115.0" y2="870.3" stroke="#33363a" stroke-width="1.84"/>
+<line x1="124.1" y1="883.9" x2="144.3" y2="875.4" stroke="#33363a" stroke-width="1.84"/>
+<rect x="112.24" y="816.0" width="6.44" height="73.60000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<polygon points="104.88,819.68 124.2,816.92 120.52,827.96 108.56,829.8" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="124.2,816.92 126.03999999999999,829.8 133.4,827.04 131.56,814.16" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="131.56,817.84 182.16,828.88 182.16,833.48 131.56,822.44" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<rect x="170.2" y="840.84" width="36.800000000000004" height="69.0" rx="4.6000000000000005" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<ellipse cx="188.6" cy="840.84" rx="18.400000000000002" ry="8.280000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<path d="M 170.2 863.84 A 18.400000000000002 8.280000000000001 0 0 0 207.0 863.84" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<path d="M 170.2 891.44 A 18.400000000000002 8.280000000000001 0 0 0 207.0 891.44" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<circle cx="181.23999999999998" cy="856.48" r="7.36" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.104"/>
+<circle cx="181.23999999999998" cy="856.48" r="5.5200000000000005" fill="#f6f3eb"/>
+<line x1="181.23999999999998" y1="856.48" x2="184.0" y2="852.8" stroke="#a82313" stroke-width="1.104"/>
+<rect x="177.56" y="776.44" width="12.88" height="66.24000000000001" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<rect x="175.72" y="817.84" width="16.560000000000002" height="4.6000000000000005" fill="#222426"/>
+<polygon points="172.96,776.44 195.04,776.44 184.0,767.24" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.3800000000000001"/>
+<ellipse cx="191.36" cy="906.16" rx="27.6" ry="12.420000000000002" fill="none" stroke="url(#ironH)" stroke-width="5.5200000000000005"/>
+<ellipse cx="191.36" cy="906.16" rx="7.36" ry="3.68" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.3800000000000001"/>
+<line x1="191.36" y1="906.16" x2="217.1" y2="906.2" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="191.36" y1="906.16" x2="191.4" y2="917.8" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="191.36" y1="906.16" x2="165.6" y2="906.2" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="191.36" y1="906.16" x2="191.4" y2="894.6" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="154.56" y1="911.68" x2="207.9" y2="906.2" stroke="url(#brassH)" stroke-width="3.22"/>
+<circle cx="207.9" cy="906.2" r="2.7600000000000002" fill="#ebd076"/>
+<polygon points="81.88,770.0 142.6,763.5600000000001 131.56,811.4000000000001 92.92,815.08" fill="url(#ironV)" stroke="#1a1c1e" stroke-width="1.84"/>
+<polygon points="85.56,771.84 138.92000000000002,766.32 129.72,781.96 94.75999999999999,785.6400000000001" fill="#1c1e21"/>
+<polygon points="84.64,924.56 53.36,942.96 62.56,952.16 93.84,933.76" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<polygon points="82.8,923.64 55.2,940.2 58.879999999999995,944.8 86.47999999999999,928.24" fill="#25272a"/>
+<rect x="263" y="645" width="226" height="415" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="376" cy="981.6" rx="174.8" ry="38.64" fill="url(#shadowFloor)"/>
+<polygon points="307.0,921.8 362.2,946.64 454.2,917.2 399.0,894.2" fill="#63666b" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="307.0,921.8 362.2,946.64 362.2,974.24 307.0,949.4" fill="#4d5054" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="362.2,946.64 454.2,917.2 454.2,944.8 362.2,974.24" fill="#383a3d" stroke="#2b2d30" stroke-width="1.84"/>
+<rect x="313.44" y="829.8" width="14.72" height="105.80000000000001" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<rect x="374.16" y="817.84" width="14.72" height="115.0" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="309.76,829.8 392.56,817.84 392.56,832.56 309.76,844.52" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="313.44,844.52 330.0,841.76 313.44,857.4" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<circle cx="318.96" cy="849.12" r="1.84" fill="#787e87"/>
+<ellipse cx="353.0" cy="919.04" rx="44.160000000000004" ry="18.400000000000002" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 308.84000000000003 919.04 A 44.160000000000004 18.400000000000002 0 0 0 397.16 919.04 L 397.16 933.76 A 44.160000000000004 18.400000000000002 0 0 1 308.84000000000003 933.76 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<path d="M 312.52 914.44 A 42.32 16.560000000000002 0 0 0 395.32 914.44 L 395.32 916.28 A 42.32 16.560000000000002 0 0 1 312.52 916.28 Z" fill="#151718"/>
+<path d="M 307.92 887.76 A 45.080000000000005 19.32 0 0 0 398.08 887.76 L 398.08 909.84 A 45.080000000000005 19.32 0 0 1 307.92 909.84 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<ellipse cx="353.0" cy="887.76" rx="45.080000000000005" ry="19.32" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 307.92 896.96 A 45.080000000000005 19.32 0 0 0 398.08 896.96 L 398.08 902.48 A 45.080000000000005 19.32 0 0 1 307.92 902.48 Z" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<line x1="365.4" y1="889.2" x2="393.0" y2="892.3" stroke="#33363a" stroke-width="1.84"/>
+<line x1="359.4" y1="892.5" x2="373.7" y2="902.9" stroke="#33363a" stroke-width="1.84"/>
+<line x1="349.7" y1="893.1" x2="342.3" y2="904.6" stroke="#33363a" stroke-width="1.84"/>
+<line x1="341.8" y1="890.5" x2="317.1" y2="896.5" stroke="#33363a" stroke-width="1.84"/>
+<line x1="340.6" y1="886.3" x2="313.0" y2="883.2" stroke="#33363a" stroke-width="1.84"/>
+<line x1="346.6" y1="883.0" x2="332.3" y2="872.6" stroke="#33363a" stroke-width="1.84"/>
+<line x1="356.3" y1="882.4" x2="363.7" y2="870.9" stroke="#33363a" stroke-width="1.84"/>
+<line x1="364.2" y1="885.0" x2="388.9" y2="879.0" stroke="#33363a" stroke-width="1.84"/>
+<rect x="350.24" y="816.0" width="6.44" height="73.60000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<polygon points="342.88,819.68 362.2,816.92 358.52,827.96 346.56,829.8" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="362.2,816.92 364.04,829.8 371.4,827.04 369.56,814.16" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="369.56,817.84 420.16,828.88 420.16,833.48 369.56,822.44" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<rect x="408.20000000000005" y="840.84" width="36.800000000000004" height="69.0" rx="4.6000000000000005" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<ellipse cx="426.6" cy="840.84" rx="18.400000000000002" ry="8.280000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<path d="M 408.20000000000005 863.84 A 18.400000000000002 8.280000000000001 0 0 0 445.0 863.84" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<path d="M 408.20000000000005 891.44 A 18.400000000000002 8.280000000000001 0 0 0 445.0 891.44" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<circle cx="419.24" cy="856.48" r="7.36" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.104"/>
+<circle cx="419.24" cy="856.48" r="5.5200000000000005" fill="#f6f3eb"/>
+<line x1="419.24" y1="856.48" x2="422.0" y2="852.8" stroke="#a82313" stroke-width="1.104"/>
+<rect x="415.56" y="776.44" width="12.88" height="66.24000000000001" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<rect x="413.72" y="817.84" width="16.560000000000002" height="4.6000000000000005" fill="#222426"/>
+<polygon points="410.96,776.44 433.04,776.44 422.0,767.24" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.3800000000000001"/>
+<ellipse cx="429.36" cy="906.16" rx="27.6" ry="12.420000000000002" fill="none" stroke="url(#ironH)" stroke-width="5.5200000000000005"/>
+<ellipse cx="429.36" cy="906.16" rx="7.36" ry="3.68" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.3800000000000001"/>
+<line x1="429.36" y1="906.16" x2="447.6" y2="914.4" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="429.36" y1="906.16" x2="411.1" y2="914.4" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="429.36" y1="906.16" x2="411.1" y2="898.0" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="429.36" y1="906.16" x2="447.6" y2="898.0" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="392.56" y1="911.68" x2="441.1" y2="911.4" stroke="url(#brassH)" stroke-width="3.22"/>
+<circle cx="441.1" cy="911.4" r="2.7600000000000002" fill="#ebd076"/>
+<polygon points="319.88,770.0 380.6,763.5600000000001 369.56,811.4000000000001 330.92,815.08" fill="url(#ironV)" stroke="#1a1c1e" stroke-width="1.84"/>
+<polygon points="323.56,771.84 376.92,766.32 367.72,781.96 332.76,785.6400000000001" fill="#1c1e21"/>
+<polygon points="322.64,924.56 291.36,942.96 300.56,952.16 331.84,933.76" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<polygon points="320.8,923.64 293.2,940.2 296.88,944.8 324.48,928.24" fill="#25272a"/>
+<ellipse cx="409.12" cy="779.1999999999999" rx="3.22" ry="5.152" fill="url(#steamPuff)" opacity="0.24"/>
+<rect x="501" y="645" width="226" height="415" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="614" cy="981.6" rx="174.8" ry="38.64" fill="url(#shadowFloor)"/>
+<polygon points="545.0,921.8 600.2,946.64 692.2,917.2 637.0,894.2" fill="#63666b" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="545.0,921.8 600.2,946.64 600.2,974.24 545.0,949.4" fill="#4d5054" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="600.2,946.64 692.2,917.2 692.2,944.8 600.2,974.24" fill="#383a3d" stroke="#2b2d30" stroke-width="1.84"/>
+<rect x="551.44" y="829.8" width="14.72" height="105.80000000000001" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<rect x="612.16" y="817.84" width="14.72" height="115.0" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="547.76,829.8 630.56,817.84 630.56,832.56 547.76,844.52" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="551.44,844.52 568.0,841.76 551.44,857.4" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<circle cx="556.96" cy="849.12" r="1.84" fill="#787e87"/>
+<ellipse cx="591.0" cy="919.04" rx="44.160000000000004" ry="18.400000000000002" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 546.84 919.04 A 44.160000000000004 18.400000000000002 0 0 0 635.16 919.04 L 635.16 933.76 A 44.160000000000004 18.400000000000002 0 0 1 546.84 933.76 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<path d="M 550.52 914.44 A 42.32 16.560000000000002 0 0 0 633.32 914.44 L 633.32 916.28 A 42.32 16.560000000000002 0 0 1 550.52 916.28 Z" fill="#151718"/>
+<path d="M 545.92 887.76 A 45.080000000000005 19.32 0 0 0 636.08 887.76 L 636.08 909.84 A 45.080000000000005 19.32 0 0 1 545.92 909.84 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<ellipse cx="591.0" cy="887.76" rx="45.080000000000005" ry="19.32" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 545.92 896.96 A 45.080000000000005 19.32 0 0 0 636.08 896.96 L 636.08 902.48 A 45.080000000000005 19.32 0 0 1 545.92 902.48 Z" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<line x1="601.6" y1="890.9" x2="624.9" y2="897.8" stroke="#33363a" stroke-width="1.84"/>
+<line x1="593.2" y1="893.2" x2="598.2" y2="905.0" stroke="#33363a" stroke-width="1.84"/>
+<line x1="583.6" y1="892.3" x2="567.3" y2="902.1" stroke="#33363a" stroke-width="1.84"/>
+<line x1="578.3" y1="888.7" x2="550.2" y2="890.8" stroke="#33363a" stroke-width="1.84"/>
+<line x1="580.4" y1="884.6" x2="557.1" y2="877.7" stroke="#33363a" stroke-width="1.84"/>
+<line x1="588.8" y1="882.3" x2="583.8" y2="870.5" stroke="#33363a" stroke-width="1.84"/>
+<line x1="598.4" y1="883.2" x2="614.7" y2="873.4" stroke="#33363a" stroke-width="1.84"/>
+<line x1="603.7" y1="886.8" x2="631.8" y2="884.7" stroke="#33363a" stroke-width="1.84"/>
+<rect x="588.24" y="816.0" width="6.44" height="73.60000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<polygon points="580.88,819.68 600.2,816.92 596.52,827.96 584.56,829.8" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="600.2,816.92 602.04,829.8 609.4,827.04 607.56,814.16" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="607.56,817.84 658.16,828.88 658.16,833.48 607.56,822.44" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<rect x="646.2" y="840.84" width="36.800000000000004" height="69.0" rx="4.6000000000000005" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<ellipse cx="664.6" cy="840.84" rx="18.400000000000002" ry="8.280000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<path d="M 646.2 863.84 A 18.400000000000002 8.280000000000001 0 0 0 683.0 863.84" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<path d="M 646.2 891.44 A 18.400000000000002 8.280000000000001 0 0 0 683.0 891.44" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<circle cx="657.24" cy="856.48" r="7.36" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.104"/>
+<circle cx="657.24" cy="856.48" r="5.5200000000000005" fill="#f6f3eb"/>
+<line x1="657.24" y1="856.48" x2="660.0" y2="852.8" stroke="#a82313" stroke-width="1.104"/>
+<rect x="653.56" y="776.44" width="12.88" height="66.24000000000001" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<rect x="651.72" y="817.84" width="16.560000000000002" height="4.6000000000000005" fill="#222426"/>
+<polygon points="648.96,776.44 671.04,776.44 660.0,767.24" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.3800000000000001"/>
+<ellipse cx="667.36" cy="906.16" rx="27.6" ry="12.420000000000002" fill="none" stroke="url(#ironH)" stroke-width="5.5200000000000005"/>
+<ellipse cx="667.36" cy="906.16" rx="7.36" ry="3.68" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.3800000000000001"/>
+<line x1="667.36" y1="906.16" x2="658.5" y2="917.1" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="667.36" y1="906.16" x2="643.2" y2="902.2" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="667.36" y1="906.16" x2="676.2" y2="895.3" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="667.36" y1="906.16" x2="691.6" y2="910.1" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="630.56" y1="911.68" x2="661.7" y2="913.1" stroke="url(#brassH)" stroke-width="3.22"/>
+<circle cx="661.7" cy="913.1" r="2.7600000000000002" fill="#ebd076"/>
+<polygon points="557.88,770.0 618.6,763.5600000000001 607.56,811.4000000000001 568.92,815.08" fill="url(#ironV)" stroke="#1a1c1e" stroke-width="1.84"/>
+<polygon points="561.56,771.84 614.92,766.32 605.72,781.96 570.76,785.6400000000001" fill="#1c1e21"/>
+<polygon points="560.64,924.56 529.36,942.96 538.56,952.16 569.84,933.76" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<polygon points="558.8,923.64 531.2,940.2 534.88,944.8 562.48,928.24" fill="#25272a"/>
+<circle cx="660.0" cy="760.8" r="7.3" fill="url(#smokePuff)" opacity="0.29"/>
+<circle cx="674.7" cy="757.8" r="10.9" fill="url(#smokePuff)" opacity="0.23"/>
+<circle cx="679.2" cy="754.7" r="15.2" fill="url(#smokePuff)" opacity="0.17"/>
+<circle cx="682.2" cy="751.7" r="20.6" fill="url(#smokePuff)" opacity="0.12"/>
+<ellipse cx="647.12" cy="779.1999999999999" rx="5.5200000000000005" ry="8.832" fill="url(#steamPuff)" opacity="0.42"/>
+<ellipse cx="591.0" cy="903.4" rx="50.6" ry="20.240000000000002" fill="url(#dustCloud)" opacity="0.14"/>
+<ellipse cx="577.2" cy="910.76" rx="32.2" ry="13.8" fill="url(#dustCloud)" opacity="0.10"/>
+<rect x="739" y="645" width="226" height="415" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="852" cy="981.6" rx="174.8" ry="38.64" fill="url(#shadowFloor)"/>
+<polygon points="783.0,921.8 838.2,946.64 930.2,917.2 875.0,894.2" fill="#63666b" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="783.0,921.8 838.2,946.64 838.2,974.24 783.0,949.4" fill="#4d5054" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="838.2,946.64 930.2,917.2 930.2,944.8 838.2,974.24" fill="#383a3d" stroke="#2b2d30" stroke-width="1.84"/>
+<rect x="789.44" y="829.8" width="14.72" height="105.80000000000001" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<rect x="850.16" y="817.84" width="14.72" height="115.0" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="785.76,829.8 868.56,817.84 868.56,832.56 785.76,844.52" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="789.44,844.52 806.0,841.76 789.44,857.4" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<circle cx="794.96" cy="849.12" r="1.84" fill="#787e87"/>
+<ellipse cx="829.0" cy="919.04" rx="44.160000000000004" ry="18.400000000000002" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 784.84 919.04 A 44.160000000000004 18.400000000000002 0 0 0 873.16 919.04 L 873.16 933.76 A 44.160000000000004 18.400000000000002 0 0 1 784.84 933.76 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<path d="M 788.52 914.44 A 42.32 16.560000000000002 0 0 0 871.32 914.44 L 871.32 916.28 A 42.32 16.560000000000002 0 0 1 788.52 916.28 Z" fill="#151718"/>
+<path d="M 783.92 887.76 A 45.080000000000005 19.32 0 0 0 874.08 887.76 L 874.08 909.84 A 45.080000000000005 19.32 0 0 1 783.92 909.84 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<ellipse cx="829.0" cy="887.76" rx="45.080000000000005" ry="19.32" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 783.92 896.96 A 45.080000000000005 19.32 0 0 0 874.08 896.96 L 874.08 902.48 A 45.080000000000005 19.32 0 0 1 783.92 902.48 Z" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<line x1="834.4" y1="892.8" x2="846.5" y2="903.6" stroke="#33363a" stroke-width="1.84"/>
+<line x1="824.6" y1="892.9" x2="814.8" y2="904.2" stroke="#33363a" stroke-width="1.84"/>
+<line x1="817.3" y1="890.1" x2="791.5" y2="895.1" stroke="#33363a" stroke-width="1.84"/>
+<line x1="816.9" y1="885.9" x2="790.1" y2="881.8" stroke="#33363a" stroke-width="1.84"/>
+<line x1="823.6" y1="882.8" x2="811.5" y2="871.9" stroke="#33363a" stroke-width="1.84"/>
+<line x1="833.4" y1="882.6" x2="843.2" y2="871.3" stroke="#33363a" stroke-width="1.84"/>
+<line x1="840.7" y1="885.4" x2="866.5" y2="880.4" stroke="#33363a" stroke-width="1.84"/>
+<line x1="841.1" y1="889.6" x2="867.9" y2="893.7" stroke="#33363a" stroke-width="1.84"/>
+<rect x="826.24" y="816.0" width="6.44" height="73.60000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<polygon points="818.88,819.68 838.2,816.92 834.52,827.96 822.56,829.8" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="838.2,816.92 840.04,829.8 847.4,827.04 845.56,814.16" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="845.56,817.84 896.16,828.88 896.16,833.48 845.56,822.44" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<rect x="884.2" y="840.84" width="36.800000000000004" height="69.0" rx="4.6000000000000005" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<ellipse cx="902.6" cy="840.84" rx="18.400000000000002" ry="8.280000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<path d="M 884.2 863.84 A 18.400000000000002 8.280000000000001 0 0 0 921.0 863.84" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<path d="M 884.2 891.44 A 18.400000000000002 8.280000000000001 0 0 0 921.0 891.44" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<circle cx="895.24" cy="856.48" r="7.36" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.104"/>
+<circle cx="895.24" cy="856.48" r="5.5200000000000005" fill="#f6f3eb"/>
+<line x1="895.24" y1="856.48" x2="898.0" y2="852.8" stroke="#a82313" stroke-width="1.104"/>
+<rect x="891.56" y="776.44" width="12.88" height="66.24000000000001" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<rect x="889.72" y="817.84" width="16.560000000000002" height="4.6000000000000005" fill="#222426"/>
+<polygon points="886.96,776.44 909.04,776.44 898.0,767.24" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.3800000000000001"/>
+<ellipse cx="905.36" cy="906.16" rx="27.6" ry="12.420000000000002" fill="none" stroke="url(#ironH)" stroke-width="5.5200000000000005"/>
+<ellipse cx="905.36" cy="906.16" rx="7.36" ry="3.68" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.3800000000000001"/>
+<line x1="905.36" y1="906.16" x2="883.1" y2="900.4" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="905.36" y1="906.16" x2="918.2" y2="896.1" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="905.36" y1="906.16" x2="927.7" y2="912.0" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="905.36" y1="906.16" x2="892.5" y2="916.2" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="868.56" y1="911.68" x2="891.0" y2="902.5" stroke="url(#brassH)" stroke-width="3.22"/>
+<circle cx="891.0" cy="902.5" r="2.7600000000000002" fill="#ebd076"/>
+<polygon points="795.88,770.0 856.6,763.5600000000001 845.56,811.4000000000001 806.92,815.08" fill="url(#ironV)" stroke="#1a1c1e" stroke-width="1.84"/>
+<polygon points="799.56,771.84 852.92,766.32 843.72,781.96 808.76,785.6400000000001" fill="#1c1e21"/>
+<polygon points="817.96,780.12 827.16,774.6 834.52,781.96 825.32,789.32" fill="#767980" stroke="#2a2c2e" stroke-width="1.3800000000000001"/>
+<polygon points="832.68,787.48 841.88,781.96 845.56,793.0 836.36,796.6800000000001" fill="#5a5d62" stroke="#2a2c2e" stroke-width="1.3800000000000001"/>
+<polygon points="798.64,924.56 767.36,942.96 776.56,952.16 807.84,933.76" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<polygon points="796.8,923.64 769.2,940.2 772.88,944.8 800.48,928.24" fill="#25272a"/>
+<ellipse cx="763.68" cy="959.52" rx="3.864" ry="1.932" fill="#63666b" stroke="#36383b" stroke-width="1.3800000000000001"/>
+<circle cx="762.5759999999999" cy="959.7959999999999" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="764.232" cy="959.106" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="765.06" cy="960.072" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="763.266" cy="958.8299999999999" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="898.0" cy="760.8" r="8.6" fill="url(#smokePuff)" opacity="0.47"/>
+<circle cx="912.7" cy="751.7" r="12.9" fill="url(#smokePuff)" opacity="0.38"/>
+<circle cx="917.2" cy="742.6" r="17.9" fill="url(#smokePuff)" opacity="0.28"/>
+<circle cx="920.2" cy="733.5" r="24.4" fill="url(#smokePuff)" opacity="0.19"/>
+<ellipse cx="885.12" cy="779.1999999999999" rx="3.6800000000000006" ry="5.888000000000001" fill="url(#steamPuff)" opacity="0.28"/>
+<ellipse cx="829.0" cy="903.4" rx="50.6" ry="20.240000000000002" fill="url(#dustCloud)" opacity="0.22"/>
+<ellipse cx="815.2" cy="910.76" rx="32.2" ry="13.8" fill="url(#dustCloud)" opacity="0.16"/>
+<rect x="977" y="645" width="226" height="415" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="1090" cy="981.6" rx="174.8" ry="38.64" fill="url(#shadowFloor)"/>
+<polygon points="1021.0,921.8 1076.2,946.64 1168.2,917.2 1113.0,894.2" fill="#63666b" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="1021.0,921.8 1076.2,946.64 1076.2,974.24 1021.0,949.4" fill="#4d5054" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="1076.2,946.64 1168.2,917.2 1168.2,944.8 1076.2,974.24" fill="#383a3d" stroke="#2b2d30" stroke-width="1.84"/>
+<rect x="1027.44" y="829.8" width="14.72" height="105.80000000000001" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<rect x="1088.16" y="817.84" width="14.72" height="115.0" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="1023.76,829.8 1106.56,817.84 1106.56,832.56 1023.76,844.52" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="1027.44,844.52 1044.0,841.76 1027.44,857.4" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<circle cx="1032.96" cy="849.12" r="1.84" fill="#787e87"/>
+<ellipse cx="1067.0" cy="919.04" rx="44.160000000000004" ry="18.400000000000002" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 1022.84 919.04 A 44.160000000000004 18.400000000000002 0 0 0 1111.16 919.04 L 1111.16 933.76 A 44.160000000000004 18.400000000000002 0 0 1 1022.84 933.76 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<path d="M 1026.52 914.44 A 42.32 16.560000000000002 0 0 0 1109.32 914.44 L 1109.32 916.28 A 42.32 16.560000000000002 0 0 1 1026.52 916.28 Z" fill="#151718"/>
+<path d="M 1021.92 887.76 A 45.080000000000005 19.32 0 0 0 1112.08 887.76 L 1112.08 909.84 A 45.080000000000005 19.32 0 0 1 1021.92 909.84 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<ellipse cx="1067.0" cy="887.76" rx="45.080000000000005" ry="19.32" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 1021.92 896.96 A 45.080000000000005 19.32 0 0 0 1112.08 896.96 L 1112.08 902.48 A 45.080000000000005 19.32 0 0 1 1021.92 902.48 Z" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<line x1="1063.7" y1="893.1" x2="1056.3" y2="904.6" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1055.8" y1="890.5" x2="1031.1" y2="896.5" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1054.6" y1="886.3" x2="1027.0" y2="883.2" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1060.6" y1="883.0" x2="1046.3" y2="872.6" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1070.3" y1="882.4" x2="1077.7" y2="870.9" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1078.2" y1="885.0" x2="1102.9" y2="879.0" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1079.4" y1="889.2" x2="1107.0" y2="892.3" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1073.4" y1="892.5" x2="1087.7" y2="902.9" stroke="#33363a" stroke-width="1.84"/>
+<rect x="1064.24" y="816.0" width="6.44" height="73.60000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<polygon points="1056.88,819.68 1076.2,816.92 1072.52,827.96 1060.56,829.8" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="1076.2,816.92 1078.04,829.8 1085.4,827.04 1083.56,814.16" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="1083.56,817.84 1134.16,828.88 1134.16,833.48 1083.56,822.44" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<rect x="1122.1999999999998" y="840.84" width="36.800000000000004" height="69.0" rx="4.6000000000000005" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<ellipse cx="1140.6" cy="840.84" rx="18.400000000000002" ry="8.280000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<path d="M 1122.1999999999998 863.84 A 18.400000000000002 8.280000000000001 0 0 0 1159.0 863.84" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<path d="M 1122.1999999999998 891.44 A 18.400000000000002 8.280000000000001 0 0 0 1159.0 891.44" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<circle cx="1133.24" cy="856.48" r="7.36" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.104"/>
+<circle cx="1133.24" cy="856.48" r="5.5200000000000005" fill="#f6f3eb"/>
+<line x1="1133.24" y1="856.48" x2="1136.0" y2="852.8" stroke="#a82313" stroke-width="1.104"/>
+<rect x="1129.56" y="776.44" width="12.88" height="66.24000000000001" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<rect x="1127.72" y="817.84" width="16.560000000000002" height="4.6000000000000005" fill="#222426"/>
+<polygon points="1124.96,776.44 1147.04,776.44 1136.0,767.24" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.3800000000000001"/>
+<ellipse cx="1143.36" cy="906.16" rx="27.6" ry="12.420000000000002" fill="none" stroke="url(#ironH)" stroke-width="5.5200000000000005"/>
+<ellipse cx="1143.36" cy="906.16" rx="7.36" ry="3.68" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.3800000000000001"/>
+<line x1="1143.36" y1="906.16" x2="1165.7" y2="900.4" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1143.36" y1="906.16" x2="1156.2" y2="916.2" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1143.36" y1="906.16" x2="1121.1" y2="912.0" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1143.36" y1="906.16" x2="1130.5" y2="896.1" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1106.56" y1="911.68" x2="1157.7" y2="902.5" stroke="url(#brassH)" stroke-width="3.22"/>
+<circle cx="1157.7" cy="902.5" r="2.7600000000000002" fill="#ebd076"/>
+<polygon points="1033.88,770.0 1094.6,763.5600000000001 1083.56,811.4000000000001 1044.92,815.08" fill="url(#ironV)" stroke="#1a1c1e" stroke-width="1.84"/>
+<polygon points="1037.56,771.84 1090.92,766.32 1081.72,781.96 1046.76,785.6400000000001" fill="#1c1e21"/>
+<polygon points="1055.96,780.12 1065.16,774.6 1072.52,781.96 1063.32,789.32" fill="#767980" stroke="#2a2c2e" stroke-width="1.3800000000000001"/>
+<polygon points="1070.68,787.48 1079.88,781.96 1083.56,793.0 1074.36,796.6800000000001" fill="#5a5d62" stroke="#2a2c2e" stroke-width="1.3800000000000001"/>
+<polygon points="1036.64,924.56 1005.36,942.96 1014.56,952.16 1045.84,933.76" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<polygon points="1034.8,923.64 1007.2,940.2 1010.88,944.8 1038.48,928.24" fill="#25272a"/>
+<ellipse cx="1001.68" cy="959.52" rx="12.88" ry="6.44" fill="#63666b" stroke="#36383b" stroke-width="1.3800000000000001"/>
+<circle cx="998.0" cy="960.4399999999999" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1003.52" cy="958.14" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1006.28" cy="961.36" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1000.3" cy="957.22" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1136.0" cy="760.8" r="10.4" fill="url(#smokePuff)" opacity="0.71"/>
+<circle cx="1150.7" cy="743.6" r="15.6" fill="url(#smokePuff)" opacity="0.57"/>
+<circle cx="1155.2" cy="726.4" r="21.6" fill="url(#smokePuff)" opacity="0.43"/>
+<circle cx="1158.2" cy="709.2" r="29.4" fill="url(#smokePuff)" opacity="0.28"/>
+<ellipse cx="1123.12" cy="779.1999999999999" rx="6.44" ry="10.304" fill="url(#steamPuff)" opacity="0.49"/>
+<ellipse cx="1067.0" cy="903.4" rx="50.6" ry="20.240000000000002" fill="url(#dustCloud)" opacity="0.44"/>
+<ellipse cx="1053.2" cy="910.76" rx="32.2" ry="13.8" fill="url(#dustCloud)" opacity="0.32"/>
+<rect x="1215" y="645" width="226" height="415" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="1328" cy="981.6" rx="174.8" ry="38.64" fill="url(#shadowFloor)"/>
+<polygon points="1259.0,921.8 1314.2,946.64 1406.2,917.2 1351.0,894.2" fill="#63666b" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="1259.0,921.8 1314.2,946.64 1314.2,974.24 1259.0,949.4" fill="#4d5054" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="1314.2,946.64 1406.2,917.2 1406.2,944.8 1314.2,974.24" fill="#383a3d" stroke="#2b2d30" stroke-width="1.84"/>
+<rect x="1265.44" y="829.8" width="14.72" height="105.80000000000001" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<rect x="1326.16" y="817.84" width="14.72" height="115.0" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="1261.76,829.8 1344.56,817.84 1344.56,832.56 1261.76,844.52" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="1265.44,844.52 1282.0,841.76 1265.44,857.4" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<circle cx="1270.96" cy="849.12" r="1.84" fill="#787e87"/>
+<ellipse cx="1305.0" cy="919.04" rx="44.160000000000004" ry="18.400000000000002" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 1260.84 919.04 A 44.160000000000004 18.400000000000002 0 0 0 1349.16 919.04 L 1349.16 933.76 A 44.160000000000004 18.400000000000002 0 0 1 1260.84 933.76 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<path d="M 1264.52 914.44 A 42.32 16.560000000000002 0 0 0 1347.32 914.44 L 1347.32 916.28 A 42.32 16.560000000000002 0 0 1 1264.52 916.28 Z" fill="#151718"/>
+<path d="M 1259.92 887.76 A 45.080000000000005 19.32 0 0 0 1350.08 887.76 L 1350.08 909.84 A 45.080000000000005 19.32 0 0 1 1259.92 909.84 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<ellipse cx="1305.0" cy="887.76" rx="45.080000000000005" ry="19.32" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 1259.92 896.96 A 45.080000000000005 19.32 0 0 0 1350.08 896.96 L 1350.08 902.48 A 45.080000000000005 19.32 0 0 1 1259.92 902.48 Z" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<line x1="1292.9" y1="889.6" x2="1266.1" y2="893.7" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1293.3" y1="885.4" x2="1267.5" y2="880.4" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1300.6" y1="882.6" x2="1290.8" y2="871.3" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1310.4" y1="882.8" x2="1322.5" y2="871.9" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1317.1" y1="885.9" x2="1343.9" y2="881.8" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1316.7" y1="890.1" x2="1342.5" y2="895.1" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1309.4" y1="892.9" x2="1319.2" y2="904.2" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1299.6" y1="892.8" x2="1287.5" y2="903.6" stroke="#33363a" stroke-width="1.84"/>
+<rect x="1302.24" y="816.0" width="6.44" height="73.60000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<polygon points="1294.88,819.68 1314.2,816.92 1310.52,827.96 1298.56,829.8" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="1314.2,816.92 1316.04,829.8 1323.4,827.04 1321.56,814.16" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="1321.56,817.84 1372.16,828.88 1372.16,833.48 1321.56,822.44" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<rect x="1360.1999999999998" y="840.84" width="36.800000000000004" height="69.0" rx="4.6000000000000005" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<ellipse cx="1378.6" cy="840.84" rx="18.400000000000002" ry="8.280000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<path d="M 1360.1999999999998 863.84 A 18.400000000000002 8.280000000000001 0 0 0 1397.0 863.84" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<path d="M 1360.1999999999998 891.44 A 18.400000000000002 8.280000000000001 0 0 0 1397.0 891.44" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<circle cx="1371.24" cy="856.48" r="7.36" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.104"/>
+<circle cx="1371.24" cy="856.48" r="5.5200000000000005" fill="#f6f3eb"/>
+<line x1="1371.24" y1="856.48" x2="1374.0" y2="852.8" stroke="#a82313" stroke-width="1.104"/>
+<rect x="1367.56" y="776.44" width="12.88" height="66.24000000000001" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<rect x="1365.72" y="817.84" width="16.560000000000002" height="4.6000000000000005" fill="#222426"/>
+<polygon points="1362.96,776.44 1385.04,776.44 1374.0,767.24" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.3800000000000001"/>
+<ellipse cx="1381.36" cy="906.16" rx="27.6" ry="12.420000000000002" fill="none" stroke="url(#ironH)" stroke-width="5.5200000000000005"/>
+<ellipse cx="1381.36" cy="906.16" rx="7.36" ry="3.68" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.3800000000000001"/>
+<line x1="1381.36" y1="906.16" x2="1368.5" y2="916.2" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1381.36" y1="906.16" x2="1359.1" y2="900.4" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1381.36" y1="906.16" x2="1394.2" y2="896.1" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1381.36" y1="906.16" x2="1403.7" y2="912.0" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1344.56" y1="911.68" x2="1373.1" y2="912.5" stroke="url(#brassH)" stroke-width="3.22"/>
+<circle cx="1373.1" cy="912.5" r="2.7600000000000002" fill="#ebd076"/>
+<polygon points="1271.88,770.0 1332.6,763.5600000000001 1321.56,811.4000000000001 1282.92,815.08" fill="url(#ironV)" stroke="#1a1c1e" stroke-width="1.84"/>
+<polygon points="1275.56,771.84 1328.92,766.32 1319.72,781.96 1284.76,785.6400000000001" fill="#1c1e21"/>
+<polygon points="1293.96,780.12 1303.16,774.6 1310.52,781.96 1301.32,789.32" fill="#767980" stroke="#2a2c2e" stroke-width="1.3800000000000001"/>
+<polygon points="1308.68,787.48 1317.88,781.96 1321.56,793.0 1312.36,796.6800000000001" fill="#5a5d62" stroke="#2a2c2e" stroke-width="1.3800000000000001"/>
+<polygon points="1274.64,924.56 1243.36,942.96 1252.56,952.16 1283.84,933.76" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<polygon points="1272.8,923.64 1245.2,940.2 1248.88,944.8 1276.48,928.24" fill="#25272a"/>
+<ellipse cx="1239.68" cy="959.52" rx="23.184" ry="11.592" fill="#63666b" stroke="#36383b" stroke-width="1.3800000000000001"/>
+<circle cx="1233.056" cy="961.1759999999999" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1242.992" cy="957.036" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1247.96" cy="962.832" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1237.1960000000001" cy="955.38" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1374.0" cy="760.8" r="10.8" fill="url(#smokePuff)" opacity="0.77"/>
+<circle cx="1388.7" cy="741.6" r="16.2" fill="url(#smokePuff)" opacity="0.62"/>
+<circle cx="1393.2" cy="722.3" r="22.5" fill="url(#smokePuff)" opacity="0.46"/>
+<circle cx="1396.2" cy="703.1" r="30.7" fill="url(#smokePuff)" opacity="0.31"/>
+<ellipse cx="1361.12" cy="779.1999999999999" rx="7.360000000000001" ry="11.776000000000002" fill="url(#steamPuff)" opacity="0.56"/>
+<ellipse cx="1305.0" cy="903.4" rx="50.6" ry="20.240000000000002" fill="url(#dustCloud)" opacity="0.55"/>
+<ellipse cx="1291.2" cy="910.76" rx="32.2" ry="13.8" fill="url(#dustCloud)" opacity="0.40"/>
+<rect x="1453" y="645" width="226" height="415" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="1566" cy="981.6" rx="174.8" ry="38.64" fill="url(#shadowFloor)"/>
+<polygon points="1497.0,921.8 1552.2,946.64 1644.2,917.2 1589.0,894.2" fill="#63666b" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="1497.0,921.8 1552.2,946.64 1552.2,974.24 1497.0,949.4" fill="#4d5054" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="1552.2,946.64 1644.2,917.2 1644.2,944.8 1552.2,974.24" fill="#383a3d" stroke="#2b2d30" stroke-width="1.84"/>
+<rect x="1503.44" y="829.8" width="14.72" height="105.80000000000001" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<rect x="1564.16" y="817.84" width="14.72" height="115.0" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="1499.76,829.8 1582.56,817.84 1582.56,832.56 1499.76,844.52" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="1503.44,844.52 1520.0,841.76 1503.44,857.4" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<circle cx="1508.96" cy="849.12" r="1.84" fill="#787e87"/>
+<ellipse cx="1543.0" cy="919.04" rx="44.160000000000004" ry="18.400000000000002" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 1498.84 919.04 A 44.160000000000004 18.400000000000002 0 0 0 1587.16 919.04 L 1587.16 933.76 A 44.160000000000004 18.400000000000002 0 0 1 1498.84 933.76 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<path d="M 1502.52 914.44 A 42.32 16.560000000000002 0 0 0 1585.32 914.44 L 1585.32 916.28 A 42.32 16.560000000000002 0 0 1 1502.52 916.28 Z" fill="#151718"/>
+<path d="M 1497.92 887.76 A 45.080000000000005 19.32 0 0 0 1588.08 887.76 L 1588.08 909.84 A 45.080000000000005 19.32 0 0 1 1497.92 909.84 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<ellipse cx="1543.0" cy="887.76" rx="45.080000000000005" ry="19.32" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 1497.92 896.96 A 45.080000000000005 19.32 0 0 0 1588.08 896.96 L 1588.08 902.48 A 45.080000000000005 19.32 0 0 1 1497.92 902.48 Z" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<line x1="1531.3" y1="885.4" x2="1505.5" y2="880.4" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1538.6" y1="882.6" x2="1528.8" y2="871.3" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1548.4" y1="882.8" x2="1560.5" y2="871.9" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1555.1" y1="885.9" x2="1581.9" y2="881.8" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1554.7" y1="890.1" x2="1580.5" y2="895.1" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1547.4" y1="892.9" x2="1557.2" y2="904.2" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1537.6" y1="892.8" x2="1525.5" y2="903.6" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1530.9" y1="889.6" x2="1504.1" y2="893.7" stroke="#33363a" stroke-width="1.84"/>
+<rect x="1540.24" y="816.0" width="6.44" height="73.60000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<polygon points="1532.88,819.68 1552.2,816.92 1548.52,827.96 1536.56,829.8" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="1552.2,816.92 1554.04,829.8 1561.4,827.04 1559.56,814.16" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="1559.56,817.84 1610.16,828.88 1610.16,833.48 1559.56,822.44" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<rect x="1598.1999999999998" y="840.84" width="36.800000000000004" height="69.0" rx="4.6000000000000005" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<ellipse cx="1616.6" cy="840.84" rx="18.400000000000002" ry="8.280000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<path d="M 1598.1999999999998 863.84 A 18.400000000000002 8.280000000000001 0 0 0 1635.0 863.84" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<path d="M 1598.1999999999998 891.44 A 18.400000000000002 8.280000000000001 0 0 0 1635.0 891.44" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<circle cx="1609.24" cy="856.48" r="7.36" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.104"/>
+<circle cx="1609.24" cy="856.48" r="5.5200000000000005" fill="#f6f3eb"/>
+<line x1="1609.24" y1="856.48" x2="1612.0" y2="852.8" stroke="#a82313" stroke-width="1.104"/>
+<rect x="1605.56" y="776.44" width="12.88" height="66.24000000000001" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<rect x="1603.72" y="817.84" width="16.560000000000002" height="4.6000000000000005" fill="#222426"/>
+<polygon points="1600.96,776.44 1623.04,776.44 1612.0,767.24" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.3800000000000001"/>
+<ellipse cx="1619.36" cy="906.16" rx="27.6" ry="12.420000000000002" fill="none" stroke="url(#ironH)" stroke-width="5.5200000000000005"/>
+<ellipse cx="1619.36" cy="906.16" rx="7.36" ry="3.68" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.3800000000000001"/>
+<line x1="1619.36" y1="906.16" x2="1614.9" y2="894.7" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1619.36" y1="906.16" x2="1644.7" y2="904.1" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1619.36" y1="906.16" x2="1623.8" y2="917.6" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1619.36" y1="906.16" x2="1594.0" y2="908.2" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1582.56" y1="911.68" x2="1616.5" y2="898.9" stroke="url(#brassH)" stroke-width="3.22"/>
+<circle cx="1616.5" cy="898.9" r="2.7600000000000002" fill="#ebd076"/>
+<polygon points="1509.88,770.0 1570.6,763.5600000000001 1559.56,811.4000000000001 1520.92,815.08" fill="url(#ironV)" stroke="#1a1c1e" stroke-width="1.84"/>
+<polygon points="1513.56,771.84 1566.92,766.32 1557.72,781.96 1522.76,785.6400000000001" fill="#1c1e21"/>
+<polygon points="1512.64,924.56 1481.36,942.96 1490.56,952.16 1521.84,933.76" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<polygon points="1510.8,923.64 1483.2,940.2 1486.88,944.8 1514.48,928.24" fill="#25272a"/>
+<ellipse cx="1477.68" cy="959.52" rx="25.76" ry="12.88" fill="#63666b" stroke="#36383b" stroke-width="1.3800000000000001"/>
+<circle cx="1470.3200000000002" cy="961.36" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1481.3600000000001" cy="956.76" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1486.88" cy="963.1999999999999" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1474.92" cy="954.92" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1612.0" cy="760.8" r="8.4" fill="url(#smokePuff)" opacity="0.44"/>
+<circle cx="1626.7" cy="752.7" r="12.6" fill="url(#smokePuff)" opacity="0.35"/>
+<circle cx="1631.2" cy="744.6" r="17.5" fill="url(#smokePuff)" opacity="0.26"/>
+<circle cx="1634.2" cy="736.5" r="23.8" fill="url(#smokePuff)" opacity="0.18"/>
+<ellipse cx="1599.12" cy="779.1999999999999" rx="2.7600000000000002" ry="4.416" fill="url(#steamPuff)" opacity="0.21"/>
+<ellipse cx="1543.0" cy="903.4" rx="50.6" ry="20.240000000000002" fill="url(#dustCloud)" opacity="0.22"/>
+<ellipse cx="1529.2" cy="910.76" rx="32.2" ry="13.8" fill="url(#dustCloud)" opacity="0.16"/>
+<rect x="1691" y="645" width="226" height="415" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#b0b6bc" stroke-width="1.2"/>
+<ellipse cx="1804" cy="981.6" rx="174.8" ry="38.64" fill="url(#shadowFloor)"/>
+<polygon points="1735.0,921.8 1790.2,946.64 1882.2,917.2 1827.0,894.2" fill="#63666b" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="1735.0,921.8 1790.2,946.64 1790.2,974.24 1735.0,949.4" fill="#4d5054" stroke="#2b2d30" stroke-width="1.84"/>
+<polygon points="1790.2,946.64 1882.2,917.2 1882.2,944.8 1790.2,974.24" fill="#383a3d" stroke="#2b2d30" stroke-width="1.84"/>
+<rect x="1741.44" y="829.8" width="14.72" height="105.80000000000001" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<rect x="1802.16" y="817.84" width="14.72" height="115.0" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="1737.76,829.8 1820.56,817.84 1820.56,832.56 1737.76,844.52" fill="url(#woodBeamV)" stroke="#22160d" stroke-width="1.84"/>
+<polygon points="1741.44,844.52 1758.0,841.76 1741.44,857.4" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<circle cx="1746.96" cy="849.12" r="1.84" fill="#787e87"/>
+<ellipse cx="1781.0" cy="919.04" rx="44.160000000000004" ry="18.400000000000002" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 1736.84 919.04 A 44.160000000000004 18.400000000000002 0 0 0 1825.16 919.04 L 1825.16 933.76 A 44.160000000000004 18.400000000000002 0 0 1 1736.84 933.76 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<path d="M 1740.52 914.44 A 42.32 16.560000000000002 0 0 0 1823.32 914.44 L 1823.32 916.28 A 42.32 16.560000000000002 0 0 1 1740.52 916.28 Z" fill="#151718"/>
+<path d="M 1735.92 887.76 A 45.080000000000005 19.32 0 0 0 1826.08 887.76 L 1826.08 909.84 A 45.080000000000005 19.32 0 0 1 1735.92 909.84 Z" fill="url(#graniteH)" stroke="#222426" stroke-width="1.84"/>
+<ellipse cx="1781.0" cy="887.76" rx="45.080000000000005" ry="19.32" fill="url(#graniteTop)" stroke="#282a2d" stroke-width="1.84"/>
+<path d="M 1735.92 896.96 A 45.080000000000005 19.32 0 0 0 1826.08 896.96 L 1826.08 902.48 A 45.080000000000005 19.32 0 0 1 1735.92 902.48 Z" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<line x1="1793.9" y1="887.8" x2="1822.4" y2="887.8" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1790.1" y1="891.7" x2="1810.3" y2="900.1" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1781.0" y1="893.3" x2="1781.0" y2="905.2" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1771.9" y1="891.7" x2="1751.7" y2="900.1" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1768.1" y1="887.8" x2="1739.6" y2="887.8" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1771.9" y1="883.9" x2="1751.7" y2="875.4" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1781.0" y1="882.2" x2="1781.0" y2="870.3" stroke="#33363a" stroke-width="1.84"/>
+<line x1="1790.1" y1="883.9" x2="1810.3" y2="875.4" stroke="#33363a" stroke-width="1.84"/>
+<rect x="1778.24" y="816.0" width="6.44" height="73.60000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<polygon points="1770.88,819.68 1790.2,816.92 1786.52,827.96 1774.56,829.8" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="1790.2,816.92 1792.04,829.8 1799.4,827.04 1797.56,814.16" fill="url(#brassH)" stroke="#4a370e" stroke-width="1.3800000000000001"/>
+<polygon points="1797.56,817.84 1848.16,828.88 1848.16,833.48 1797.56,822.44" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.3800000000000001"/>
+<rect x="1836.1999999999998" y="840.84" width="36.800000000000004" height="69.0" rx="4.6000000000000005" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<ellipse cx="1854.6" cy="840.84" rx="18.400000000000002" ry="8.280000000000001" fill="url(#ironH)" stroke="#1a1c1e" stroke-width="1.84"/>
+<path d="M 1836.1999999999998 863.84 A 18.400000000000002 8.280000000000001 0 0 0 1873.0 863.84" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<path d="M 1836.1999999999998 891.44 A 18.400000000000002 8.280000000000001 0 0 0 1873.0 891.44" fill="none" stroke="url(#brassH)" stroke-width="3.68"/>
+<circle cx="1847.24" cy="856.48" r="7.36" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.104"/>
+<circle cx="1847.24" cy="856.48" r="5.5200000000000005" fill="#f6f3eb"/>
+<line x1="1847.24" y1="856.48" x2="1850.0" y2="852.8" stroke="#a82313" stroke-width="1.104"/>
+<rect x="1843.56" y="776.44" width="12.88" height="66.24000000000001" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<rect x="1841.72" y="817.84" width="16.560000000000002" height="4.6000000000000005" fill="#222426"/>
+<polygon points="1838.96,776.44 1861.04,776.44 1850.0,767.24" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.3800000000000001"/>
+<ellipse cx="1857.36" cy="906.16" rx="27.6" ry="12.420000000000002" fill="none" stroke="url(#ironH)" stroke-width="5.5200000000000005"/>
+<ellipse cx="1857.36" cy="906.16" rx="7.36" ry="3.68" fill="url(#brassH)" stroke="#3e2d09" stroke-width="1.3800000000000001"/>
+<line x1="1857.36" y1="906.16" x2="1883.1" y2="906.2" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1857.36" y1="906.16" x2="1857.4" y2="917.8" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1857.36" y1="906.16" x2="1831.6" y2="906.2" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1857.36" y1="906.16" x2="1857.4" y2="894.6" stroke="url(#ironH)" stroke-width="2.3000000000000003"/>
+<line x1="1820.56" y1="911.68" x2="1873.9" y2="906.2" stroke="url(#brassH)" stroke-width="3.22"/>
+<circle cx="1873.9" cy="906.2" r="2.7600000000000002" fill="#ebd076"/>
+<polygon points="1747.88,770.0 1808.6,763.5600000000001 1797.56,811.4000000000001 1758.92,815.08" fill="url(#ironV)" stroke="#1a1c1e" stroke-width="1.84"/>
+<polygon points="1751.56,771.84 1804.92,766.32 1795.72,781.96 1760.76,785.6400000000001" fill="#1c1e21"/>
+<polygon points="1750.64,924.56 1719.36,942.96 1728.56,952.16 1759.84,933.76" fill="url(#ironH)" stroke="#181a1c" stroke-width="1.84"/>
+<polygon points="1748.8,923.64 1721.2,940.2 1724.88,944.8 1752.48,928.24" fill="#25272a"/>
+<ellipse cx="1715.68" cy="959.52" rx="25.76" ry="12.88" fill="#63666b" stroke="#36383b" stroke-width="1.3800000000000001"/>
+<circle cx="1708.3200000000002" cy="961.36" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1719.3600000000001" cy="956.76" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1724.88" cy="963.1999999999999" r="2.3000000000000003" fill="#888c92"/>
+<circle cx="1712.92" cy="954.92" r="2.3000000000000003" fill="#888c92"/>
+</svg>
