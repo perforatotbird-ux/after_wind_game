@@ -1,0 +1,20 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/models/storage/storage_barn_albedo.tres" id="1_qgqq2"]
+[ext_resource type="Texture2D" path="res://assets/models/storage/storage_barn_orm.tres" id="2_bl8pu"]
+[ext_resource type="Texture2D" path="res://assets/models/storage/storage_barn_normal.tres" id="3_v5c4w"]
+
+[resource]
+resource_name = "Storage_barn_Atlas"
+albedo_texture = ExtResource("1_qgqq2")
+metallic = 1.0
+metallic_texture = ExtResource("2_bl8pu")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_bl8pu")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_v5c4w")
+ao_enabled = true
+ao_light_affect = 0.35
+ao_texture = ExtResource("2_bl8pu")
+texture_filter = 5
