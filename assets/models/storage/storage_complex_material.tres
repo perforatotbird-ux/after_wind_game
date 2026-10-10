@@ -1,0 +1,20 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/models/storage/storage_complex_albedo.tres" id="1_ghosk"]
+[ext_resource type="Texture2D" path="res://assets/models/storage/storage_complex_orm.tres" id="2_ey1xw"]
+[ext_resource type="Texture2D" path="res://assets/models/storage/storage_complex_normal.tres" id="3_77d4p"]
+
+[resource]
+resource_name = "Storage_complex_Atlas"
+albedo_texture = ExtResource("1_ghosk")
+metallic = 1.0
+metallic_texture = ExtResource("2_ey1xw")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_ey1xw")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_77d4p")
+ao_enabled = true
+ao_light_affect = 0.35
+ao_texture = ExtResource("2_ey1xw")
+texture_filter = 5
