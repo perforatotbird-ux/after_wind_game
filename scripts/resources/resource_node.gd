@@ -67,9 +67,12 @@ func _ready() -> void:
 		depleted_visual_node = get_node_or_null("DepletedVisual")
 	if depleted_visual_node:
 		depleted_visual_node.visible = false
+	
+	set_process(is_depleted or is_growing)
 
 func _process(delta: float) -> void:
-	if not is_depleted:
+	if not is_depleted and not is_growing:
+		set_process(false)
 		return
 	if requires_planting:
 		if is_growing:
@@ -118,6 +121,7 @@ func plant_sapling(player: Node) -> bool:
 		return false
 	is_growing = true
 	growth_progress_hours = 0.0
+	set_process(true)
 	if depleted_visual_node:
 		depleted_visual_node.visible = false
 	if visual_node:
@@ -273,6 +277,9 @@ func _set_depleted(depleted: bool) -> void:
 	if not depleted:
 		is_growing = false
 		growth_progress_hours = 0.0
+		set_process(false)
+	else:
+		set_process(true)
 	# Твёрдое тело (валун) исчезает вместе с моделью: по щебню можно пройти.
 	var solid := get_node_or_null("SolidBody/SolidShape") as CollisionShape3D
 	if solid:

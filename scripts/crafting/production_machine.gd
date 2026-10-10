@@ -52,6 +52,8 @@ var batch_to_buffer: bool = false
 var _original_pos: Vector3 = Vector3.ZERO
 var _last_user: Node = null
 
+var _last_emitted_progress: float = -1.0
+
 func _ready() -> void:
 	super._ready()
 	object_name = machine_display_name
@@ -61,24 +63,29 @@ func _ready() -> void:
 		visual_node = get_node_or_null("Visual")
 	if visual_node:
 		_original_pos = visual_node.position
+	set_process(is_machine_running)
 
 func _process(delta: float) -> void:
-	if is_machine_running:
-		process_timer += delta
-		var progress: float = clamp(process_timer / maxf(0.01, process_duration), 0.0, 1.0)
+	if not is_machine_running:
+		set_process(false)
+		return
+	process_timer += delta
+	var progress: float = clamp(process_timer / maxf(0.01, process_duration), 0.0, 1.0)
+	if absf(progress - _last_emitted_progress) >= 0.01 or progress >= 1.0:
+		_last_emitted_progress = progress
 		process_progress.emit(progress)
-		
-		# Визуальная вибрация работающей техники
-		if visual_node:
-			var shake_offset: Vector3 = Vector3(
-				randf_range(-0.02, 0.02),
-				randf_range(-0.01, 0.02),
-				randf_range(-0.02, 0.02)
-			)
-			visual_node.position = _original_pos + shake_offset
-		
-		if process_timer >= process_duration:
-			_complete_process()
+	
+	# Визуальная вибрация работающей техники
+	if visual_node:
+		var shake_offset: Vector3 = Vector3(
+			randf_range(-0.02, 0.02),
+			randf_range(-0.01, 0.02),
+			randf_range(-0.02, 0.02)
+		)
+		visual_node.position = _original_pos + shake_offset
+	
+	if process_timer >= process_duration:
+		_complete_process()
 
 func get_prompt() -> String:
 	if is_machine_running:
@@ -228,7 +235,9 @@ func _begin_cycle(recipe: Dictionary, duration: float, player: Node) -> void:
 	active_recipe = recipe
 	process_timer = 0.0
 	process_duration = maxf(0.05, duration)
+	_last_emitted_progress = -1.0
 	is_machine_running = true
+	set_process(true)
 	_last_user = player
 	process_started.emit(recipe.get("id", ""), process_duration)
 	AudioManager.play("machine_start")
@@ -240,6 +249,7 @@ func cancel_batch() -> bool:
 		return false
 	var recipe_id: String = active_recipe.get("id", "")
 	is_machine_running = false
+	set_process(false)
 	active_recipe = {}
 	process_timer = 0.0
 	batch_cycles_total = 0
@@ -267,6 +277,7 @@ func _complete_process() -> void:
 		outputs_changed.emit()
 		if batch_cycles_done < batch_cycles_total:
 			process_timer = 0.0
+			_last_emitted_progress = -1.0
 			return
 		var cycles: int = batch_cycles_total
 		_finish_run()
@@ -303,6 +314,7 @@ func _complete_process() -> void:
 
 func _finish_run() -> void:
 	is_machine_running = false
+	set_process(false)
 	process_timer = 0.0
 	active_recipe = {}
 	batch_cycles_total = 0

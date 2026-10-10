@@ -613,9 +613,10 @@ func _on_interaction_area_exited(area: Area3D) -> void:
 			_set_current_interactable(null)
 
 func _update_best_interactable() -> void:
-	nearby_interactables = nearby_interactables.filter(
-		func(item): return is_instance_valid(item) and item.get("is_interactable") != false
-	)
+	for i in range(nearby_interactables.size() - 1, -1, -1):
+		var item = nearby_interactables[i]
+		if not is_instance_valid(item) or item.get("is_interactable") == false:
+			nearby_interactables.remove_at(i)
 	
 	if nearby_interactables.is_empty():
 		_set_current_interactable(null)

@@ -122,6 +122,7 @@ func _ready() -> void:
 	if voxels.size() != size_cells * size_cells * depth_cells:
 		generate()
 	rebuild()
+	set_process(false)
 
 # --- Генерация ---------------------------------------------------------------
 
@@ -593,19 +594,25 @@ func _process(_delta: float) -> void:
 		var focused: bool = is_instance_valid(_last_player) and _last_player.get("current_interactable") == self
 		if not focused or Time.get_ticks_msec() - _aim_msec > 250:
 			_highlight.visible = false
+			set_process(false)
+	else:
+		set_process(false)
 
 func _update_highlight() -> void:
 	if _highlight == null:
 		return
 	if _target == NO_CELL:
 		_highlight.visible = false
+		set_process(false)
 		return
 	_highlight.position = cell_to_local(_target) + Vector3.ONE * VOXEL_SIZE * 0.5
 	var ok: bool = _target_ok
 	_highlight_mat.albedo_color = Color(0.55, 1.0, 0.5, 0.28) if ok else Color(1.0, 0.35, 0.3, 0.3)
 	if _edge_material:
 		_edge_material.albedo_color = Color(0.85, 1.0, 0.8) if ok else Color(1.0, 0.55, 0.5)
-	_highlight.visible = is_instance_valid(_last_player) and _last_player.get("current_interactable") == self
+	var should_vis: bool = is_instance_valid(_last_player) and _last_player.get("current_interactable") == self
+	_highlight.visible = should_vis
+	set_process(should_vis)
 
 ## Перестраивает видимый меш (только открытые грани) и коллизию участка.
 func rebuild() -> void:

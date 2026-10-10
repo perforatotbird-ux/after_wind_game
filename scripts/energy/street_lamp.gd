@@ -12,6 +12,7 @@ extends "res://scripts/interaction/interactable.gd"
 
 var _has_grid_power: bool = true
 var _day_cycle: Node = null
+var _check_timer: float = 0.0
 
 func _ready() -> void:
 	super._ready()
@@ -23,14 +24,34 @@ func _ready() -> void:
 	if not bulb_mesh:
 		bulb_mesh = get_node_or_null("Post/Arm/Bulb")
 	
+	_resolve_day_cycle()
 	_update_lamp_state()
 
-func _process(_delta: float) -> void:
+func _resolve_day_cycle() -> void:
+	if is_instance_valid(_day_cycle):
+		return
+	if get_tree():
+		_day_cycle = get_tree().get_first_node_in_group("day_night_cycle")
+		if not _day_cycle and get_tree().root:
+			_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
+	if is_instance_valid(_day_cycle) and _day_cycle.has_signal("phase_changed"):
+		if not _day_cycle.phase_changed.is_connected(_on_day_phase_changed):
+			_day_cycle.phase_changed.connect(_on_day_phase_changed)
+
+func _on_day_phase_changed(_new_phase: String) -> void:
 	_update_lamp_state()
+
+func _process(delta: float) -> void:
+	_check_timer += delta
+	if _check_timer >= 1.0:
+		_check_timer = 0.0
+		if not is_instance_valid(_day_cycle):
+			_resolve_day_cycle()
+		_update_lamp_state()
 
 func should_be_illuminated() -> bool:
-	if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
-		_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
+	if not is_instance_valid(_day_cycle):
+		_resolve_day_cycle()
 	
 	if _day_cycle:
 		if _day_cycle.has_method("is_night") and _day_cycle.is_night():
@@ -50,14 +71,17 @@ func set_powered(powered: bool) -> void:
 
 func _update_lamp_state() -> void:
 	var wants_on: bool = should_be_illuminated()
-	is_on = wants_on and _has_grid_power
+	var new_is_on: bool = wants_on and _has_grid_power
+	if new_is_on == is_on and lamp_light and lamp_light.visible == is_on:
+		return
+	is_on = new_is_on
 	
 	if lamp_light:
 		lamp_light.visible = is_on
 	
 	if bulb_mesh and bulb_mesh.material_override:
 		var mat = bulb_mesh.material_override as StandardMaterial3D
-		if mat:
+		if mat and mat.emission_enabled != is_on:
 			mat.emission_enabled = is_on
 
 func _on_interacted(player: Node) -> void:

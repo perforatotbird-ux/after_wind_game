@@ -21,6 +21,7 @@ var _last_emitted_stored: float = -1.0
 var _last_emitted_gen: float = -1.0
 var _last_emitted_con: float = -1.0
 var _last_emitted_has_power: bool = false
+var _last_consumer_has_power: Variant = null
 
 func _ready() -> void:
 	# Ветряк, батарея и фонари добавляются в группы в своих _ready, которые идут
@@ -43,6 +44,7 @@ func _scan_grid_devices() -> void:
 	_generators.clear()
 	_consumers.clear()
 	_batteries.clear()
+	_last_consumer_has_power = null
 	for child in world.find_children("*", "", true, false):
 		if child.is_in_group("power_generators") and not _generators.has(child):
 			_generators.append(child)
@@ -58,6 +60,8 @@ func register_generator(gen: Node) -> void:
 func register_consumer(con: Node) -> void:
 	if con and not _consumers.has(con):
 		_consumers.append(con)
+		if con.has_method("set_powered"):
+			con.set_powered(has_power)
 
 func register_battery(bat: Node) -> void:
 	if bat and not _batteries.has(bat):
@@ -96,10 +100,12 @@ func _update_grid(delta: float) -> void:
 	
 	has_power = (current_generation >= current_consumption) or (current_stored > 0.05)
 
-	# 5. Уведомление потребителей
-	for con in _consumers:
-		if is_instance_valid(con) and con.has_method("set_powered"):
-			con.set_powered(has_power)
+	# 5. Уведомление потребителей (только при изменении статуса питания)
+	if _last_consumer_has_power != has_power:
+		_last_consumer_has_power = has_power
+		for con in _consumers:
+			if is_instance_valid(con) and con.has_method("set_powered"):
+				con.set_powered(has_power)
 	
 	# 6. Уведомление батарей
 	for bat in _batteries:

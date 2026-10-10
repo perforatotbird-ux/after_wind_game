@@ -40,6 +40,7 @@ def main() -> int:
     parser.add_argument("--godot", default=os.environ.get("GODOT_BIN", "godot"))
     parser.add_argument("--timeout", type=float, default=90.0, help="per-test timeout (seconds)")
     parser.add_argument("--logs", type=Path, default=ROOT / "outputs" / "test-results")
+    parser.add_argument("--filter", default="", help="filter test names by substring")
     args = parser.parse_args()
     if args.timeout <= 0:
         parser.error("--timeout must be positive")
@@ -47,7 +48,7 @@ def main() -> int:
     if engine is None:
         parser.error("Godot not found; pass --godot PATH or set GODOT_BIN")
     engine = str(Path(engine).resolve())
-    tests = sorted((ROOT / "tests").glob("test_*.gd"))
+    tests = sorted(p for p in (ROOT / "tests").glob("test_*.gd") if not args.filter or args.filter in p.name)
     if not tests:
         print("FAIL: no tests discovered", file=sys.stderr)
         return 1
@@ -97,7 +98,12 @@ def main() -> int:
             results.append({"test": test.name, "passed": ok, "seconds": duration})
             print(f"{'PASS' if ok else 'FAIL'} {test.name} ({duration:.2f}s)", flush=True)
             if not ok:
-                print("\n".join(output.splitlines()[-25:]))
+                tail = "\n".join(output.splitlines()[-25:])
+                try:
+                    print(tail)
+                except UnicodeEncodeError:
+                    sys.stdout.buffer.write((tail + "\n").encode("utf-8", errors="replace"))
+                    sys.stdout.flush()
         for directory in external_user_dirs:
             shutil.rmtree(directory, ignore_errors=True)
     (args.logs / "results.json").write_text(json.dumps(results, indent=2), encoding="utf-8")

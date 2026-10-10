@@ -116,10 +116,14 @@ var _load_state: int = LoadState.NORMAL
 var _base_walk_speed: float = -1.0
 var _base_sprint_speed: float = -1.0
 
+var _cached_total_weight: float = 0.0
+var _weight_dirty: bool = true
+
 func clear() -> void:
-	for k in items.keys():
+	for k in items:
 		items[k] = 0
 	slot_layout.clear()
+	_weight_dirty = true
 	_update_load_state()
 	inventory_updated.emit()
 
@@ -128,8 +132,8 @@ func _ready() -> void:
 	call_deferred("_notify_tool_changed")
 
 func _physics_process(delta: float) -> void:
-	# Предметы могут меняться напрямую (загрузка, тесты) — состояние сверяем каждый тик.
-	_update_load_state()
+	if _weight_dirty:
+		_update_load_state()
 	if _load_state != LoadState.OVERLOADED:
 		return
 	var owner_body = get_parent()
@@ -476,20 +480,25 @@ func get_item_weight(item_id: String) -> float:
 	return float(ItemDB.get_item(item_id).get("weight", 1.0))
 
 func get_total_weight() -> float:
+	if not _weight_dirty:
+		return _cached_total_weight
 	var total: float = 0.0
-	for item_id in items.keys():
-		var count: int = items[item_id]
+	for item_id in items:
+		var count: int = int(items[item_id])
 		if count > 0:
 			var data: Dictionary = ItemDB.get_item(item_id)
-			var w: float = data.get("weight", 1.0)
+			var w: float = float(data.get("weight", 1.0))
 			total += w * count
+	_cached_total_weight = total
+	_weight_dirty = false
 	return total
 
 func get_load_ratio() -> float:
 	var limit: float = max_weight
+	var total_w: float = get_total_weight()
 	if limit <= 0.0:
-		return INF if get_total_weight() > 0.0 else 0.0
-	return get_total_weight() / limit
+		return INF if total_w > 0.0 else 0.0
+	return total_w / limit
 
 func get_load_state() -> int:
 	var ratio: float = get_load_ratio()
@@ -503,6 +512,7 @@ func is_overloaded() -> bool:
 	return get_load_state() != LoadState.NORMAL
 
 func _update_load_state() -> void:
+	_weight_dirty = true
 	var state: int = get_load_state()
 	if state == _load_state:
 		return
