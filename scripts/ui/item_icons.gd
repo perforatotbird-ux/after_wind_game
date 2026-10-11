@@ -38,6 +38,8 @@ const STYLES: Dictionary = {
 	"seeds_wheat": ["seeds", Color(0.88, 0.75, 0.4), Color(1.0, 0.93, 0.62)],
 	"carrot": ["carrot", Color(0.95, 0.5, 0.15), Color(0.35, 0.7, 0.25)],
 	"potato": ["potato", Color(0.75, 0.6, 0.38), Color(0.9, 0.8, 0.6)],
+	"red_berry": ["berries", Color(0.78, 0.08, 0.1), Color(0.3, 0.6, 0.2)],
+	"blue_berry": ["berries", Color(0.18, 0.25, 0.75), Color(0.3, 0.6, 0.2)],
 	"sapling": ["sapling", Color(0.35, 0.7, 0.3), Color(0.5, 0.34, 0.2)],
 	"wheat": ["wheat", Color(0.92, 0.78, 0.35), Color(0.7, 0.55, 0.2)],
 	"bread": ["bread", Color(0.72, 0.45, 0.2), Color(0.88, 0.65, 0.35)],
@@ -219,6 +221,14 @@ static func _shape(img: Image, shape: String, base: Color, accent: Color, g: flo
 				_ellipse(img, 19, 21, 4, 2, accent)
 				for p in [Vector2(18, 27), Vector2(29, 22), Vector2(26, 32), Vector2(33, 28)]:
 					_ellipse(img, p.x, p.y, 1.5, 1.5, dark)
+		"berries":
+			_line(img, 24, 8, 24, 16, 2.5, accent, g)
+			_ellipse(img, 30, 10, 6, 3, accent, g)
+			for p in [Vector2(17, 26), Vector2(31, 26), Vector2(24, 37)]:
+				_ellipse(img, p.x, p.y, 8, 8, base, g)
+			if d:
+				for p2 in [Vector2(14, 23), Vector2(28, 23), Vector2(21, 34)]:
+					_ellipse(img, p2.x, p2.y, 2, 2, Color(1, 1, 1, 0.75))
 		"wheat":
 			_line(img, 24, 44, 24, 12, 2.5, base, g)
 			_ellipse(img, 24, 9, 2.5, 4, base, g)

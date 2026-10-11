@@ -196,6 +196,12 @@ k:/After Wind/
   Godot_v4.7.3-stable_win64.exe --headless --path . -s tools/generate_trees.gd
   ```
 
+### 4.12. Ягодные кусты и заглушка сезонов (`scripts/resources/berry_bush.gd`)
+- **Модель**: присланный `berry_bush.glb` → `tools/import_berry_bush.gd` → `assets/models/berry_bush/` (ветки, 3 слоя листвы, ягоды; материалы ягод красный/синий). Сцены моделей: `scenes/resources/berry_bush/berry_bush_{red|blue}_model.tscn` и `*_empty_model.tscn` (без меша ягод).
+- **Геймплей**: `berry_bush_red.tscn` — 3 «Красные Ягоды», растёт весной/летом, 36 ч; `berry_bush_blue.tscn` — 6 «Синих Ягод», растёт зимой, 48 ч. Ягоды (`red_berry`/`blue_berry` в `ItemDB`) дают сытость, жажду и силу, `health_bonus = 0`.
+- **Сезоны**: `scripts/core/seasons.gd` — заглушка, `current_season = ""` (растёт круглый год). Будущая система сезонов выставляет `Seasons.current_season`.
+- **Мир**: `World/BerryBushes` (`scripts/world/berry_bush_spawner.gd`) — 2 + 2 куста в случайных свободных местах по маске `Meadow` (сигнал `generated`, `is_bush_spot_free`); зерно и урожай — секция сохранения `berry_bushes`. Тест: `tests/test_berry_bushes.gd`.
+
 ---
 
 ## 5. Как работать с базой знаний Obsidian (`obsidian-mind`)

@@ -320,6 +320,36 @@ const ITEMS: Dictionary = {
 		"energy_bonus": 10.0,
 		"description": "Хрустящая сладкая морковь прямо с грядки (+28% сытости, +12% жажды, +10 энергии)."
 	},
+	"red_berry": {
+		"id": "red_berry",
+		"name": "Красная Ягода",
+		"icon": "🍒",
+		"category": "food",
+		"weight": 0.05,
+		"max_stack": 40,
+		"sell_price": 4,
+		"is_edible": true,
+		"hunger_recovery": 6.0,
+		"thirst_recovery": 8.0,
+		"energy_bonus": 4.0,
+		"health_bonus": 0.0,
+		"description": "Кисло-сладкая ягода с куста, растёт весной и летом (+6% сытости, +8% жажды, +4 силы; здоровье не лечит)."
+	},
+	"blue_berry": {
+		"id": "blue_berry",
+		"name": "Синяя Ягода",
+		"icon": "🫐",
+		"category": "food",
+		"weight": 0.05,
+		"max_stack": 40,
+		"sell_price": 5,
+		"is_edible": true,
+		"hunger_recovery": 4.0,
+		"thirst_recovery": 3.0,
+		"energy_bonus": 9.0,
+		"health_bonus": 0.0,
+		"description": "Терпкая морозная ягода, вызревает зимой (+4% сытости, +3% жажды, +9 силы; здоровье не лечит)."
+	},
 	"potato": {
 		"id": "potato",
 		"name": "Картофель",

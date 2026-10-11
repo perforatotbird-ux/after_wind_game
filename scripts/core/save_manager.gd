@@ -185,6 +185,10 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	save_data["resources"] = resources
 	save_data["dropped_items"] = dropped
 	save_data["deposits"] = deposits
+	# 13. Ягодные кусты: зерно раскладки и урожай каждого куста.
+	var berry_spawner = world.find_child("BerryBushes", true, false)
+	if berry_spawner and berry_spawner.has_method("get_save_state"):
+		save_data["berry_bushes"] = berry_spawner.get_save_state()
 
 	# Пишем во временный файл: не обнуляем последнее сохранение при сбое записи.
 	var json_str: String = JSON.stringify(save_data, "\t")
@@ -512,6 +516,12 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		if deposit is VoxelDepositScript:
 			deposit.apply_save_state(dep_state)
 
+	# 13б. Ягодные кусты (в старых сохранениях секции нет — остаётся новая раскладка).
+	if save_data.get("berry_bushes") is Dictionary:
+		var bush_spawner = world.find_child("BerryBushes", true, false)
+		if bush_spawner and bush_spawner.has_method("apply_save_state"):
+			bush_spawner.apply_save_state(save_data["berry_bushes"])
+
 	# 14. Выброшенные предметы: текущие кучки убираются, сохранённые создаются заново.
 	# В старых сохранениях секции нет — тогда кучки тоже убираются (их не было).
 	for node in world.find_children("*", "", true, false):
@@ -700,6 +710,17 @@ static func _validate_save_data(data: Dictionary) -> bool:
 			if not dep_state is Dictionary or not _is_relative_path(dep_state.get("path", "")):
 				return false
 			if not VoxelDepositScript.is_valid_save_state(dep_state):
+				return false
+	if data.has("berry_bushes"):
+		var bb = data["berry_bushes"]
+		if not bb is Dictionary or not _is_integer(bb.get("seed", 0), 0.0, 2147483647.0) or not bb.get("bushes", []) is Array:
+			return false
+		for b_state in bb.get("bushes", []):
+			if not b_state is Dictionary:
+				return false
+			if b_state.has("has_berries") and not b_state["has_berries"] is bool:
+				return false
+			if b_state.has("regrow_progress") and not _is_number(b_state["regrow_progress"], 0.0):
 				return false
 	if data.has("dropped_items"):
 		if not data["dropped_items"] is Array:

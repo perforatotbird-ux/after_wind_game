@@ -34,6 +34,7 @@
 [ext_resource type="Script" path="res://scripts/world/ground_terrain.gd" id="36_ground"]
 [ext_resource type="Script" path="res://scripts/world/voxel_deposit.gd" id="37_deposit"]
 [ext_resource type="Script" path="res://scripts/world/meadow_decor.gd" id="38_meadow"]
+[ext_resource type="Script" path="res://scripts/world/berry_bush_spawner.gd" id="39_berries"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.36, 0.54, 0.75, 1)
@@ -461,3 +462,6 @@ deposit_seed = 37
 
 [node name="Meadow" type="Node3D" parent="." unique_id=1730042010]
 script = ExtResource("38_meadow")
+
+[node name="BerryBushes" type="Node3D" parent="." unique_id=1730042011]
+script = ExtResource("39_berries")

@@ -703,7 +703,7 @@ func eat_from_inventory(preferred_item_id: String = "") -> bool:
 	
 	var target_item: String = preferred_item_id
 	if target_item == "" or inventory.get_item_count(target_item) <= 0:
-		for it_id in ["bread", "potato", "carrot"]:
+		for it_id in ["bread", "potato", "carrot", "red_berry", "blue_berry"]:
 			if inventory.get_item_count(it_id) > 0:
 				target_item = it_id
 				break

@@ -11,6 +11,8 @@ const MeadowGround = preload("res://scripts/world/meadow_ground.gd")
 const MeadowGrass = preload("res://scripts/world/meadow_grass.gd")
 const VoxelDepositScript = preload("res://scripts/world/voxel_deposit.gd")
 
+signal generated
+
 const GROUP: String = "meadow_decor"
 const BUSH_GROUP: String = "bushes"
 
@@ -119,6 +121,7 @@ func generate() -> void:
 	_spawn_bushes()
 	_rng.seed = decor_seed + 4
 	_spawn_debris()
+	generated.emit()
 
 # --- Маска свободного места ----------------------------------------------------
 
@@ -390,6 +393,10 @@ func _bush_spot_ok(p: Vector2, radius: float) -> bool:
 		if Vector2(b.x, b.z).distance_to(p) < 2.2:
 			return false
 	return true
+
+## Свободно ли место под куст радиуса radius (для ягодных кустов BerryBushSpawner).
+func is_bush_spot_free(p: Vector2, radius: float) -> bool:
+	return _bush_spot_ok(p, radius)
 
 func _spawn_bushes() -> void:
 	var guard: int = 0
