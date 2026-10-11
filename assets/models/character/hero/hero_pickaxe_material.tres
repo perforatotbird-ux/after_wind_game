@@ -1,0 +1,17 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/models/character/hero/hero_pickaxe_albedo.tres" id="1_biw2b"]
+[ext_resource type="Texture2D" path="res://assets/models/character/hero/hero_pickaxe_orm.tres" id="2_jwxh6"]
+[ext_resource type="Texture2D" path="res://assets/models/character/hero/hero_pickaxe_normal.tres" id="3_w2nra"]
+
+[resource]
+resource_name = "hero_pickaxe"
+albedo_texture = ExtResource("1_biw2b")
+metallic = 1.0
+metallic_texture = ExtResource("2_jwxh6")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_jwxh6")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_w2nra")
+texture_filter = 5
