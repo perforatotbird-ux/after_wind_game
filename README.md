@@ -2,7 +2,7 @@
 
 [![Engine: Godot 4.7.2](https://img.shields.io/badge/Engine-Godot%204.7.2-blue.svg)](https://godotengine.org)
 [![Status: Chapter 1](https://img.shields.io/badge/Status-Chapter%201%20%7C%20Base%20Restored-brightgreen.svg)]()
-[![Tests: 34](https://img.shields.io/badge/Godot_tests-38-blue.svg)](tests/)
+[![Tests: 34](https://img.shields.io/badge/Godot_tests-39-blue.svg)](tests/)
 
 > Изометрический 3D-симулятор выживания, добычи, переработки, фермерства, электрогенерации и восстановления разрушенного поселения после катаклизма.
 
@@ -53,7 +53,7 @@ Linux / macOS: `python3 tools/run_tests.py --godot godot`.
 8. Специализации: Шахтёр, Фермер, Учёный.
 9. Сохранения: JSON с версией формата; автосохранение (F5/F9, сон, каждые 5 мин) и 3 ручных слота.
 10. Стартовое меню с живым фоном, меню паузы, настройки звука, экрана и камеры.
-11. Аудио: 11 процедурных звуков.
+11. Звук: 26 эффектов и фоны ветра, дождя и птиц из бесплатных CC0-паков (Kenney, OpenGameArt), шаги, замах, еда — см. [assets/audio/CREDITS.md](assets/audio/CREDITS.md).
 12. Финал «BASE RESTORED» по 8 вехам; станки должны отработать хотя бы один цикл.
 13. Анимации героя (ретаргет UAL), орбитальная камера.
 14. Камни и деревья: стилизованные генераторы (`tools/generate_rocks.gd`, `tools/generate_trees.gd`).

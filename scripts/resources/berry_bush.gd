@@ -8,6 +8,7 @@ extends "res://scripts/interaction/interactable.gd"
 const Seasons = preload("res://scripts/core/seasons.gd")
 const GROUP: String = "berry_bushes"
 const FALLBACK_HOURS_PER_SECOND: float = 1.0 / 60.0
+const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 
 ## Вид куста ("red" / "blue") — для сохранений, тестов и спавнера.
 @export var bush_type: String = "red"
@@ -69,6 +70,7 @@ func _on_interacted(player: Node) -> void:
 		_notify(player, "🎒 Не хватает места в рюкзаке для ягод!")
 		return
 	set_has_berries(false)
+	AudioManager.play("berry_pick")
 	var item: Dictionary = ItemDB.get_item(berry_item_id)
 	_notify(player, "%s Собрано: %s ×%d" % [item.get("icon", "🫐"), item.get("name", berry_item_id), berry_yield])
 

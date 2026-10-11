@@ -273,7 +273,7 @@ func _complete_process() -> void:
 	for item_id in outputs.keys():
 		pending_outputs[item_id] = int(pending_outputs.get(item_id, 0)) + int(outputs[item_id])
 	batch_cycles_done += 1
-	AudioManager.play("harvest", 1.25)
+	AudioManager.play("machine_done")
 	process_completed.emit(recipe_id, outputs)
 	outputs_changed.emit()
 	if batch_cycles_done < batch_cycles_total:

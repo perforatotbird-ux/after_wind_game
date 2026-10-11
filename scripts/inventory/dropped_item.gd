@@ -76,6 +76,7 @@ static func drop_from_player(player: Node, p_item_id: String, p_amount: int) -> 
 			ItemDB.get_item_icon(p_item_id), ItemDB.get_item_name(p_item_id), p_amount,
 			float(ItemDB.get_item(p_item_id).get("weight", 1.0)) * p_amount
 		])
+	AudioManager.play("drop")
 	return node
 
 func _ready() -> void:

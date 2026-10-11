@@ -47,8 +47,8 @@ func _run_tests() -> void:
 		_fail("Инвентарь игрока не найден")
 		return
 
-	# 1. Процедурный AudioManager
-	print("\n--- Проверка 1: Процедурный AudioManager и генерация звуков ---")
+	# 1. AudioManager (CC0-сэмплы)
+	print("\n--- Проверка 1: AudioManager и загрузка звуков ---")
 	var audio_mgr = world.find_child("AudioManager", true, false)
 	if not audio_mgr:
 		_fail("AudioManager не найден среди дочерних узлов World")
@@ -65,11 +65,12 @@ func _run_tests() -> void:
 		if not audio_mgr._sounds.has(s_name):
 			_fail("Звуковой эффект '%s' отсутствует в реестре AudioManager" % s_name)
 			return
-		var stream: AudioStreamWAV = audio_mgr._sounds[s_name]
-		if not stream or stream.data.is_empty():
-			_fail("Аудиопоток '%s' пуст или не сгенерирован" % s_name)
+		var variants: Array = audio_mgr._sounds[s_name]
+		var stream: AudioStream = variants[0] if not variants.is_empty() else null
+		if not stream or stream.get_length() <= 0.0:
+			_fail("Аудиопоток '%s' пуст или не загружен" % s_name)
 			return
-		print("  • Звук '%s': %d байт PCM, mix_rate: %d Гц" % [s_name, stream.data.size(), stream.mix_rate])
+		print("  • Звук '%s': %d вариант(ов), %.2f с" % [s_name, variants.size(), stream.get_length()])
 	AudioManager.play("hit_wood", 1.05)
 	AudioManager.play("coins", 1.0)
 	AudioManager.play("ui_click")

@@ -454,9 +454,9 @@ func _on_interacted(player: Node) -> void:
 	if player.has_method("consume_energy"):
 		player.consume_energy(energy)
 	if is_ore or tool_type == "pickaxe":
-		AudioManager.play("hit_stone", randf_range(0.9, 1.05))
+		AudioManager.play("hit_stone")
 	else:
-		AudioManager.play("hit_wood", randf_range(0.55, 0.7), -3.0)
+		AudioManager.play("dig")
 	var hits: int = int(damage.get(cell, 0)) + hit_power
 	var needed: int = hits_for(mat, tool_type)
 	if hits < needed:

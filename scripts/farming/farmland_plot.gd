@@ -258,6 +258,7 @@ func plant_crop(seed_id: String, player: Node = null) -> bool:
 	
 	crop_planted.emit(crop_type)
 	_update_visuals()
+	AudioManager.play("plant")
 	_play_plant_pop()
 	
 	if player and player.has_method("notify"):

@@ -127,7 +127,7 @@ func plant_sapling(player: Node) -> bool:
 	if visual_node:
 		visual_node.visible = true
 	_update_growth_visual()
-	AudioManager.play("hit_wood", 1.3)
+	AudioManager.play("plant")
 	if player and player.has_method("notify"):
 		player.notify("🌱 Саженец посажен! %s вырастет через %d игр. ч." % [resource_display_name, int(ceil(growth_hours))])
 	return true
@@ -214,9 +214,11 @@ func _on_interacted(player: Node) -> void:
 	
 	# Звук удара (Game Feel)
 	if required_tool == "axe" or resource_id == "wood":
-		AudioManager.play("hit_wood", randf_range(0.95, 1.05))
+		AudioManager.play("hit_wood")
+	elif resource_id == "metal_scrap":
+		AudioManager.play("hit_metal")
 	else:
-		AudioManager.play("hit_stone", randf_range(0.95, 1.05))
+		AudioManager.play("hit_stone")
 	
 	# Визуальный отклик (shake tween)
 	_play_hit_effect()

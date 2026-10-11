@@ -36,6 +36,7 @@ const InventoryScript = preload("res://scripts/inventory/inventory.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
 const SaveManager = preload("res://scripts/core/save_manager.gd")
+const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 
 # Must match the authored Blender mine action (60 FPS, contact on frame 10).
 # Для новой модели шахтёра из Miner_Character_Package (Track_Pickaxe_Swing 1.5 c)
@@ -137,6 +138,9 @@ var _strike_impacted: bool = false
 var _strike_buffered: bool = false
 var _strike_held: bool = false
 var _strike_pause_remaining: float = 0.0
+## Шаги: накопленная дистанция до следующего звука шага (м).
+var _step_distance: float = 0.0
+const FOOTSTEP_STRIDE: float = 1.6
 var _hud: Node = null
 var _day_cycle: Node = null
 var _weather_mgr: Node = null
@@ -215,6 +219,7 @@ func _physics_process(delta: float) -> void:
 	_handle_interaction_input()
 	_try_step_up(delta)
 	move_and_slide()
+	_update_footsteps(delta)
 	_update_character_animation()
 	_check_bounds()
 
@@ -649,6 +654,7 @@ func drink_water(amount: float = 40.0, is_clean: bool = true, energy_bonus: floa
 		notify("💧 Вы утолили жажду чистой водой! (+%d%% жажды, текущая: %d%%)" % [int(amount), int(thirst)])
 	else:
 		notify("⚠️ Вы выпили мутную сырую воду (+%d%% жажды, текущая: %d%%). Лучше фильтровать её!" % [int(amount), int(thirst)])
+	AudioManager.play("drink")
 	return true
 
 func drink_from_inventory(preferred_item_id: String = "") -> bool:
@@ -716,6 +722,7 @@ func eat_food(food_item_id: String) -> bool:
 		thirst_changed.emit(thirst, max_thirst)
 
 	notify("%s Вы съели %s! (+%d%% сытости, текущая: %d%%)" % [item_icon, item_name, int(h_rec), int(hunger)])
+	AudioManager.play("eat")
 	return true
 
 func eat_from_inventory(preferred_item_id: String = "") -> bool:
@@ -1256,6 +1263,25 @@ func _finish_dig() -> void:
 
 ## Набор воды: персонаж выставляет ведро к источнику, капли перелетают
 ## из хранилища в ведро, модель меняется на наполненное.
+## Звук шагов по пройденной дистанции: трава на земле, «грунт» на камне/постройках.
+func _update_footsteps(delta: float) -> void:
+	var h_speed := Vector2(velocity.x, velocity.z).length()
+	if not is_on_floor() or h_speed < 0.6 or is_mining or is_digging or is_scooping:
+		_step_distance = minf(_step_distance, FOOTSTEP_STRIDE * 0.5)
+		return
+	_step_distance += h_speed * delta
+	if _step_distance < FOOTSTEP_STRIDE:
+		return
+	_step_distance = 0.0
+	var on_grass := true
+	for i in range(get_slide_collision_count()):
+		var col: Object = get_slide_collision(i).get_collider()
+		if col is Node and col.name != "Ground" and get_slide_collision(i).get_normal().y > 0.7:
+			on_grass = false
+			break
+	var vol := -14.0 if h_speed < walk_speed + 0.5 else -11.0
+	AudioManager.play("footstep_grass" if on_grass else "footstep_dirt", 1.0, vol)
+
 func play_scoop_animation(source_pos: Vector3) -> bool:
 	if is_mining or is_digging or is_scooping:
 		return false
@@ -1291,6 +1317,7 @@ func _update_scoop(delta: float) -> void:
 		_spawn_scoop_droplets(_scoop_from)
 	if not _scoop_filled_done and _scoop_elapsed >= _scoop_duration * 0.85:
 		_scoop_filled_done = true
+		AudioManager.play("water_fill")
 		bucket_filled = true
 		_bucket_full_timer = 5.0
 		_refresh_tool_visibility()
@@ -1361,6 +1388,7 @@ func set_hat_visible(is_visible: bool) -> void:
 
 func _play_interaction_swing() -> void:
 	is_mining = true
+	AudioManager.play("swing", 1.0, -4.0)
 	current_anim = "mine"
 	_strike_elapsed = 0.0
 	_strike_impacted = false

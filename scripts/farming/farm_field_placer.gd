@@ -12,6 +12,7 @@ const FarmField = preload("res://scripts/farming/farm_field.gd")
 const MeadowDecor = preload("res://scripts/world/meadow_decor.gd")
 const BLOCKER_GROUP: String = "ui_input_blockers"
 const CONTAINER_NAME: String = "FarmFields"
+const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 
 signal finished(field: Node)
 signal cancelled
@@ -119,6 +120,7 @@ func end_drag() -> Node:
 	dragging = false
 	var err := check_rect(world, Rect2(r.position, r.size))
 	if err != "":
+		AudioManager.play("ui_error")
 		_notify("⛔ " + err)
 		_update_ghost()
 		return null
@@ -134,6 +136,7 @@ func place(r: Rect2i) -> Node:
 		container.name = CONTAINER_NAME
 		world.add_child(container)
 	var field = FarmField.spawn(container, Vector3(r.position.x, 0.0, r.position.y), r.size.x, r.size.y)
+	AudioManager.play("build", 1.15, -4.0)
 	var cost := FarmField.cost_for(r.size.x, r.size.y)
 	var parts: PackedStringArray = []
 	for id in cost:

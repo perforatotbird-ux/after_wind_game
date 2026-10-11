@@ -445,7 +445,7 @@ func deliver_materials(player: Node) -> bool:
 		state = State.BUILDING
 		build_progress = 0.0
 		state_changed.emit(state)
-		AudioManager.play("hit_wood")
+		AudioManager.play("build")
 		_refresh_all_visuals()
 		_notify(player, "🏗 Материалы на месте! Стройка делянки займёт 1 игровой день (%d ч)." % int(BUILD_HOURS))
 		return true
@@ -557,7 +557,7 @@ func plant(c: Vector2i, seed_id: String, player: Node = null) -> int:
 		planted += 1
 		cell_changed.emit(n)
 	if planted > 0:
-		AudioManager.play("till_soil")
+		AudioManager.play("plant")
 		_prompt_dirty = true
 		_refresh_all_visuals()
 		var rot: String = ""

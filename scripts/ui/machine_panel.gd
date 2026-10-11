@@ -46,6 +46,7 @@ func setup(p_machine: Node, p_player: Node) -> void:
 	inventory = player.inventory if player and "inventory" in player else null
 
 func _ready() -> void:
+	AudioManager.play("ui_open")
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(UI.make_overlay())
@@ -394,6 +395,6 @@ func close() -> void:
 	if _closing:
 		return
 	_closing = true
-	AudioManager.play("ui_click")
+	AudioManager.play("ui_close")
 	closed.emit()
 	queue_free()
