@@ -360,6 +360,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 
 func is_gameplay_input_blocked() -> bool:
+	# Режимы размещения (делянка) и прочие перехватчики мыши.
+	if is_inside_tree() and get_tree().get_first_node_in_group("ui_input_blockers") != null:
+		return true
 	for window in [inventory_window, machine_window, sales_window, repair_window, contract_window, class_window, pause_window, victory_window]:
 		if is_instance_valid(window) and window.visible:
 			return true

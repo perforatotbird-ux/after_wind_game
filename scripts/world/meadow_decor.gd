@@ -56,6 +56,8 @@ var _noise := FastNoiseLite.new()
 var counts: Dictionary = {}
 var bush_positions: Array[Vector3] = []
 var _deposit_grass: Array = []
+## Расчищенные участки (делянки): трава, цветы, мусор и кусты под ними убраны.
+var _cleared: Array[Rect2] = []
 
 static var _mesh_cache: Dictionary = {}
 static var _grass_material: ShaderMaterial = null
@@ -121,6 +123,8 @@ func generate() -> void:
 	_spawn_bushes()
 	_rng.seed = decor_seed + 4
 	_spawn_debris()
+	for r in _cleared:
+		_apply_clear(r)
 	generated.emit()
 
 # --- Маска свободного места ----------------------------------------------------
@@ -393,6 +397,41 @@ func _bush_spot_ok(p: Vector2, radius: float) -> bool:
 		if Vector2(b.x, b.z).distance_to(p) < 2.2:
 			return false
 	return true
+
+## Расчищает прямоугольник rect (XZ мира): прячет экземпляры травы, цветов и мусора,
+## убирает декоративные кусты. Запоминается и повторяется после generate().
+func clear_area(rect: Rect2) -> void:
+	_cleared.append(rect)
+	if not counts.is_empty():
+		_apply_clear(rect)
+
+func _apply_clear(rect: Rect2) -> void:
+	for mmi in find_children("*", "MultiMeshInstance3D", true, false):
+		var mm: MultiMesh = mmi.multimesh
+		if mm == null or mm.instance_count == 0:
+			continue
+		var xf: Transform3D = mmi.global_transform
+		if not _aabb_touches(xf * mmi.get_aabb(), rect):
+			continue
+		var buf: PackedFloat32Array = mm.buffer
+		var stride: int = 12 + (4 if mm.use_colors else 0) + (4 if mm.use_custom_data else 0)
+		var changed: bool = false
+		for i in mm.instance_count:
+			var o: int = i * stride
+			var p: Vector3 = xf * Vector3(buf[o + 3], buf[o + 7], buf[o + 11])
+			if rect.has_point(Vector2(p.x, p.z)):
+				for k in [0, 1, 2, 4, 5, 6, 8, 9, 10]:
+					buf[o + k] = 0.0
+				changed = true
+		if changed:
+			mm.buffer = buf
+	for b in get_children():
+		if b.is_in_group(BUSH_GROUP) and b is Node3D and rect.grow(0.5).has_point(Vector2(b.global_position.x, b.global_position.z)):
+			bush_positions.erase(b.position)
+			b.queue_free()
+
+static func _aabb_touches(box: AABB, rect: Rect2) -> bool:
+	return Rect2(box.position.x, box.position.z, box.size.x, box.size.z).intersects(rect)
 
 ## Свободно ли место под куст радиуса radius (для ягодных кустов BerryBushSpawner).
 func is_bush_spot_free(p: Vector2, radius: float) -> bool:

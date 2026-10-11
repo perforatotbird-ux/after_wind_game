@@ -6,6 +6,8 @@ extends Control
 ## Создаётся и уничтожается GameplayUIController.
 
 signal closed
+## Кнопка постройки (сейчас — «Делянка»): контроллер закрывает рюкзак и включает размещение.
+signal build_requested(kind: String)
 
 const UI = preload("res://scripts/ui/ui_style.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
@@ -70,6 +72,11 @@ func _ready() -> void:
 	header.add_child(sp)
 	_credits_label = UI.make_label("", 15, UI.COLOR_ACCENT)
 	header.add_child(_credits_label)
+	var farm_btn := UI.make_button("🌾 Делянка", Vector2(120, 32), true)
+	farm_btn.name = "BuildFarmFieldButton"
+	farm_btn.tooltip_text = "Разметить фермерскую делянку мышкой (до 128 клеток). Материалы: древесина по периметру, камень и опилки по площади. Стройка — 1 игровой день."
+	farm_btn.pressed.connect(func(): request_build("farm_field"))
+	header.add_child(farm_btn)
 	var sort_btn := UI.make_button("⇅ Сортировать", Vector2(130, 32))
 	sort_btn.tooltip_text = "Упорядочить рюкзак по типу и названию"
 	sort_btn.pressed.connect(_on_sort_pressed)
@@ -246,6 +253,10 @@ func _update_details() -> void:
 	elif str(data.get("category", "")) == "food":
 		_use_btn.text = "🍞 Съесть (Y)"
 		_use_btn.visible = true
+	elif str(data.get("category", "")) == "seeds":
+		var chosen: bool = player != null and player.get("selected_seed") == _selected
+		_use_btn.text = "🌱 Выбрано для посадки" if chosen else "🌱 Сажать эти семена"
+		_use_btn.visible = true
 	else:
 		_use_btn.visible = false
 
@@ -289,6 +300,11 @@ func _on_cell_right_clicked(item_id: String, _count: int, _index: int) -> void:
 func _on_use_pressed() -> void:
 	if player == null or _selected == "":
 		return
+	if str(ItemDB.get_item(_selected).get("category", "")) == "seeds":
+		if "selected_seed" in player:
+			player.selected_seed = _selected
+		_update_details()
+		return
 	var key: Key = KEY_U if _selected in DRINK_ITEMS else KEY_Y
 	var was_mode: int = player.process_mode
 	player.process_mode = Node.PROCESS_MODE_INHERIT
@@ -323,6 +339,9 @@ func _input(event: InputEvent) -> void:
 	if event.keycode in [KEY_ESCAPE, KEY_TAB, KEY_I]:
 		close()
 		get_viewport().set_input_as_handled()
+
+func request_build(kind: String) -> void:
+	build_requested.emit(kind)
 
 func close() -> void:
 	if _closing:

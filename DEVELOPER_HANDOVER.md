@@ -202,6 +202,11 @@ k:/After Wind/
 - **Сезоны**: `scripts/core/seasons.gd` — заглушка, `current_season = ""` (растёт круглый год). Будущая система сезонов выставляет `Seasons.current_season`.
 - **Мир**: `World/BerryBushes` (`scripts/world/berry_bush_spawner.gd`) — 2 + 2 куста в случайных свободных местах по маске `Meadow` (сигнал `generated`, `is_bush_spot_free`); зерно и урожай — секция сохранения `berry_bushes`. Тест: `tests/test_berry_bushes.gd`.
 
+### 4.13. Делянки (`scripts/farming/farm_field.gd`)
+- **Размещение**: кнопка «🌾 Делянка» в рюкзаке (`inventory_panel.gd`, сигнал `build_requested`) → `GameplayUIController.start_placement()` → `FarmFieldPlacer` (ЛКМ — растянуть, отпустить — поставить, ПКМ/Esc — отмена; `check_rect` — проверка места по маске `Meadow`, другим делянкам и ягодным кустам; группа `ui_input_blockers` блокирует удары через `HUD.is_gameplay_input_blocked`). Делянки лежат в `World/FarmFields`.
+- **Стадии**: `BLUEPRINT` (материалы `cost_for(w, h)` приносятся по E) → `BUILDING` (24 игровых часа) → `READY`. Клетки — словари в `cells` (влага, плодородие, удобрение, засуха, уход, прошлая культура); `advance_hours()` — шаг времени (тесты), `work_cell()` — умное действие E. Клавиши у делянки (player.gd `_farm_key`): R — семена (`player.selected_seed`), G — зона 3×3, X — отмена.
+- **Культуры и правила** — `scripts/farming/crop_db.gd`; модель — процедурная `farm_field_meshes.gd` (кэш мешей, `MultiMesh` грядок и культур). Дождь — `WeatherManager` вызывает `apply_rain()`; трава под делянкой — `MeadowDecor.clear_area()`. Сохранение — секция `farm_fields`. Тест — `tests/test_farm_fields.gd`.
+
 ---
 
 ## 5. Как работать с базой знаний Obsidian (`obsidian-mind`)

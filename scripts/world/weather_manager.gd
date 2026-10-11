@@ -124,6 +124,11 @@ func _apply_rainfall_to_world(intensity: float, delta: float) -> void:
 				if (plot.moisture > 10.0) != old_wet and plot.has_method("_update_soil_material"):
 					plot._update_soil_material()
 	
+	# 1б. Делянки: дождь поливает все клетки.
+	for field in get_tree().get_nodes_in_group("farm_fields"):
+		if is_instance_valid(field) and field.has_method("apply_rain"):
+			field.apply_rain(3.5 * intensity * delta)
+	
 	# 2. Наполнение водного резервуара дождевой водой
 	_reservoir_accumulator += delta * intensity
 	var threshold: float = 10.0 # каждые 10 сек в обычный дождь, 5 сек в ливень

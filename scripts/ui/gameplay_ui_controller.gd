@@ -8,6 +8,7 @@ extends Node
 
 const InventoryPanel = preload("res://scripts/ui/inventory_panel.gd")
 const MachinePanel = preload("res://scripts/ui/machine_panel.gd")
+const FarmFieldPlacer = preload("res://scripts/farming/farm_field_placer.gd")
 
 const SLOT5_PATH: String = "HotbarUI/Panel/Margin/HBox/Slot5"
 
@@ -68,8 +69,27 @@ func toggle_inventory_panel() -> void:
 func open_inventory_panel() -> Control:
 	var p = InventoryPanel.new()
 	p.setup(player)
+	p.build_requested.connect(start_placement)
 	_open(p)
 	return p
+
+var _placer: Node = null
+
+## Режим размещения постройки мышкой (сейчас — делянка). Рюкзак закрывается.
+func start_placement(kind: String = "farm_field") -> Node:
+	if kind != "farm_field" or world == null:
+		return null
+	close_panel()
+	if is_instance_valid(_placer):
+		_placer.queue_free()
+	_placer = FarmFieldPlacer.new()
+	_placer.name = "FarmFieldPlacer"
+	_placer.setup(world, player)
+	world.add_child(_placer)
+	return _placer
+
+func is_placing() -> bool:
+	return is_instance_valid(_placer) and not _placer.is_queued_for_deletion()
 
 func open_machine_panel(machine: Node) -> Control:
 	var p = MachinePanel.new()

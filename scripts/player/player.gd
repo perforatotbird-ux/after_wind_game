@@ -75,6 +75,8 @@ const LOCOMOTION_SPEED_SCALE_MAX: float = 1.6
 @onready var visual_root: Node3D = $Visuals
 @onready var interaction_detector: Area3D = $InteractionDetector
 @onready var inventory: Node = $Inventory
+## Семена, выбранные для посадки на делянке (R у делянки или кнопка в рюкзаке).
+var selected_seed: String = ""
 
 var health: float = 100.0
 var energy: float = 100.0
@@ -264,10 +266,29 @@ func _unhandled_input(event: InputEvent) -> void:
 				inventory_toggle_requested.emit()
 			KEY_C:
 				class_select_toggle_requested.emit()
+			KEY_R, KEY_G, KEY_X:
+				_farm_key(event.keycode)
 			KEY_F5:
 				quick_save()
 			KEY_F9:
 				quick_load()
+
+## Делянка под прицелом: R — сменить семена, G — зона 1×1 / 3×3, X — отменить стройку.
+func _farm_key(key: Key) -> void:
+	if _is_gameplay_blocked():
+		return
+	_update_best_interactable()
+	var t = current_interactable
+	if not is_instance_valid(t) or not t.is_in_group("farm_fields"):
+		return
+	match key:
+		KEY_R:
+			t.cycle_seed(self)
+		KEY_G:
+			t.toggle_zone(self)
+		KEY_X:
+			t.request_cancel(self)
+	focused_interactable_changed.emit(t)
 
 func set_character_class(new_class_id: String, grant_starting_bonus: bool = false) -> bool:
 	var c_data: Dictionary = CharacterClassDB.get_class_data(new_class_id)

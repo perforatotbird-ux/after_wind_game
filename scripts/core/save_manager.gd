@@ -11,6 +11,7 @@ const SAVE_FILE_NAME: String = "user://savegame.json"
 ## Текущая версия формата. v1 — сохранения без format_version (до унификации).
 const SAVE_FORMAT_VERSION: int = 2
 const FarmlandPlot = preload("res://scripts/farming/farmland_plot.gd")
+const FarmFieldScript = preload("res://scripts/farming/farm_field.gd")
 const ProductionMachine = preload("res://scripts/crafting/production_machine.gd")
 const ResourceNodeScript = preload("res://scripts/resources/resource_node.gd")
 const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
@@ -185,6 +186,12 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	save_data["resources"] = resources
 	save_data["dropped_items"] = dropped
 	save_data["deposits"] = deposits
+	# 13а. Делянки: размер, стадия стройки, принесённые материалы и все клетки.
+	var fields_arr: Array = []
+	for f in (world.get_tree().get_nodes_in_group("farm_fields") if world.is_inside_tree() else []):
+		if is_instance_valid(f) and not f.is_queued_for_deletion() and world.is_ancestor_of(f):
+			fields_arr.append(f.get_save_state())
+	save_data["farm_fields"] = fields_arr
 	# 13. Ягодные кусты: зерно раскладки и урожай каждого куста.
 	var berry_spawner = world.find_child("BerryBushes", true, false)
 	if berry_spawner and berry_spawner.has_method("get_save_state"):
@@ -516,6 +523,22 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		if deposit is VoxelDepositScript:
 			deposit.apply_save_state(dep_state)
 
+	# 13в. Делянки: текущие убираются, сохранённые создаются заново (в старых сохранениях секции нет).
+	if world.is_inside_tree():
+		for f in world.get_tree().get_nodes_in_group("farm_fields"):
+			if world.is_ancestor_of(f):
+				f.get_parent().remove_child(f)
+				f.queue_free()
+	if save_data.get("farm_fields") is Array and not save_data["farm_fields"].is_empty():
+		var fields_root: Node = world.get_node_or_null("FarmFields")
+		if fields_root == null:
+			fields_root = Node3D.new()
+			fields_root.name = "FarmFields"
+			world.add_child(fields_root)
+		for f_state in save_data["farm_fields"]:
+			var field = FarmFieldScript.spawn(fields_root, Vector3(float(f_state["x"]), 0.0, float(f_state["z"])), int(f_state["w"]), int(f_state["h"]))
+			field.apply_save_state(f_state)
+
 	# 13б. Ягодные кусты (в старых сохранениях секции нет — остаётся новая раскладка).
 	if save_data.get("berry_bushes") is Dictionary:
 		var bush_spawner = world.find_child("BerryBushes", true, false)
@@ -710,6 +733,12 @@ static func _validate_save_data(data: Dictionary) -> bool:
 			if not dep_state is Dictionary or not _is_relative_path(dep_state.get("path", "")):
 				return false
 			if not VoxelDepositScript.is_valid_save_state(dep_state):
+				return false
+	if data.has("farm_fields"):
+		if not data["farm_fields"] is Array:
+			return false
+		for f_state in data["farm_fields"]:
+			if not FarmFieldScript.is_valid_save_state(f_state):
 				return false
 	if data.has("berry_bushes"):
 		var bb = data["berry_bushes"]
