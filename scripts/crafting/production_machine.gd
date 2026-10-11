@@ -33,7 +33,8 @@ const FUEL_SLOTS: int = 4
 ## Вместимость одного топливного слота.
 const FUEL_SLOT_STACK: int = 9
 ## Виды топлива и время горения одной единицы, сек реального времени.
-const FUEL_BURN_TIME: Dictionary = {"coal": 240.0, "wood": 120.0, "fuel_briquette": 360.0}
+## Дерево — слабое аварийное топливо (1 шт = 10 с); уголь и брикеты — основные.
+const FUEL_BURN_TIME: Dictionary = {"coal": 240.0, "wood": 10.0, "fuel_briquette": 360.0}
 const FUEL_ITEMS: Array[String] = ["coal", "wood", "fuel_briquette"]
 ## Стоимость улучшения станка: { тип станка: { уровень: { item_id: количество } } }.
 ## Все детали делаются станками: Lv.2 — из компонентов Lv.1, Lv.3 — из стали

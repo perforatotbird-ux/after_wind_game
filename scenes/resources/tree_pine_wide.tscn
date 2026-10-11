@@ -17,10 +17,10 @@ collision_layer = 8
 collision_mask = 0
 script = ExtResource("1_33h2h")
 resource_display_name = "Сосна"
-max_hits = 4
-current_hits = 4
-yield_per_hit = 3
-bonus_depleted_yield = 3
+max_hits = 2
+current_hits = 2
+yield_per_hit = 1
+bonus_depleted_yield = 0
 visual_node = NodePath("Visual")
 depleted_visual_node = NodePath("DepletedVisual")
 

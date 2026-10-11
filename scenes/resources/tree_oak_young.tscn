@@ -17,7 +17,10 @@ collision_layer = 8
 collision_mask = 0
 script = ExtResource("1_ead3d")
 resource_display_name = "Молодой дуб"
-bonus_depleted_yield = 2
+max_hits = 2
+current_hits = 2
+yield_per_hit = 1
+bonus_depleted_yield = 0
 visual_node = NodePath("Visual")
 depleted_visual_node = NodePath("DepletedVisual")
 
