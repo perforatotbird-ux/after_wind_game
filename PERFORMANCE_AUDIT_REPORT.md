@@ -1,10 +1,12 @@
 # ОТЧЁТ О КОМПЛЕКСНОМ ТЕХНИЧЕСКОМ АУДИТЕ ПРОИЗВОДИТЕЛЬНОСТИ И ПАМЯТИ
 **Проект:** After The Storm / After Wind  
-**Движок:** Godot Engine v4.7.2 / v4.7.3  
+**Движок:** Godot Engine v4.7.2  
 **Платформа:** Windows 64-bit  
-**Ветка аудита:** `perf/deep-audit-and-optimizations`  
+**Ветка аудита:** `perf/deep-audit-and-optimizations` (влита в `main`, коммит `dc7207f`; ветка удалена)  
 **Дата проведения:** Октябрь 2026 г.  
 **Инженер аудита:** Senior Game Performance Engineer & Godot Engine Specialist  
+
+> **Статус:** все перечисленные оптимизации находятся в `main`; отчёт сохраняется как историческая справка. Актуальная документация — `docs/DOCUMENTATION.md`.
 
 ---
 

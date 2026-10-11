@@ -8,7 +8,7 @@
 ## 1. О проекте в двух словах
 
 - **Жанр**: Изометрический 3D-симулятор выживания, сбора ресурсов, крафта, производственных цепочек и пошагового восстановления разрушенной базы.
-- **Движок**: **Godot Engine 4.7.3**.
+- **Движок**: **Godot Engine 4.7.2** (в `project.godot` — фича-набор `4.7`).
 - **Язык**: Чистый GDScript 2.0 со строгой статической типизацией.
 - **Репозиторий Git**: `https://github.com/perforatotbird-ux/after_wind_game.git`
 - **Текущая веха**: **Глава 1 «Base Restored» (Этапы 0–13 полностью завершены и протестированы на 100%)**.
@@ -25,7 +25,7 @@
 | `start.bat -e` или `start.bat --editor` | Запуск редактора Godot с открытым проектом |
 | `start.bat -t` или `start.bat --test` | Запуск полного сьюта интеграционных тестов в headless-режиме |
 
-> **Примечание**: Скрипт `start.bat` автоматически определяет установленный Godot в папке проекта (`Godot_v4.7.3-stable_win64.exe`), соседних каталогах или системной переменной `PATH`.
+> **Примечание**: Скрипт `start.bat` автоматически ищет Godot (`Godot_v4.7.3-stable_win64.exe`, затем `Godot_v4.7.2-stable_win64.exe`) в папке проекта, соседних каталогах или системной переменной `PATH`. Установлена версия **4.7.2**.
 
 ---
 
@@ -40,9 +40,11 @@ k:/After Wind/
 ├── README.md                     # Краткая карточка репозитория
 │
 ├── docs/                         # Документация для чтения вне Obsidian (.gdignore)
-│   ├── After The Storm — Документация и Роадмап.md # Полный мастер-документ проекта
-│   ├── PHASES_SUMMARY.md         # Описание всех 13 завершенных фаз разработки
-│   └── CONTROLS_AND_SYSTEMS.md   # Памятка по клавишам и системам
+│   ├── DOCUMENTATION.md          # Единый актуальный мастер-документ проекта
+│   ├── After The Storm — Документация и Роадмап.md # Исторический дизайн-документ (архив)
+│   ├── CONTROLS_AND_SYSTEMS.md   # Ссылки на разделы DOCUMENTATION.md
+│   ├── PHASES_SUMMARY.md         # Ссылки на разделы DOCUMENTATION.md
+│   └── CODE_AUDIT.md             # Ссылки на разделы DOCUMENTATION.md
 │
 ├── obsidian-mind/                # Полная база знаний Obsidian (Vault) (.gdignore)
 │   ├── .obsidian/                # Настройки хранилища Obsidian
@@ -50,6 +52,8 @@ k:/After Wind/
 │   ├── memories/                 # Архивы сессий и инженерные разборы
 │   ├── templates/                # Шаблоны документации
 │   └── bases/                    # Базы данных заметок
+│
+├── PERFORMANCE_AUDIT_REPORT.md   # Отчёт об аудите производительности (оптимизации влиты в main)
 │
 ├── scenes/                       # Сцены Godot (.tscn)
 │   ├── buildings/                # Жилой дом, склад, водонапорный бак, доска объявлений, станция сбыта
@@ -68,16 +72,20 @@ k:/After Wind/
 │   ├── audio/                    # AudioManager: CC0-звуки из assets/audio/*.tres
 │   ├── buildings/                # Логика ремонта зданий и водохранилища
 │   ├── characters/               # База специализаций (Шахтёр, Фермер, Учёный)
-│   ├── core/                     # SaveManager, VictoryManager
+│   ├── core/                     # SaveManager, GameSettings, GameSession, VictoryManager
 │   ├── crafting/                 # RecipeDB и контроллер станков
 │   ├── economy/                  # ContractDB (квесты и награды)
 │   ├── energy/                   # PowerGrid (координатор электросети)
-│   ├── farming/                  # Логика роста культур на грядках
-│   ├── inventory/                # Inventory, ItemDB, хотбар, расчет веса
+│   ├── farming/                  # Грядки базы и делянки (FarmField, CropDB, FarmFieldPlacer)
+│   ├── interaction/              # Базовый класс интерактивных объектов Interactable
+│   ├── inventory/                # Inventory, ItemDB, предметы на земле, расчёт веса
+│   ├── npc/                      # Торговец Степан
 │   ├── player/                   # Контроллер игрока и параметры выживания
-│   └── world/                    # DayNightCycle, WeatherManager
+│   ├── resources/                # Деревья, камни, ягодные кусты
+│   ├── ui/                       # HUD, рюкзак, окна станков, меню, настройки
+│   └── world/                    # DayNightCycle, WeatherManager, жилы, луг, камера
 │
-└── tests/                        # 21 автотест (11 этапных + 10 фичевых)
+└── tests/                        # 39 автотестов (11 этапных + 28 фичевых), полный список — docs/DOCUMENTATION.md
     ├── test_stage2_time_and_fatigue.gd    # Этап 2: сутки, освещение, усталость, сон
     ├── test_stage4_thermal_processing.gd  # Этап 4: печь, обжиг, стекло, слитки, сбыт
     ├── test_stage5_buildings.gd           # Этап 5: восстановление зданий
@@ -88,17 +96,11 @@ k:/After Wind/
     ├── test_stage10_electricity.gd        # Этап 10: энергосеть, ветряк, аккумулятор, фонари
     ├── test_stage11_tool_upgrades.gd      # Этап 11: инструменты Lv.2, компоненты, рюкзак
     ├── test_stage12_classes_and_save.gd   # Этап 12: специализации, Save/Load
-    ├── test_stage13_polish_and_finale.gd  # Этап 13: аудио, пауза, финал «Base Restored»
-    ├── test_orbit_camera.gd               # Орбитальная камера (ПКМ, зум, clamp, камеро-движение)
-    ├── test_miner_and_pickaxe.gd          # Модель Шахтёра, кирка, анимации, спрайты
-    ├── test_pickaxe_swing_and_lmb.gd      # Ориентация кирки, замах, ЛКМ
-    ├── test_modern_strike_animation.gd    # Кинематика удара сверху вниз
-    ├── test_stardew_character.gd          # Реалистичная модель Фермера
-    ├── test_equipped_tools.gd             # Динамическая экипировка: топор/кирка/лопата/ведро в руке по активному слоту
-    ├── test_hero_animations_ingame.gd     # Герой в игре: idle -> jog -> run -> mine, кости реально двигаются
-    ├── test_hero_grip_and_feet.gd         # Стопы не задраны, топор головой вверх, инструмент в сжатом кулаке
-    ├── test_rocks.gd                      # Модели камней, коллизии, раскладка по карте, добыча валуна киркой
-    └── test_trees.gd                      # Дубы и сосны, лес на карте, рубка топором в пенёк
+    └── test_stage13_polish_and_finale.gd  # Этап 13: аудио, пауза, финал «Base Restored»
+    # ... и 28 фичевых тестов: модель героя и его анимации, камни, деревья, ягодные
+    # кусты, делянки, жилы, луг, инвентарь и рюкзак, звук, меню и слоты сохранений,
+    # орбитальная камера, баланс прогрессии, модели дробилки/печи/склада, качество
+    # кода — актуальные описания в docs/DOCUMENTATION.md, раздел «Тесты».
 ```
 
 ---
@@ -148,8 +150,8 @@ k:/After Wind/
 - Автосейв при сне в кровати.
 - Формат: чистый JSON-файл в `user://savegame.json`.
 
-### 4.8. Персонаж: 3D-модели, анимации и камера (в работе, не влито в `main`)
-- **Модели**: скелетные модели Шахтёра (`scenes/player/miner_model.tscn`) и Фермера (`scenes/player/character_model.tscn`), импортированы из Blender (`.glb`), подключены в узле `Player/Visuals/CharacterModel`.
+### 4.8. Персонаж: старые 3D-модели, экипировка и камера
+> **Актуальная модель героя** — `scenes/player/miner_package_model.tscn`, именно она подключена в `player.tscn` (подробно — раздел 4.9). Старые скелетные модели `scenes/player/miner_model.tscn` (Шахтёр) и `scenes/player/character_model.tscn` (Фермер) лежат в репозитории, но ни в какую сцену не подключены.
 - **Модели инструментов**: готовые CC0-ассеты из интернета (не процедурная генерация) — топор/ведро/кирка: Quaternius (Fantasy Props MegaKit + Medieval Weapons Pack, Godot Asset Store / Google Drive, CC0), лопата: Kenney Graveyard Kit 5.0 (kenney.nl, CC0). Пайплайн: `tools/normalize_library_tools.py` (real-world масштаб, хват в origin, рукоять +Z, текстуры ужаты до 512) — автономные сцены `scenes/tools/{axe,pickaxe,shovel,bucket}_model.tscn` + in-hand варианты `scenes/tools/*_inhand.tscn` (+ `bucket_full_inhand.tscn` с зеркалом воды) + иконки `assets/tools/*.png`, привязанные в `ItemDB` (включая Lv.2). Встроенная кирка в моделях персонажей заменена на Quaternius Pickaxe_Bronze (`tools/swap_pickaxe_mesh.py`, кость-родитель ToolSocket.R). Позы в руке проверены рендерами на риге фермера (`tools/preview_dig_scoop.py`, `outputs/dig_scoop_preview/`).
 - **Анимации** (`AnimationPlayer`): `idle`, `walk`, `run`, `mine` — замах инструментом сверху вниз с просадкой таза и работой корпуса/ног; длина `mine` ≤ 1.1 с.
 - **Удар по ЛКМ**: новый экшен ввода `strike` (ЛКМ) в `project.godot`; во время замаха скорость передвижения снижается до 35%.
@@ -171,9 +173,9 @@ k:/After Wind/
 - **Материал**: атлас запекания (цвет/нормали/ORM, WebP в `.tres`); металличность берётся из карты исходника (почти нулевая — одежда не «хромовая»).
 - **Перезапекание** (после правки модели или выбора других клипов в `CLIPS`):
   ```bash
-  Godot_v4.7.3-stable_win64.exe --headless --path . -s tools/retarget_ual_to_miner.gd -- --hero hero_build [--textures]
+  Godot_v4.7.2-stable_win64.exe --headless --path . -s tools/retarget_ual_to_miner.gd -- --hero hero_build [--textures]
   # метрики клипов (траектория кисти, высота стоп) + дамп поз в /tmp/miner_pose_dump.json:
-  Godot_v4.7.3-stable_win64.exe --headless --path . -s tools/retarget_ual_to_miner.gd -- --hero hero_build --probe
+  Godot_v4.7.2-stable_win64.exe --headless --path . -s tools/retarget_ual_to_miner.gd -- --hero hero_build --probe
   ```
 
 ### 4.10. Камни (`tools/generate_rocks.gd`)
@@ -184,7 +186,7 @@ k:/After Wind/
 - **Перегенерация**:
   ```bash
   python3 tools/generate_rock_texture.py      # -> .godot/rock_albedo.png (кэш)
-  Godot_v4.7.3-stable_win64.exe --headless --path . -s tools/generate_rocks.gd
+  Godot_v4.7.2-stable_win64.exe --headless --path . -s tools/generate_rocks.gd
   ```
 
 ### 4.11. Деревья и лес (`tools/generate_trees.gd`)
@@ -195,7 +197,7 @@ k:/After Wind/
 - **Перегенерация**:
   ```bash
   python3 tools/generate_tree_textures.py     # -> .godot/bark_albedo.png (кэш)
-  Godot_v4.7.3-stable_win64.exe --headless --path . -s tools/generate_trees.gd
+  Godot_v4.7.2-stable_win64.exe --headless --path . -s tools/generate_trees.gd
   ```
 
 ### 4.12. Ягодные кусты и заглушка сезонов (`scripts/resources/berry_bush.gd`)
@@ -227,13 +229,13 @@ k:/After Wind/
 
 ## 6. Запуск тестов и проверка регрессий
 
-Проект покрыт **21** автономным тестом: **11 этапных** регрессионных (`test_stage2…13`) и **10 фичевых** (модели персонажа, анимация удара, орбитальная камера, динамическая экипировка инструментов, анимации героя в игре, стопы и хват инструментов, камни на карте, деревья и лес).
+Проект покрыт **39** автономными тестами: **11 этапных** регрессионных (`test_stage2…13`) и **28 фичевых** (модели героя и его анимации, камни, деревья, ягодные кусты, делянки, воксельные жилы, луг, инвентарь и рюкзак, звук, меню и слоты сохранений, орбитальная камера, баланс прогрессии, модели дробилки/печи/склада, качество кода). Актуальный список с описаниями — [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md), раздел «Тесты».
 ```bash
 # Запуск через start.bat:
 start.bat --test
 
 # Запуск любого конкретного теста вручную:
-Godot_v4.7.3-stable_win64.exe --headless --path . -s tests/test_stage12_classes_and_save.gd
+Godot_v4.7.2-stable_win64.exe --headless --path . -s tests/test_stage12_classes_and_save.gd
 ```
 Перед отправкой любых изменений в `main` убедитесь, что все тесты завершаются с кодом 0 (`code 0`).
 

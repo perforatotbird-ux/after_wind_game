@@ -2,7 +2,7 @@
 
 [![Engine: Godot 4.7.2](https://img.shields.io/badge/Engine-Godot%204.7.2-blue.svg)](https://godotengine.org)
 [![Status: Chapter 1](https://img.shields.io/badge/Status-Chapter%201%20%7C%20Base%20Restored-brightgreen.svg)]()
-[![Tests: 34](https://img.shields.io/badge/Godot_tests-39-blue.svg)](tests/)
+[![Tests: 39](https://img.shields.io/badge/Godot_tests-39-blue.svg)](tests/)
 
 > Изометрический 3D-симулятор выживания, добычи, переработки, фермерства, электрогенерации и восстановления разрушенного поселения после катаклизма.
 
@@ -39,7 +39,7 @@ Linux / macOS: `python3 tools/run_tests.py --godot godot`.
 
 - [DEVELOPER_HANDOVER.md](DEVELOPER_HANDOVER.md) — архитектура для разработчиков.
 - [Исторический дизайн-документ и роадмап](docs/After%20The%20Storm%20%E2%80%94%20%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B8%20%D0%A0%D0%BE%D0%B0%D0%B4%D0%BC%D0%B0%D0%BF.md) — архив.
-- [obsidian-mind/](obsidian-mind/) — заметки Obsidian (Open Folder as Vault), ссылаются на `docs/`.
+- [obsidian-mind/](obsidian-mind/) — хранилище Obsidian (шаблон Obsidian Mind, Open Folder as Vault); рабочие заметки ссылаются на `docs/`, копия роадмапа там помечена как архив.
 
 ## 🏆 Глава 1 (Base Restored)
 
@@ -58,4 +58,4 @@ Linux / macOS: `python3 tools/run_tests.py --godot godot`.
 13. Анимации героя (ретаргет UAL), орбитальная камера.
 14. Камни и деревья: стилизованные генераторы (`tools/generate_rocks.gd`, `tools/generate_trees.gd`).
 
-В работе (не влито в `main`): реалистичные 3D-модели Шахтёра и Фермера, 2D-портреты классов.
+Модель героя (Шахтёр) используется в игре; в репозитории остаются неиспользуемыми старые скелетные модели `scenes/player/miner_model.tscn` и `scenes/player/character_model.tscn` (Фермер). Портреты классов прописаны в `CharacterClassDB`, но в интерфейсе пока не показываются.

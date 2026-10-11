@@ -2,7 +2,7 @@
 date: 2026-10-06
 description: "Подробная документация разработки игры 'После бури' (After The Storm): архитектура, реализованные системы, статус и роадмап"
 project: after-wind
-status: active
+status: archived
 tags:
   - work-note
   - gamedev
@@ -11,6 +11,8 @@ tags:
 ---
 
 # After The Storm («После бури») — Документация и Роадмап
+
+> ⚠️ **Устаревшая копия-архив.** Документ больше не ведётся: актуальная документация — `docs/DOCUMENTATION.md` в корне проекта. При расхождениях верна она.
 
 Проект: `k:\After Wind`  
 Репозиторий: **[GitHub: perforatotbird-ux/after_wind_game](https://github.com/perforatotbird-ux/after_wind_game)**  
