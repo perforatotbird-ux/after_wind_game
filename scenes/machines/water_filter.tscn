@@ -71,6 +71,7 @@ script = ExtResource("1_mach")
 machine_type = "water_filter"
 machine_display_name = "Песчаный фильтр воды"
 power_draw = 1.2
+yield_bonus_per_level = 2
 visual_node = NodePath("Visual")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]

@@ -186,6 +186,52 @@ const RECIPES: Dictionary = {
 		"description": "Замес теста из молотой пшеницы и чистой воды с выпечкой подового хлеба. Топливо — в топливных слотах печи."
 	},
 
+	# --- Компоненты улучшенных станков (доступны со Lv.2, min_level) ---
+	"craft_steel_plate": {
+		"id": "craft_steel_plate",
+		"name": "Закалка: Стальная пластина (x1)",
+		"machine": "workbench",
+		"min_level": 2,
+		"inputs": {"iron_plate": 2, "coal": 1},
+		"outputs": {"steel_plate": 1},
+		"duration": 40.0,
+		"energy_cost": 2.5,
+		"description": "Холодная закалка двух пластин с угольной присадкой на улучшенном верстаке. Деталь качественного ремонта и передовых станков."
+	},
+	"craft_precision_gear": {
+		"id": "craft_precision_gear",
+		"name": "Обкатка: Точная шестерня (x1)",
+		"machine": "workbench",
+		"min_level": 2,
+		"inputs": {"gear": 2, "iron_plate": 1},
+		"outputs": {"precision_gear": 1},
+		"duration": 50.0,
+		"energy_cost": 3.0,
+		"description": "Прецизионная обкатка пары шестерён со шлифовкой зубьев. Без улучшенного верстака точность не удержать."
+	},
+	"smelt_steel": {
+		"id": "smelt_steel",
+		"name": "Передел: Стальной слиток (x1)",
+		"machine": "furnace",
+		"min_level": 2,
+		"inputs": {"iron_ingot": 2},
+		"outputs": {"steel_ingot": 1},
+		"duration": 90.0,
+		"energy_cost": 3.5,
+		"description": "Двойной передел железа с углём из топливных слотов улучшенной печи. Долгий цикл, но сталь того стоит."
+	},
+	"brew_healing_water": {
+		"id": "brew_healing_water",
+		"name": "Настой: Целебная вода (x1)",
+		"machine": "water_filter",
+		"min_level": 2,
+		"inputs": {"clean_water": 2, "glass": 1},
+		"outputs": {"healing_water": 1},
+		"duration": 35.0,
+		"energy_cost": 1.5,
+		"description": "Минеральный настой на глубоко очищенной воде в стерильной таре. Утоляет жажду и затягивает ссадины."
+	},
+
 	# --- Электрогенерация и освещение (Этап 10) ---
 	"craft_copper_wire": {
 		"id": "craft_copper_wire",
@@ -331,12 +377,17 @@ const RECIPES: Dictionary = {
 	}
 }
 
-static func get_recipes_for_machine(machine_type: String) -> Array[Dictionary]:
+## Рецепты станка данного типа, доступные на уровне level и выше.
+## Компоненты улучшенных станков помечены min_level и появляются после апгрейда.
+static func get_recipes_for_machine(machine_type: String, level: int = 1) -> Array[Dictionary]:
 	var list: Array[Dictionary] = []
 	for r_id in RECIPES.keys():
 		var r: Dictionary = RECIPES[r_id]
-		if r.get("machine", "") == machine_type:
-			list.append(r)
+		if r.get("machine", "") != machine_type:
+			continue
+		if int(r.get("min_level", 1)) > maxi(1, level):
+			continue
+		list.append(r)
 	return list
 
 static func get_recipe(recipe_id: String) -> Dictionary:

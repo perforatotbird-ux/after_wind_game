@@ -15,14 +15,19 @@ const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 const MachineWearScript = preload("res://scripts/crafting/machine_wear.gd")
+const MachineLevelScript = preload("res://scripts/crafting/machine_level.gd")
 
 ## Максимум циклов в одной партии.
 const MAX_BATCH_CYCLES: int = 99
 ## Бонус специализации «Учёный» (Этап 12).
 const SCIENTIST_ENERGY_MULT: float = 0.5
 const SCIENTIST_SPEED_MULT: float = 1.4
-## На сколько процентов состояния восстанавливает один ремонт.
+## На сколько процентов состояния восстанавливает обычный ремонт (болты + рукоять).
 const REPAIR_RESTORE: float = 50.0
+## Качественный ремонт (болты + стальная пластина, с улучшенного верстака):
+## восстанавливает больше состояния за более редкие детали.
+const QUALITY_REPAIR_RESTORE: float = 70.0
+const QUALITY_REPAIR_COST: Dictionary = {"bolt": 2, "steel_plate": 1}
 ## Число независимых слотов топлива у печи.
 const FUEL_SLOTS: int = 4
 ## Вместимость одного топливного слота.
@@ -30,6 +35,27 @@ const FUEL_SLOT_STACK: int = 9
 ## Виды топлива и время горения одной единицы, сек реального времени.
 const FUEL_BURN_TIME: Dictionary = {"coal": 240.0, "wood": 120.0, "fuel_briquette": 360.0}
 const FUEL_ITEMS: Array[String] = ["coal", "wood", "fuel_briquette"]
+## Стоимость улучшения станка: { тип станка: { уровень: { item_id: количество } } }.
+## Все детали делаются станками: Lv.2 — из компонентов Lv.1, Lv.3 — из стали
+## и точных шестерён (их делает только улучшенный верстак).
+const UPGRADE_COSTS: Dictionary = {
+	"crusher": {
+		2: {"stone": 6, "iron_plate": 4, "gear": 2, "bolt": 4},
+		3: {"steel_plate": 4, "precision_gear": 2, "iron_plate": 4, "bolt": 6},
+	},
+	"workbench": {
+		2: {"wooden_handle": 2, "iron_plate": 4, "gear": 2, "bolt": 4},
+		3: {"steel_plate": 4, "precision_gear": 3, "bolt": 6},
+	},
+	"furnace": {
+		2: {"fired_brick": 6, "iron_plate": 6, "gear": 2, "bolt": 4},
+		3: {"fired_brick": 6, "steel_plate": 6, "precision_gear": 2, "bolt": 6},
+	},
+	"water_filter": {
+		2: {"sand": 4, "iron_plate": 2, "gear": 1, "bolt": 2},
+		3: {"steel_plate": 2, "precision_gear": 1, "bolt": 4},
+	},
+}
 
 signal machine_opened(machine: Node)
 signal process_started(recipe_id: String, duration: float)
@@ -38,6 +64,7 @@ signal process_completed(recipe_id: String, outputs: Dictionary)
 signal batch_finished(recipe_id: String, cycles: int)
 signal batch_cancelled(recipe_id: String)
 signal outputs_changed()
+signal machine_upgraded(new_level: int)
 
 @export var machine_type: String = "crusher"
 @export var machine_display_name: String = "Дробилка камня"
@@ -55,6 +82,9 @@ signal outputs_changed()
 @export var repair_cost: Dictionary = {"bolt": 2, "wooden_handle": 1}
 ## У печи — отдельный блок из 4 слотов топлива; без топлива цикл приостанавливается.
 @export var has_fuel_slots: bool = false
+## Прибавка к выходу каждой позиции рецепта за уровень выше первого
+## (дробилка 1, фильтр 2; у верстака и печи выход растёт только рецептами).
+@export var yield_bonus_per_level: int = 0
 
 var is_machine_running: bool = false
 var is_machine: bool = true
@@ -77,6 +107,8 @@ var _last_user: Node = null
 var power_ok: bool = true
 ## Состояние оборудования (износ/ремонт) — общий компонент MachineWear.
 var wear: MachineWearScript
+## Уровень станка (Lv.1 базовая → Lv.2 улучшенная → Lv.3 передовая).
+var level_state: MachineLevelScript
 ## 4 независимых слота топлива: { "item_id": String, "count": int }.
 var fuel_slots: Array = []
 ## Сколько секунд горения осталось у активной единицы топлива.
@@ -93,6 +125,9 @@ func _ready() -> void:
 	add_to_group("power_consumers")
 	wear = MachineWearScript.new()
 	wear.wear_per_cycle = wear_per_cycle
+	level_state = MachineLevelScript.new()
+	wear.max_condition = level_state.get_max_condition()
+	wear.condition = wear.max_condition
 	if not wear_enabled:
 		wear.condition = wear.max_condition
 	if has_fuel_slots:
@@ -116,7 +151,8 @@ func _process(delta: float) -> void:
 		if fuel_burn_left <= 0.0 and not _light_next_fuel():
 			# Топливо кончилось: цикл приостановлен, сырьё и прогресс партии не теряются.
 			return
-		fuel_burn_left = maxf(0.0, fuel_burn_left - delta)
+		# КПД топлива растёт с уровнем станка (Lv.2 ×1.3): горение тратится медленнее.
+		fuel_burn_left = maxf(0.0, fuel_burn_left - delta / level_state.get_fuel_efficiency())
 	process_timer += delta
 	var progress: float = clamp(process_timer / maxf(0.01, process_duration), 0.0, 1.0)
 	if absf(progress - _last_emitted_progress) >= 0.01 or progress >= 1.0:
@@ -135,6 +171,7 @@ func _process(delta: float) -> void:
 		_complete_process()
 
 func get_prompt() -> String:
+	var lvl: String = " (Lv.%d)" % level_state.level if level_state.level > 1 else ""
 	if is_machine_running:
 		if not power_ok:
 			return "[E] %s (Нет питания — цикл приостановлен)" % object_name
@@ -143,14 +180,14 @@ func get_prompt() -> String:
 		var pct: int = int((process_timer / max(0.1, process_duration)) * 100.0)
 		var r_name: String = active_recipe.get("name", "Переработка")
 		if batch_cycles_total > 1:
-			return "[E] %s (В работе: %s, цикл %d/%d, %d%%)" % [object_name, r_name, batch_cycles_done + 1, batch_cycles_total, pct]
-		return "[E] %s (В работе: %s %d%%)" % [object_name, r_name, pct]
+			return "[E] %s%s (В работе: %s, цикл %d/%d, %d%%)" % [object_name, lvl, r_name, batch_cycles_done + 1, batch_cycles_total, pct]
+		return "[E] %s%s (В работе: %s %d%%)" % [object_name, lvl, r_name, pct]
 	if not pending_outputs.is_empty():
 		var total_items: int = 0
 		for cnt in pending_outputs.values():
 			total_items += int(cnt)
-		return "[E] Открыть %s (продукция: %d шт.)" % [object_name, total_items]
-	return "[E] Открыть %s" % object_name
+		return "[E] Открыть %s%s (продукция: %d шт.)" % [object_name, lvl, total_items]
+	return "[E] Открыть %s%s" % [object_name, lvl]
 
 func _on_interacted(player: Node) -> void:
 	_last_user = player
@@ -162,8 +199,9 @@ func _on_interacted(player: Node) -> void:
 
 ## Мощность, которую станок берёт из сети прямо сейчас, кВт. Работающий станок
 ## потребляет даже без питания (его цикл стоит и он «просит» энергию).
+## Улучшенный станок мощнее (Lv.2 ×1.3, Lv.3 ×1.6), но и работает быстрее.
 func get_power_demand() -> float:
-	return power_draw if is_machine_running else 0.0
+	return power_draw * level_state.get_power_mult() if is_machine_running else 0.0
 
 ## PowerGrid сообщает о доступности питания. Без питания цикл приостанавливается:
 ## партия и сырьё не теряются, при восстановлении питания производство продолжается.
@@ -242,6 +280,10 @@ func start_recipe(recipe_id: String, player: Node) -> bool:
 		if player.has_method("notify"):
 			player.notify("⛔ «%s» неисправна и требует ремонта." % object_name)
 		return false
+	if int(recipe.get("min_level", 1)) > level_state.level:
+		if player.has_method("notify"):
+			player.notify("⬆ Рецепт «%s» требует станок Lv.%d — улучшите станок." % [recipe.get("name", recipe_id), int(recipe["min_level"])])
+		return false
 
 	var inv = player.get("inventory") if "inventory" in player else null
 	if not inv:
@@ -265,7 +307,7 @@ func start_recipe(recipe_id: String, player: Node) -> bool:
 		inv.remove_item(item_id, needed)
 
 	if player.has_method("consume_energy"):
-		player.consume_energy(params["energy"])
+		player.consume_energy(params["energy"] * level_state.get_energy_mult())
 
 	batch_cycles_total = 1
 	batch_cycles_done = 0
@@ -290,6 +332,10 @@ func start_batch(recipe_id: String, cycles: int, player: Node) -> bool:
 		if player.has_method("notify"):
 			player.notify("⛔ «%s» неисправна и требует ремонта." % object_name)
 		return false
+	if int(recipe.get("min_level", 1)) > level_state.level:
+		if player.has_method("notify"):
+			player.notify("⬆ Рецепт «%s» требует станок Lv.%d — улучшите станок." % [recipe.get("name", recipe_id), int(recipe["min_level"])])
+		return false
 	var inv = player.get("inventory") if "inventory" in player else null
 	if not inv:
 		return false
@@ -308,7 +354,7 @@ func start_batch(recipe_id: String, cycles: int, player: Node) -> bool:
 		inv.remove_item(item_id, int(inputs[item_id]) * cycles)
 
 	if player.has_method("consume_energy"):
-		player.consume_energy(float(params["energy"]) * cycles)
+		player.consume_energy(float(params["energy"]) * level_state.get_energy_mult() * cycles)
 
 	batch_cycles_total = cycles
 	batch_cycles_done = 0
@@ -326,8 +372,10 @@ func start_batch(recipe_id: String, cycles: int, player: Node) -> bool:
 func _begin_cycle(recipe: Dictionary, duration: float, player: Node) -> void:
 	active_recipe = recipe
 	process_timer = 0.0
-	# Изношенный станок работает медленнее (MachineWear.get_speed_mult).
-	process_duration = maxf(0.05, duration) * (wear.get_speed_mult() if wear else 1.0)
+	# Скорость цикла: рецепт × уровень станка × износ (MachineWear).
+	process_duration = maxf(0.05, duration) \
+		* level_state.get_speed_mult() \
+		* (wear.get_speed_mult() if wear else 1.0)
 	_last_emitted_progress = -1.0
 	# Печь разжигает топливо сразу при старте цикла.
 	if has_fuel_slots and fuel_burn_left <= 0.0:
@@ -361,13 +409,17 @@ func cancel_batch() -> bool:
 func _complete_process() -> void:
 	completed_runs += 1
 	if wear_enabled and wear:
-		wear.add_wear(wear_per_cycle)
+		# Улучшенный станок изнашивается медленнее (множитель уровня).
+		wear.add_wear(wear_per_cycle * level_state.get_wear_mult())
 	var outputs: Dictionary = active_recipe.get("outputs", {})
 	var recipe_id: String = active_recipe.get("id", "")
 	var user_valid: bool = _last_user != null and is_instance_valid(_last_user)
-	
+
+	# Бонус выхода за уровень (дробилка +1/ур., фильтр +2/ур.): каждая позиция
+	# рецепта получает прибавку — цикл делает больше продукции, сырьё то же.
+	var bonus: int = yield_bonus_per_level * maxi(0, level_state.level - 1)
 	for item_id in outputs.keys():
-		pending_outputs[item_id] = int(pending_outputs.get(item_id, 0)) + int(outputs[item_id])
+		pending_outputs[item_id] = int(pending_outputs.get(item_id, 0)) + int(outputs[item_id]) + bonus
 	batch_cycles_done += 1
 	AudioManager.play("machine_done")
 	process_completed.emit(recipe_id, outputs)
@@ -483,10 +535,11 @@ func get_batch_remaining_time() -> float:
 # Износ и ремонт
 # ---------------------------------------------------------------------------
 
-## Ремонт станка: проверяет состояние и наличие ресурсов (repair_cost), списывает
-## их только при успехе и восстанавливает REPAIR_RESTORE % состояния.
+## Ремонт станка: проверяет состояние и наличие ресурсов, списывает их только
+## при успехе и восстанавливает состояние. Обычный ремонт — repair_cost (+50 %),
+## качественный (quality = true) — QUALITY_REPAIR_COST (+70 %, стальная пластина).
 ## Возвращает true, если ремонт выполнен.
-func repair_machine(player: Node) -> bool:
+func repair_machine(player: Node, quality: bool = false) -> bool:
 	if wear == null:
 		return false
 	if wear.get_ratio() >= 1.0:
@@ -496,23 +549,93 @@ func repair_machine(player: Node) -> bool:
 	var inv = player.get("inventory") if player and "inventory" in player else null
 	if inv == null:
 		return false
-	for item_id in repair_cost.keys():
-		if int(inv.get_item_count(str(item_id))) < int(repair_cost[item_id]):
+	var cost: Dictionary = QUALITY_REPAIR_COST if quality else repair_cost
+	var restore: float = QUALITY_REPAIR_RESTORE if quality else REPAIR_RESTORE
+	for item_id in cost.keys():
+		if int(inv.get_item_count(str(item_id))) < int(cost[item_id]):
 			if player.has_method("notify"):
-				player.notify("❌ Для ремонта нужно: %s" % _repair_cost_text())
+				player.notify("❌ Для ремонта нужно: %s" % _repair_cost_text(cost))
 			return false
-	for item_id in repair_cost.keys():
-		inv.remove_item(str(item_id), int(repair_cost[item_id]))
-	wear.repair(wear.max_condition * REPAIR_RESTORE / 100.0)
+	for item_id in cost.keys():
+		inv.remove_item(str(item_id), int(cost[item_id]))
+	wear.repair(wear.max_condition * restore / 100.0)
 	AudioManager.play("build")
 	if player.has_method("notify"):
-		player.notify("🔧 «%s» отремонтирована: %s" % [object_name, wear.get_status_text()])
+		player.notify("🔧 «%s» отремонтирована (%s): %s" % [
+			object_name, "качественно" if quality else "обычно", wear.get_status_text()])
 	return true
 
-func _repair_cost_text() -> String:
+func _repair_cost_text(cost: Dictionary = {}) -> String:
+	var use: Dictionary = cost if not cost.is_empty() else repair_cost
 	var parts: PackedStringArray = []
-	for item_id in repair_cost.keys():
-		parts.append("%s %s ×%d" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), int(repair_cost[item_id])])
+	for item_id in use.keys():
+		parts.append("%s %s ×%d" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), int(use[item_id])])
+	return ", ".join(parts)
+
+# ---------------------------------------------------------------------------
+# Уровни станка (улучшение на месте)
+# ---------------------------------------------------------------------------
+
+func get_level() -> int:
+	return level_state.level if level_state else 1
+
+## Можно ли улучшить прямо сейчас: есть следующий уровень, стоимость для этого
+## типа станка задана и станок не занят производством.
+func can_upgrade() -> bool:
+	if level_state == null or not level_state.can_upgrade() or is_machine_running:
+		return false
+	var costs: Dictionary = UPGRADE_COSTS.get(machine_type, {})
+	return costs.has(level_state.level + 1)
+
+## Стоимость следующего уровня: { item_id: количество } или {}.
+func get_upgrade_cost() -> Dictionary:
+	if not can_upgrade():
+		return {}
+	return UPGRADE_COSTS[machine_type][level_state.level + 1]
+
+## Улучшает станок на месте: списывает детали только при успехе, поднимает
+## уровень (быстрее, долговечнее, мощнее), ресурс износа растёт с сохранением
+## доли состояния. Возвращает true при успешном улучшении.
+func upgrade_machine(player: Node) -> bool:
+	if level_state == null:
+		return false
+	if is_machine_running:
+		if player and player.has_method("notify"):
+			player.notify("⏳ Дождитесь окончания партии, прежде чем улучшать станок.")
+		return false
+	if not can_upgrade():
+		if player and player.has_method("notify"):
+			player.notify("⬆ «%s» уже максимального уровня (Lv.%d)." % [object_name, level_state.level])
+		return false
+	var inv = player.get("inventory") if player and "inventory" in player else null
+	if inv == null:
+		return false
+	var cost: Dictionary = get_upgrade_cost()
+	for item_id in cost.keys():
+		if int(inv.get_item_count(str(item_id))) < int(cost[item_id]):
+			if player.has_method("notify"):
+				player.notify("❌ Для улучшения нужно: %s" % _upgrade_cost_text(cost))
+			return false
+	for item_id in cost.keys():
+		inv.remove_item(str(item_id), int(cost[item_id]))
+	var ratio: float = wear.get_ratio() if wear else 1.0
+	var next_level: int = level_state.level + 1
+	level_state.set_level(next_level)
+	if wear:
+		wear.max_condition = level_state.get_max_condition()
+		wear.set_condition(ratio * wear.max_condition)
+	AudioManager.play("build")
+	if player.has_method("notify"):
+		player.notify("⬆ «%s» улучшена до Lv.%d (%s): циклы ×%.2f, ресурс %d, питание ×%.1f." % [
+			object_name, next_level, level_state.get_level_name(), level_state.get_speed_mult(),
+			int(level_state.get_max_condition()), level_state.get_power_mult()])
+	machine_upgraded.emit(next_level)
+	return true
+
+func _upgrade_cost_text(cost: Dictionary) -> String:
+	var parts: PackedStringArray = []
+	for item_id in cost.keys():
+		parts.append("%s %s ×%d" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), int(cost[item_id])])
 	return ", ".join(parts)
 
 # ---------------------------------------------------------------------------

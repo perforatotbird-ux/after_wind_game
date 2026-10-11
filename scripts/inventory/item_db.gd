@@ -225,6 +225,50 @@ const ITEMS: Dictionary = {
 		"sell_price": 22,
 		"description": "Прозрачное закалённое стекло из выплавленного кварцевого песка."
 	},
+	"steel_plate": {
+		"id": "steel_plate",
+		"name": "Стальная пластина",
+		"icon": "🔩",
+		"category": "component",
+		"weight": 1.0,
+		"max_stack": 25,
+		"sell_price": 45,
+		"description": "Закалённая сталь клейма «База»: держит удар и жар. Деталь качественного ремонта и передовых станков."
+	},
+	"precision_gear": {
+		"id": "precision_gear",
+		"name": "Точная шестерня",
+		"icon": "⚙️",
+		"category": "component",
+		"weight": 0.6,
+		"max_stack": 25,
+		"sell_price": 70,
+		"description": "Шестерня с обкатанными зубьями: не дребезжит и не съедает мощность. Сердце передовой техники."
+	},
+	"steel_ingot": {
+		"id": "steel_ingot",
+		"name": "Стальной слиток",
+		"icon": "⛓️",
+		"category": "product",
+		"weight": 1.6,
+		"max_stack": 20,
+		"sell_price": 78,
+		"description": "Дважды переплавленное железо с присадкой угля. Из него выходят стальные пластины и точные шестерни."
+	},
+	"healing_water": {
+		"id": "healing_water",
+		"name": "Целебная вода",
+		"icon": "🧪",
+		"category": "product",
+		"weight": 0.9,
+		"max_stack": 20,
+		"sell_price": 85,
+		"is_drinkable": true,
+		"thirst_recovery": 60.0,
+		"energy_bonus": 12.0,
+		"health_bonus": 15.0,
+		"description": "Минерализованный настой на очищенной воде. Утоляет жажду, бодрит и затягивает ссадины (+15 здоровья)."
+	},
 	"iron_ingot": {
 		"id": "iron_ingot",
 		"name": "Железный слиток",

@@ -113,6 +113,7 @@ script = ExtResource("1_mach")
 machine_type = "crusher"
 machine_display_name = "Дробилка камня"
 power_draw = 3.0
+yield_bonus_per_level = 1
 visual_node = NodePath("Visual")
 shake_strength = 0.25
 

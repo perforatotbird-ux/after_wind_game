@@ -101,6 +101,10 @@ var items: Dictionary = {
 	"battery_cell": 0,
 	"street_lamp_item": 0,
 	# --- Компоненты и инструменты Lv.2 (Этап 11) ---
+	"steel_plate": 0,
+	"precision_gear": 0,
+	"steel_ingot": 0,
+	"healing_water": 0,
 	"wooden_handle": 0,
 	"bolt": 0,
 	"fabric": 0,

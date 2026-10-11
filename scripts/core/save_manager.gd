@@ -156,6 +156,7 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"batch_total": node.batch_cycles_total,
 				"batch_done": node.batch_cycles_done,
 				"batch_to_buffer": node.batch_to_buffer,
+				"level": int(node.get_level()) if node.level_state else 1,
 				"wear": float(node.wear.condition) if node.wear else 100.0,
 				"fuel_slots": node.fuel_slots.duplicate(true) if node.has_fuel_slots else [],
 				"fuel_burn_left": maxf(0.0, float(node.fuel_burn_left))
@@ -482,6 +483,13 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			machine.batch_cycles_total = 0
 			machine.batch_cycles_done = 0
 			machine.batch_to_buffer = false
+		# Уровень станка — до износа: max_condition зависит от уровня.
+		if machine.level_state and state.has("level"):
+			machine.level_state.set_level(int(state["level"]))
+			if machine.wear:
+				var saved_ratio: float = machine.wear.get_ratio()
+				machine.wear.max_condition = machine.level_state.get_max_condition()
+				machine.wear.set_condition(saved_ratio * machine.wear.max_condition)
 		# Износ и топливо (поля необязательные: старые сохранения — defaults).
 		if machine.wear and state.has("wear"):
 			machine.wear.set_condition(float(state["wear"]))
@@ -729,7 +737,9 @@ static func _validate_save_data(data: Dictionary) -> bool:
 				return false
 			if state.has("batch_to_buffer") and not state["batch_to_buffer"] is bool:
 				return false
-			if state.has("wear") and not _is_number(state["wear"], 0.0, 100.0):
+			if state.has("level") and not _is_integer(state["level"], 1.0, 3.0):
+				return false
+			if state.has("wear") and not _is_number(state["wear"], 0.0, 150.0):
 				return false
 			if state.has("fuel_slots"):
 				if not state["fuel_slots"] is Array or state["fuel_slots"].size() > ProductionMachine.FUEL_SLOTS:

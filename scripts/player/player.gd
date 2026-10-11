@@ -660,18 +660,22 @@ func _on_collapse(reason: String = "") -> void:
 	thirst_changed.emit(thirst, max_thirst)
 	hunger_changed.emit(hunger, max_hunger)
 
-func drink_water(amount: float = 40.0, is_clean: bool = true, energy_bonus: float = 0.0) -> bool:
-	if thirst >= max_thirst:
+func drink_water(amount: float = 40.0, is_clean: bool = true, energy_bonus: float = 0.0, health_bonus: float = 0.0) -> bool:
+	# Обычное питьё при полной жажде не нужно; целебная вода пьётся ради здоровья.
+	if thirst >= max_thirst and health_bonus <= 0.0:
 		notify("💧 Вы пока не хотите пить (Жажда 100%).")
 		return false
-	
+
 	thirst = min(max_thirst, thirst + amount)
 	thirst_changed.emit(thirst, max_thirst)
-	
+
 	if energy_bonus > 0.0:
 		energy = min(max_energy, energy + energy_bonus)
 		energy_changed.emit(energy, max_energy)
-		
+
+	if health_bonus > 0.0:
+		heal(health_bonus)
+
 	if is_clean:
 		notify("💧 Вы утолили жажду чистой водой! (+%d%% жажды, текущая: %d%%)" % [int(amount), int(thirst)])
 	else:
@@ -693,18 +697,22 @@ func drink_from_inventory(preferred_item_id: String = "") -> bool:
 	if target_item == "" or inventory.get_item_count(target_item) <= 0:
 		notify("ℹ️ В рюкзаке нет воды для питья!")
 		return false
-	
-	if thirst >= max_thirst:
+
+	var item_data: Dictionary = ItemDB.get_item(target_item)
+	# Целебные напитки пьют и при полной жажде — ради здоровья.
+	if thirst >= max_thirst and float(item_data.get("health_bonus", 0.0)) <= 0.0:
 		notify("💧 Вы пока не испытываете жажды (100%).")
 		return false
-	
-	var item_data: Dictionary = ItemDB.get_item(target_item)
+
 	var rec: float = item_data.get("thirst_recovery", 30.0)
 	var e_bon: float = item_data.get("energy_bonus", 0.0)
+	var hp_bon: float = item_data.get("health_bonus", 0.0)
 	var is_clean: bool = (target_item != "water")
-	
+
 	inventory.remove_item(target_item, 1)
-	drink_water(rec, is_clean, e_bon)
+	drink_water(rec, is_clean, e_bon, hp_bon)
+	if hp_bon > 0.0:
+		notify("🧪 Целебный настой затянул ссадины (+%d здоровья)." % int(hp_bon))
 	return true
 
 func eat_food(food_item_id: String) -> bool:

@@ -17,7 +17,7 @@ const QuantityDialog = preload("res://scripts/ui/quantity_dialog.gd")
 const DroppedItem = preload("res://scripts/inventory/dropped_item.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 
-const DRINK_ITEMS: Array[String] = ["clean_water", "bottled_water"]
+const DRINK_ITEMS: Array[String] = ["clean_water", "bottled_water", "healing_water"]
 
 var player: Node
 var inventory: Node

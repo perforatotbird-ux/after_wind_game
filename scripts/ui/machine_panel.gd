@@ -26,6 +26,7 @@ var inventory: Node
 var _recipes: Array = []
 var _selected_recipe: Dictionary = {}
 
+var _title_label: Label
 var _grid: ItemGrid
 var _recipe_grid: GridContainer
 var _recipe_name: Label
@@ -35,6 +36,9 @@ var _info: Label
 var _start_btn: Button
 var _wear_label: Label
 var _repair_btn: Button
+var _repair_q_btn: Button
+var _upgrade_btn: Button
+var _upgrade_cost_label: Label
 var _fuel_box: VBoxContainer
 var _fuel_slot_btns: Array[Button] = []
 var _fuel_status: Label
@@ -71,7 +75,8 @@ func _ready() -> void:
 
 	var header := HBoxContainer.new()
 	root.add_child(header)
-	header.add_child(UI.make_label("⚙️ %s" % str(machine.object_name if machine else "Станок"), 20, UI.COLOR_TITLE))
+	_title_label = UI.make_label("⚙️ %s" % str(machine.object_name if machine else "Станок"), 20, UI.COLOR_TITLE)
+	header.add_child(_title_label)
 	var sp := Control.new()
 	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(sp)
@@ -166,9 +171,21 @@ func _ready() -> void:
 	_wear_label = UI.make_label("", 14)
 	_wear_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col_state.add_child(_wear_label)
-	_repair_btn = UI.make_button("🔧 Ремонт", Vector2(0, 32))
-	_repair_btn.pressed.connect(_on_repair_pressed)
-	col_state.add_child(_repair_btn)
+	var repair_row := HBoxContainer.new()
+	repair_row.add_theme_constant_override("separation", 6)
+	col_state.add_child(repair_row)
+	_repair_btn = UI.make_button("🔧 Ремонт (+50%)", Vector2(0, 32))
+	_repair_btn.pressed.connect(func(): _on_repair_pressed(false))
+	repair_row.add_child(_repair_btn)
+	_repair_q_btn = UI.make_button("✨ Качественный ремонт (+70%)", Vector2(0, 32), true)
+	_repair_q_btn.pressed.connect(func(): _on_repair_pressed(true))
+	repair_row.add_child(_repair_q_btn)
+	_upgrade_btn = UI.make_button("⬆ Улучшить станок", Vector2(0, 36), true)
+	_upgrade_btn.pressed.connect(_on_upgrade_pressed)
+	col_state.add_child(_upgrade_btn)
+	_upgrade_cost_label = UI.make_label("", 13, UI.COLOR_MUTED)
+	_upgrade_cost_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col_state.add_child(_upgrade_cost_label)
 	_status_label = UI.make_label("", 14)
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col_state.add_child(_status_label)
@@ -228,6 +245,8 @@ func _ready() -> void:
 		for sig in ["outputs_changed", "batch_finished", "batch_cancelled", "process_started"]:
 			if machine.has_signal(sig):
 				machine.connect(sig, _on_machine_signal)
+		if machine.has_signal("machine_upgraded"):
+			machine.machine_upgraded.connect(_on_machine_upgraded)
 	_load_recipes()
 	if not _recipes.is_empty():
 		_select_recipe(_recipes[0])
@@ -237,11 +256,19 @@ func _ready() -> void:
 func _on_machine_signal(_a = null, _b = null) -> void:
 	_refresh()
 
+## После улучшения: перечитываем рецепты (появляются рецепты со min_level)
+## и обновляем заголовок, блок улучшения и характеристики.
+func _on_machine_upgraded(_new_level: int) -> void:
+	_load_recipes()
+	if not _recipes.is_empty() and _selected_recipe.is_empty():
+		_select_recipe(_recipes[0])
+	_refresh()
+
 func _load_recipes() -> void:
 	_recipes.clear()
 	if machine == null:
 		return
-	var list = RecipeDB.get_recipes_for_machine(machine.machine_type)
+	var list = RecipeDB.get_recipes_for_machine(machine.machine_type, machine.get_level())
 	for r in list:
 		if r is Dictionary and not r.is_empty():
 			_recipes.append(r)
@@ -350,11 +377,41 @@ func _refresh_wear() -> void:
 	if machine == null or machine.wear == null:
 		_wear_label.text = ""
 		_repair_btn.visible = false
+		_repair_q_btn.visible = false
 		return
+	var lvl: int = machine.get_level()
+	_title_label.text = "⚙️ %s · Lv.%d" % [str(machine.object_name), lvl] if lvl > 1 else "⚙️ %s" % str(machine.object_name)
 	_wear_label.text = machine.wear.get_status_text()
 	_repair_btn.visible = true
 	_repair_btn.disabled = machine.wear.get_ratio() >= 1.0
 	_repair_btn.tooltip_text = "Восстанавливает +50%% состояния. Ресурсы: %s" % machine._repair_cost_text()
+	# Качественный ремонт: та же кнопка «на месте», но со стальной пластиной.
+	_repair_q_btn.visible = true
+	_repair_q_btn.disabled = machine.wear.get_ratio() >= 1.0
+	_repair_q_btn.tooltip_text = "Стальные детали служат дольше: +70%% состояния. Ресурсы: %s" % machine._repair_cost_text(machine.QUALITY_REPAIR_COST)
+	_refresh_upgrade()
+
+## Блок улучшения: доступен, пока станок не занят и есть следующий уровень.
+func _refresh_upgrade() -> void:
+	var can: bool = machine.can_upgrade()
+	_upgrade_btn.visible = can
+	_upgrade_cost_label.visible = can
+	if not can:
+		return
+	var next_level: int = machine.get_level() + 1
+	_upgrade_btn.text = "⬆ Улучшить до Lv.%d" % next_level
+	var cost: Dictionary = machine.get_upgrade_cost()
+	var enough: bool = true
+	var parts: PackedStringArray = []
+	for item_id in cost.keys():
+		var need: int = int(cost[item_id])
+		var have: int = inventory.get_item_count(str(item_id)) if inventory else 0
+		enough = enough and have >= need
+		parts.append("%s %s %d/%d" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), have, need])
+	_upgrade_btn.disabled = not enough or machine.is_machine_running
+	_upgrade_cost_label.text = "  ·  ".join(parts)
+	_upgrade_btn.tooltip_text = "Улучшенный станок: циклы ×%.2f быстрее, износ меньше, ресурс больше, питание ×%.1f." % [
+		machine.level_state.LEVEL_STATS[next_level]["speed"], machine.level_state.LEVEL_STATS[next_level]["power"]]
 
 func _refresh_fuel() -> void:
 	if _fuel_box == null or machine == null:
@@ -484,10 +541,19 @@ func _on_start() -> void:
 		AudioManager.play("ui_click")
 	_refresh()
 
-func _on_repair_pressed() -> void:
+func _on_repair_pressed(quality: bool) -> void:
 	if machine == null:
 		return
-	if machine.repair_machine(player):
+	if machine.repair_machine(player, quality):
+		AudioManager.play("ui_click")
+	_refresh()
+
+## Улучшение станка на месте: детали списываются, уровень растёт,
+## рецепты перечитываются сигналом machine_upgraded.
+func _on_upgrade_pressed() -> void:
+	if machine == null:
+		return
+	if machine.upgrade_machine(player):
 		AudioManager.play("ui_click")
 	_refresh()
 
