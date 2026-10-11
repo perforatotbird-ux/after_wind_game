@@ -1,0 +1,6 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "BerryBush_BerryRed"
+albedo_color = Color(0.503, 0.0048, 0.025, 1)
+roughness = 0.4

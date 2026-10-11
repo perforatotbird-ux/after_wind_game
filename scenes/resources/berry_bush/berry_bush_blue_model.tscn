@@ -1,0 +1,26 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/models/berry_bush/berry_bush_branches_mesh.tres" id="1_br"]
+[ext_resource type="ArrayMesh" path="res://assets/models/berry_bush/berry_bush_leaves_dark_mesh.tres" id="2_ld"]
+[ext_resource type="ArrayMesh" path="res://assets/models/berry_bush/berry_bush_leaves_mesh.tres" id="3_lv"]
+[ext_resource type="ArrayMesh" path="res://assets/models/berry_bush/berry_bush_leaves_light_mesh.tres" id="4_ll"]
+[ext_resource type="ArrayMesh" path="res://assets/models/berry_bush/berry_bush_berries_mesh.tres" id="5_be"]
+[ext_resource type="Material" path="res://assets/models/berry_bush/berry_bush_berry_blue_material.tres" id="6_bm"]
+
+[node name="BerryBushBlueModel" type="Node3D"]
+
+[node name="Branches" type="MeshInstance3D" parent="."]
+mesh = ExtResource("1_br")
+
+[node name="LeavesDark" type="MeshInstance3D" parent="."]
+mesh = ExtResource("2_ld")
+
+[node name="Leaves" type="MeshInstance3D" parent="."]
+mesh = ExtResource("3_lv")
+
+[node name="LeavesLight" type="MeshInstance3D" parent="."]
+mesh = ExtResource("4_ll")
+
+[node name="Berries" type="MeshInstance3D" parent="."]
+material_override = ExtResource("6_bm")
+mesh = ExtResource("5_be")
