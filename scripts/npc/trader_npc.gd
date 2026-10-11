@@ -6,6 +6,8 @@ extends "res://scripts/interaction/interactable.gd"
 
 signal dialogue_opened(npc: Node)
 
+const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
+
 @export var npc_name: String = "Степан (Снабженец)"
 @export var greeting_text: String = "Приветствую, выживший! Буря натворила бед, но смотрю, твоя база оживает. У меня есть срочные заказы от соседних поселений — заплатят щедро!"
 @export var visual_node: Node3D
@@ -40,9 +42,11 @@ func _on_interacted(player: Node) -> void:
 	var inv = player.get("inventory") if player else null
 	if inv and not starter_seeds_given:
 		starter_seeds_given = true
-		inv.add_item("seeds_carrot", 3)
-		inv.add_item("seeds_potato", 2)
-		inv.add_item("seeds_wheat", 3)
+		# Семена не теряются: при полном рюкзаке падают кучкой у Степана.
+		var drop_at: Vector3 = global_position + Vector3(0.0, 0.4, 1.0) if player is Node3D else Vector3.ZERO
+		DroppedItemScript.give_or_drop(player, "seeds_carrot", 3, drop_at, get_parent())
+		DroppedItemScript.give_or_drop(player, "seeds_potato", 2, drop_at, get_parent())
+		DroppedItemScript.give_or_drop(player, "seeds_wheat", 3, drop_at, get_parent())
 		if player.has_method("notify"):
 			player.notify("👨‍🌾 Степан: «Держи семена моркови, картошки и пшеницы! Вскопай грядку лопатой и наладь урожай.»")
 			return

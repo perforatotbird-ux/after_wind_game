@@ -97,8 +97,14 @@ func _update_grid(delta: float) -> void:
 			current_stored = min(max_capacity, current_stored + net * delta)
 		elif net < 0.0:
 			current_stored = max(0.0, current_stored + net * delta)
-	
-	has_power = (current_generation >= current_consumption) or (current_stored > 0.05)
+
+	# Гистерезис: когда питание уже пропало (станки встали и не потребляют), сеть
+	# вернёт его только при положительном балансе или заряде ≥ 15 % — иначе станки
+	# на пустой батарее «мигали» бы: встали → потребление упало → питание есть.
+	if has_power:
+		has_power = (net >= 0.0) or (current_stored > 0.05)
+	else:
+		has_power = (net >= 0.0) or (current_stored > max_capacity * 0.15)
 
 	# 5. Уведомление потребителей (только при изменении статуса питания)
 	if _last_consumer_has_power != has_power:

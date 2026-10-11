@@ -45,6 +45,36 @@ static func spawn(parent: Node, p_item_id: String, p_amount: int, pos: Vector3) 
 		d.position = pos
 	return d
 
+## Единая точка выдачи предмета игроку (добыча, урожай, подарки NPC):
+## сначала рюкзак, остаток при нехватке места — кучкой на землю у точки pos,
+## чтобы предмет не пропадал. Возвращает, сколько штук попало в рюкзак.
+static func give_or_drop(player: Node, p_item_id: String, p_amount: int, pos: Vector3, parent: Node = null) -> int:
+	if p_amount <= 0:
+		return 0
+	var inv: Object = player.get("inventory") if player and "inventory" in player else null
+	var fit: int = p_amount
+	if inv and inv.has_method("get_max_addable"):
+		fit = int(inv.get_max_addable(p_item_id, p_amount))
+	elif inv and inv.has_method("can_add_item") and not inv.can_add_item(p_item_id, p_amount):
+		fit = 0
+	var rest: int = p_amount - maxi(0, fit)
+	if fit > 0 and inv and inv.has_method("add_item") and not inv.add_item(p_item_id, fit):
+		rest = p_amount
+		fit = 0
+	if rest > 0:
+		var drop_parent: Node = parent
+		if drop_parent == null and player is Node3D:
+			drop_parent = player.get_parent()
+		if drop_parent == null and player is Node and player.get_tree():
+			drop_parent = player.get_tree().current_scene
+		if drop_parent != null:
+			spawn(drop_parent, p_item_id, rest, pos)
+			if player and player.has_method("notify"):
+				player.notify("🎒 Рюкзак полон: %s %s ×%d осталось на земле." % [
+					ItemDB.get_item_icon(p_item_id), ItemDB.get_item_name(p_item_id), rest
+				])
+	return maxi(0, fit)
+
 ## Выбрасывает amount предметов из рюкзака игрока на землю перед ним.
 ## Возвращает кучку или null (нельзя выбросить: инструмент, не хватает количества).
 static func drop_from_player(player: Node, p_item_id: String, p_amount: int) -> Node:

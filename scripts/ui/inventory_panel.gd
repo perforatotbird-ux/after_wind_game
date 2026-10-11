@@ -297,7 +297,8 @@ func _on_cell_right_clicked(item_id: String, _count: int, _index: int) -> void:
 	_refresh()
 	_open_drop_dialog(item_id)
 
-## Еда и вода расходуются тем же кодом, что и клавиши U / Y в игре.
+## Еда и вода расходуются по id выбранного предмета (карточка справа), а не
+## по общему приоритету клавиш U / Y: выбрана синяя ягода — съедается она.
 func _on_use_pressed() -> void:
 	if player == null or _selected == "":
 		return
@@ -306,16 +307,10 @@ func _on_use_pressed() -> void:
 			player.selected_seed = _selected
 		_update_details()
 		return
-	var key: Key = KEY_U if _selected in DRINK_ITEMS else KEY_Y
-	var was_mode: int = player.process_mode
-	player.process_mode = Node.PROCESS_MODE_INHERIT
-	var ev := InputEventKey.new()
-	ev.keycode = key
-	ev.physical_keycode = key
-	ev.pressed = true
-	if player.has_method("_unhandled_input"):
-		player._unhandled_input(ev)
-	player.process_mode = was_mode
+	if _selected in DRINK_ITEMS:
+		player.drink_from_inventory(_selected)
+	else:
+		player.eat_food(_selected)
 	_refresh()
 
 func _open_drop_dialog(item_id: String) -> void:

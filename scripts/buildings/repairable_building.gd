@@ -325,13 +325,24 @@ func sleep(player: Node) -> void:
 		if player and player.has_method("notify"):
 			player.notify("⚠️ Дом еще недостаточно отремонтирован для сна!")
 		return
-	
+
+	# Сон до 6:00 следующего дня через переход отдыха (часы, ускорение времени).
+	# В headless-режиме и без UI start_rest применяет результат мгновенно.
+	if player and player.has_method("start_rest"):
+		var hours: float = 8.0
+		var dc: Node = get_tree().root.find_child("DayNightCycle", true, false)
+		if dc and "current_hour" in dc:
+			# Часов до 6:00 утра следующего дня (например, 23:00 -> 7 ч, 07:00 -> 23 ч).
+			hours = (24.0 - float(dc.current_hour)) + 6.0
+		player.start_rest(hours, true)
+		return
+
 	var day_cycle: Node = get_tree().root.find_child("DayNightCycle", true, false)
 	var new_day: int = -1
 	if day_cycle and day_cycle.has_method("skip_to_morning"):
 		day_cycle.skip_to_morning(6.0)
 		new_day = day_cycle.current_day
-	
+
 	if player:
 		if player.has_method("rest_in_bed"):
 			player.rest_in_bed(new_day)
@@ -341,7 +352,7 @@ func sleep(player: Node) -> void:
 				player.energy_changed.emit(player.energy, player.max_energy)
 			if player.has_method("notify"):
 				player.notify("💤 Вы отлично выспались в отремонтированном доме! Энергия 100%.")
-	
+
 	# Автосохранение при сне в доме (Этап 12)
 	var world = get_tree().root.find_child("World", true, false)
 	if world:

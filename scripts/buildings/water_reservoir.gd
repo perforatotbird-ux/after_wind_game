@@ -45,6 +45,13 @@ func _on_interacted(player: Node) -> void:
 				var bucket_lvl: int = inv.get_tool_level("bucket") if inv.has_method("get_tool_level") else 1
 				var amount_to_draw: int = 2 if bucket_lvl >= 2 else 1
 				amount_to_draw = mini(amount_to_draw, current_water)
+				# Вода списывается из резервуара только если помещается в рюкзак.
+				if inv.has_method("get_max_addable"):
+					amount_to_draw = mini(amount_to_draw, int(inv.get_max_addable("clean_water", amount_to_draw)))
+				if amount_to_draw <= 0:
+					if player.has_method("notify"):
+						player.notify("🎒 В рюкзаке нет места для воды. Освободите слот.")
+					return
 				current_water -= amount_to_draw
 				inv.add_item("clean_water", amount_to_draw)
 				water_level_changed.emit(current_water, max_capacity)

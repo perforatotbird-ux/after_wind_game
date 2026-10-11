@@ -5,6 +5,7 @@ extends "res://scripts/interaction/interactable.gd"
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
+const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
 signal resource_gathered(resource_id: String, amount: int)
 signal node_depleted()
@@ -232,18 +233,19 @@ func _on_interacted(player: Node) -> void:
 		# Истощение
 		gained += bonus_depleted_yield
 		if inv:
-			inv.add_item(resource_id, gained)
-		
+			# Рюкзак полон — добыча падает кучкой у узла, а не пропадает.
+			DroppedItemScript.give_or_drop(player, resource_id, gained, global_position, get_parent())
+
 		resource_gathered.emit(resource_id, gained)
 		_set_depleted(true)
-		
+
 		var msg_depleted: String = "✅ %s %s +%d! Жила полностью выработана." % [
 			item_icon, resource_display_name, gained
 		]
 		if requires_planting:
 			var saplings: int = maxi(0, sapling_yield)
 			if inv and saplings > 0:
-				inv.add_item(SAPLING_ID, saplings)
+				DroppedItemScript.give_or_drop(player, SAPLING_ID, saplings, global_position, get_parent())
 			msg_depleted = "✅ %s %s +%d, 🌱 саженец +%d. Дерево не отрастёт само — посадите саженец на пень." % [
 				item_icon, resource_display_name, gained, saplings
 			]
@@ -251,8 +253,9 @@ func _on_interacted(player: Node) -> void:
 			player.notify(msg_depleted)
 	else:
 		if inv:
-			inv.add_item(resource_id, gained)
-		
+			# Рюкзак полон — добыча падает кучкой у узла, а не пропадает.
+			DroppedItemScript.give_or_drop(player, resource_id, gained, global_position, get_parent())
+
 		resource_gathered.emit(resource_id, gained)
 		
 		var msg_hit: String = "%s %s +%d (Прочность: %d/%d)" % [

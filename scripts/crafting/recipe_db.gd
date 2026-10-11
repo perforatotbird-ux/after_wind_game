@@ -59,41 +59,41 @@ const RECIPES: Dictionary = {
 		"id": "smelt_brick",
 		"name": "Обжиг: Обожжённый кирпич (x2)",
 		"machine": "furnace",
-		"inputs": {"poor_brick": 2, "fuel_briquette": 1},
+		"inputs": {"poor_brick": 2},
 		"outputs": {"fired_brick": 2},
 		"duration": 50.0,
 		"energy_cost": 2.0,
-		"description": "Закалка сырых необожженных кирпичей в раскаленной печи с топливом."
+		"description": "Закалка сырых кирпичей в раскаленной печи. Топливо (уголь, дрова, брикеты) кладётся в топливные слоты печи."
 	},
 	"smelt_glass": {
 		"id": "smelt_glass",
 		"name": "Выплавка: Листовое стекло (x1)",
 		"machine": "furnace",
-		"inputs": {"sand": 3, "fuel_briquette": 1},
+		"inputs": {"sand": 3},
 		"outputs": {"glass": 1},
 		"duration": 55.0,
 		"energy_cost": 2.5,
-		"description": "Высокотемпературное плавление трёх порций кварцевого песка в прозрачное стекло."
+		"description": "Высокотемпературное плавление трёх порций кварцевого песка в прозрачное стекло. Топливо — в топливных слотах печи."
 	},
 	"smelt_iron": {
 		"id": "smelt_iron",
 		"name": "Переплавка: Железный слиток (x1)",
 		"machine": "furnace",
-		"inputs": {"metal_scrap": 3, "fuel_briquette": 2},
+		"inputs": {"metal_scrap": 3},
 		"outputs": {"iron_ingot": 1},
 		"duration": 75.0,
 		"energy_cost": 3.0,
-		"description": "Переплавка ржавого металлолома в слиток: дорого по топливу — руда с углём выгоднее."
+		"description": "Переплавка ржавого металлолома в слиток: уходит много топлива — руда с углём выгоднее."
 	},
 	"smelt_iron_ore": {
 		"id": "smelt_iron_ore",
 		"name": "Плавка руды: Железный слиток (x1)",
 		"machine": "furnace",
-		"inputs": {"iron_ore": 2, "coal": 1},
+		"inputs": {"iron_ore": 2},
 		"outputs": {"iron_ingot": 1},
 		"duration": 60.0,
 		"energy_cost": 3.0,
-		"description": "Выплавка железа из руды жилы на угле — основной источник слитков после металлолома."
+		"description": "Выплавка железа из руды жилы — основной источник слитков. Уголь загружается в топливный слот печи."
 	},
 	"press_coal_briquette": {
 		"id": "press_coal_briquette",
@@ -179,11 +179,11 @@ const RECIPES: Dictionary = {
 		"id": "bake_bread",
 		"name": "Выпечка: Домашний хлеб (x2)",
 		"machine": "furnace",
-		"inputs": {"wheat": 2, "clean_water": 1, "fuel_briquette": 1},
+		"inputs": {"wheat": 2, "clean_water": 1},
 		"outputs": {"bread": 2},
 		"duration": 45.0,
 		"energy_cost": 2.5,
-		"description": "Замес теста из молотой пшеницы и чистой воды с последующей выпечкой подового хлеба в печи."
+		"description": "Замес теста из молотой пшеницы и чистой воды с выпечкой подового хлеба. Топливо — в топливных слотах печи."
 	},
 
 	# --- Электрогенерация и освещение (Этап 10) ---

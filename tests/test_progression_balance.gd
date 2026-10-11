@@ -95,7 +95,15 @@ func _initialize() -> void:
 	check(total_raw >= 80 and total_raw <= 220, "Сырья до победы %d — вне 80–220" % total_raw)
 	check(longest >= 300.0 and longest <= 1500.0, "Самый загруженный станок %.0f с — вне 5–25 мин" % longest)
 	check(int(raw.get("stone", 0)) <= 70, "Слишком много камня до победы: %d" % raw.get("stone", 0))
-	check(raw.has("iron_ore") and raw.has("coal"), "Путь к инструменту Lv.2 не использует жилы")
+	check(raw.has("iron_ore"), "Путь к инструменту Lv.2 не использует жилы")
+	# Уголь больше не сырьё рецептов печи: он идёт в топливные слоты (горение по времени).
+	check(not RecipeDB.get_recipe("smelt_iron_ore")["inputs"].has("coal"),
+		"Уголь должен расходоваться топливными слотами печи, а не списываться рецептом")
+	var fuel_consumed: bool = false
+	for r in RecipeDB.RECIPES.values():
+		if str(r.get("machine", "")) == "furnace" and (r["inputs"].has("coal") or r["inputs"].has("fuel_briquette")):
+			fuel_consumed = true
+	check(not fuel_consumed, "Рецепты печи не должны тратить топливо как вход: оно горит в слотах")
 	house.free()
 	storage.free()
 	if errors.is_empty():

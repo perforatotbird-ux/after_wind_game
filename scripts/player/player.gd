@@ -26,6 +26,15 @@ signal character_class_changed(class_id: String, c_name: String)
 @export var max_hunger: float = 100.0
 @export var hunger_decay_rate: float = 0.15
 @export var max_wetness: float = 100.0
+## Скорость высыхания (%/сек) на открытом воздухе в сухую погоду.
+## 100 % влаги сохнет ~4.8 мин (~5 игровых часов при 1 ч = 60 с).
+@export var dry_rate_outdoor: float = 0.35
+## Скорость высыхания в укрытии (дом стадии 1+): сухо и теплее, ~1.4 игровых часа.
+@export var dry_rate_sheltered: float = 1.2
+## Скорость высыхания у источника тепла (печь-плавильня), ~17 с на 100 %.
+@export var dry_rate_near_fire: float = 6.0
+## Урон здоровью в секунду при полном истощении сил (энергия 0).
+@export var exhaustion_damage_rate: float = 0.5
 @export var sleep_deprivation_threshold: float = 24.0
 @export var critical_sleep_threshold: float = 36.0
 
@@ -86,6 +95,8 @@ var hunger: float = 100.0
 var wetness: float = 0.0
 var hours_without_sleep: float = 0.0
 var _last_sleep_warning_hour: int = 0
+## Одноразовое предупреждение «истощение подтачивает здоровье» (сбрасывается при восстановлении).
+var _exhaustion_damage_warned: bool = false
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 var nearby_interactables: Array[Area3D] = []
 var current_interactable: Area3D = null
@@ -106,6 +117,8 @@ var _bucket_full_timer: float = 0.0
 var is_digging: bool = false
 var _dig_elapsed: float = 0.0
 var _dig_duration: float = 1.1
+## Идёт переход отдыха/сна (RestTransition): движение и ввод заблокированы.
+var is_resting: bool = false
 var is_scooping: bool = false
 var _scoop_elapsed: float = 0.0
 var _scoop_duration: float = 1.2
@@ -234,6 +247,8 @@ func _notification(what: int) -> void:
 		_strike_buffered = false
 
 func _unhandled_input(event: InputEvent) -> void:
+	if is_resting:
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if _is_gameplay_blocked():
 			return
@@ -497,17 +512,17 @@ func _handle_wetness(delta: float) -> void:
 
 	var old_wetness: float = wetness
 	if is_raining and not is_sheltered:
-		# Намокание под дождем
+		# Намокание под дождем (интенсивность дождя учитывается)
 		var rate: float = 3.0 * intensity
 		wetness = min(max_wetness, wetness + rate * delta)
 	else:
-		# Сушка
-		var dry_rate: float = 1.0
+		# Высыхание постепенное: на улице медленно, в доме быстрее, у печи — быстро.
+		var dry_rate: float = dry_rate_outdoor
 		if is_near_fire:
-			dry_rate = 8.5 # очень быстрая сушка у раскаленной печи
+			dry_rate = dry_rate_near_fire
 		elif is_sheltered:
-			dry_rate = 5.0 # комфортная сушка в доме
-		
+			dry_rate = dry_rate_sheltered
+
 		wetness = max(0.0, wetness - dry_rate * delta)
 
 	if abs(old_wetness - wetness) > 0.01:
@@ -576,20 +591,26 @@ func _on_sleep_collapse() -> void:
 func _handle_health(delta: float) -> void:
 	var old_health: float = health
 	
-	# 1. Урон от критических потребностей
+	# 1. Урон от критических потребностей и истощения
 	var damage_rate: float = 0.0
 	if thirst <= 0.0:
 		damage_rate += 1.2 # Сильное обезвоживание
 	if hunger <= 0.0:
 		damage_rate += 0.8 # Голод
+	if energy <= 0.0:
+		damage_rate += exhaustion_damage_rate # Истощение сил
 	if hours_without_sleep >= critical_sleep_threshold:
 		damage_rate += 0.4 # Критическое переутомление от бессонницы (> 36 часов)
-	
+
 	if damage_rate > 0.0:
+		if not _exhaustion_damage_warned:
+			_exhaustion_damage_warned = true
+			notify("⚠️ Истощение подтачивает здоровье! Нужны еда, вода и отдых.")
 		health = max(0.0, health - damage_rate * delta)
 		if health <= 0.0:
 			_on_collapse("exhaustion")
 	else:
+		_exhaustion_damage_warned = false
 		# 2. Пассивное восстановление здоровья (если сыт, утолил жажду, есть силы и нет депривации сна)
 		if health < max_health and hunger >= 70.0 and thirst >= 70.0 and energy >= 40.0 and hours_without_sleep < sleep_deprivation_threshold:
 			var regen_rate: float = 0.4
@@ -624,6 +645,7 @@ func _on_collapse(reason: String = "") -> void:
 	hunger = max(25.0, hunger)
 	hours_without_sleep = 0.0
 	_last_sleep_warning_hour = 0
+	_exhaustion_damage_warned = false
 	
 	if not is_instance_valid(_house) and get_tree() and get_tree().root:
 		_house = get_tree().root.find_child("RepairableHouse", true, false)
@@ -762,6 +784,82 @@ func rest_in_bed(new_day: int = -1) -> void:
 	else:
 		notify("💤 Вы отлично выспались и полностью восстановили силы! Здоровье и энергия 100%.")
 
+# ---------------------------------------------------------------------------
+# Отдых и сон (переход с ускорением времени, RestTransition)
+# ---------------------------------------------------------------------------
+
+## Запускает отдых на hours игровых часов (is_sleep — сон в кровати: к концу
+## энергия и здоровье восстанавливаются полностью). В игре показывает переход
+## с часами; в headless-режиме (тесты) применяет результат мгновенно.
+func start_rest(hours: float, is_sleep: bool = false) -> void:
+	if is_resting or hours <= 0.0:
+		return
+	var dc: Node = _find_day_cycle()
+	if DisplayServer.get_name() == "headless" or dc == null or not dc.has_method("advance_hours"):
+		if dc and dc.has_method("advance_hours"):
+			dc.advance_hours(hours)
+		_apply_rest_step(hours, hours, 0.0, is_sleep)
+		_finish_rest(hours, is_sleep)
+		return
+	is_resting = true
+	var overlay: Node = preload("res://scripts/ui/rest_transition.gd").new()
+	overlay.setup(self, dc, hours, is_sleep)
+	get_tree().root.add_child(overlay)
+
+func _find_day_cycle() -> Node:
+	if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
+		_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
+	return _day_cycle
+
+## Один шаг симуляции отдыха за hours игровых часов из total (f — доля отдыха).
+## Сон: энергия и здоровье к утру выходят на максимум; организм тратит воду и еду,
+## мокрая одежда сохнет в тепле дома.
+func _apply_rest_step(hours: float, total: float, _elapsed: float, is_sleep: bool) -> void:
+	if hours <= 0.0:
+		return
+	var f: float = clampf(hours / maxf(0.01, total), 0.0, 1.0)
+	if is_sleep:
+		var eff_max: float = get_effective_max_energy()
+		energy = lerpf(energy, eff_max, f)
+		energy_changed.emit(energy, max_energy)
+		if hunger >= 35.0 and thirst >= 35.0:
+			health = lerpf(health, max_health, f)
+			health_changed.emit(health, max_health)
+		hours_without_sleep = 0.0
+		_last_sleep_warning_hour = 0
+	else:
+		# Короткий отдых восстанавливает силы слабее полноценного сна.
+		energy = minf(get_effective_max_energy(), energy + 6.0 * hours)
+		energy_changed.emit(energy, max_energy)
+	thirst = maxf(0.0, thirst - thirst_decay_rate * 60.0 * hours)
+	thirst_changed.emit(thirst, max_thirst)
+	hunger = maxf(0.0, hunger - hunger_decay_rate * 60.0 * hours)
+	hunger_changed.emit(hunger, max_hunger)
+	wetness = maxf(0.0, wetness - dry_rate_sheltered * 60.0 * hours)
+	wetness_changed.emit(wetness, max_wetness)
+
+## Завершение отдыха: итоговое сообщение и автосохранение после сна.
+func _finish_rest(actual_hours: float, is_sleep: bool) -> void:
+	is_resting = false
+	var hours_int: int = maxi(1, int(round(actual_hours)))
+	if is_sleep:
+		if thirst < 35.0:
+			thirst = 35.0
+			thirst_changed.emit(thirst, max_thirst)
+		if hunger < 35.0:
+			hunger = 35.0
+			hunger_changed.emit(hunger, max_hunger)
+		var new_day: int = 0
+		var dc: Node = _find_day_cycle()
+		if dc and "current_day" in dc:
+			new_day = int(dc.current_day)
+		notify("💤 Вы отдыхали %d ч. Энергия: %d%%, здоровье: %d%%." % [hours_int, int(energy), int(health)])
+		if new_day > 0:
+			notify("🌅 Наступил День %d." % new_day)
+		quick_save()
+	else:
+		notify("🛌 Вы отдыхали %d ч. Энергия: %d%%." % [hours_int, int(energy)])
+
 func _check_bounds() -> void:
 	if global_position.y < -5.0:
 		global_position = Vector3(0.0, 0.5, 0.0)
@@ -776,7 +874,7 @@ func _handle_gravity(delta: float) -> void:
 			velocity.y = -0.1
 
 func _handle_movement(delta: float) -> void:
-	if is_mining or is_digging or is_scooping:
+	if is_mining or is_digging or is_scooping or is_resting:
 		# A short planted stance, not an ice-skating full-body animation.
 		velocity.x = 0.0
 		velocity.z = 0.0

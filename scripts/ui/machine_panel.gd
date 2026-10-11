@@ -1,10 +1,9 @@
 extends Control
 
-## Окно станка: слева — рюкзак игрока (сырьё выбранного рецепта подсвечено),
-## в центре — рецепты, справа — заказ: сколько единиц продукции произвести
-## (кратно выходу одного цикла), «Старт» списывает сырьё на всю партию.
-## Ниже — ход партии, отмена (без возврата сырья) и готовая продукция в станке.
-## ESC — закрыть. Логика партий — production_machine.gd (start_batch / cancel_batch).
+## Окно станка: основная область — сетка рецептов (как клетки рюкзака) и заказ;
+## справа — рюкзак игрока (сырьё выбранного рецепта подсвечено). У печи — блок
+## из 4 топливных слотов (уголь/дрова/брикеты горят разное время), у всех станков —
+## состояние износа и ремонт. ESC — закрыть. Логика — production_machine.gd.
 
 signal closed
 
@@ -17,6 +16,9 @@ const PM = preload("res://scripts/crafting/production_machine.gd")
 const ConfirmDialog = preload("res://scripts/ui/confirm_dialog.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 
+const RECIPE_COLS: int = 3
+const RECIPE_CELL: Vector2 = Vector2(196, 64)
+
 var machine: Node
 var player: Node
 var inventory: Node
@@ -24,17 +26,22 @@ var inventory: Node
 var _recipes: Array = []
 var _selected_recipe: Dictionary = {}
 
-var _grid: GridContainer
-var _recipe_list: VBoxContainer
+var _grid: ItemGrid
+var _recipe_grid: GridContainer
 var _recipe_name: Label
 var _inputs_box: VBoxContainer
 var _spin: SpinBox
 var _info: Label
 var _start_btn: Button
+var _wear_label: Label
+var _repair_btn: Button
+var _fuel_box: VBoxContainer
+var _fuel_slot_btns: Array[Button] = []
+var _fuel_status: Label
 var _status_label: Label
 var _progress: ProgressBar
 var _cancel_btn: Button
-var _out_grid: GridContainer
+var _out_grid: ItemGrid
 var _collect_btn: Button
 var _modal: Control
 var _closing: bool = false
@@ -61,7 +68,7 @@ func _ready() -> void:
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 10)
 	margin.add_child(root)
-	
+
 	var header := HBoxContainer.new()
 	root.add_child(header)
 	header.add_child(UI.make_label("⚙️ %s" % str(machine.object_name if machine else "Станок"), 20, UI.COLOR_TITLE))
@@ -72,54 +79,41 @@ func _ready() -> void:
 	close_btn.tooltip_text = "Закрыть (ESC)"
 	close_btn.pressed.connect(close)
 	header.add_child(close_btn)
-	
+
 	var body := HBoxContainer.new()
 	body.add_theme_constant_override("separation", 14)
 	root.add_child(body)
-	
-	# 1. Рюкзак
-	var col_inv := VBoxContainer.new()
-	body.add_child(col_inv)
-	col_inv.add_child(UI.make_section_header("🎒 Рюкзак"))
-	var inv_scroll := ScrollContainer.new()
-	inv_scroll.custom_minimum_size = Vector2(4 * 62 + 16, 440)
-	inv_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	col_inv.add_child(inv_scroll)
-	_grid = ItemGrid.new()
-	_grid.columns = 4
-	_grid.cell_size = Vector2(56, 56)
-	inv_scroll.add_child(_grid)
-	
-	# 2. Рецепты
-	var col_rec := VBoxContainer.new()
-	body.add_child(col_rec)
-	col_rec.add_child(UI.make_section_header("📜 Рецепты"))
+
+	# 1. Основная область: сетка рецептов + заказ + состояние (+ топливо у печи)
+	var col_main := VBoxContainer.new()
+	col_main.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_child(col_main)
+	col_main.add_child(UI.make_section_header("📜 Рецепты"))
 	var rec_scroll := ScrollContainer.new()
-	rec_scroll.custom_minimum_size = Vector2(390, 440)
+	rec_scroll.custom_minimum_size = Vector2(RECIPE_COLS * RECIPE_CELL.x + 14, 4 * RECIPE_CELL.y + 14)
 	rec_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	col_rec.add_child(rec_scroll)
-	_recipe_list = VBoxContainer.new()
-	_recipe_list.add_theme_constant_override("separation", 6)
-	_recipe_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	rec_scroll.add_child(_recipe_list)
-	
-	# 3. Заказ и состояние
+	col_main.add_child(rec_scroll)
+	_recipe_grid = GridContainer.new()
+	_recipe_grid.columns = RECIPE_COLS
+	_recipe_grid.add_theme_constant_override("h_separation", 8)
+	_recipe_grid.add_theme_constant_override("v_separation", 8)
+	_recipe_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rec_scroll.add_child(_recipe_grid)
+
 	var card := UI.make_panel(UI.COLOR_CARD, UI.COLOR_BORDER, 1)
-	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_child(card)
+	col_main.add_child(card)
 	var cm := UI.make_margin(12)
 	card.add_child(cm)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 8)
 	cm.add_child(col)
-	col.add_child(UI.make_section_header("🏭 Заказ"))
 	_recipe_name = UI.make_label("", 16)
 	_recipe_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_recipe_name)
 	_inputs_box = VBoxContainer.new()
 	_inputs_box.add_theme_constant_override("separation", 4)
 	col.add_child(_inputs_box)
-	
+
 	var qty := HBoxContainer.new()
 	qty.add_theme_constant_override("separation", 6)
 	col.add_child(qty)
@@ -138,7 +132,7 @@ func _ready() -> void:
 	var max_btn := UI.make_button("Макс", Vector2(64, 32))
 	max_btn.pressed.connect(func(): _spin.value = _spin.max_value)
 	qty.add_child(max_btn)
-	
+
 	_info = UI.make_label("", 13, UI.COLOR_MUTED)
 	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_info.custom_minimum_size = Vector2(360, 0)
@@ -146,11 +140,38 @@ func _ready() -> void:
 	_start_btn = UI.make_button("▶ Старт", Vector2(0, 40), true, false, 16)
 	_start_btn.pressed.connect(_on_start)
 	col.add_child(_start_btn)
-	
-	col.add_child(UI.make_section_header("⏱ Состояние"))
+
+	# 2. Справа: рюкзак игрока
+	var col_inv := VBoxContainer.new()
+	body.add_child(col_inv)
+	col_inv.add_child(UI.make_section_header("🎒 Рюкзак"))
+	var inv_scroll := ScrollContainer.new()
+	inv_scroll.custom_minimum_size = Vector2(6 * 62 + 16, 440)
+	inv_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	col_inv.add_child(inv_scroll)
+	_grid = ItemGrid.new()
+	_grid.columns = 6
+	_grid.cell_size = Vector2(56, 56)
+	inv_scroll.add_child(_grid)
+
+	# 3. Нижняя строка: состояние, топливо, продукция
+	var bottom := HBoxContainer.new()
+	bottom.add_theme_constant_override("separation", 14)
+	root.add_child(bottom)
+
+	var col_state := VBoxContainer.new()
+	col_state.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bottom.add_child(col_state)
+	col_state.add_child(UI.make_section_header("⏱ Состояние"))
+	_wear_label = UI.make_label("", 14)
+	_wear_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col_state.add_child(_wear_label)
+	_repair_btn = UI.make_button("🔧 Ремонт", Vector2(0, 32))
+	_repair_btn.pressed.connect(_on_repair_pressed)
+	col_state.add_child(_repair_btn)
 	_status_label = UI.make_label("", 14)
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(_status_label)
+	col_state.add_child(_status_label)
 	_progress = ProgressBar.new()
 	_progress.max_value = 1.0
 	_progress.step = 0.001
@@ -158,25 +179,49 @@ func _ready() -> void:
 	_progress.custom_minimum_size = Vector2(0, 14)
 	_progress.add_theme_stylebox_override("background", UI.make_stylebox(UI.COLOR_CARD_EMPTY, UI.COLOR_BORDER, 1, 4))
 	_progress.add_theme_stylebox_override("fill", UI.make_stylebox(UI.COLOR_ACCENT, Color(0, 0, 0, 0), 0, 4))
-	col.add_child(_progress)
+	col_state.add_child(_progress)
 	_cancel_btn = UI.make_button("⏹ Отменить партию", Vector2(0, 34), false, true)
 	_cancel_btn.pressed.connect(_on_cancel_pressed)
-	col.add_child(_cancel_btn)
-	
-	col.add_child(UI.make_section_header("📦 Готовая продукция в станке"))
+	col_state.add_child(_cancel_btn)
+
+	if machine and machine.get("has_fuel_slots"):
+		_fuel_box = VBoxContainer.new()
+		_fuel_box.add_theme_constant_override("separation", 6)
+		bottom.add_child(_fuel_box)
+		_fuel_box.add_child(UI.make_section_header("⛽ Топливо — клик по слоту: добавить/забрать"))
+		var fuel_row := HBoxContainer.new()
+		fuel_row.add_theme_constant_override("separation", 6)
+		_fuel_box.add_child(fuel_row)
+		for i in int(machine.FUEL_SLOTS):
+			var slot_btn := UI.make_button("", Vector2(56, 56))
+			slot_btn.expand_icon = true
+			slot_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			slot_btn.pressed.connect(_on_fuel_slot_pressed.bind(i))
+			fuel_row.add_child(slot_btn)
+			_fuel_slot_btns.append(slot_btn)
+		_fuel_status = UI.make_label("", 13, UI.COLOR_MUTED)
+		_fuel_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_fuel_box.add_child(_fuel_status)
+		var fill_btn := UI.make_button("⛽ Заправить из рюкзака", Vector2(0, 32), true)
+		fill_btn.pressed.connect(_on_fuel_fill_pressed)
+		_fuel_box.add_child(fill_btn)
+
+	var col_out := VBoxContainer.new()
+	bottom.add_child(col_out)
+	col_out.add_child(UI.make_section_header("📦 Продукция в станке"))
 	_out_grid = ItemGrid.new()
 	_out_grid.columns = 5
 	_out_grid.cell_size = Vector2(56, 56)
 	_out_grid.cell_pressed.connect(_on_out_cell_pressed)
-	col.add_child(_out_grid)
+	col_out.add_child(_out_grid)
 	_collect_btn = UI.make_button("📦 Забрать всё", Vector2(0, 34), true)
 	_collect_btn.pressed.connect(_on_collect)
-	col.add_child(_collect_btn)
-	
+	col_out.add_child(_collect_btn)
+
 	var footer := UI.make_label("Количество кратно выходу одного цикла · сырьё и энергия на всю партию списываются при старте · отмена не возвращает сырьё · ESC — закрыть", 13, UI.COLOR_DIM)
 	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	root.add_child(footer)
-	
+
 	if inventory:
 		inventory.inventory_updated.connect(_refresh)
 	if machine:
@@ -205,31 +250,56 @@ func _load_recipes() -> void:
 			if not rd.is_empty():
 				_recipes.append(rd)
 
-func _build_recipe_cards() -> void:
-	for c in _recipe_list.get_children():
+## Сетка рецептов: карточки одного размера (иконка продукции, название, вход → выход),
+## серые без сырья, выбранный рецепт выделен — как клетки рюкзака.
+func _build_recipe_grid() -> void:
+	for c in _recipe_grid.get_children():
 		c.queue_free()
 	for r in _recipes:
 		var main_out: String = PM.get_main_output(r)
 		var ins: PackedStringArray = []
 		var inputs: Dictionary = r.get("inputs", {})
 		for item_id in inputs.keys():
-			ins.append("%s×%d" % [ItemDB.get_item_name(item_id), int(inputs[item_id])])
+			ins.append("%s×%d" % [ItemDB.get_item_icon(item_id), int(inputs[item_id])])
 		var max_c: int = PM.get_max_cycles(r, inventory)
-		var text: String = "%s\n%s → %s×%d · %.0f с" % [str(r.get("name", r.get("id", ""))), ", ".join(ins), ItemDB.get_item_name(main_out), PM.get_output_per_cycle(r), float(r.get("duration", 6.0))]
 		var selected: bool = str(r.get("id", "")) == str(_selected_recipe.get("id", ""))
-		var b := UI.make_button(text, Vector2(0, 58), selected, false, 14)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		# Длинные рецепты (3–4 ингредиента) переносятся, а не вылезают за колонку.
-		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.icon = ItemIcons.get_texture(main_out)
-		b.expand_icon = false
-		b.add_theme_constant_override("icon_max_width", 36)
-		b.tooltip_text = "Хватает сырья на %d цикл(ов)" % max_c
+		var b := UI.make_button("", RECIPE_CELL, selected)
+		b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		b.tooltip_text = "%s\n%s → %s ×%d\nХватает сырья на %d цикл(ов)" % [
+			str(r.get("name", r.get("id", ""))),
+			", ".join(ins), ItemDB.get_item_name(main_out),
+			PM.get_output_per_cycle(r), max_c
+		]
 		if max_c <= 0:
 			b.add_theme_color_override("font_color", UI.COLOR_DIM)
 		b.pressed.connect(_select_recipe.bind(r))
-		_recipe_list.add_child(b)
+		var cell := VBoxContainer.new()
+		cell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cell.add_theme_constant_override("separation", 2)
+		var top := HBoxContainer.new()
+		top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top.add_theme_constant_override("separation", 6)
+		var icon := TextureRect.new()
+		icon.texture = ItemIcons.get_texture(main_out)
+		icon.custom_minimum_size = Vector2(28, 28)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top.add_child(icon)
+		var name_l := UI.make_label(str(r.get("name", r.get("id", ""))), 13, UI.COLOR_TITLE if not selected else UI.COLOR_BG)
+		name_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top.add_child(name_l)
+		cell.add_child(top)
+		var bottom_l := UI.make_label("%s → %s×%d · %.0f с" % ["+".join(ins), ItemDB.get_item_icon(main_out), PM.get_output_per_cycle(r), float(r.get("duration", 6.0))], 12, UI.COLOR_MUTED if not selected else UI.COLOR_BG)
+		bottom_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		bottom_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cell.add_child(bottom_l)
+		b.add_child(cell)
+		_recipe_grid.add_child(b)
 
 func _select_recipe(recipe: Dictionary) -> void:
 	AudioManager.play("ui_click")
@@ -256,7 +326,7 @@ func _on_amount_changed(_v: float) -> void:
 func _refresh() -> void:
 	if not is_inside_tree() or inventory == null:
 		return
-	_build_recipe_cards()
+	_build_recipe_grid()
 	if not _selected_recipe.is_empty():
 		var out: int = PM.get_output_per_cycle(_selected_recipe)
 		var keep: float = _spin.value
@@ -272,7 +342,55 @@ func _refresh() -> void:
 				stacks.append({"item_id": item_id, "count": n})
 	_out_grid.set_stacks(stacks, maxi(5, stacks.size()))
 	_collect_btn.disabled = stacks.is_empty()
+	_refresh_wear()
+	_refresh_fuel()
 	_refresh_order()
+
+func _refresh_wear() -> void:
+	if machine == null or machine.wear == null:
+		_wear_label.text = ""
+		_repair_btn.visible = false
+		return
+	_wear_label.text = machine.wear.get_status_text()
+	_repair_btn.visible = true
+	_repair_btn.disabled = machine.wear.get_ratio() >= 1.0
+	_repair_btn.tooltip_text = "Восстанавливает +50%% состояния. Ресурсы: %s" % machine._repair_cost_text()
+
+func _refresh_fuel() -> void:
+	if _fuel_box == null or machine == null:
+		return
+	for i in _fuel_slot_btns.size():
+		var slot: Dictionary = machine.fuel_slots[i] if i < machine.fuel_slots.size() else {"item_id": "", "count": 0}
+		var fid: String = str(slot.get("item_id", ""))
+		var btn: Button = _fuel_slot_btns[i]
+		if fid != "" and int(slot.get("count", 0)) > 0:
+			btn.icon = ItemIcons.get_texture(fid)
+			btn.text = "×%d" % int(slot["count"])
+			btn.tooltip_text = "%s %s ×%d (%d с/шт)\nКлик — забрать в рюкзак" % [
+				ItemDB.get_item_icon(fid), ItemDB.get_item_name(fid), int(slot["count"]),
+				int(machine.get_fuel_burn_time(fid))]
+		else:
+			btn.icon = null
+			btn.text = "+"
+			btn.tooltip_text = "Пустой топливный слот. Клик — положить топливо из рюкзака (%s)." % machine._fuel_list_text()
+		btn.disabled = machine.is_machine_running and machine.active_fuel_slot == i and machine.fuel_burn_left > 0.0
+	var burn: float = float(machine.fuel_burn_left)
+	var total: float = machine.get_fuel_time_total()
+	if total <= 0.0:
+		_fuel_status.text = "⛔ Нет топлива! Печь стоит: добавьте уголь, дрова или брикеты."
+		_fuel_status.add_theme_color_override("font_color", UI.COLOR_DANGER)
+	else:
+		var active_txt: String = "—"
+		if machine.active_fuel_slot >= 0 and machine.active_fuel_slot < machine.fuel_slots.size():
+			var af: String = str(machine.fuel_slots[machine.active_fuel_slot].get("item_id", ""))
+			if af != "":
+				active_txt = "%s %s" % [ItemDB.get_item_icon(af), ItemDB.get_item_name(af)]
+		_fuel_status.text = "🔥 Горит: %s (ещё %s) · Запас горения: %s" % [active_txt, _fmt_time(burn), _fmt_time(total)]
+		_fuel_status.add_theme_color_override("font_color", UI.COLOR_MUTED)
+
+func _fmt_time(sec: float) -> String:
+	var s: int = maxi(0, int(sec))
+	return "%d:%02d" % [s / 60, s % 60]
 
 ## Состав заказа, подсветка сырья в рюкзаке и доступность «Старт».
 func _refresh_order() -> void:
@@ -301,7 +419,7 @@ func _refresh_order() -> void:
 	for item_id in outputs.keys():
 		_inputs_box.add_child(_make_line(item_id, "→ %s ×%d" % [ItemDB.get_item_name(item_id), int(outputs[item_id]) * maxi(cycles, 1)], UI.COLOR_TITLE))
 	_grid.set_stacks(inventory.get_slot_cells(), inventory.max_slots)
-	
+
 	var params: Dictionary = machine.get_cycle_params(_selected_recipe, player) if machine else {"duration": 0.0, "energy": 0.0}
 	var energy_total: float = float(params["energy"]) * maxi(cycles, 1)
 	var text: String = "Циклов: %d  ·  Время: %.0f с  ·  Энергия: %.0f" % [maxi(cycles, 1), float(params["duration"]) * maxi(cycles, 1), energy_total]
@@ -309,8 +427,15 @@ func _refresh_order() -> void:
 		text += "\n❌ Не хватает сырья даже на один цикл."
 	if player and "energy" in player and float(player.energy) < energy_total:
 		text += "\n⚠️ Мало энергии: есть %.0f." % float(player.energy)
+	if machine and machine.wear and machine.wear.is_broken():
+		text += "\n⛔ Станок неисправен — нужен ремонт."
+	if machine and machine.get("has_fuel_slots"):
+		var need_fuel: float = float(params["duration"]) * maxi(cycles, 1)
+		if machine.get_fuel_time_total() < need_fuel:
+			text += "\n⛽ Не хватает топлива на партию (%s в слотах)." % _fmt_time(machine.get_fuel_time_total())
 	_info.text = text
-	_start_btn.disabled = not enough_all or (machine and machine.is_machine_running)
+	var broken: bool = machine != null and machine.wear != null and machine.wear.is_broken()
+	_start_btn.disabled = not enough_all or (machine and machine.is_machine_running) or broken
 	_start_btn.text = "▶ Старт: %s ×%d" % [ItemDB.get_item_name(PM.get_main_output(_selected_recipe)), int(_spin.value)]
 
 func _make_line(item_id: String, text: String, color: Color) -> HBoxContainer:
@@ -334,9 +459,16 @@ func _process(_delta: float) -> void:
 	if machine.is_machine_running:
 		_progress.value = machine.get_progress()
 		var r_name: String = str(machine.active_recipe.get("name", "Переработка"))
-		_status_label.text = "🔄 %s · цикл %d/%d · осталось %.0f с" % [r_name, machine.batch_cycles_done + 1, maxi(1, machine.batch_cycles_total), machine.get_batch_remaining_time()]
+		if not machine.power_ok:
+			_status_label.text = "⚡ Нет питания — цикл приостановлен"
+		elif machine.get("has_fuel_slots") and machine.fuel_burn_left <= 0.0 and machine.get_fuel_time_total() <= 0.0:
+			_status_label.text = "⛽ Нет топлива — цикл приостановлен"
+		else:
+			_status_label.text = "🔄 %s · цикл %d/%d · осталось %.0f с" % [r_name, machine.batch_cycles_done + 1, maxi(1, machine.batch_cycles_total), machine.get_batch_remaining_time()]
 		_cancel_btn.visible = true
 		_start_btn.disabled = true
+		if machine.get("has_fuel_slots"):
+			_refresh_fuel()
 	else:
 		_progress.value = 0.0
 		_status_label.text = "✅ Станок свободен"
@@ -350,6 +482,38 @@ func _on_start() -> void:
 		return
 	if machine.start_batch(str(_selected_recipe.get("id", "")), cycles, player):
 		AudioManager.play("ui_click")
+	_refresh()
+
+func _on_repair_pressed() -> void:
+	if machine == null:
+		return
+	if machine.repair_machine(player):
+		AudioManager.play("ui_click")
+	_refresh()
+
+## Клик по топливному слоту: заполненный — забрать всё в рюкзак, пустой —
+## положить первый подходящий вид топлива из рюкзака.
+func _on_fuel_slot_pressed(slot_index: int) -> void:
+	if machine == null or inventory == null:
+		return
+	var slot: Dictionary = machine.fuel_slots[slot_index] if slot_index < machine.fuel_slots.size() else {}
+	if int(slot.get("count", 0)) > 0:
+		machine.take_fuel_from_slot(slot_index, inventory)
+	else:
+		for fid in machine.FUEL_ITEMS:
+			if inventory.get_item_count(fid) > 0:
+				machine.add_fuel_from_inventory(inventory, fid, 1)
+				break
+	AudioManager.play("ui_click")
+	_refresh()
+
+## «Заправить из рюкзака»: заполняет слоты всеми видами топлива из рюкзака.
+func _on_fuel_fill_pressed() -> void:
+	if machine == null or inventory == null:
+		return
+	for fid in machine.FUEL_ITEMS:
+		machine.add_fuel_from_inventory(inventory, fid)
+	AudioManager.play("ui_click")
 	_refresh()
 
 func _on_cancel_pressed() -> void:

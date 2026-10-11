@@ -155,7 +155,10 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"pending_outputs": node.pending_outputs.duplicate(true),
 				"batch_total": node.batch_cycles_total,
 				"batch_done": node.batch_cycles_done,
-				"batch_to_buffer": node.batch_to_buffer
+				"batch_to_buffer": node.batch_to_buffer,
+				"wear": float(node.wear.condition) if node.wear else 100.0,
+				"fuel_slots": node.fuel_slots.duplicate(true) if node.has_fuel_slots else [],
+				"fuel_burn_left": maxf(0.0, float(node.fuel_burn_left))
 			})
 		elif node is ResourceNodeScript:
 			resources.append({
@@ -479,6 +482,25 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			machine.batch_cycles_total = 0
 			machine.batch_cycles_done = 0
 			machine.batch_to_buffer = false
+		# Износ и топливо (поля необязательные: старые сохранения — defaults).
+		if machine.wear and state.has("wear"):
+			machine.wear.set_condition(float(state["wear"]))
+		if machine.has_fuel_slots and state.has("fuel_slots") and state["fuel_slots"] is Array:
+			var saved_fuel: Array = state["fuel_slots"]
+			machine.fuel_slots.clear()
+			for i in ProductionMachine.FUEL_SLOTS:
+				if i < saved_fuel.size() and saved_fuel[i] is Dictionary:
+					var fs: Dictionary = saved_fuel[i]
+					var fid: String = str(fs.get("item_id", ""))
+					var fcnt: int = clampi(int(fs.get("count", 0)), 0, ProductionMachine.FUEL_SLOT_STACK)
+					if fid == "" or fcnt <= 0 or not fid in ProductionMachine.FUEL_ITEMS:
+						fid = ""
+						fcnt = 0
+					machine.fuel_slots.append({"item_id": fid, "count": fcnt})
+			machine.active_fuel_slot = -1
+			machine.fuel_burn_left = maxf(0.0, float(state.get("fuel_burn_left", 0.0)))
+			if machine.fuel_burn_left <= 0.0:
+				machine._light_next_fuel()
 		var pending: Dictionary = {}
 		var saved_pending: Dictionary = state.get("pending_outputs", {})
 		for item_id in saved_pending:
@@ -706,6 +728,21 @@ static func _validate_save_data(data: Dictionary) -> bool:
 			if state.has("batch_done") and not _is_integer(state["batch_done"], 0.0, float(ProductionMachine.MAX_BATCH_CYCLES)):
 				return false
 			if state.has("batch_to_buffer") and not state["batch_to_buffer"] is bool:
+				return false
+			if state.has("wear") and not _is_number(state["wear"], 0.0, 100.0):
+				return false
+			if state.has("fuel_slots"):
+				if not state["fuel_slots"] is Array or state["fuel_slots"].size() > ProductionMachine.FUEL_SLOTS:
+					return false
+				for fs in state["fuel_slots"]:
+					if not fs is Dictionary:
+						return false
+					var fid = fs.get("item_id", "")
+					if not fid is String or (fid != "" and not fid in ProductionMachine.FUEL_ITEMS):
+						return false
+					if not _is_integer(fs.get("count", 0), 0.0, float(ProductionMachine.FUEL_SLOT_STACK)):
+						return false
+			if state.has("fuel_burn_left") and not _is_number(state["fuel_burn_left"], 0.0, 10000.0):
 				return false
 	for path in data.get("traders", {}):
 		if not _is_relative_path(path) or not data["traders"][path] is bool:

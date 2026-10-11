@@ -136,6 +136,24 @@ func skip_to_morning(target_hour: float = 6.0) -> void:
 	var minute_int: int = int((current_hour - hour_int) * 60.0)
 	time_changed.emit(current_day, hour_int, minute_int, get_time_string(), current_phase)
 
+## Продвигает время на hours игровых часов (переход отдыха, сон).
+## Сигналы day_passed/time_changed излучаются как при обычном течении времени.
+func advance_hours(hours: float) -> void:
+	if hours <= 0.0:
+		return
+	var total: float = current_hour + hours
+	while total >= 24.0:
+		total -= 24.0
+		current_day += 1
+		day_passed.emit(current_day)
+	current_hour = total
+	_last_reported_minute = -1
+	current_phase = get_current_phase()
+	_update_lighting_and_sky(true)
+	var hour_int: int = int(current_hour)
+	var minute_int: int = int((current_hour - hour_int) * 60.0)
+	time_changed.emit(current_day, hour_int, minute_int, get_time_string(), current_phase)
+
 func _update_lighting_and_sky(force: bool) -> void:
 	if not sun_light and not _sky_material and not force:
 		return

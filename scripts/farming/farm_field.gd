@@ -18,6 +18,7 @@ const Meshes = preload("res://scripts/farming/farm_field_meshes.gd")
 const Seasons = preload("res://scripts/core/seasons.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 const MeadowDecor = preload("res://scripts/world/meadow_decor.gd")
+const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
 const GROUP: String = "farm_fields"
 const MAX_CELLS: int = 128
@@ -661,11 +662,17 @@ func harvest(c: Vector2i, player: Node = null) -> Dictionary:
 		var ys: Array = calc_yield(d, q, _rng)
 		var seed_id: String = CropDB.get_crop(crop)["seed"]
 		if inv:
-			if not inv.can_add_item(crop, ys[0]) or not inv.can_add_item(seed_id, ys[1]):
+			if not inv.can_add_item(crop, ys[0]):
 				_notify(player, "🎒 Рюкзак полон — урожай остался на грядке.")
 				break
 			inv.add_item(crop, ys[0])
-			inv.add_item(seed_id, ys[1])
+			# Если после урожая семенам не хватило места (свободен был ровно
+			# один слот) — семена падают кучкой у делянки, а не пропадают.
+			if not inv.can_add_item(seed_id, ys[1]):
+				DroppedItemScript.give_or_drop(player, seed_id, ys[1],
+					cell_center_global(n) + Vector3(0.0, 0.4, 0.0), get_parent())
+			else:
+				inv.add_item(seed_id, ys[1])
 		var t: Array = totals.get(crop, [0, 0])
 		totals[crop] = [t[0] + ys[0], t[1] + ys[1]]
 		best_q = maxi(best_q, q)

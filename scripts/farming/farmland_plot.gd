@@ -6,6 +6,7 @@ extends "res://scripts/interaction/interactable.gd"
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
+const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
 signal plot_tilled()
 signal crop_planted(crop_type: String)
@@ -332,8 +333,10 @@ func harvest_crop(player: Node) -> Dictionary:
 	
 	var inv = player.get("inventory") if player else null
 	if inv:
-		inv.add_item(crop_type, base_yield)
-		inv.add_item("seeds_" + crop_type, seed_yield)
+		# Рюкзак полон — урожай и семена падают кучкой у грядки, а не пропадают.
+		var drop_at: Vector3 = global_position + Vector3(0.0, 0.4, 0.9)
+		DroppedItemScript.give_or_drop(player, crop_type, base_yield, drop_at, get_parent())
+		DroppedItemScript.give_or_drop(player, "seeds_" + crop_type, seed_yield, drop_at, get_parent())
 	
 	AudioManager.play("harvest")
 	var harvested_crop_name: String = ItemDB.get_item_name(crop_type)

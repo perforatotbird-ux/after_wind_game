@@ -22,6 +22,8 @@ collision_mask = 0
 script = ExtResource("1_smelt")
 machine_type = "furnace"
 machine_display_name = "Печь-плавильня"
+power_draw = 5.0
+has_fuel_slots = true
 visual_node = NodePath("Visual")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]

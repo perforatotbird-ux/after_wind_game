@@ -14,12 +14,22 @@ extends "res://scripts/interaction/interactable.gd"
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
+const MachineWearScript = preload("res://scripts/crafting/machine_wear.gd")
 
 ## Максимум циклов в одной партии.
 const MAX_BATCH_CYCLES: int = 99
 ## Бонус специализации «Учёный» (Этап 12).
 const SCIENTIST_ENERGY_MULT: float = 0.5
 const SCIENTIST_SPEED_MULT: float = 1.4
+## На сколько процентов состояния восстанавливает один ремонт.
+const REPAIR_RESTORE: float = 50.0
+## Число независимых слотов топлива у печи.
+const FUEL_SLOTS: int = 4
+## Вместимость одного топливного слота.
+const FUEL_SLOT_STACK: int = 9
+## Виды топлива и время горения одной единицы, сек реального времени.
+const FUEL_BURN_TIME: Dictionary = {"coal": 240.0, "wood": 120.0, "fuel_briquette": 360.0}
+const FUEL_ITEMS: Array[String] = ["coal", "wood", "fuel_briquette"]
 
 signal machine_opened(machine: Node)
 signal process_started(recipe_id: String, duration: float)
@@ -34,6 +44,17 @@ signal outputs_changed()
 @export var visual_node: Node3D
 ## Сила дрожания корпуса в работе (0 — не дрожит; у дробилки движутся сами детали).
 @export_range(0.0, 2.0) var shake_strength: float = 1.0
+## Потребление энергосети в работе, кВт (мощность учитывается сетью только пока
+## станок реально работает — см. get_power_demand; настраивается в сцене станка).
+@export var power_draw: float = 1.0
+## Износ включён (MachineWear): изнашивается за циклы, ремонт — repair_machine().
+@export var wear_enabled: bool = true
+## Износ за один завершённый цикл (при wear_enabled).
+@export var wear_per_cycle: float = 0.5
+## Ресурсы одного ремонта: { item_id: количество }.
+@export var repair_cost: Dictionary = {"bolt": 2, "wooden_handle": 1}
+## У печи — отдельный блок из 4 слотов топлива; без топлива цикл приостанавливается.
+@export var has_fuel_slots: bool = false
 
 var is_machine_running: bool = false
 var is_machine: bool = true
@@ -52,6 +73,16 @@ var batch_cycles_done: int = 0
 var batch_to_buffer: bool = false
 var _original_pos: Vector3 = Vector3.ZERO
 var _last_user: Node = null
+## Питание от энергосети (PowerGrid.set_powered). false — цикл на паузе.
+var power_ok: bool = true
+## Состояние оборудования (износ/ремонт) — общий компонент MachineWear.
+var wear: MachineWearScript
+## 4 независимых слота топлива: { "item_id": String, "count": int }.
+var fuel_slots: Array = []
+## Сколько секунд горения осталось у активной единицы топлива.
+var fuel_burn_left: float = 0.0
+## Слот, из которого взята горящая единица топлива (-1 — ничего не горит).
+var active_fuel_slot: int = -1
 
 var _last_emitted_progress: float = -1.0
 
@@ -59,6 +90,14 @@ func _ready() -> void:
 	super._ready()
 	object_name = machine_display_name
 	prompt_action = "Открыть"
+	add_to_group("power_consumers")
+	wear = MachineWearScript.new()
+	wear.wear_per_cycle = wear_per_cycle
+	if not wear_enabled:
+		wear.condition = wear.max_condition
+	if has_fuel_slots:
+		for i in FUEL_SLOTS:
+			fuel_slots.append({"item_id": "", "count": 0})
 	
 	if not visual_node:
 		visual_node = get_node_or_null("Visual")
@@ -70,6 +109,14 @@ func _process(delta: float) -> void:
 	if not is_machine_running:
 		set_process(false)
 		return
+	if not power_ok:
+		# Нет питания: таймер цикла стоит, партия ждёт. Сырьё уже списано — не теряется.
+		return
+	if has_fuel_slots:
+		if fuel_burn_left <= 0.0 and not _light_next_fuel():
+			# Топливо кончилось: цикл приостановлен, сырьё и прогресс партии не теряются.
+			return
+		fuel_burn_left = maxf(0.0, fuel_burn_left - delta)
 	process_timer += delta
 	var progress: float = clamp(process_timer / maxf(0.01, process_duration), 0.0, 1.0)
 	if absf(progress - _last_emitted_progress) >= 0.01 or progress >= 1.0:
@@ -89,6 +136,10 @@ func _process(delta: float) -> void:
 
 func get_prompt() -> String:
 	if is_machine_running:
+		if not power_ok:
+			return "[E] %s (Нет питания — цикл приостановлен)" % object_name
+		if has_fuel_slots and fuel_burn_left <= 0.0 and get_fuel_time_total() <= 0.0:
+			return "[E] %s (Нет топлива — цикл приостановлен)" % object_name
 		var pct: int = int((process_timer / max(0.1, process_duration)) * 100.0)
 		var r_name: String = active_recipe.get("name", "Переработка")
 		if batch_cycles_total > 1:
@@ -104,6 +155,28 @@ func get_prompt() -> String:
 func _on_interacted(player: Node) -> void:
 	_last_user = player
 	machine_opened.emit(self)
+
+# ---------------------------------------------------------------------------
+# Энергосеть (PowerGrid опрашивает группу power_consumers)
+# ---------------------------------------------------------------------------
+
+## Мощность, которую станок берёт из сети прямо сейчас, кВт. Работающий станок
+## потребляет даже без питания (его цикл стоит и он «просит» энергию).
+func get_power_demand() -> float:
+	return power_draw if is_machine_running else 0.0
+
+## PowerGrid сообщает о доступности питания. Без питания цикл приостанавливается:
+## партия и сырьё не теряются, при восстановлении питания производство продолжается.
+func set_powered(has_power: bool) -> void:
+	if power_ok == has_power:
+		return
+	power_ok = has_power
+	if not is_machine_running or not (_last_user and is_instance_valid(_last_user)):
+		return
+	if not has_power:
+		_last_user.notify("⚡ В «%s» нет питания — производство приостановлено." % object_name)
+	else:
+		_last_user.notify("⚡ Питание восстановлено: «%s» продолжает работу." % object_name)
 
 # ---------------------------------------------------------------------------
 # Расчёт партии
@@ -164,27 +237,36 @@ func start_recipe(recipe_id: String, player: Node) -> bool:
 	var recipe: Dictionary = RecipeDB.get_recipe(recipe_id)
 	if recipe.is_empty() or recipe.get("machine", "") != machine_type:
 		return false
-	
+
+	if wear and wear.is_broken():
+		if player.has_method("notify"):
+			player.notify("⛔ «%s» неисправна и требует ремонта." % object_name)
+		return false
+
 	var inv = player.get("inventory") if "inventory" in player else null
 	if not inv:
 		return false
-	
+
 	# Проверка наличия сырья
 	if not RecipeDB.can_craft(recipe, inv):
 		if player.has_method("notify"):
 			player.notify("❌ Недостаточно сырья для запуска производства!")
 		return false
-	
+
+	var params: Dictionary = get_cycle_params(recipe, player)
+	# Топливо проверяется ДО списания сырья: при отказе ничего не теряется.
+	if not _require_fuel(params["duration"] * (wear.get_speed_mult() if wear else 1.0), player, 1):
+		return false
+
 	# Списание ресурсов
 	var inputs: Dictionary = recipe.get("inputs", {})
 	for item_id in inputs.keys():
 		var needed: int = inputs[item_id]
 		inv.remove_item(item_id, needed)
-	
-	var params: Dictionary = get_cycle_params(recipe, player)
+
 	if player.has_method("consume_energy"):
 		player.consume_energy(params["energy"])
-	
+
 	batch_cycles_total = 1
 	batch_cycles_done = 0
 	batch_to_buffer = true
@@ -204,6 +286,10 @@ func start_batch(recipe_id: String, cycles: int, player: Node) -> bool:
 	var recipe: Dictionary = RecipeDB.get_recipe(recipe_id)
 	if recipe.is_empty() or recipe.get("machine", "") != machine_type:
 		return false
+	if wear and wear.is_broken():
+		if player.has_method("notify"):
+			player.notify("⛔ «%s» неисправна и требует ремонта." % object_name)
+		return false
 	var inv = player.get("inventory") if "inventory" in player else null
 	if not inv:
 		return false
@@ -211,15 +297,19 @@ func start_batch(recipe_id: String, cycles: int, player: Node) -> bool:
 		if player.has_method("notify"):
 			player.notify("❌ Недостаточно сырья на %d цикл(ов) «%s»!" % [cycles, recipe.get("name", recipe_id)])
 		return false
-	
+
+	var params: Dictionary = get_cycle_params(recipe, player)
+	# Топливо проверяется ДО списания сырья: при отказе ничего не теряется.
+	if not _require_fuel(params["duration"] * (wear.get_speed_mult() if wear else 1.0) * cycles, player, cycles):
+		return false
+
 	var inputs: Dictionary = recipe.get("inputs", {})
 	for item_id in inputs.keys():
 		inv.remove_item(item_id, int(inputs[item_id]) * cycles)
-	
-	var params: Dictionary = get_cycle_params(recipe, player)
+
 	if player.has_method("consume_energy"):
 		player.consume_energy(float(params["energy"]) * cycles)
-	
+
 	batch_cycles_total = cycles
 	batch_cycles_done = 0
 	batch_to_buffer = true
@@ -236,8 +326,12 @@ func start_batch(recipe_id: String, cycles: int, player: Node) -> bool:
 func _begin_cycle(recipe: Dictionary, duration: float, player: Node) -> void:
 	active_recipe = recipe
 	process_timer = 0.0
-	process_duration = maxf(0.05, duration)
+	# Изношенный станок работает медленнее (MachineWear.get_speed_mult).
+	process_duration = maxf(0.05, duration) * (wear.get_speed_mult() if wear else 1.0)
 	_last_emitted_progress = -1.0
+	# Печь разжигает топливо сразу при старте цикла.
+	if has_fuel_slots and fuel_burn_left <= 0.0:
+		_light_next_fuel()
 	is_machine_running = true
 	set_process(true)
 	_last_user = player
@@ -266,6 +360,8 @@ func cancel_batch() -> bool:
 
 func _complete_process() -> void:
 	completed_runs += 1
+	if wear_enabled and wear:
+		wear.add_wear(wear_per_cycle)
 	var outputs: Dictionary = active_recipe.get("outputs", {})
 	var recipe_id: String = active_recipe.get("id", "")
 	var user_valid: bool = _last_user != null and is_instance_valid(_last_user)
@@ -382,3 +478,148 @@ func get_batch_remaining_time() -> float:
 		return 0.0
 	var left_cycles: int = maxi(0, batch_cycles_total - batch_cycles_done - 1)
 	return maxf(0.0, process_duration - process_timer) + left_cycles * process_duration
+
+# ---------------------------------------------------------------------------
+# Износ и ремонт
+# ---------------------------------------------------------------------------
+
+## Ремонт станка: проверяет состояние и наличие ресурсов (repair_cost), списывает
+## их только при успехе и восстанавливает REPAIR_RESTORE % состояния.
+## Возвращает true, если ремонт выполнен.
+func repair_machine(player: Node) -> bool:
+	if wear == null:
+		return false
+	if wear.get_ratio() >= 1.0:
+		if player and player.has_method("notify"):
+			player.notify("✅ «%s» полностью исправна — ремонт не нужен." % object_name)
+		return false
+	var inv = player.get("inventory") if player and "inventory" in player else null
+	if inv == null:
+		return false
+	for item_id in repair_cost.keys():
+		if int(inv.get_item_count(str(item_id))) < int(repair_cost[item_id]):
+			if player.has_method("notify"):
+				player.notify("❌ Для ремонта нужно: %s" % _repair_cost_text())
+			return false
+	for item_id in repair_cost.keys():
+		inv.remove_item(str(item_id), int(repair_cost[item_id]))
+	wear.repair(wear.max_condition * REPAIR_RESTORE / 100.0)
+	AudioManager.play("build")
+	if player.has_method("notify"):
+		player.notify("🔧 «%s» отремонтирована: %s" % [object_name, wear.get_status_text()])
+	return true
+
+func _repair_cost_text() -> String:
+	var parts: PackedStringArray = []
+	for item_id in repair_cost.keys():
+		parts.append("%s %s ×%d" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), int(repair_cost[item_id])])
+	return ", ".join(parts)
+
+# ---------------------------------------------------------------------------
+# Топливо (печь: 4 независимых слота, у каждого вида своё время горения)
+# ---------------------------------------------------------------------------
+
+func get_fuel_burn_time(item_id: String) -> float:
+	return float(FUEL_BURN_TIME.get(item_id, 0.0))
+
+## Полный запас горения: догорающая единица + всё топливо в слотах, сек.
+## У станков без топливных слотов — заведомо большое значение.
+func get_fuel_time_total() -> float:
+	if not has_fuel_slots:
+		return 1.0e9
+	var total: float = fuel_burn_left
+	for slot in fuel_slots:
+		if int(slot["count"]) > 0:
+			total += get_fuel_burn_time(str(slot["item_id"])) * int(slot["count"])
+	return total
+
+## Проверка перед запуском: запаса горения должно хватить на всю партию.
+func _require_fuel(needed_seconds: float, player: Node, cycles: int) -> bool:
+	if not has_fuel_slots or get_fuel_time_total() >= needed_seconds:
+		return true
+	if player and player.has_method("notify"):
+		player.notify("⛽ Не хватает топлива на %d цикл(ов) (%.0f с горения). В слоты: %s." % [
+			cycles, needed_seconds, _fuel_list_text()])
+	return false
+
+func _fuel_list_text() -> String:
+	var parts: PackedStringArray = []
+	for f in FUEL_ITEMS:
+		parts.append("%s %s (%d с/шт)" % [ItemDB.get_item_icon(f), ItemDB.get_item_name(f), int(FUEL_BURN_TIME[f])])
+	return ", ".join(parts)
+
+## Кладёт топливо из инвентаря в слоты: сначала в слоты с тем же видом,
+## затем в пустые. Возвращает, сколько единиц добавлено.
+func add_fuel_from_inventory(inv: Node, item_id: String, amount: int = -1) -> int:
+	if not has_fuel_slots or inv == null or not item_id in FUEL_ITEMS:
+		return 0
+	var available: int = int(inv.get_item_count(item_id))
+	if amount >= 0:
+		available = mini(available, amount)
+	var added: int = 0
+	for slot in fuel_slots:
+		if added >= available:
+			break
+		if str(slot["item_id"]) == item_id and int(slot["count"]) < FUEL_SLOT_STACK:
+			var n: int = mini(available - added, FUEL_SLOT_STACK - int(slot["count"]))
+			slot["count"] = int(slot["count"]) + n
+			added += n
+	for slot in fuel_slots:
+		if added >= available:
+			break
+		if str(slot["item_id"]) == "" or int(slot["count"]) <= 0:
+			var n: int = mini(available - added, FUEL_SLOT_STACK)
+			slot["item_id"] = item_id
+			slot["count"] = n
+			added += n
+	if added > 0:
+		inv.remove_item(item_id, added)
+		# Если печь стояла без топлива — разжигаем сразу.
+		if fuel_burn_left <= 0.0:
+			_light_next_fuel()
+	return added
+
+## Забирает содержимое топливного слота обратно в инвентарь. Возвращает количество.
+func take_fuel_from_slot(slot_index: int, inv: Node) -> int:
+	if not has_fuel_slots or inv == null or slot_index < 0 or slot_index >= fuel_slots.size():
+		return 0
+	var slot: Dictionary = fuel_slots[slot_index]
+	var count: int = int(slot["count"])
+	if count <= 0:
+		return 0
+	var back: int = count
+	if inv.has_method("get_max_addable"):
+		back = int(inv.get_max_addable(str(slot["item_id"]), count))
+	if back <= 0 or not inv.add_item(str(slot["item_id"]), back):
+		return 0
+	slot["count"] = int(slot["count"]) - back
+	if int(slot["count"]) <= 0:
+		slot["item_id"] = ""
+		if active_fuel_slot == slot_index:
+			# Горевшая единица была из этого слота — ищем следующее топливо.
+			active_fuel_slot = -1
+			fuel_burn_left = 0.0
+			_light_next_fuel()
+	return back
+
+## Разжигает следующую единицу топлива (сначала слот, где горело, затем по порядку).
+## false — топлива нигде нет.
+func _light_next_fuel() -> bool:
+	if not has_fuel_slots:
+		return true
+	var order: Array[int] = []
+	if active_fuel_slot >= 0 and active_fuel_slot < fuel_slots.size():
+		order.append(active_fuel_slot)
+	for i in fuel_slots.size():
+		if i != active_fuel_slot:
+			order.append(i)
+	for i in order:
+		var slot: Dictionary = fuel_slots[i]
+		if int(slot["count"]) > 0:
+			slot["count"] = int(slot["count"]) - 1
+			active_fuel_slot = i
+			fuel_burn_left = get_fuel_burn_time(str(slot["item_id"]))
+			return true
+	active_fuel_slot = -1
+	fuel_burn_left = 0.0
+	return false

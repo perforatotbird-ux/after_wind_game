@@ -135,6 +135,9 @@ func _process(_delta: float) -> bool:
 				if crusher and crusher.has_method("start_batch"):
 					crusher.start_batch("crush_stone", 5, player)
 				if smelter and smelter.has_method("start_batch"):
+					# Печь теперь требует топливо в слотах — заправляем перед замером.
+					if player and "inventory" in player:
+						smelter.add_fuel_from_inventory(player.inventory, "coal", 9)
 					smelter.start_batch("smelt_iron", 5, player)
 				_reset_acc()
 		4:

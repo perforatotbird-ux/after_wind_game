@@ -112,6 +112,7 @@ collision_mask = 0
 script = ExtResource("1_mach")
 machine_type = "crusher"
 machine_display_name = "Дробилка камня"
+power_draw = 3.0
 visual_node = NodePath("Visual")
 shake_strength = 0.25
 
