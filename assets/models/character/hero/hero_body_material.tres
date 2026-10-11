@@ -1,0 +1,17 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/models/character/hero/hero_body_albedo.tres" id="1_pf2m6"]
+[ext_resource type="Texture2D" path="res://assets/models/character/hero/hero_body_orm.tres" id="2_6t3eq"]
+[ext_resource type="Texture2D" path="res://assets/models/character/hero/hero_body_normal.tres" id="3_8mssu"]
+
+[resource]
+resource_name = "hero_body"
+albedo_texture = ExtResource("1_pf2m6")
+metallic = 1.0
+metallic_texture = ExtResource("2_6t3eq")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_6t3eq")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_8mssu")
+texture_filter = 5

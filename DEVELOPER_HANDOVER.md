@@ -157,21 +157,21 @@ k:/After Wind/
 - **2D-графика**: портреты и изометрия-спрайты классов (`assets/sprites/`), иконки инструментов (`assets/tools/`).
 
 ### 4.9. Модель героя и ретаргет анимаций UAL (`tools/retarget_ual_to_miner.gd`)
-- **Модель**: `assets/models/character/miner_ready_fixed.glb` → запекается в `scenes/player/miner_package_model.tscn` (используется в `player.tscn`, масштаб 0.36).
+- **Модель** (с этой версии): присланный AI-шахтёр → `tools/rig_hero_model.py` (Blender: вырез кирки, low-poly ~14k + каска, запекание атласа, скелет с именами костей прежнего шахтёра, веса, сокет `ToolSocket.R` в кулаке) → `hero_build/hero_rigged.gltf` + `hero_pickaxe.gltf` → этот инструмент (`-- --hero hero_build --textures`) → `scenes/player/miner_package_model.tscn` (используется в `player.tscn`, масштаб 0.36), меши и текстуры — в `assets/models/character/hero/`. Подробно — `docs/DOCUMENTATION.md`, «Главный герой». Прежний `miner_ready_fixed.glb` больше не используется.
 - **Почему раньше «не было анимаций»**: родные клипы glb (`Iddle01/Walk/Mine`) двигают в основном IK-контроллеры (`Footik.*`, `Handik.*`). IK-констрейнты Blender в glTF не экспортируются, поэтому в Godot конечности стояли на месте. UAL-клипы копировались как локальные кватернионы 1:1, хотя rest-позы скелетов разные (T-pose UAL vs A-pose шахтёра).
 - **Решение**: ретаргет в мировом пространстве с коррекцией rest-поз по «анатомическим» базисам костей (направление на дочернюю кость + боковой/передний вектор / линия костяшек для кистей и пальцев), смещение таза масштабируется по высоте таза. Нерабочие IK-клипы удалены.
 - **Клипы** (Universal Animation Library 1/2, Quaternius, CC0): `idle`, `walk`, `jog`, `run`, `mine` (OverhandThrow — удар сверху вниз), `chop` (TreeChopping — топор), `dig`/`scoop`/`harvest` (Farm_Harvest), `plant`, `water`, `eat`, `interact`, `pickup`, `carry_walk`, `talk`, `sit`, `hit`, `death`, `jump_*`.
 - **Metadata клипов**: `play_speed` (темп), `contact_time` (момент удара для `mine`/`chop`), `ground_speed` (м/с — `player.gd` подгоняет темп ходьбы/бега под скорость, стопы не скользят).
 - **Стопы**: у героя кость `Foot` идёт от лодыжки круто вниз (~68°), у UAL `foot→ball` полого (~31°). Выравнивание «кость в кость» задирало носки вверх, поэтому для `Foot.*`/`Toe.*` коррекция rest-поз — единичная (`REST_MATCH_BONES`): плоская стопа UAL → плоская стопа героя.
-- **Сокет инструмента**: кость `ToolSocket.R` (дочерняя `Hand.r`) + `BoneAttachment3D` `ToolSocket_R`. Начало — центр отверстия сжатого кулака (центр окружности через суставы согнутых пальцев), +Y — ось рукояти от мизинца к указательному (к голове инструмента), +X — к костяшкам (лезвие), масштаб в метрах. Встроенная в меш кирка вынесена в узел `Pickaxe` на сокете (хват у конца рукояти, 15% длины), каска — в skinned меш `Character_Helmet` (`set_hat_visible`).
+- **Сокет инструмента**: кость `ToolSocket.R` (дочерняя `Hand.r`) + `BoneAttachment3D` `ToolSocket_R`. Начало — центр отверстия сжатого кулака (центр окружности через суставы согнутых пальцев), +Y — ось рукояти от мизинца к указательному (к голове инструмента), +X — к костяшкам (лезвие), масштаб в метрах. Если кость `ToolSocket.R` уже есть в модели (новый герой) — берётся её rest (масштаб переводится в метры). Кирка — отдельный меш `Pickaxe` на сокете с наклоном черенка к костяшкам 35° (`PICKAXE_GRIP_TILT_DEG`), каска — skinned меш `Character_Helmet` (`set_hat_visible`). Skinned-меши сохраняются без `ARRAY_FLAG_COMPRESS_ATTRIBUTES` — со сжатием GPU-скиннинг разрывал меш.
 - **Кулак**: в клипах с инструментом (`GRIP_CLIPS`: mine/chop/dig/scoop/water) пальцы правой кисти зафиксированы в кулаке из `Idle_Loop` — иначе в OverhandThrow кисть раскрывается и кирка «висит» рядом с ладонью.
 - **In-hand модели**: `axe_inhand` смоделирован головой вниз, поэтому `player.gd` (`INHAND_GRIP`) поворачивает его на 180° вокруг X и смещает хват к концу топорища.
-- **Материал**: в glb нет `metallicFactor` (по glTF = 1.0) — при запекании ставится `metallic = 0`, иначе одежда выглядит тёмным хромом. Текстура подключается файлом `miner_ready_RGB_Alpha.png`.
+- **Материал**: атлас запекания (цвет/нормали/ORM, WebP в `.tres`); металличность берётся из карты исходника (почти нулевая — одежда не «хромовая»).
 - **Перезапекание** (после правки модели или выбора других клипов в `CLIPS`):
   ```bash
-  Godot_v4.7.3-stable_win64.exe --headless --path . -s tools/retarget_ual_to_miner.gd
+  Godot_v4.7.3-stable_win64.exe --headless --path . -s tools/retarget_ual_to_miner.gd -- --hero hero_build [--textures]
   # метрики клипов (траектория кисти, высота стоп) + дамп поз в /tmp/miner_pose_dump.json:
-  Godot_v4.7.3-stable_win64.exe --headless --path . -s tools/retarget_ual_to_miner.gd -- --probe
+  Godot_v4.7.3-stable_win64.exe --headless --path . -s tools/retarget_ual_to_miner.gd -- --hero hero_build --probe
   ```
 
 ### 4.10. Камни (`tools/generate_rocks.gd`)

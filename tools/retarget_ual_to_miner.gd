@@ -21,19 +21,29 @@ extends SceneTree
 ##  3. Добавляется кость ToolSocket.R (дочерняя к Hand.r, ось рукояти +Y, лезвие +X,
 ##     масштаб в метрах) и BoneAttachment3D «ToolSocket_R» — к нему player.gd цепляет
 ##     топор/лопату/ведро.
-##  4. Встроенная в меш кирка отделяется в собственный MeshInstance3D «Pickaxe» на сокете,
-##     чтобы её можно было скрывать при смене инструмента.
+##  4. Тело/каска/кирка берутся из модели tools/rig_hero_model.py (кирка — отдельный меш
+##     «Pickaxe» на сокете, чтобы её можно было скрывать при смене инструмента); меши и
+##     текстуры (WebP) сохраняются текстовыми ресурсами в assets/models/character/hero/.
 ##
 ## Запуск (из корня проекта):
 ##   Godot --headless --path . -s tools/retarget_ual_to_miner.gd
 ##   Godot --headless --path . -s tools/retarget_ual_to_miner.gd -- --probe   (метрики клипов)
+##   Godot --headless --path . -s tools/retarget_ual_to_miner.gd -- --hero <HERO_OUT> [--textures]
+##        (модель из rig_hero_model.py; --textures — пересжать текстуры героя из PNG запекания)
 
-const MINER_GLB := "res://assets/models/character/miner_ready_fixed.glb"
+## Папка сборки героя tools/rig_hero_model.py (HERO_OUT): hero_rigged.gltf — скелет и skinned-меши
+## (тело Miner_Body + каска Character_Helmet, кость ToolSocket.R), hero_pickaxe.gltf — кирка в
+## системе сокета хвата (метры), PNG запекания. В репозиторий не входит (промежуточные файлы),
+## путь задаётся «-- --hero <папка>»; по умолчанию res://hero_build.
+var MINER_GLB := "res://hero_build/hero_rigged.gltf"
+var HERO_PICKAXE := "res://hero_build/hero_pickaxe.gltf"
+var HERO_BUILD := "res://hero_build"
+## Текстуры (PortableCompressedTexture2D) и материалы героя.
+const HERO_DIR := "res://assets/models/character/hero/"
 const UAL1_GLB := "res://assets/models/character/UAL1_Standard.glb"
 const UAL2_GLB := "res://assets/models/character/UAL2_Standard.glb"
 const OUT_SCENE := "res://scenes/player/miner_package_model.tscn"
 ## Текстура героя — ссылкой на импортированный PNG вместо 16 МБ встроенного Image.
-const MINER_TEXTURE := "res://assets/models/character/miner_ready_RGB_Alpha.png"
 ## Библиотека клипов — отдельным ресурсом (сцена остаётся лёгкой, клипы можно переиспользовать).
 const OUT_LIBRARY := "res://assets/animations/miner_ual_animations.tres"
 const FPS := 30.0
@@ -128,6 +138,8 @@ const GRIP_FINGERS: Array[String] = [
 ## Эталон кулака: кадр UAL, где правая кисть сжата (Idle_Loop, кадр 0).
 const FIST_REF := [UAL1_GLB, "Idle_Loop", 0]
 
+## Наклон черенка кирки к костяшкам в сокете хвата, градусы.
+const PICKAXE_GRIP_TILT_DEG := 35.0
 ## Клипы удара: для них вычисляется момент контакта (metadata/contact_time).
 const STRIKE_CLIPS: Array[String] = ["mine", "chop"]
 ## Клипы ходьбы: вычисляется скорость шага (metadata/ground_speed, м/с) против скольжения стоп.
@@ -147,7 +159,13 @@ var src_cache: Dictionary = {}
 var probe := false
 
 func _init() -> void:
-	probe = "--probe" in OS.get_cmdline_user_args()
+	var args := OS.get_cmdline_user_args()
+	probe = "--probe" in args
+	var hi := args.find("--hero")
+	if hi != -1 and hi + 1 < args.size():
+		HERO_BUILD = args[hi + 1]
+	MINER_GLB = HERO_BUILD.path_join("hero_rigged.gltf")
+	HERO_PICKAXE = HERO_BUILD.path_join("hero_pickaxe.gltf")
 	var ok := _run()
 	quit(0 if ok else 1)
 
@@ -523,11 +541,17 @@ func _build_scene(dst: Rig, lib: AnimationLibrary, fist: Animation) -> void:
 	var node := dst.root
 	node.name = "MinerPackageModel"
 	var sk := dst.sk
-	# 1. Сокет инструмента (кость + BoneAttachment3D).
-	var socket_global := _socket_global_rest(dst, fist)
+	# 1. Сокет инструмента (кость + BoneAttachment3D). В новой модели кость ToolSocket.R
+	# уже стоит в кулаке (центр хвата на оси черенка, rig_hero_model.py) — берём её rest
+	# и только переводим масштаб в метры; иначе считаем по сжатому кулаку UAL.
 	var hand := sk.find_bone("Hand.r")
 	var sock := sk.find_bone("ToolSocket.R")
-	if sock == -1:
+	var socket_global: Transform3D
+	if sock != -1:
+		var g := sk.get_bone_global_rest(sock)
+		socket_global = Transform3D(g.basis.orthonormalized().scaled(Vector3.ONE / MODEL_UNIT_M), g.origin)
+	else:
+		socket_global = _socket_global_rest(dst, fist)
 		sock = sk.get_bone_count()
 		sk.add_bone("ToolSocket.R")
 		sk.set_bone_parent(sock, hand)
@@ -540,29 +564,32 @@ func _build_scene(dst: Rig, lib: AnimationLibrary, fist: Animation) -> void:
 	att.name = "ToolSocket_R"
 	att.bone_name = "ToolSocket.R"
 	sk.add_child(att)
-	# 2. Отделяем кирку от тела.
-	var body: MeshInstance3D = sk.find_child("*", false, false) as MeshInstance3D
-	for c in sk.get_children():
-		if c is MeshInstance3D:
-			body = c
-	body.name = "Miner_Body"
-	var body_mat := (body.mesh as ArrayMesh).surface_get_material(0) as StandardMaterial3D
-	if body_mat and ResourceLoader.exists(MINER_TEXTURE):
-		var tex: Texture2D = load(MINER_TEXTURE)
-		if body_mat.albedo_texture and body_mat.albedo_texture.get_size() != tex.get_size():
-			push_warning("texture size differs: %s vs %s" % [body_mat.albedo_texture.get_size(), tex.get_size()])
-		body_mat.albedo_texture = tex
-	if body_mat:
-		# В glb нет metallicFactor -> по спецификации glTF он равен 1.0, и одежда
-		# рендерится тёмным «хромом». Герой не металлический.
-		body_mat.metallic = 0.0
-		body_mat.roughness = 0.85
-	var pick := _split_pickaxe(body, sk, socket_global)
-	if pick:
-		att.add_child(pick)
-	var helmet := _split_helmet(body)
-	if helmet:
-		sk.add_child(helmet)
+	# 2. Тело, каска и кирка: меши — отдельными сжатыми ресурсами, материал с атласом.
+	var mats := _hero_materials()
+	var body := sk.find_child("Miner_Body", false, false) as MeshInstance3D
+	var helmet := sk.find_child("Character_Helmet", false, false) as MeshInstance3D
+	for mi in [body, helmet]:
+		if mi == null:
+			push_error("в %s нет Miner_Body/Character_Helmet" % MINER_GLB)
+			return
+		mi.mesh = _save_mesh(mi.mesh, mats["body"], HERO_DIR + "hero_%s_mesh.tres" % ("body" if mi == body else "helmet"), true)
+	var pdoc := GLTFDocument.new()
+	var pstate := GLTFState.new()
+	if pdoc.append_from_file(HERO_PICKAXE, pstate) != OK:
+		push_error("cannot read " + HERO_PICKAXE)
+		return
+	var proot := pdoc.generate_scene(pstate)
+	var psrc := proot.find_child("Pickaxe", true, false) as MeshInstance3D
+	var pick := MeshInstance3D.new()
+	pick.name = "Pickaxe"
+	pick.mesh = _save_mesh(psrc.mesh, mats["pickaxe"], HERO_DIR + "hero_pickaxe_mesh.tres", false)
+	# В исходной модели черенок перпендикулярен предплечью. В ударе (UAL OverhandThrow) кулак
+	# повёрнут большим пальцем внутрь, и длинная кирка уходила вбок; наклон черенка к костяшкам
+	# (+X сокета) — естественный хват: головка опускается вперёд-вниз, к цели.
+	pick.transform = Transform3D(Basis(Vector3.BACK, -deg_to_rad(PICKAXE_GRIP_TILT_DEG)), Vector3.ZERO)
+	proot.free()
+	att.add_child(pick)
+	print("socket rest (skeleton space): ", socket_global.orthonormalized())
 	# 3. Анимации.
 	var ap: AnimationPlayer = dst.ap
 	if ap == null:
@@ -586,6 +613,83 @@ func _build_scene(dst: Rig, lib: AnimationLibrary, fist: Animation) -> void:
 		return
 	var err := ResourceSaver.save(packed, OUT_SCENE)
 	print("OK: saved " + OUT_SCENE if err == OK else "FAIL: save error %d" % err)
+
+## Текстуры героя: при «-- --textures» PNG из папки --hero из rig_hero_model.py сжимаются в
+## PortableCompressedTexture2D (WebP, текстовые .tres), иначе берутся уже сохранённые.
+func _hero_tex(dir: String, file: String, size: int, is_normal: bool, quality: float) -> Texture2D:
+	var out := HERO_DIR + file + ".tres"
+	if dir != "":
+		var img := Image.load_from_file(dir.path_join(file + ".png"))
+		img.convert(Image.FORMAT_RGB8)
+		if img.get_width() != size:
+			img.resize(size, size, Image.INTERPOLATE_LANCZOS)
+		var t := PortableCompressedTexture2D.new()
+		t.create_from_image(img, PortableCompressedTexture2D.COMPRESSION_MODE_LOSSY, is_normal, quality)
+		ResourceSaver.save(t, out)
+	return load(out)
+
+func _hero_orm(dir: String, pre: String, size: int) -> Texture2D:
+	var out := HERO_DIR + pre + "_orm.tres"
+	if dir != "":
+		var rough := Image.load_from_file(dir.path_join(pre + "_roughness.png"))
+		var metal := Image.load_from_file(dir.path_join(pre + "_metallic.png"))
+		for im in [rough, metal]:
+			im.convert(Image.FORMAT_RGB8)
+			if im.get_width() != size:
+				im.resize(size, size, Image.INTERPOLATE_LANCZOS)
+		var orm := Image.create(size, size, false, Image.FORMAT_RGB8)
+		for y in size:
+			for x in size:
+				orm.set_pixel(x, y, Color(1.0, rough.get_pixel(x, y).r, metal.get_pixel(x, y).r))
+		var t := PortableCompressedTexture2D.new()
+		t.create_from_image(orm, PortableCompressedTexture2D.COMPRESSION_MODE_LOSSY, false, 0.8)
+		ResourceSaver.save(t, out)
+	return load(out)
+
+func _hero_materials() -> Dictionary:
+	var args := OS.get_cmdline_user_args()
+	var dir := HERO_BUILD if "--textures" in args else ""
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(HERO_DIR))
+	PortableCompressedTexture2D.set_keep_all_compressed_buffers(true)
+	var res := {}
+	for part in [["body", "hero_body", 2048, 1024], ["pickaxe", "hero_pickaxe", 512, 512]]:
+		var path: String = HERO_DIR + part[1] + "_material.tres"
+		if dir == "" and ResourceLoader.exists(path):
+			res[part[0]] = load(path)
+			continue
+		var m := StandardMaterial3D.new()
+		m.resource_name = part[1]
+		m.albedo_texture = _hero_tex(dir, part[1] + "_albedo", part[2], false, 0.82)
+		m.normal_enabled = true
+		m.normal_texture = _hero_tex(dir, part[1] + "_normal", part[3], true, 0.82)
+		var orm := _hero_orm(dir, part[1], part[3])
+		m.roughness = 1.0
+		m.roughness_texture = orm
+		m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
+		m.metallic = 1.0
+		m.metallic_texture = orm
+		m.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE
+		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+		ResourceSaver.save(m, path)
+		res[part[0]] = load(path)
+	return res
+
+## Меш с материалом — отдельным ресурсом (касательные для карты нормалей, сжатые атрибуты).
+func _save_mesh(src: Mesh, material: Material, path: String, skinned: bool) -> Mesh:
+	var st := SurfaceTool.new()
+	st.create_from(src, 0)
+	st.generate_tangents()
+	var arrays: Array = st.commit_to_arrays()
+	var out := ArrayMesh.new()
+	# Сжатые атрибуты ломают GPU-скиннинг (вершины «улетают») — только для статичной кирки.
+	var flags := 0 if skinned else Mesh.ARRAY_FLAG_COMPRESS_ATTRIBUTES
+	if skinned and (src.surface_get_format(0) & Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS):
+		flags |= Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS
+	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
+	out.surface_set_material(0, material)
+	out.resource_name = path.get_file().get_basename()
+	ResourceSaver.save(out, path)
+	return load(path)
 
 func _make_reset(dst: Rig) -> Animation:
 	var a := Animation.new()
@@ -635,207 +739,6 @@ func _circumcenter(a: Vector3, b: Vector3, c: Vector3) -> Vector3:
 	if n.length_squared() < 1e-12:
 		return (a + b + c) / 3.0
 	return a + (n.cross(ab) * ac.length_squared() + ac.cross(n) * ab.length_squared()) / (2.0 * n.length_squared())
-
-func _split_pickaxe(body: MeshInstance3D, sk: Skeleton3D, socket_global: Transform3D) -> MeshInstance3D:
-	var mesh := body.mesh as ArrayMesh
-	if mesh == null or mesh.get_surface_count() == 0:
-		return null
-	var arrays := mesh.surface_get_arrays(0)
-	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-	var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
-	var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
-	var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
-	var bpv := 8 if (mesh.surface_get_format(0) & Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS) else 4
-	# Связные компоненты (с учётом сварки по позиции).
-	var weld := {}
-	var parent := PackedInt32Array()
-	parent.resize(verts.size())
-	for i in verts.size():
-		var key := Vector3i(roundi(verts[i].x * 10000), roundi(verts[i].y * 10000), roundi(verts[i].z * 10000))
-		if not weld.has(key):
-			weld[key] = i
-		parent[i] = weld[key]
-	var find := func(x: int) -> int:
-		while parent[x] != x:
-			parent[x] = parent[parent[x]]
-			x = parent[x]
-		return x
-	for f in range(0, idx.size(), 3):
-		var a: int = find.call(idx[f])
-		for k in [1, 2]:
-			var b: int = find.call(idx[f + k])
-			if a != b:
-				parent[b] = a
-	var comps := {}
-	for i in verts.size():
-		var r: int = find.call(i)
-		if not comps.has(r):
-			comps[r] = []
-		comps[r].append(i)
-	# Skin: индекс кости в скине -> имя.
-	var skin: Skin = body.skin
-	var hand_bind := -1
-	for bi in skin.get_bind_count():
-		var bn := skin.get_bind_name(bi)
-		if bn == "" and skin.get_bind_bone(bi) >= 0:
-			bn = sk.get_bone_name(skin.get_bind_bone(bi))
-		if bn == "Hand.r":
-			hand_bind = bi
-	var pick_set := {}
-	var handle: Array = []
-	var head: Array = []
-	for r in comps:
-		var vs: Array = comps[r]
-		var aabb := AABB(verts[vs[0]], Vector3.ZERO)
-		var on_hand := 0
-		for v in vs:
-			aabb = aabb.expand(verts[v])
-			var best := 0
-			for k in range(1, bpv):
-				if weights[v * bpv + k] > weights[v * bpv + best]:
-					best = k
-			if bones[v * bpv + best] == hand_bind:
-				on_hand += 1
-		if on_hand == vs.size() and aabb.get_longest_axis_size() > 1.0:
-			for v in vs:
-				pick_set[v] = true
-			if aabb.size.y > aabb.size.x:
-				handle = vs
-			else:
-				head = vs
-	if handle.is_empty() or head.is_empty():
-		push_warning("pickaxe components not found")
-		return null
-	# Оси кирки в bind-пространстве (= rest).
-	var h_min := Vector3(INF, INF, INF)
-	var h_max := -h_min
-	for v in handle:
-		h_min = h_min.min(verts[v]); h_max = h_max.max(verts[v])
-	var head_c := Vector3.ZERO
-	var hd_min := Vector3(INF, INF, INF)
-	var hd_max := -hd_min
-	for v in head:
-		head_c += verts[v]
-		hd_min = hd_min.min(verts[v]); hd_max = hd_max.max(verts[v])
-	head_c /= head.size()
-	var handle_bottom := Vector3((h_min.x + h_max.x) / 2, h_min.y, (h_min.z + h_max.z) / 2)
-	var handle_top := Vector3((h_min.x + h_max.x) / 2, h_max.y, (h_min.z + h_max.z) / 2)
-	var py := (handle_top - handle_bottom).normalized()
-	var blade := Vector3(hd_max.x - hd_min.x, 0, hd_max.z - hd_min.z)
-	var px := (blade - py * blade.dot(py)).normalized()
-	var pz := px.cross(py).normalized()
-	# Хват одной рукой — у конца рукояти (15% длины от низа): при ударе кирка
-	# продолжает предплечье, а не торчит из середины кулака.
-	var grip := handle_bottom + (handle_top - handle_bottom) * 0.15
-	var pframe := Transform3D(Basis(px, py, pz), grip)
-	var to_local := pframe.affine_inverse()
-	# Новый меш кирки (статический, в метрах, в системе сокета).
-	var remap := {}
-	var nv := PackedVector3Array()
-	var nn := PackedVector3Array()
-	var nuv := PackedVector2Array()
-	var ni := PackedInt32Array()
-	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
-	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
-	var body_idx := PackedInt32Array()
-	for f in range(0, idx.size(), 3):
-		if pick_set.has(idx[f]):
-			for k in 3:
-				var v: int = idx[f + k]
-				if not remap.has(v):
-					remap[v] = nv.size()
-					nv.append((to_local * verts[v]) * MODEL_UNIT_M)
-					nn.append((to_local.basis * normals[v]).normalized())
-					nuv.append(uvs[v] if uvs.size() > v else Vector2.ZERO)
-				ni.append(remap[v])
-		else:
-			body_idx.append_array([idx[f], idx[f + 1], idx[f + 2]])
-	var mat := mesh.surface_get_material(0)
-	var pick_arrays := []
-	pick_arrays.resize(Mesh.ARRAY_MAX)
-	pick_arrays[Mesh.ARRAY_VERTEX] = nv
-	pick_arrays[Mesh.ARRAY_NORMAL] = nn
-	pick_arrays[Mesh.ARRAY_TEX_UV] = nuv
-	pick_arrays[Mesh.ARRAY_INDEX] = ni
-	var pmesh := ArrayMesh.new()
-	pmesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, pick_arrays)
-	pmesh.surface_set_material(0, mat)
-	pmesh.resource_name = "Pickaxe"
-	var pmi := MeshInstance3D.new()
-	pmi.name = "Pickaxe"
-	pmi.mesh = pmesh
-	# Тело без кирки.
-	arrays[Mesh.ARRAY_INDEX] = body_idx
-	var flags := mesh.surface_get_format(0) & Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS
-	var bmesh := ArrayMesh.new()
-	bmesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
-	bmesh.surface_set_material(0, mat)
-	bmesh.resource_name = "Miner_Body"
-	body.mesh = bmesh
-	print("pickaxe split: %d tris, body %d tris" % [ni.size() / 3, body_idx.size() / 3])
-	return pmi
-
-## Каска с фонарём — отдельные куски меша выше макушки (y > HELMET_MIN_Y в bind-пространстве).
-## Выносим в собственный skinned MeshInstance3D «Character_Helmet» (set_hat_visible).
-const HELMET_MIN_Y := 4.45
-
-func _split_helmet(body: MeshInstance3D) -> MeshInstance3D:
-	var mesh := body.mesh as ArrayMesh
-	var arrays := mesh.surface_get_arrays(0)
-	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-	var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
-	# Компоненты по рёбрам треугольников (со сваркой позиций).
-	var weld := {}
-	var parent := PackedInt32Array()
-	parent.resize(verts.size())
-	for i in verts.size():
-		var key := Vector3i(roundi(verts[i].x * 10000), roundi(verts[i].y * 10000), roundi(verts[i].z * 10000))
-		if not weld.has(key):
-			weld[key] = i
-		parent[i] = weld[key]
-	var find := func(x: int) -> int:
-		while parent[x] != x:
-			parent[x] = parent[parent[x]]
-			x = parent[x]
-		return x
-	for f in range(0, idx.size(), 3):
-		var a: int = find.call(idx[f])
-		for k in [1, 2]:
-			var b: int = find.call(idx[f + k])
-			if a != b:
-				parent[b] = a
-	var min_y := {}
-	for i in verts.size():
-		var r: int = find.call(i)
-		min_y[r] = minf(min_y.get(r, INF), verts[i].y)
-	var helmet_idx := PackedInt32Array()
-	var body_idx := PackedInt32Array()
-	for f in range(0, idx.size(), 3):
-		var r: int = find.call(idx[f])
-		if min_y[r] > HELMET_MIN_Y:
-			helmet_idx.append_array([idx[f], idx[f + 1], idx[f + 2]])
-		else:
-			body_idx.append_array([idx[f], idx[f + 1], idx[f + 2]])
-	if helmet_idx.is_empty():
-		return null
-	var mat := mesh.surface_get_material(0)
-	var flags := mesh.surface_get_format(0) & Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS
-	var make := func(ind: PackedInt32Array, res_name: String) -> ArrayMesh:
-		var a2 := arrays.duplicate()
-		a2[Mesh.ARRAY_INDEX] = ind
-		var m := ArrayMesh.new()
-		m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, a2, [], {}, flags)
-		m.surface_set_material(0, mat)
-		m.resource_name = res_name
-		return m
-	body.mesh = make.call(body_idx, "Miner_Body")
-	var h := MeshInstance3D.new()
-	h.name = "Character_Helmet"
-	h.mesh = make.call(helmet_idx, "Character_Helmet")
-	h.skin = body.skin
-	h.skeleton = NodePath("..")
-	print("helmet split: %d tris" % (helmet_idx.size() / 3))
-	return h
 
 ## Убирает ключи, которые восстанавливаются линейной интерполяцией соседей (размер сцены).
 func _reduce_keys(anim: Animation, rot_eps: float = 0.007, pos_eps: float = 0.006) -> void:
