@@ -594,24 +594,32 @@ func update_weather_display(_new_type: int = 0, w_name: String = "", icon: Strin
 		var final_temp: int = max(4, base_temp + temp_offset)
 		weather_label.text = "%s %s (+%d°C)" % [icon, w_name, final_temp]
 
-func update_power_display(stored: float, capacity: float, generation: float, consumption: float, has_power: bool) -> void:
+func update_power_display(stored: float, capacity: float, generation: float, consumption: float, has_power: bool, source_mode: int = -1) -> void:
 	if not power_label:
 		power_label = get_node_or_null("TopRightUI/Panel/Margin/VBox/PowerLabel")
 	if not power_label:
 		return
-	
+
 	var net: float = generation - consumption
 	var pct: int = int((stored / capacity) * 100.0) if capacity > 0 else 0
 	var sign_str: String = "+" if net >= 0 else ""
-	
+	# Выбранный источник питания (Сеть / Ветряк / Батарея), если он известен.
+	var mode_str: String = ""
+	match source_mode:
+		1: mode_str = " · Ветряк"
+		2: mode_str = " · Батарея"
+		_: mode_str = ""
+
 	if not has_power:
-		power_label.text = "⚡ Сеть: Обесточена (0%)"
+		# Объясняем причину: потребление выше генерации (батарея не выручает).
+		var reason: String = ": тратится %.1f кВт > генерация %.1f" % [consumption, generation] if consumption > generation else ""
+		power_label.text = "⚡ Сеть%s: Обесточена (0%%)%s" % [mode_str, reason]
 		power_label.add_theme_color_override("font_color", Color(0.95, 0.3, 0.3))
 	elif net >= 0:
-		power_label.text = "⚡ Сеть: %d%% (%s%.1f кВт)" % [pct, sign_str, net]
+		power_label.text = "⚡ Сеть%s: %d%% (%s%.1f кВт)" % [mode_str, pct, sign_str, net]
 		power_label.add_theme_color_override("font_color", Color(0.45, 0.9, 0.6))
 	else:
-		power_label.text = "⚡ Сеть: %d%% (%.1f кВт)" % [pct, net]
+		power_label.text = "⚡ Сеть%s: %d%% (%.1f кВт)" % [mode_str, pct, net]
 		power_label.add_theme_color_override("font_color", Color(0.95, 0.8, 0.3))
 
 func _on_inventory_updated() -> void:

@@ -58,7 +58,11 @@ func _ready() -> void:
 	_apply(0.0)
 
 func is_running() -> bool:
-	return _machine != null and bool(_machine.get("is_machine_running"))
+	if _machine == null or not bool(_machine.get("is_machine_running")):
+		return false
+	# Без питания (сеть обесточена) цикл стоит — маховики останавливаются.
+	var power_ok: Variant = _machine.get("power_ok")
+	return power_ok == null or bool(power_ok)
 
 func _process(delta: float) -> void:
 	var running := is_running()

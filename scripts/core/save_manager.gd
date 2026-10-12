@@ -99,9 +99,11 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	
 	# 7. Энергетика (BatteryBank)
 	var battery = world.find_child("BatteryBank", true, false)
+	var energy_grid = world.find_child("PowerGrid", true, false)
 	if battery and is_instance_valid(battery):
 		save_data["energy"] = {
-			"stored_energy": battery.stored_energy if "stored_energy" in battery else 35.0
+			"stored_energy": battery.stored_energy if "stored_energy" in battery else 35.0,
+			"source_mode": int(energy_grid.get("source_mode")) if energy_grid and "source_mode" in energy_grid else 0
 		}
 	
 	# 8. Водоснабжение (WaterReservoir)
@@ -412,6 +414,9 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		var grid = world.find_child("PowerGrid", true, false)
 		if grid and is_instance_valid(grid) and "current_stored" in grid:
 			grid.current_stored = stored_val
+			# Источник питания (Сеть/Ветряк/Батарея); в старых сейвах — Сеть.
+			if "source_mode" in grid and en_data.has("source_mode"):
+				grid.source_mode = clampi(int(en_data["source_mode"]), 0, 2)
 		var battery = world.find_child("BatteryBank", true, false)
 		if battery and is_instance_valid(battery):
 			battery.stored_energy = stored_val
@@ -682,6 +687,8 @@ static func _validate_save_data(data: Dictionary) -> bool:
 			return false
 	var energy: Dictionary = data.get("energy", {})
 	if energy.has("stored_energy") and not _is_number(energy["stored_energy"], 0.0):
+		return false
+	if energy.has("source_mode") and not _is_integer(energy["source_mode"], 0.0, 2.0):
 		return false
 	var water: Dictionary = data.get("water", {})
 	if water.has("current_water") and not _is_integer(water["current_water"]):

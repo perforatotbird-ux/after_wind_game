@@ -16,6 +16,7 @@ const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 const MachineWearScript = preload("res://scripts/crafting/machine_wear.gd")
 const MachineLevelScript = preload("res://scripts/crafting/machine_level.gd")
+const PowerGridScript = preload("res://scripts/energy/power_grid.gd")
 
 ## Максимум циклов в одной партии.
 const MAX_BATCH_CYCLES: int = 99
@@ -199,10 +200,25 @@ func _on_interacted(player: Node) -> void:
 # ---------------------------------------------------------------------------
 
 ## Мощность, которую станок берёт из сети прямо сейчас, кВт. Работающий станок
-## потребляет даже без питания (его цикл стоит и он «просит» энергию).
+## потребляет даже без питания (его цикл стоит и он «просит» энергию) — иначе
+## сеть мигала бы на границе баланса. Исключение — режим сети «Батарея»: там
+## пауза снимает нагрузку, чтобы батарея могла зарядиться и вернуть питание.
 ## Улучшенный станок мощнее (Lv.2 ×1.3, Lv.3 ×1.6), но и работает быстрее.
 func get_power_demand() -> float:
-	return power_draw * level_state.get_power_mult() if is_machine_running else 0.0
+	if not is_machine_running:
+		return 0.0
+	if not power_ok:
+		var grid: Node = _get_power_grid()
+		if grid and int(grid.get("source_mode")) == PowerGridScript.SourceMode.BATTERY:
+			return 0.0
+	return power_draw * level_state.get_power_mult()
+
+var _grid_ref: Node = null
+
+func _get_power_grid() -> Node:
+	if not is_instance_valid(_grid_ref) and get_tree():
+		_grid_ref = get_tree().get_first_node_in_group("power_grid")
+	return _grid_ref
 
 ## PowerGrid сообщает о доступности питания. Без питания цикл приостанавливается:
 ## партия и сырьё не теряются, при восстановлении питания производство продолжается.

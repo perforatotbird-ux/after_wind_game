@@ -58,9 +58,9 @@ func _ready() -> void:
 		_on_weather_changed(weather_manager.current_weather, "", "")
 	
 	if power_grid and hud and hud.has_method("update_power_display"):
-		if not power_grid.grid_updated.is_connected(hud.update_power_display):
-			power_grid.grid_updated.connect(hud.update_power_display)
-		hud.update_power_display(power_grid.current_stored, power_grid.max_capacity, power_grid.current_generation, power_grid.current_consumption, power_grid.has_power)
+		if not power_grid.grid_updated.is_connected(_on_grid_updated):
+			power_grid.grid_updated.connect(_on_grid_updated)
+		_on_grid_updated(power_grid.current_stored, power_grid.max_capacity, power_grid.current_generation, power_grid.current_consumption, power_grid.has_power)
 	
 	_connect_interactive_stations()
 	_init_session.call_deferred()
@@ -140,6 +140,13 @@ func _connect_interactive_stations() -> void:
 		elif child.has_signal("board_opened") and hud.has_method("open_contract_window"):
 			if not child.board_opened.is_connected(hud.open_contract_window):
 				child.board_opened.connect(hud.open_contract_window)
+
+## Мост grid_updated → HUD: добавляет к стандартным аргументам выбранный
+## источник питания (Сеть / Ветряк / Батарея), чтобы он был виден в HUD.
+func _on_grid_updated(stored: float, capacity: float, generation: float, consumption: float, has_power: bool) -> void:
+	if hud and hud.has_method("update_power_display"):
+		var mode: int = int(power_grid.get("source_mode")) if power_grid and "source_mode" in power_grid else -1
+		hud.update_power_display(stored, capacity, generation, consumption, has_power, mode)
 
 func _on_weather_changed(w_type: int, _w_name: String, _w_icon: String) -> void:
 	var is_rain: bool = (w_type == 2 or w_type == 3)

@@ -2,12 +2,26 @@ class_name PowerGrid
 extends Node
 
 ## Энергосеть базы (Разделы 54, 57, 84 дизайн-документа)
-## Координирует выработку (ветряк), накопление (аккумуляторы) и потребление (фонари, приборы).
+## Координирует выработку (ветряк), накопление (аккумуляторы) и потребление (фонари, станки).
+## Источник питания переключается у батареи ([E]):
+## * Сеть (авто) — ветряк питает базу, излишек заряжает батарею, батарея покрывает пики;
+## * Ветряк — потребители только на генерации (слабее), батарея не тратится и копит излишек;
+## * Батарея — вся нагрузка на батарее (тратит ёмкость), ветряк подзаряжает её (с КПД заряда).
 
 signal grid_updated(stored: float, capacity: float, generation: float, consumption: float, has_power: bool)
+signal source_mode_changed(mode: int)
+
+## Источник питания базы.
+enum SourceMode { BOTH, TURBINE, BATTERY }
+
+## КПД заряда батареи: базовый ветряк наполняет её втрое медленнее,
+## чтобы заряд был заметным процессом, а не мгновенным скачком до 100 %.
+const CHARGE_EFFICIENCY: float = 1.0 / 3.0
 
 @export var max_capacity: float = 100.0
 @export var current_stored: float = 30.0 # Начальный заряд 30 кВт·ч
+## Откуда питаются потребители: BOTH (сеть), TURBINE (ветряк), BATTERY (батарея).
+@export var source_mode: int = SourceMode.BOTH
 
 var current_generation: float = 0.0
 var current_consumption: float = 0.0
@@ -67,6 +81,18 @@ func register_battery(bat: Node) -> void:
 	if bat and not _batteries.has(bat):
 		_batteries.append(bat)
 
+## Переключает источник питания по кругу: Сеть → Ветряк → Батарея → Сеть.
+func cycle_source_mode() -> int:
+	source_mode = (source_mode + 1) % 3
+	source_mode_changed.emit(source_mode)
+	return source_mode
+
+func get_source_mode_name() -> String:
+	match source_mode:
+		SourceMode.TURBINE: return "Ветряк"
+		SourceMode.BATTERY: return "Батарея"
+		_: return "Сеть"
+
 func _update_grid(delta: float) -> void:
 	# 1. Расчет генерации
 	var gen_sum: float = 0.0
@@ -90,21 +116,42 @@ func _update_grid(delta: float) -> void:
 			con_sum += con.get_power_demand()
 	current_consumption = con_sum
 
-	# 4. Баланс мощности
+	# 4. Баланс мощности по выбранному источнику
 	var net: float = current_generation - current_consumption
 	if delta > 0.0:
-		if net > 0.0:
-			current_stored = min(max_capacity, current_stored + net * delta)
-		elif net < 0.0:
-			current_stored = max(0.0, current_stored + net * delta)
+		match source_mode:
+			SourceMode.TURBINE:
+				# Ветряк питает потребителей напрямую; батарея не тратится и
+				# копит только излишек генерации (с КПД заряда).
+				if net > 0.0:
+					current_stored = min(max_capacity, current_stored + net * delta * CHARGE_EFFICIENCY)
+			SourceMode.BATTERY:
+				# Вся нагрузка идёт из батареи, генерация подзаряжает её (с КПД).
+				current_stored = clampf(
+					current_stored + (current_generation * CHARGE_EFFICIENCY - current_consumption) * delta,
+					0.0, max_capacity)
+			_:
+				# Сеть (авто): генерация питает потребителей, излишек — в батарею.
+				if net > 0.0:
+					current_stored = min(max_capacity, current_stored + net * delta * CHARGE_EFFICIENCY)
+				elif net < 0.0:
+					current_stored = max(0.0, current_stored + net * delta)
 
-	# Гистерезис: когда питание уже пропало (станки встали и не потребляют), сеть
-	# вернёт его только при положительном балансе или заряде ≥ 15 % — иначе станки
-	# на пустой батарее «мигали» бы: встали → потребление упало → питание есть.
-	if has_power:
-		has_power = (net >= 0.0) or (current_stored > 0.05)
-	else:
-		has_power = (net >= 0.0) or (current_stored > max_capacity * 0.15)
+	# Питание потребителей — по выбранному источнику. Гистерезис: когда питание
+	# уже пропало, сеть вернёт его только на уверенном запасе, иначе потребители
+	# «мигали» бы на границе баланса.
+	match source_mode:
+		SourceMode.TURBINE:
+			# Только генерация: батарея в питании не участвует.
+			has_power = current_generation + 0.05 >= current_consumption
+		SourceMode.BATTERY:
+			# Только батарея: генерация не питает потребителей напрямую.
+			has_power = current_stored > (max_capacity * 0.15 if not has_power else 0.05)
+		_:
+			if has_power:
+				has_power = (net >= 0.0) or (current_stored > 0.05)
+			else:
+				has_power = (net >= 0.0) or (current_stored > max_capacity * 0.15)
 
 	# 5. Уведомление потребителей (только при изменении статуса питания)
 	if _last_consumer_has_power != has_power:
@@ -134,4 +181,4 @@ func get_power_status_text() -> String:
 	var net: float = current_generation - current_consumption
 	var pct: int = int((current_stored / max_capacity) * 100.0) if max_capacity > 0.001 else 0
 	var sign_str: String = "+" if net >= 0 else ""
-	return "⚡ %d%% (%s%.1f кВт)" % [pct, sign_str, net]
+	return "⚡ %d%% (%s%.1f кВт) · Источник: %s" % [pct, sign_str, net, get_source_mode_name()]
