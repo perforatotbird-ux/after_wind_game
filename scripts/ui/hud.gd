@@ -132,6 +132,7 @@ var _victory_shown: bool = false
 var _bound_player: Node = null
 var _current_active_machine: Node = null
 var _current_active_station: Node = null
+var repair_storage_button: Button
 var _current_active_building: Node = null
 var _current_active_npc: Node = null
 var _cached_weather_mgr: Node = null
@@ -199,6 +200,17 @@ func _ready() -> void:
 		repair_upgrade_button.pressed.connect(_on_upgrade_building_pressed)
 	if repair_sleep_button:
 		repair_sleep_button.pressed.connect(_on_building_sleep_pressed)
+	if repair_upgrade_button:
+		repair_storage_button = Button.new()
+		repair_storage_button.name = "StorageInventoryButton"
+		repair_storage_button.text = "📦 Открыть склад (20 ячеек)"
+		repair_storage_button.visible = false
+		repair_upgrade_button.get_parent().add_child(repair_storage_button)
+		repair_storage_button.pressed.connect(func():
+			var controller = get_node_or_null("GameplayUIController")
+			if controller and is_instance_valid(_current_active_building):
+				controller.open_storage_panel(_current_active_building)
+		)
 	if contract_close_button:
 		contract_close_button.pressed.connect(close_contract_window)
 	if class_close_button:
@@ -1072,6 +1084,8 @@ func _refresh_repair_window() -> void:
 	var can_sleep_now: bool = _current_active_building.has_method("can_sleep") and _current_active_building.can_sleep()
 	repair_sleep_button.visible = can_sleep_now
 	
+	if repair_storage_button:
+		repair_storage_button.visible = _current_active_building.has_method("is_storage_ready") and _current_active_building.is_storage_ready()
 	# Очистка списка требований
 	for ch in repair_requirements_list.get_children():
 		ch.queue_free()

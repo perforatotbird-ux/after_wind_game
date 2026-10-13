@@ -248,4 +248,5 @@ def cottage(which):
  tris=sum(sum(len(p.vertices)-2 for p in o.data.polygons) for o in objects)
  print(which,'triangles',tris,'parts',len(objects),flush=True)
  for o in objects:bpy.data.objects.remove(o,do_unlink=True)
-for which in ['ruined','restored']:cottage(which)
+if __name__ == '__main__':
+ for which in ['ruined','restored']:cottage(which)

@@ -6,6 +6,7 @@ extends Node
 ## старые окна HUD (toggle_inventory / open_machine_window). Пока окно открыто,
 ## управление персонажем выключено. Создаётся в world.gd (_init_session).
 
+const StoragePanel = preload("res://scripts/ui/storage_panel.gd")
 const InventoryPanel = preload("res://scripts/ui/inventory_panel.gd")
 const MachinePanel = preload("res://scripts/ui/machine_panel.gd")
 const FarmFieldPlacer = preload("res://scripts/farming/farm_field_placer.gd")
@@ -41,6 +42,10 @@ func _rewire() -> void:
 			slot5.pressed.connect(toggle_inventory_panel)
 	if world:
 		for node in world.find_children("*", "Area3D", true, false):
+			if node.has_signal("building_opened"):
+				_disconnect_from(node.building_opened, hud)
+				if not node.building_opened.is_connected(open_building_panel):
+					node.building_opened.connect(open_building_panel)
 			if node.has_signal("machine_opened"):
 				_disconnect_from(node.machine_opened, hud)
 				if not node.machine_opened.is_connected(open_machine_panel):
@@ -71,6 +76,24 @@ func open_inventory_panel() -> Control:
 	var p = InventoryPanel.new()
 	p.setup(player)
 	p.build_requested.connect(start_placement)
+	_open(p)
+	return p
+
+func open_building_panel(building: Node) -> void:
+	if building.has_method("is_storage_ready") and building.is_storage_ready():
+		open_storage_panel(building)
+	elif hud:
+		hud.open_repair_window(building)
+
+func open_storage_panel(building: Node) -> Control:
+	if not building.has_method("is_storage_ready") or not building.is_storage_ready(): return null
+	if hud and hud.has_method("close_repair_window"): hud.close_repair_window()
+	var p = StoragePanel.new()
+	p.setup(player, building)
+	p.repair_requested.connect(func():
+		close_panel()
+		if hud: hud.open_repair_window(building)
+	)
 	_open(p)
 	return p
 

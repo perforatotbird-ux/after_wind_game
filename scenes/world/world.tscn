@@ -119,7 +119,7 @@ target_node = NodePath("../Player")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2, 0, -5.5)
 
 [node name="RepairableStorage" parent="Props" unique_id=1068845650 instance=ExtResource("15_storage")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0, -7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0, -8.3)
 
 [node name="StoneCrusher" parent="Props" unique_id=1787148247 instance=ExtResource("11_crusher")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 0, -1.95)
@@ -152,7 +152,7 @@ rebuild_credits = 80
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0, 0.6)
 
 [node name="KitchenStove" parent="Props" instance=ExtResource("41_kitchen")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, -6.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.35, 0, -7.2)
 
 [node name="DispatchStation" parent="Props" unique_id=2079646939 instance=ExtResource("13_station")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0, -4.5)

@@ -17,6 +17,7 @@ const ResourceNodeScript = preload("res://scripts/resources/resource_node.gd")
 const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 const VoxelDepositScript = preload("res://scripts/world/voxel_deposit.gd")
 const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
+const WarehouseInventory = preload("res://scripts/inventory/warehouse_inventory.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const CropDB = preload("res://scripts/farming/crop_db.gd")
 const FruitTreeScript = preload("res://scripts/resources/fruit_tree.gd")
@@ -117,6 +118,8 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	var storage = world.find_child("RepairableStorage", true, false)
 	if storage and is_instance_valid(storage):
 		buildings_data["storage_stage"] = storage.current_stage if "current_stage" in storage else 0
+	if storage and "storage_inventory" in storage:
+		buildings_data["storage_inventory"] = storage.storage_inventory.export_state()
 	save_data["buildings"] = buildings_data
 	
 	# 7. Энергетика (BatteryBank)
@@ -458,6 +461,9 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			_restore_building_stage(house, int(b_data["house_stage"]))
 		if storage and is_instance_valid(storage) and b_data.has("storage_stage"):
 			_restore_building_stage(storage, int(b_data["storage_stage"]))
+	# Старые сейвы не содержат склада: очищаем его, а не дублируем текущие вещи.
+	if storage and "storage_inventory" in storage:
+		storage.storage_inventory.restore_state(save_data.get("buildings", {}).get("storage_inventory", {}))
 	# Бонусы грузоподъёмности от зданий выставляются всегда (идемпотентно).
 	for building in [house, storage]:
 		if building and is_instance_valid(building) and building.has_method("apply_capacity_bonus"):
@@ -790,6 +796,8 @@ static func _validate_save_data(data: Dictionary) -> bool:
 	for key in ["house_stage", "storage_stage"]:
 		if buildings.has(key) and not _is_integer(buildings[key], 0.0, 3.0):
 			return false
+	if buildings.has("storage_inventory") and not WarehouseInventory.is_valid_state(buildings["storage_inventory"]):
+		return false
 	var energy: Dictionary = data.get("energy", {})
 	if energy.has("stored_energy") and not _is_number(energy["stored_energy"], 0.0):
 		return false

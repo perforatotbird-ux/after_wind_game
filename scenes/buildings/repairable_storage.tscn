@@ -1,26 +1,15 @@
-[gd_scene load_steps=16 format=3 uid="uid://b7v8k1m2p4q6c"]
+[gd_scene load_steps=7 format=3 uid="uid://b7v8k1m2p4q6c"]
 
-[ext_resource type="Script" path="res://scripts/buildings/repairable_building.gd" id="1_storage"]
-[ext_resource type="Script" path="res://scripts/buildings/storage_hoist_animator.gd" id="2_hoist"]
-[ext_resource type="ArrayMesh" path="res://assets/models/storage/storage_ruins_mesh.tres" id="m_ruins"]
-[ext_resource type="ArrayMesh" path="res://assets/models/storage/storage_barn_frame_mesh.tres" id="m_frame"]
-[ext_resource type="ArrayMesh" path="res://assets/models/storage/storage_barn_shell_mesh.tres" id="m_shell"]
-[ext_resource type="ArrayMesh" path="res://assets/models/storage/storage_barn_tarp_mesh.tres" id="m_tarp"]
-[ext_resource type="ArrayMesh" path="res://assets/models/storage/storage_complex_mesh.tres" id="m_complex"]
-[ext_resource type="ArrayMesh" path="res://assets/models/storage/storage_complex_yard_mesh.tres" id="m_yard"]
-[ext_resource type="ArrayMesh" path="res://assets/models/storage/storage_complex_gear_mesh.tres" id="m_gear"]
-[ext_resource type="ArrayMesh" path="res://assets/models/storage/storage_complex_crank_mesh.tres" id="m_crank"]
-[ext_resource type="ArrayMesh" path="res://assets/models/storage/storage_complex_chain_mesh.tres" id="m_chain"]
-[ext_resource type="ArrayMesh" path="res://assets/models/storage/storage_complex_hook_mesh.tres" id="m_hook"]
+[ext_resource type="Script" path="res://scripts/buildings/product_storage.gd" id="1_storage"]
+[ext_resource type="PackedScene" path="res://assets/models/warehouse/warehouse_ruined.tscn" id="2_ruined"]
+[ext_resource type="PackedScene" path="res://assets/models/warehouse/warehouse_restored.tscn" id="3_restored"]
+[ext_resource type="Script" path="res://scripts/inventory/warehouse_inventory.gd" id="4_inventory"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_trigger"]
-size = Vector3(6, 3.5, 5)
+[sub_resource type="BoxShape3D" id="TriggerShape"]
+size = Vector3(6.2, 4.7, 6.2)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_solid"]
-size = Vector3(4.8, 2.8, 3.8)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_sort"]
-size = Vector3(1.4, 2.2, 3.65)
+[sub_resource type="BoxShape3D" id="SolidShape"]
+size = Vector3(4.6, 4.6, 3.8)
 
 [node name="RepairableStorage" type="Area3D"]
 collision_layer = 8
@@ -29,72 +18,34 @@ script = ExtResource("1_storage")
 building_id = "storage"
 building_title = "Склад продукции"
 
+[node name="StorageInventory" type="Node" parent="."]
+script = ExtResource("4_inventory")
+
 [node name="TriggerShape" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-shape = SubResource("BoxShape3D_trigger")
+position = Vector3(0, 2.2, 0.3)
+shape = SubResource("TriggerShape")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="."]
 collision_layer = 1
 collision_mask = 0
 
 [node name="SolidShape" type="CollisionShape3D" parent="StaticBody3D"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
-shape = SubResource("BoxShape3D_solid")
-
-[node name="Stage3Sorting" type="CollisionShape3D" parent="StaticBody3D"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.05, 1.1, 0.1)
-shape = SubResource("BoxShape3D_sort")
-disabled = true
+position = Vector3(0, 2.3, 0)
+shape = SubResource("SolidShape")
 
 [node name="Visuals" type="Node3D" parent="."]
 
-[node name="Stage0" type="Node3D" parent="Visuals"]
+[node name="Stage0" parent="Visuals" instance=ExtResource("2_ruined")]
+storage_stage = 0
 
-[node name="Model" type="MeshInstance3D" parent="Visuals/Stage0"]
-mesh = ExtResource("m_ruins")
-
-[node name="Stage1" type="Node3D" parent="Visuals"]
+[node name="Stage1" parent="Visuals" instance=ExtResource("2_ruined")]
 visible = false
+storage_stage = 1
 
-[node name="Frame" type="MeshInstance3D" parent="Visuals/Stage1"]
-mesh = ExtResource("m_frame")
-
-[node name="Tarp" type="MeshInstance3D" parent="Visuals/Stage1"]
-mesh = ExtResource("m_tarp")
-
-[node name="Stage2" type="Node3D" parent="Visuals"]
+[node name="Stage2" parent="Visuals" instance=ExtResource("3_restored")]
 visible = false
+storage_stage = 2
 
-[node name="Frame" type="MeshInstance3D" parent="Visuals/Stage2"]
-mesh = ExtResource("m_frame")
-
-[node name="Shell" type="MeshInstance3D" parent="Visuals/Stage2"]
-mesh = ExtResource("m_shell")
-
-[node name="Stage3" type="Node3D" parent="Visuals"]
+[node name="Stage3" parent="Visuals" instance=ExtResource("3_restored")]
 visible = false
-
-[node name="Model" type="MeshInstance3D" parent="Visuals/Stage3"]
-mesh = ExtResource("m_complex")
-
-[node name="Yard" type="MeshInstance3D" parent="Visuals/Stage3"]
-mesh = ExtResource("m_yard")
-
-[node name="Gear" type="MeshInstance3D" parent="Visuals/Stage3"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.45, 1.4, 1.73)
-mesh = ExtResource("m_gear")
-
-[node name="Crank" type="MeshInstance3D" parent="Visuals/Stage3"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.45, 1.17, 1.75)
-mesh = ExtResource("m_crank")
-
-[node name="Chain" type="MeshInstance3D" parent="Visuals/Stage3"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.95, 2.45, 1.6)
-mesh = ExtResource("m_chain")
-
-[node name="Hook" type="MeshInstance3D" parent="Visuals/Stage3"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.95, 1.0, 1.6)
-mesh = ExtResource("m_hook")
-
-[node name="HoistAnimator" type="Node3D" parent="Visuals/Stage3"]
-script = ExtResource("2_hoist")
+storage_stage = 3
