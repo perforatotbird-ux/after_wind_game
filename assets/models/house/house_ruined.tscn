@@ -1,0 +1,52 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/buildings/house_visual.gd" id="1_gj7e2"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_ruined_foundation_mesh.tres" id="2_vh5tn"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_ruined_walls_mesh.tres" id="3_vltbm"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_ruined_timber_mesh.tres" id="4_ajihf"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_ruined_roof_mesh.tres" id="5_g8stf"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_ruined_door_mesh.tres" id="6_0xgdh"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_ruined_windows_mesh.tres" id="7_rpawg"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_ruined_chimney_mesh.tres" id="8_kl6wu"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_ruined_debris_mesh.tres" id="9_i8f7s"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_ruined_tarp_mesh.tres" id="10_x1ixi"]
+
+[node name="HouseRuined" type="Node3D" unique_id=849595750]
+script = ExtResource("1_gj7e2")
+
+[node name="Foundation" type="MeshInstance3D" parent="." unique_id=116402370]
+mesh = ExtResource("2_vh5tn")
+skeleton = NodePath("")
+
+[node name="Walls" type="MeshInstance3D" parent="." unique_id=1735714087]
+mesh = ExtResource("3_vltbm")
+skeleton = NodePath("")
+
+[node name="Timber" type="MeshInstance3D" parent="." unique_id=2030613789]
+mesh = ExtResource("4_ajihf")
+skeleton = NodePath("")
+
+[node name="Roof" type="MeshInstance3D" parent="." unique_id=884966415]
+mesh = ExtResource("5_g8stf")
+skeleton = NodePath("")
+
+[node name="Door" type="MeshInstance3D" parent="." unique_id=1040491289]
+mesh = ExtResource("6_0xgdh")
+skeleton = NodePath("")
+
+[node name="Windows" type="MeshInstance3D" parent="." unique_id=859936819]
+mesh = ExtResource("7_rpawg")
+skeleton = NodePath("")
+
+[node name="Chimney" type="MeshInstance3D" parent="." unique_id=172206510]
+mesh = ExtResource("8_kl6wu")
+skeleton = NodePath("")
+
+[node name="Debris" type="MeshInstance3D" parent="." unique_id=1291184802]
+mesh = ExtResource("9_i8f7s")
+skeleton = NodePath("")
+
+[node name="Tarp" type="MeshInstance3D" parent="." unique_id=1753981826]
+visible = false
+mesh = ExtResource("10_x1ixi")
+skeleton = NodePath("")

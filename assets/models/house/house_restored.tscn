@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/buildings/house_visual.gd" id="1_fyyp1"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_restored_foundation_mesh.tres" id="2_gsp3t"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_restored_walls_mesh.tres" id="3_j0ehr"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_restored_timber_mesh.tres" id="4_qf4h7"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_restored_roof_mesh.tres" id="5_p2vhp"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_restored_door_mesh.tres" id="6_dqjma"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_restored_windows_mesh.tres" id="7_e1bua"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_restored_glass_mesh.tres" id="8_je1oi"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_restored_chimney_mesh.tres" id="9_ik56t"]
+[ext_resource type="ArrayMesh" path="res://assets/models/house/house_restored_tarp_mesh.tres" id="10_bpkb4"]
+
+[node name="HouseRestored" type="Node3D" unique_id=890074013]
+script = ExtResource("1_fyyp1")
+house_stage = 2
+
+[node name="Foundation" type="MeshInstance3D" parent="." unique_id=1575189840]
+mesh = ExtResource("2_gsp3t")
+skeleton = NodePath("")
+
+[node name="Walls" type="MeshInstance3D" parent="." unique_id=1033744417]
+mesh = ExtResource("3_j0ehr")
+skeleton = NodePath("")
+
+[node name="Timber" type="MeshInstance3D" parent="." unique_id=490426295]
+mesh = ExtResource("4_qf4h7")
+skeleton = NodePath("")
+
+[node name="Roof" type="MeshInstance3D" parent="." unique_id=2059213078]
+mesh = ExtResource("5_p2vhp")
+skeleton = NodePath("")
+
+[node name="Door" type="MeshInstance3D" parent="." unique_id=489130176]
+mesh = ExtResource("6_dqjma")
+skeleton = NodePath("")
+
+[node name="Windows" type="MeshInstance3D" parent="." unique_id=315308906]
+mesh = ExtResource("7_e1bua")
+skeleton = NodePath("")
+
+[node name="Glass" type="MeshInstance3D" parent="." unique_id=772032160]
+mesh = ExtResource("8_je1oi")
+skeleton = NodePath("")
+
+[node name="Chimney" type="MeshInstance3D" parent="." unique_id=1081172495]
+mesh = ExtResource("9_ik56t")
+skeleton = NodePath("")
+
+[node name="Tarp" type="MeshInstance3D" parent="." unique_id=889984001]
+visible = false
+mesh = ExtResource("10_bpkb4")
+skeleton = NodePath("")
