@@ -1,0 +1,20 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_repaired_filter_repaired_00_00.tres" id="1_jdy80"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_repaired_filter_repaired_00_01.tres" id="2_bt00q"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_repaired_filter_repaired_00_02.tres" id="3_1a3vx"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_repaired_filter_repaired_00_03.tres" id="4_gs33y"]
+
+[node name="WaterFilterRepaired" type="Node3D" unique_id=811552819]
+
+[node name="FilterRepaired_00_00" type="MeshInstance3D" parent="." unique_id=810340997]
+mesh = ExtResource("1_jdy80")
+
+[node name="FilterRepaired_00_01" type="MeshInstance3D" parent="." unique_id=894447018]
+mesh = ExtResource("2_bt00q")
+
+[node name="FilterRepaired_00_02" type="MeshInstance3D" parent="." unique_id=910299005]
+mesh = ExtResource("3_1a3vx")
+
+[node name="FilterRepaired_00_03" type="MeshInstance3D" parent="." unique_id=1217510771]
+mesh = ExtResource("4_gs33y")

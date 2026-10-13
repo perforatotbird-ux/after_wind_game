@@ -1,0 +1,54 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_broken_base_00_00.tres" id="1_10u6f"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_broken_base_00_01.tres" id="2_r55em"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_broken_base_00_02.tres" id="3_yc6t8"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_broken_base_00_03.tres" id="4_s8nmb"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_collapsed_column_00_00.tres" id="5_c5yxx"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_fallen_lid_00_00.tres" id="6_84y36"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_ring_shard_0_00_00.tres" id="7_0lm34"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_ring_shard_1_00_00.tres" id="8_n1rha"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_ring_shard_2_00_00.tres" id="9_djh5p"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_ring_shard_3_00_00.tres" id="10_8vhdl"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_failed_media_00_00.tres" id="11_1fupm"]
+[ext_resource type="ArrayMesh" path="res://assets/models/water_filter/filter_ruined_filter_torn_rim_00_00.tres" id="12_304ar"]
+
+[node name="WaterFilterRuined" type="Node3D" unique_id=1478467842]
+
+[node name="FilterBrokenBase_00_00" type="MeshInstance3D" parent="." unique_id=1227201957]
+mesh = ExtResource("1_10u6f")
+
+[node name="FilterBrokenBase_00_01" type="MeshInstance3D" parent="." unique_id=219281200]
+mesh = ExtResource("2_r55em")
+
+[node name="FilterBrokenBase_00_02" type="MeshInstance3D" parent="." unique_id=1546593357]
+mesh = ExtResource("3_yc6t8")
+
+[node name="FilterBrokenBase_00_03" type="MeshInstance3D" parent="." unique_id=1777606850]
+mesh = ExtResource("4_s8nmb")
+
+[node name="FilterCollapsedColumn_00_00" type="MeshInstance3D" parent="." unique_id=1598975542]
+mesh = ExtResource("5_c5yxx")
+
+[node name="FilterFallenLid_00_00" type="MeshInstance3D" parent="." unique_id=237075598]
+mesh = ExtResource("6_84y36")
+
+[node name="FilterRingShard0_00_00" type="MeshInstance3D" parent="." unique_id=52223037]
+mesh = ExtResource("7_0lm34")
+
+[node name="FilterRingShard1_00_00" type="MeshInstance3D" parent="." unique_id=774755350]
+mesh = ExtResource("8_n1rha")
+
+[node name="FilterRingShard2_00_00" type="MeshInstance3D" parent="." unique_id=1983673767]
+mesh = ExtResource("9_djh5p")
+
+[node name="FilterRingShard3_00_00" type="MeshInstance3D" parent="." unique_id=441451131]
+mesh = ExtResource("10_8vhdl")
+
+[node name="FilterFailedMedia_00_00" type="MeshInstance3D" parent="." unique_id=1113857229]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.01, 0)
+mesh = ExtResource("11_1fupm")
+
+[node name="FilterTornRim_00_00" type="MeshInstance3D" parent="." unique_id=1523668403]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.055, 0)
+mesh = ExtResource("12_304ar")
