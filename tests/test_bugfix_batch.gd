@@ -9,6 +9,9 @@ extends SceneTree
 ## F. Износ за циклы, блокировка запуска неисправного станка, ремонт.
 ## G. Топливные слоты печи: время горения, смена вида топлива, извлечение.
 ## H. Отдых/сон: время продвигается, статы меняются, итог «Вы отдыхали N ч».
+## I. Save → resume: машина продолжает цикл (set_process + power_ok).
+## J. Новая игра: сброс выполненных контрактов.
+## K. Обморок: утро к дому (stage ≥ 2) vs Game Over + штраф ресурсов.
 
 const WorldScene = preload("res://scenes/world/world.tscn")
 const ResourceNodeScript = preload("res://scripts/resources/resource_node.gd")
@@ -18,6 +21,9 @@ const TraderNPCScript = preload("res://scripts/npc/trader_npc.gd")
 const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 const InventoryPanelScript = preload("res://scripts/ui/inventory_panel.gd")
 const WeatherManagerScript = preload("res://scripts/world/weather_manager.gd")
+const SaveSlots = preload("res://scripts/core/save_slots.gd")
+const save_manager_class = preload("res://scripts/core/save_manager.gd")
+const ContractDB = preload("res://scripts/economy/contract_db.gd")
 
 var _test_executed: bool = false
 var _errors: Array[String] = []
@@ -162,10 +168,16 @@ func _run_tests() -> void:
 	check(absf(player.wetness - (100.0 - player.dry_rate_outdoor * 10.0)) < 0.5,
 		"Скорость сушки на улице равна dry_rate_outdoor и умножается на delta (FPS-независимость)")
 	var smelter = world.find_child("Smelter", true, false)
+	# Глава 2: печь стартует разрушенной — топливо и обжиг проверяем на живой печи.
+	smelter.force_rebuilt()
 	player.global_position = smelter.global_position + Vector3(1.5, 0.0, 0.0)
 	player.wetness = 100.0
 	player._handle_wetness(5.0)
-	check(player.wetness < 75.0, "У печи сушка заметно быстрее (100 -> %.1f)" % player.wetness)
+	# dry_rate_near_fire ×1/3 (6.0 -> 2.0): за 5 с 90.0, но всё равно быстрее, чем на улице (≈98.8).
+	check(player.wetness < 92.0,
+		"У печи сушка заметно быстрее, чем на улице (100 -> %.1f)" % player.wetness)
+	check(absf(player.wetness - (100.0 - player.dry_rate_near_fire * 5.0)) < 0.5,
+		"Скорость сушки у печи равна dry_rate_near_fire и умножается на delta")
 	player.global_position = Vector3(50.0, 0.5, 50.0)
 	if weather:
 		weather.set_weather(WeatherManagerScript.WeatherType.RAIN)
@@ -174,7 +186,90 @@ func _run_tests() -> void:
 		check(player.wetness > 0.0, "Под дождём персонаж намокает")
 		weather.set_weather(WeatherManagerScript.WeatherType.SUNNY)
 
-	# ---------- D. Истощение сил и здоровье ----------
+	# C1. Новые скорости высыхания — все ×1/3
+	print("\n--- C1. Скорости высыхания ×1/3 ---")
+	check(absf(player.dry_rate_outdoor - 0.12) < 0.001, "dry_rate_outdoor = 0.12 (было 0.35)")
+	check(absf(player.dry_rate_sheltered - 0.4) < 0.001, "dry_rate_sheltered = 0.4 (было 1.2)")
+	check(absf(player.dry_rate_near_fire - 2.0) < 0.001, "dry_rate_near_fire = 2.0 (было 6.0)")
+	# Намокание под дождем: 3.0 * intensity (RAIN=1.0 → 3.0), не изменено.
+	if weather:
+		weather.set_weather(WeatherManagerScript.WeatherType.HEAVY_RAIN)
+	player.wetness = 0.0
+	player._handle_wetness(1.0)
+	check(player.wetness > 0.0 and player.wetness <= 6.5,
+		"Намокание под сильным дождём не тронуто (3.0 * 2.0 * 1.0 = 6.0, факт: %.1f)" % player.wetness)
+	# Погоду возвращаем к ясной: дальше идут секции сети/машин, которым нужен
+	# слабый ветер (иначе в шторм ветряк покрывает потребление и батарея не разряжается).
+	if weather:
+		weather.set_weather(WeatherManagerScript.WeatherType.SUNNY)
+
+	# ---------- I. Save → resume: машины продолжают работать ----------
+	print("\n--- I. Save → resume: машины возобновляют цикл ---")
+	ContractDB.reset_completed()
+	# Узлы ищутся здесь же: объявления crusher/grid ниже по функции видны
+	# только после своих строк, поэтому у секции свои локальные имена.
+	var crusher_i = world.find_child("StoneCrusher", true, false)
+	var grid_i = world.get_node_or_null("PowerGrid")
+	if crusher_i == null or grid_i == null:
+		_fail("Не найдены StoneCrusher/PowerGrid для теста save/resume")
+		return
+	# Глава 2: дробилка стартует разрушенной — здесь проверяется возобновление цикла.
+	crusher_i.force_rebuilt()
+	inv.add_item("stone", 20)
+	check(crusher_i.start_batch("crush_stone", 4, player), "Запущена партия для теста save/resume")
+	grid_i._update_grid(0.1)
+	crusher_i._process(0.5)
+	check(crusher_i.process_timer > 0.0, "Таймер цикла растёт во время работы")
+	# Сохранение и загрузка в том же мире (валидный ручной слот, после теста удаляется).
+	SaveSlots.save_to_slot(world, "slot_1")
+	check(SaveSlots.has_slot("slot_1"), "Слот сохранения создан")
+	SaveSlots.load_from_slot(world, "slot_1")
+	var crusher2 = world.find_child("StoneCrusher", true, false)
+	check(crusher2 == crusher_i, "Машина сохранилась в том же узле")
+	check(crusher2.is_processing(), "Машина продолжает процессить после загрузки (set_process(true) восстановлен)")
+	check(crusher2.power_ok, "power_ok восстановлен из PowerGrid.has_power после загрузки")
+	check(crusher2.is_machine_running, "Машина считается работающей после загрузки")
+	check(absf(crusher2.process_timer - crusher_i.process_timer) < 0.001,
+		"Таймер цикла сохраняется и не сбрасывается при загрузке")
+	crusher2.cancel_batch()
+	SaveSlots.delete_slot("slot_1")
+
+	# ---------- J. Новая игра: сброс прогресса контрактов ----------
+	print("\n--- J. Сброс контрактов при новой игре ---")
+	ContractDB.completed_contracts["contract_test"] = true
+	check(ContractDB.get_completed_count() == 1, "Контракт помечен выполненным")
+	ContractDB.reset_completed()
+	check(ContractDB.get_completed_count() == 0, "reset_completed() очищает выполненные контракты")
+	check(ContractDB.get_all_contracts().filter(func(c): return ContractDB.is_unlocked(c)).size() >= 1,
+		"Базовые заказы доступны после сброса")
+
+	# ---------- K. Обморок и поражение ----------
+	print("\n--- K. Обморок: утро к дому vs Game Over ---")
+	var house = world.find_child("RepairableHouse", true, false)
+	# K1. Без дома (stage 0) — game over overlay
+	house.current_stage = 0
+	inv.add_item("wood", 10)
+	var wood_before: int = inv.get_item_count("wood")
+	player.health = 0.0
+	# В headless режиме overlay мгновенно применяется, player._on_collapse вызывается.
+	player._on_collapse("test")
+	check(player.health >= 20.0, "Здоровье восстановлено после обморока (>= 20)")
+	check(inv.get_item_count("wood") < wood_before, "Штраф: часть ресурсов рассыпалась кучкой у точки падения")
+	# В headless overlay создаётся, но не блокирует — проверяем, что не вылетело.
+	check(_count_piles("wood") >= 1, "Рассыпанные ресурсы лежат на земле")
+
+	# K2. С домом stage ≥ 2 — утренний отскок к дому
+	house.current_stage = 2
+	player.health = 0.0
+	inv.clear(); inv.add_item("wood", 10)
+	var drop_parent = world
+	player._on_collapse("exhaustion")
+	check(player.global_position.distance_to(house.global_position) < 3.0,
+		"При stage дома ≥ 2 игрок рядом с домом после обморока")
+	check(player.health > 0.0, "Здоровье восстановлено после утреннего отскока")
+	# Сброс контрактов для чистоты остальных тестов
+	ContractDB.reset_completed()
+
 	print("\n--- D. Истощение влияет на здоровье ---")
 	player.energy = 0.0
 	player.hunger = 100.0
@@ -196,6 +291,8 @@ func _run_tests() -> void:
 	var turbine = world.find_child("WindTurbine", true, false)
 	var crusher = world.find_child("StoneCrusher", true, false)
 	if not grid or not turbine or not crusher: _fail("Не найдены PowerGrid/WindTurbine/StoneCrusher")
+	# Глава 2: дробилка стартует разрушенной — потребление сети проверяем на живой.
+	crusher.force_rebuilt()
 	player.energy = 100.0
 	inv.add_item("stone", 30)
 	check(crusher.start_batch("crush_stone", 5, player), "Партия дробилки запущена")

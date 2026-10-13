@@ -359,16 +359,34 @@ static func crop(crop_id: String, stage: int, withered: bool = false) -> ArrayMe
 						_potato(st, base, rng, stage == 3)
 					"wheat":
 						_wheat(st, base, rng, stage == 3)
+					"sunflower":
+						_sunflower(st, base, rng, stage == 3)
+					"onion":
+						_onion(st, base, rng, stage == 3)
+					"cabbage":
+						_cabbage(st, base, rng, stage == 3)
+					"tomato":
+						_tomato(st, base, rng, stage == 3)
+					"pepper":
+						_pepper(st, base, rng, stage == 3)
+					"bean":
+						_bean(st, base, rng, stage == 3)
+					"herbs":
+						_herbs(st, base, rng, stage == 3)
+					"corn":
+						_corn(st, base, rng, stage == 3)
+					"pumpkin":
+						_pumpkin(st, base, rng, stage == 3)
 					_:
 						_sprout(st, base, rng)
 	_cache[key] = _finish(st)
 	return _cache[key]
 
-## Точки посадки в клетке: морковь — 2 ряда по 3, картофель — 2×2 куста, пшеница — 4×4.
+## Точки посадки в клетке: морковь — 2 ряда по 3, картофель/тыква/капуста — 2×2, пшеница — 4×4.
 static func _plant_spots(crop_id: String) -> Array:
 	var out: Array = []
 	match crop_id:
-		"potato":
+		"potato", "cabbage", "pumpkin":
 			for x in [-0.2, 0.2]:
 				for z in [-0.2, 0.2]:
 					out.append(Vector2(x, z))
@@ -376,6 +394,10 @@ static func _plant_spots(crop_id: String) -> Array:
 			for x in 4:
 				for z in 4:
 					out.append(Vector2(-0.3 + x * 0.2, -0.3 + z * 0.2))
+		"corn", "sunflower":
+			for x in [-0.18, 0.18]:
+				for z in [-0.24, 0.0, 0.24]:
+					out.append(Vector2(x, z))
 		_:
 			for x in [-0.15, 0.15]:
 				for z in [-0.28, 0.0, 0.28]:
@@ -443,9 +465,141 @@ static func _wheat(st: SurfaceTool, base: Vector3, rng: RandomNumberGenerator, m
 				var e: Vector3 = top + lean * (0.02 + j * 0.03)
 				_blade(st, e, (lean + Vector3(cos(a + j), 0, sin(a + j)) * 0.6).normalized(), 0.05, 0.004, 0.0, ear_col, ear_col.lightened(0.2))
 
+static func _sunflower(st: SurfaceTool, base: Vector3, rng: RandomNumberGenerator, mature: bool) -> void:
+	var height: float = 0.65 if mature else 0.35
+	var top: Vector3 = base + Vector3(0, height, 0)
+	_stalk(st, base, top, 0.012, GREEN_DARK)
+	for k in (6 if mature else 4):
+		var a: float = k * (TAU / (6.0 if mature else 4.0)) + rng.randf_range(-0.2, 0.2)
+		var y_off: float = (0.15 + k * 0.08) * (height / 0.65)
+		var d := Vector3(cos(a), 0.3, sin(a)).normalized()
+		_blade(st, base + Vector3(0, y_off, 0), d, 0.16, 0.08, 0.04, GREEN, GREEN_LIGHT)
+	if mature:
+		var head_center: Vector3 = top + Vector3(0, 0.04, 0.05)
+		var yellow := Color(0.96, 0.78, 0.15)
+		var brown := Color(0.32, 0.20, 0.10)
+		_blob(st, head_center, Vector3(0.06, 0.06, 0.03), brown, rng, 0.05)
+		for p in 10:
+			var ang: float = TAU * p / 10.0
+			var pd := Vector3(cos(ang), sin(ang), 0.1).normalized()
+			_blade(st, head_center, pd, 0.08, 0.03, 0.01, yellow, yellow.lightened(0.15))
+
+static func _onion(st: SurfaceTool, base: Vector3, rng: RandomNumberGenerator, mature: bool) -> void:
+	var n: int = 6 if mature else 4
+	var length: float = 0.24 if mature else 0.14
+	for k in n:
+		var a: float = TAU * k / n + rng.randf_range(-0.25, 0.25)
+		var d := Vector3(cos(a) * 0.25, 1.0, sin(a) * 0.25).normalized()
+		_blade(st, base, d, length * rng.randf_range(0.85, 1.15), 0.025, 0.03, GREEN, GREEN_LIGHT)
+	if mature:
+		var onion_col := Color(0.80, 0.55, 0.30)
+		_blob(st, base + Vector3(0, 0.02, 0), Vector3(0.04, 0.035, 0.04), onion_col, rng, 0.1)
+
+static func _cabbage(st: SurfaceTool, base: Vector3, rng: RandomNumberGenerator, mature: bool) -> void:
+	var n: int = 8 if mature else 5
+	var r: float = 0.18 if mature else 0.10
+	for k in n:
+		var a: float = TAU * k / n + rng.randf_range(-0.2, 0.2)
+		var d := Vector3(cos(a), 0.25, sin(a)).normalized()
+		_blade(st, base + Vector3(0, 0.02, 0), d, r, 0.12 if mature else 0.07, 0.05, GREEN_DARK, GREEN)
+	if mature:
+		var head_col := Color(0.55, 0.82, 0.45)
+		_blob(st, base + Vector3(0, 0.08, 0), Vector3(0.09, 0.075, 0.09), head_col, rng, 0.1)
+
+static func _tomato(st: SurfaceTool, base: Vector3, rng: RandomNumberGenerator, mature: bool) -> void:
+	var height: float = 0.45 if mature else 0.25
+	var top: Vector3 = base + Vector3(0, height, 0)
+	_stalk(st, base, top, 0.01, GREEN_DARK)
+	for k in (6 if mature else 4):
+		var a: float = k * (TAU / 5.0) + rng.randf_range(-0.2, 0.2)
+		var y: float = 0.1 + k * 0.06 * (height / 0.45)
+		var d := Vector3(cos(a), 0.4, sin(a)).normalized()
+		_blade(st, base + Vector3(0, y, 0), d, 0.14, 0.06, 0.03, GREEN, GREEN_LIGHT)
+	if mature:
+		var red := Color(0.88, 0.20, 0.15)
+		for t in 4:
+			var ang: float = t * (TAU / 4.0) + rng.randf_range(-0.2, 0.2)
+			var tp: Vector3 = base + Vector3(cos(ang) * 0.09, 0.18 + t * 0.05, sin(ang) * 0.09)
+			_blob(st, tp, Vector3(0.03, 0.03, 0.03), red, rng, 0.05)
+
+static func _pepper(st: SurfaceTool, base: Vector3, rng: RandomNumberGenerator, mature: bool) -> void:
+	var height: float = 0.35 if mature else 0.20
+	var top: Vector3 = base + Vector3(0, height, 0)
+	_stalk(st, base, top, 0.009, GREEN_DARK)
+	for k in (5 if mature else 3):
+		var a: float = k * (TAU / 4.0) + rng.randf_range(-0.2, 0.2)
+		var d := Vector3(cos(a), 0.35, sin(a)).normalized()
+		_blade(st, base + Vector3(0, 0.08 + k * 0.05, 0), d, 0.12, 0.05, 0.03, GREEN, GREEN_LIGHT)
+	if mature:
+		var pepper_col := Color(0.85, 0.15, 0.12)
+		for p in 3:
+			var ang: float = p * (TAU / 3.0) + 0.3
+			var pp: Vector3 = base + Vector3(cos(ang) * 0.08, 0.14, sin(ang) * 0.08)
+			_blob(st, pp, Vector3(0.022, 0.04, 0.022), pepper_col, rng, 0.08)
+
+static func _bean(st: SurfaceTool, base: Vector3, rng: RandomNumberGenerator, mature: bool) -> void:
+	var height: float = 0.50 if mature else 0.28
+	var top: Vector3 = base + Vector3(0, height, 0)
+	_box(st, base + Vector3(-0.012, 0, -0.012), base + Vector3(0.012, height + 0.05, 0.012), WOOD_DARK)
+	_stalk(st, base, top, 0.008, GREEN_DARK)
+	for k in (7 if mature else 4):
+		var a: float = k * 1.0 + rng.randf_range(-0.2, 0.2)
+		var y: float = 0.06 + k * 0.06 * (height / 0.50)
+		var d := Vector3(cos(a), 0.3, sin(a)).normalized()
+		_blade(st, base + Vector3(0, y, 0), d, 0.09, 0.045, 0.02, GREEN, GREEN_LIGHT)
+	if mature:
+		var pod_col := Color(0.42, 0.72, 0.30)
+		for p in 4:
+			var a2: float = p * 1.5
+			var bp: Vector3 = base + Vector3(cos(a2) * 0.05, 0.15 + p * 0.07, sin(a2) * 0.05)
+			_blade(st, bp, Vector3(cos(a2) * 0.2, -1.0, sin(a2) * 0.2).normalized(), 0.09, 0.02, 0.02, pod_col, pod_col.lightened(0.1))
+
+static func _herbs(st: SurfaceTool, base: Vector3, rng: RandomNumberGenerator, mature: bool) -> void:
+	var n: int = 12 if mature else 6
+	var len_val: float = 0.18 if mature else 0.10
+	for k in n:
+		var a: float = TAU * k / n + rng.randf_range(-0.3, 0.3)
+		var lean := Vector3(cos(a) * 0.5, 0.85, sin(a) * 0.5).normalized()
+		_stalk(st, base, base + lean * len_val, 0.004, GREEN)
+		_blade(st, base + lean * (len_val * 0.5), lean, len_val * 0.55, 0.03, 0.03, GREEN_DARK, GREEN_LIGHT)
+
+static func _corn(st: SurfaceTool, base: Vector3, rng: RandomNumberGenerator, mature: bool) -> void:
+	var height: float = 0.75 if mature else 0.40
+	var top: Vector3 = base + Vector3(0, height, 0)
+	_stalk(st, base, top, 0.014, GREEN_DARK)
+	for k in (8 if mature else 4):
+		var a: float = k * (TAU / 4.0) + rng.randf_range(-0.15, 0.15)
+		var y: float = 0.12 + k * 0.07 * (height / 0.75)
+		var d := Vector3(cos(a), 0.2, sin(a)).normalized()
+		_blade(st, base + Vector3(0, y, 0), d, 0.28, 0.065, 0.12, GREEN, GREEN_LIGHT)
+	if mature:
+		var yellow := Color(0.95, 0.82, 0.20)
+		for c in 2:
+			var ca: float = c * PI + 0.5
+			var cp: Vector3 = base + Vector3(cos(ca) * 0.04, 0.32 + c * 0.12, sin(ca) * 0.04)
+			_blob(st, cp, Vector3(0.025, 0.065, 0.025), yellow, rng, 0.05)
+			_blade(st, cp + Vector3(0, -0.03, 0), Vector3(cos(ca), 0.6, sin(ca)).normalized(), 0.10, 0.03, 0.02, GREEN_LIGHT, GREEN)
+
+static func _pumpkin(st: SurfaceTool, base: Vector3, rng: RandomNumberGenerator, mature: bool) -> void:
+	var vine_len: float = 0.30 if mature else 0.15
+	for v in 3:
+		var va: float = v * (TAU / 3.0) + rng.randf_range(-0.2, 0.2)
+		var vd := Vector3(cos(va), 0.05, sin(va)).normalized()
+		_stalk(st, base, base + vd * vine_len, 0.007, GREEN_DARK)
+		for l in (3 if mature else 2):
+			var lp: Vector3 = base + vd * (l * 0.1)
+			_blade(st, lp, (vd + Vector3(sin(va * 2.0), 0.4, cos(va * 2.0))).normalized(), 0.12, 0.09, 0.03, GREEN, GREEN_LIGHT)
+	if mature:
+		var orange := Color(0.92, 0.50, 0.12)
+		var p_pos: Vector3 = base + Vector3(0.08, 0.06, 0.06)
+		_blob(st, p_pos, Vector3(0.11, 0.08, 0.11), orange, rng, 0.15)
+		_box(st, p_pos + Vector3(-0.015, 0.07, -0.015), p_pos + Vector3(0.015, 0.11, 0.015), GREEN_DARK)
+
 static func _withered_plant(st: SurfaceTool, crop_id: String, base: Vector3, rng: RandomNumberGenerator) -> void:
-	var n: int = 3 if crop_id == "wheat" else 5
+	var n: int = 3 if crop_id in ["wheat", "corn", "sunflower"] else 5
+	var len_base: float = 0.28 if crop_id in ["wheat", "corn", "sunflower"] else 0.16
 	for k in n:
 		var a: float = TAU * k / n + rng.randf_range(-0.4, 0.4)
 		var d := Vector3(cos(a), 0.6, sin(a)).normalized()
-		_blade(st, base, d, 0.16 if crop_id != "wheat" else 0.24, 0.04, 0.1, WITHERED.darkened(0.2), WITHERED.lightened(0.15))
+		_blade(st, base, d, len_base, 0.04, 0.1, WITHERED.darkened(0.2), WITHERED.lightened(0.15))
+

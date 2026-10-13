@@ -55,6 +55,7 @@ current_hits = 3
 yield_per_hit = 1
 bonus_depleted_yield = 1
 respawn_time = 25.0
+freezes_in_winter = true
 visual_node = NodePath("Visual")
 depleted_visual_node = NodePath("DepletedVisual")
 

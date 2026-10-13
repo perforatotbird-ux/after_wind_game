@@ -6,6 +6,8 @@ const ContractDB = preload("res://scripts/economy/contract_db.gd")
 const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 const VictoryManager = preload("res://scripts/core/victory_manager.gd")
+const CookingProgress = preload("res://scripts/crafting/cooking_progress.gd")
+const Seasons = preload("res://scripts/core/seasons.gd")
 const UI = preload("res://scripts/ui/ui_style.gd")
 
 ## Желаемые размеры окон HUD в логических пикселях (база растяжения 1600×900,
@@ -39,6 +41,7 @@ const HOTBAR_SLOT_SIZE: Vector2 = Vector2(118, 46)
 @onready var pause_button: Button = get_node_or_null("TopRightUI/Panel/Margin/VBox/PauseButton")
 @onready var pause_window: PanelContainer = get_node_or_null("PauseWindow")
 @onready var base_progress_label: Label = get_node_or_null("PauseWindow/Margin/VBox/BaseProgressLabel")
+@onready var ch2_progress_label: Label = get_node_or_null("PauseWindow/Margin/VBox/Ch2ProgressLabel")
 @onready var pause_tasks_list: VBoxContainer = get_node_or_null("PauseWindow/Margin/VBox/TasksScroll/TasksList")
 @onready var sfx_slider: HSlider = get_node_or_null("PauseWindow/Margin/VBox/SfxHBox/SfxSlider")
 @onready var amb_slider: HSlider = get_node_or_null("PauseWindow/Margin/VBox/AmbHBox/AmbSlider")
@@ -67,6 +70,7 @@ var _victory_shown: bool = false
 
 @onready var time_label: Label = $TopRightUI/Panel/Margin/VBox/TimeLabel
 @onready var weather_label: Label = $TopRightUI/Panel/Margin/VBox/WeatherLabel
+@onready var season_label: Label = $TopRightUI/Panel/Margin/VBox/SeasonLabel
 @onready var money_label: Label = $TopRightUI/Panel/Margin/VBox/MoneyLabel
 @onready var power_label: Label = $TopRightUI/Panel/Margin/VBox/PowerLabel
 
@@ -132,6 +136,7 @@ var _current_active_building: Node = null
 var _current_active_npc: Node = null
 var _cached_weather_mgr: Node = null
 var _cached_day_cycle: Node = null
+var _cached_season_mgr: Node = null
 var _cached_world: Node = null
 
 var style_slot_active: StyleBoxFlat = null
@@ -146,6 +151,11 @@ func _get_day_cycle() -> Node:
 	if not is_instance_valid(_cached_day_cycle) and get_tree() and get_tree().root:
 		_cached_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
 	return _cached_day_cycle
+
+func _get_season_manager() -> Node:
+	if not is_instance_valid(_cached_season_mgr) and get_tree() and get_tree().root:
+		_cached_season_mgr = get_tree().root.find_child("SeasonManager", true, false)
+	return _cached_season_mgr
 
 func _get_world() -> Node:
 	if not is_instance_valid(_cached_world):
@@ -239,7 +249,7 @@ func _apply_hud_layout() -> void:
 	if top_right:
 		top_right.offset_left = top_right.offset_right - 300.0
 		top_right.offset_bottom = top_right.offset_top + 176.0
-	for pair in [[time_label, 15], [weather_label, 15], [money_label, 16], [power_label, 14]]:
+	for pair in [[time_label, 15], [weather_label, 15], [season_label, 12], [money_label, 16], [power_label, 14]]:
 		if pair[0]:
 			(pair[0] as Label).add_theme_font_size_override("font_size", pair[1])
 	var save_lbl := get_node_or_null("TopRightUI/Panel/Margin/VBox/SaveLoadLabel") as Label
@@ -575,8 +585,8 @@ func update_time_display(day: int, hour: int, minute: int, formatted: String, ph
 			"Вечер": base_temp = 18
 			"Ночь": base_temp = 11
 		
-		var final_temp: int = max(4, base_temp + temp_offset)
-		weather_label.text = "%s %s (+%d°C)" % [icon, w_name, final_temp]
+		var final_temp: int = maxi(-25, base_temp + temp_offset + _get_season_temperature_offset())
+		weather_label.text = "%s %s (%+d°C)" % [icon, w_name, final_temp]
 
 func update_weather_display(_new_type: int = 0, w_name: String = "", icon: String = "") -> void:
 	if weather_label:
@@ -591,8 +601,34 @@ func update_weather_display(_new_type: int = 0, w_name: String = "", icon: Strin
 		
 		var weather_mgr: Node = _get_weather_mgr()
 		var temp_offset: int = weather_mgr.get_temperature_offset() if (weather_mgr and weather_mgr.has_method("get_temperature_offset")) else 0
-		var final_temp: int = max(4, base_temp + temp_offset)
-		weather_label.text = "%s %s (+%d°C)" % [icon, w_name, final_temp]
+		var final_temp: int = maxi(-25, base_temp + temp_offset + _get_season_temperature_offset())
+		weather_label.text = "%s %s (%+d°C)" % [icon, w_name, final_temp]
+
+## Сезонный сдвиг температуры (лето теплее, зима холоднее). 0 без системы сезонов.
+func _get_season_temperature_offset() -> int:
+	var sm: Node = _get_season_manager()
+	if sm and sm.has_method("get_temperature_offset"):
+		return int(sm.get_temperature_offset())
+	return Seasons.get_temperature_offset()
+
+## Строка календаря: «🌱 Весна · день 3/7» + активное погодное событие.
+func update_season_display() -> void:
+	if not season_label:
+		season_label = get_node_or_null("TopRightUI/Panel/Margin/VBox/SeasonLabel")
+	if not season_label:
+		return
+	if not Seasons.is_enabled():
+		season_label.text = ""
+		season_label.visible = false
+		return
+	season_label.visible = true
+	var caption: String = Seasons.get_calendar_caption()
+	var sm: Node = _get_season_manager()
+	if sm and sm.has_method("get_active_event_caption"):
+		var event_caption: String = str(sm.get_active_event_caption())
+		if event_caption != "":
+			caption = "%s · %s" % [caption, event_caption]
+	season_label.text = caption
 
 func update_power_display(stored: float, capacity: float, generation: float, consumption: float, has_power: bool, source_mode: int = -1) -> void:
 	if not power_label:
@@ -611,8 +647,13 @@ func update_power_display(stored: float, capacity: float, generation: float, con
 		_: mode_str = ""
 
 	if not has_power:
-		# Объясняем причину: потребление выше генерации (батарея не выручает).
-		var reason: String = ": тратится %.1f кВт > генерация %.1f" % [consumption, generation] if consumption > generation else ""
+		var reason: String
+		if source_mode == 2:
+			reason = ": батарея разряжена (заряд %d%%)" % pct
+		elif consumption > generation:
+			reason = ": тратится %.1f кВт > генерация %.1f кВт" % [consumption, generation]
+		else:
+			reason = ": нет доступной мощности"
 		power_label.text = "⚡ Сеть%s: Обесточена (0%%)%s" % [mode_str, reason]
 		power_label.add_theme_color_override("font_color", Color(0.95, 0.3, 0.3))
 	elif net >= 0:
@@ -977,7 +1018,9 @@ func _on_quick_sell_pressed() -> void:
 		return
 	
 	var to_sell: Dictionary = {}
-	for product_id in ["poor_brick", "mortar", "fuel_briquette", "fired_brick", "glass", "iron_ingot", "clean_water", "bottled_water", "carrot", "potato", "wheat", "bread"]:
+	for product_id in ["poor_brick", "mortar", "fuel_briquette", "fired_brick", "glass", "iron_ingot", "clean_water", "bottled_water", "carrot", "potato", "wheat", "bread",
+			"sunflower_seeds", "onion", "cabbage", "tomato", "pepper", "bean", "herbs", "corn", "pumpkin",
+			"apple", "pear", "cherry", "red_berry", "blue_berry", "blackberry", "sea_buckthorn"]:
 		var c: int = inv.get_item_count(product_id)
 		if c > 0:
 			to_sell[product_id] = c
@@ -1208,7 +1251,14 @@ func _refresh_contract_window() -> void:
 		h_title.add_child(lbl_title)
 		
 		var lbl_reward: Label = Label.new()
-		lbl_reward.text = "💰 +%d кр." % contract.get("reward_credits", 0)
+		var reward_txt: String = "💰 +%d кр." % contract.get("reward_credits", 0)
+		var reward_items: Dictionary = contract.get("reward_items", {})
+		if not reward_items.is_empty():
+			var gift_parts: Array[String] = []
+			for gift_id in reward_items.keys():
+				gift_parts.append("%s ×%d" % [ItemDB.get_item_name(str(gift_id)), int(reward_items[gift_id])])
+			reward_txt += " 🎁 " + ", ".join(gift_parts)
+		lbl_reward.text = reward_txt
 		lbl_reward.add_theme_font_size_override("font_size", 13)
 		lbl_reward.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5) if not is_done else Color(0.6, 0.7, 0.6))
 		h_title.add_child(lbl_reward)
@@ -1250,7 +1300,8 @@ func _refresh_contract_window() -> void:
 			btn.text = "Заказ выполнен ✅"
 			btn.disabled = true
 		elif can_do:
-			btn.text = "Сдать партию материалов (💰 +%d кр.)" % contract.get("reward_credits", 0)
+			var gift_txt: String = " + 🎁" if not contract.get("reward_items", {}).is_empty() else ""
+			btn.text = "Сдать партию материалов (💰 +%d кр.%s)" % [contract.get("reward_credits", 0), gift_txt]
 			btn.pressed.connect(_on_fulfill_contract_pressed.bind(c_id))
 		else:
 			btn.text = "Недостаточно товаров в рюкзаке"
@@ -1402,26 +1453,40 @@ func _refresh_pause_menu() -> void:
 		base_progress_label.text = "🏆 Восстановление базы: %d/%d вех (%d%%)" % [
 			v_data.get("completed_count", 0), v_data.get("total_count", 0), v_data.get("progress_pct", 0)
 		]
+	var c_data: Dictionary = CookingProgress.evaluate(world)
+	if ch2_progress_label:
+		ch2_progress_label.text = "🔥 Первый дым: %d/%d вех (%d%%)" % [
+			c_data.get("completed_count", 0), c_data.get("total_count", 0), c_data.get("progress_pct", 0)
+		]
 	
 	if pause_tasks_list:
 		for c in pause_tasks_list.get_children():
 			c.queue_free()
 		for t in v_data.get("tasks", []):
-			var l: Label = Label.new()
-			var status_str = "[ГОТОВО]" if t.done else "[в процессе]"
-			l.text = "%s %s: %s" % [t.icon, t.title, status_str]
-			l.add_theme_font_size_override("font_size", 11)
-			if t.done:
-				l.add_theme_color_override("font_color", Color(0.4, 0.9, 0.55))
-			else:
-				l.add_theme_color_override("font_color", Color(0.75, 0.8, 0.85))
-			pause_tasks_list.add_child(l)
+			pause_tasks_list.add_child(_make_task_label(t))
+		# Вехи Главы 2 идут после Главы 1 под отдельным заголовком.
+		var ch2_header: Label = _make_task_label({"title": "Глава 2 «Первый дым»", "icon": "", "done": false})
+		ch2_header.add_theme_color_override("font_color", Color(1.0, 0.78, 0.45))
+		ch2_header.text = "— Глава 2 «Первый дым» —"
+		pause_tasks_list.add_child(ch2_header)
+		for t in c_data.get("tasks", []):
+			pause_tasks_list.add_child(_make_task_label(t))
 	
 	if sfx_slider and AudioManager.instance:
 		sfx_slider.value = AudioManager.instance.sfx_volume
 	if amb_slider and AudioManager.instance:
 		amb_slider.value = AudioManager.instance.ambient_volume
 	_polish(pause_window)
+
+func _make_task_label(task: Dictionary) -> Label:
+	var l: Label = Label.new()
+	var done: bool = bool(task.get("done", false))
+	var icon: String = str(task.get("icon", ""))
+	l.text = "%s %s: %s" % [icon, str(task.get("title", "")), "[ГОТОВО]" if done else "[в процессе]"]
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.add_theme_font_size_override("font_size", 11)
+	l.add_theme_color_override("font_color", Color(0.4, 0.9, 0.55) if done else Color(0.75, 0.8, 0.85))
+	return l
 
 func _on_pause_save_pressed() -> void:
 	AudioManager.play("ui_click")

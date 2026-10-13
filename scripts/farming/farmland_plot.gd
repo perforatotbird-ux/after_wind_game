@@ -5,6 +5,7 @@ extends "res://scripts/interaction/interactable.gd"
 ## Поддерживает вскопку лопатой, посадку культур, полив, внесение удобрений и сбор урожая
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
+const CropDB = preload("res://scripts/farming/crop_db.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
@@ -28,12 +29,29 @@ enum SoilState {
 ## Время созревания по культурам (реальные секунды, полив без удобрения; при
 ## стандартной скорости 1 игровой час = 60 с это 2–3 игровых часа). Полного полива (100%) хватает
 ## примерно на 165 с, поэтому пшеницу за рост нужно полить дважды (или дождь).
-const CROP_GROWTH_TIME: Dictionary = {"carrot": 120.0, "potato": 150.0, "wheat": 180.0}
+const CROP_GROWTH_TIME: Dictionary = {
+	"carrot": 120.0,
+	"potato": 150.0,
+	"wheat": 180.0,
+	"sunflower": 160.0,
+	"onion": 110.0,
+	"cabbage": 200.0,
+	"tomato": 140.0,
+	"pepper": 170.0,
+	"bean": 100.0,
+	"herbs": 70.0,
+	"corn": 180.0,
+	"pumpkin": 220.0
+}
 
 var soil_state: SoilState = SoilState.UNTILLED
 var moisture: float = 0.0
 var is_fertilized: bool = false
+## Старые грядки базы выращивают только базовые культуры Главы 1:
+## модели стадий захардкожены под морковь/картофель/пшеницу, новые культуры —
+## только на делянках (FarmField). Комментарий у crop_type оставлен как был.
 var crop_type: String = "" # "carrot", "potato", "wheat"
+const PLOT_CROPS: Array[String] = ["carrot", "potato", "wheat"]
 var growth_progress: float = 0.0 # 0.0 - 100.0
 var is_ripe: bool = false
 
@@ -244,6 +262,11 @@ func plant_crop(seed_id: String, player: Node = null) -> bool:
 	var target_crop: String = ItemDB.get_crop_type(seed_id)
 	if target_crop == "":
 		return false
+	# Новые культуры не поддерживаются визуалом старых грядок — только делянки.
+	if not target_crop in PLOT_CROPS:
+		if player and player.has_method("notify"):
+			player.notify("🌱 %s растёт только на делянках (кнопка «🌾 Делянка» в рюкзаке)." % ItemDB.get_item_name(target_crop))
+		return false
 	
 	if player:
 		var inv = player.get("inventory") if "inventory" in player else null
@@ -333,9 +356,10 @@ func harvest_crop(player: Node) -> Dictionary:
 	
 	var inv = player.get("inventory") if player else null
 	if inv:
+		var prod_id: String = CropDB.get_crop_product(crop_type)
 		# Рюкзак полон — урожай и семена падают кучкой у грядки, а не пропадают.
 		var drop_at: Vector3 = global_position + Vector3(0.0, 0.4, 0.9)
-		DroppedItemScript.give_or_drop(player, crop_type, base_yield, drop_at, get_parent())
+		DroppedItemScript.give_or_drop(player, prod_id, base_yield, drop_at, get_parent())
 		DroppedItemScript.give_or_drop(player, "seeds_" + crop_type, seed_yield, drop_at, get_parent())
 	
 	AudioManager.play("harvest")

@@ -1,0 +1,2440 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>After The Storm — Мастер-план развития игры</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'neutral',
+    securityLevel: 'loose',
+    fontFamily: 'Inter, sans-serif'
+  });
+</script>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-card: #1c2128;
+  --text-main: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #58a6ff;
+  --accent-hover: #79c0ff;
+  --accent-green: #3fb950;
+  --accent-yellow: #d29922;
+  --accent-red: #f85149;
+  --accent-purple: #bc8cff;
+  --border-color: #30363d;
+  --border-muted: #21262d;
+  --table-stripe: rgba(255, 255, 255, 0.02);
+  --code-bg: #11151c;
+  --callout-note: #1f6feb;
+  --callout-tip: #238636;
+  --callout-warn: #9e6a03;
+  --callout-imp: #bd561d;
+  --callout-danger: #da3633;
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f6f8fa;
+    --bg-tertiary: #eaeef2;
+    --bg-card: #f6f8fa;
+    --text-main: #1f2328;
+    --text-muted: #656d76;
+    --accent: #0969da;
+    --accent-hover: #0550ae;
+    --border-color: #d0d7de;
+    --border-muted: #eaeef2;
+    --table-stripe: rgba(0, 0, 0, 0.02);
+    --code-bg: #f6f8fa;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --bg-tertiary: #eaeef2;
+  --bg-card: #f6f8fa;
+  --text-main: #1f2328;
+  --text-muted: #656d76;
+  --accent: #0969da;
+  --accent-hover: #0550ae;
+  --border-color: #d0d7de;
+  --border-muted: #eaeef2;
+  --table-stripe: rgba(0, 0, 0, 0.02);
+  --code-bg: #f6f8fa;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 2rem;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  line-height: 1.65;
+  font-size: 15px;
+}
+
+/* Top Navigation Bar */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(10px);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(88, 166, 255, 0.3);
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.btn {
+  background: var(--bg-tertiary);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background: var(--border-color);
+  color: var(--accent);
+}
+
+/* Layout */
+.layout {
+  display: flex;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 2rem;
+  gap: 2.5rem;
+}
+
+.sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 4.5rem;
+  height: calc(100vh - 5.5rem);
+  overflow-y: auto;
+  padding-right: 1rem;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  max-width: 1040px;
+}
+
+/* TOC Styling */
+.toc-nav {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.toc-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.toc-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-nav li {
+  margin: 0.35rem 0;
+}
+
+.toc-nav li.toc-l2 {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.toc-nav li.toc-l3 {
+  font-size: 0.8rem;
+  padding-left: 1rem;
+  color: var(--text-muted);
+}
+
+.toc-nav a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toc-nav a:hover {
+  color: var(--accent);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-main);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+h1 {
+  font-size: 2.2rem;
+  margin-top: 0;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.8rem;
+}
+
+h2 {
+  font-size: 1.6rem;
+  border-bottom: 1px solid var(--border-muted);
+  padding-bottom: 0.5rem;
+  margin-top: 3rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+  margin-top: 2rem;
+}
+
+h4 {
+  font-size: 1.05rem;
+}
+
+.anchor {
+  opacity: 0;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: 0.4rem;
+  transition: opacity 0.2s ease;
+}
+
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor, h4:hover .anchor {
+  opacity: 0.7;
+}
+
+p {
+  margin-bottom: 1.1rem;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+hr {
+  border: none;
+  height: 1px;
+  background: var(--border-color);
+  margin: 2.5rem 0;
+}
+
+/* Tables */
+.table-container {
+  overflow-x: auto;
+  margin: 1.25rem 0 2rem 0;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+th, td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+  color: var(--text-main);
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+}
+
+tbody tr:nth-child(even) {
+  background: var(--table-stripe);
+}
+
+tbody tr:hover {
+  background: rgba(88, 166, 255, 0.05);
+}
+
+/* Callouts / Alerts */
+.callout {
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  border-left: 4px solid var(--accent);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-left-width: 4px;
+}
+
+.callout-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.callout-note { border-left-color: var(--callout-note); }
+.callout-note .callout-header { color: var(--accent); }
+
+.callout-important { border-left-color: var(--callout-imp); }
+.callout-important .callout-header { color: #ffa657; }
+
+.callout-tip { border-left-color: var(--callout-tip); }
+.callout-tip .callout-header { color: var(--accent-green); }
+
+.callout-warning { border-left-color: var(--callout-warn); }
+.callout-warning .callout-header { color: var(--accent-yellow); }
+
+.callout-caution { border-left-color: var(--callout-danger); }
+.callout-caution .callout-header { color: var(--accent-red); }
+
+.callout-body {
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+blockquote {
+  margin: 1.25rem 0;
+  padding: 0.75rem 1.25rem;
+  border-left: 4px solid var(--accent);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  border-radius: 0 6px 6px 0;
+}
+
+/* Lists */
+ul, ol {
+  margin: 0.75rem 0 1.25rem 1.5rem;
+}
+
+li {
+  margin: 0.35rem 0;
+}
+
+li.task-item {
+  list-style: none;
+  margin-left: -1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.checkbox {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+}
+.checkbox.checked {
+  color: var(--accent-green);
+}
+
+/* Code & Pre */
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.2rem;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 1.25rem 0;
+}
+
+code {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--code-bg);
+  border: 1px solid var(--border-muted);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+}
+
+pre code {
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
+.mermaid-wrap {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+}
+
+.mermaid-wrap pre.mermaid {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Footer */
+footer {
+  border-top: 1px solid var(--border-color);
+  padding: 2rem 0;
+  margin-top: 4rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 992px) {
+  .sidebar {
+    display: none;
+  }
+  .layout {
+    padding: 1rem;
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-brand">
+    <span>🌪️ After The Storm</span>
+    <span class="badge">v1.0 Master Plan</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn" onclick="toggleTheme()" title="Переключить тему">🌓 Тема</button>
+    <button class="btn" onclick="window.print()" title="Печать">🖨️ Печать</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <nav class="toc-nav">
+<div class="toc-title">📋 Содержание</div>
+<ul>
+<li class="toc-l2"><a href="#оглавление">Оглавление</a></li>
+<li class="toc-l2"><a href="#1-предыстория-и-сюжетная-канва">1. Предыстория и сюжетная канва</a></li>
+<li class="toc-l3"><a href="#завязка">Завязка</a></li>
+<li class="toc-l3"><a href="#сюжетная-дуга-по-главам">Сюжетная дуга по главам</a></li>
+<li class="toc-l3"><a href="#мотивация-героя">Мотивация героя</a></li>
+<li class="toc-l2"><a href="#2-глава-2-первый-дым">2. Глава 2 — «Первый дым»</a></li>
+<li class="toc-l3"><a href="#21-костёр-новый-станок-стартовый">2.1 Костёр</a></li>
+<li class="toc-l3"><a href="#22-грибы-новый-ресурс">2.2 Грибы</a></li>
+<li class="toc-l3"><a href="#23-ремонт-станков-новая-механика">2.3 Ремонт станков</a></li>
+<li class="toc-l3"><a href="#24-вехи-главы-2">2.4 Вехи Главы 2</a></li>
+<li class="toc-l2"><a href="#3-глава-3-соседи">3. Глава 3 — «Соседи»</a></li>
+<li class="toc-l3"><a href="#31-новые-npc">3.1 Новые NPC</a></li>
+<li class="toc-l3"><a href="#32-торговый-рынок">3.2 Торговый рынок</a></li>
+<li class="toc-l3"><a href="#33-расширение-фермы-новые-культуры-глава-3">3.3 Расширение фермы: новые культуры</a></li>
+<li class="toc-l3"><a href="#34-фруктовые-деревья-долгосрочные">3.4 Фруктовые деревья</a></li>
+<li class="toc-l3"><a href="#35-контракты-главы-3-новые-волны">3.5 Контракты Главы 3</a></li>
+<li class="toc-l2"><a href="#4-глава-4-охотник">4. Глава 4 — «Охотник»</a></li>
+<li class="toc-l3"><a href="#41-дикая-фауна">4.1 Дикая фауна</a></li>
+<li class="toc-l3"><a href="#42-новые-инструменты">4.2 Новые инструменты</a></li>
+<li class="toc-l3"><a href="#43-новые-предметы">4.3 Новые предметы</a></li>
+<li class="toc-l3"><a href="#44-животноводство-поздняя-глава-4">4.4 Животноводство</a></li>
+<li class="toc-l3"><a href="#45-вехи-главы-4">4.5 Вехи Главы 4</a></li>
+<li class="toc-l2"><a href="#5-глава-5-мастер">5. Глава 5 — «Мастер»</a></li>
+<li class="toc-l3"><a href="#51-новые-станки">5.1 Новые станки</a></li>
+<li class="toc-l3"><a href="#52-рецепты-лесопилки">5.2 Рецепты лесопилки</a></li>
+<li class="toc-l3"><a href="#53-рецепты-кухни-продвинутые">5.3 Рецепты кухни</a></li>
+<li class="toc-l3"><a href="#54-система-качество-блюда">5.4 Система «Качество блюда»</a></li>
+<li class="toc-l3"><a href="#55-промышленная-энергосеть">5.5 Промышленная энергосеть</a></li>
+<li class="toc-l3"><a href="#56-вехи-главы-5">5.6 Вехи Главы 5</a></li>
+<li class="toc-l2"><a href="#6-глава-6-возрождение">6. Глава 6 — «Возрождение»</a></li>
+<li class="toc-l3"><a href="#61-восстановление-деревни">6.1 Восстановление деревни</a></li>
+<li class="toc-l3"><a href="#62-новые-npc-деревни">6.2 Новые NPC деревни</a></li>
+<li class="toc-l3"><a href="#63-финальные-контракты">6.3 Финальные контракты</a></li>
+<li class="toc-l3"><a href="#64-финал-возрождение">6.4 Финал: «Возрождение»</a></li>
+<li class="toc-l2"><a href="#7-система-кулинарии-сквозная">7. Система кулинарии</a></li>
+<li class="toc-l3"><a href="#71-принципы-дизайна">7.1 Принципы дизайна</a></li>
+<li class="toc-l3"><a href="#72-категории-блюд">7.2 Категории блюд</a></li>
+<li class="toc-l3"><a href="#73-прогрессия-по-станкам">7.3 Прогрессия по станкам</a></li>
+<li class="toc-l3"><a href="#74-баланс-сравнение-еды">7.4 Баланс: сравнение еды</a></li>
+<li class="toc-l2"><a href="#8-расширение-фермы-сквозное">8. Расширение фермы</a></li>
+<li class="toc-l3"><a href="#81-все-культуры-по-главам">8.1 Все культуры по главам</a></li>
+<li class="toc-l3"><a href="#82-фруктовые-деревья">8.2 Фруктовые деревья</a></li>
+<li class="toc-l3"><a href="#83-ягоды-существующие-новые">8.3 Ягоды</a></li>
+<li class="toc-l2"><a href="#9-система-сезонов-и-погоды">9. Система сезонов и погоды</a></li>
+<li class="toc-l3"><a href="#91-сезонный-цикл">9.1 Сезонный цикл</a></li>
+<li class="toc-l3"><a href="#92-сезонные-эффекты">9.2 Сезонные эффекты</a></li>
+<li class="toc-l3"><a href="#93-погодные-события">9.3 Погодные события</a></li>
+<li class="toc-l2"><a href="#10-новые-машины-и-станки">10. Новые машины и станки</a></li>
+<li class="toc-l3"><a href="#сводная-таблица-всех-станков-по-главам">Сводная таблица всех станков по главам</a></li>
+<li class="toc-l2"><a href="#11-новые-персонажи-npc">11. Новые персонажи</a></li>
+<li class="toc-l3"><a href="#сводка-всех-npc-по-главам">Сводка всех NPC по главам</a></li>
+<li class="toc-l3"><a href="#диалоговая-система-улучшение">Диалоговая система</a></li>
+<li class="toc-l2"><a href="#12-улучшения-существующих-механик">12. Улучшения существующих механик</a></li>
+<li class="toc-l3"><a href="#121-система-прочности-инструментов">12.1 Система прочности инструментов</a></li>
+<li class="toc-l3"><a href="#122-система-одежды">12.2 Система одежды</a></li>
+<li class="toc-l3"><a href="#123-система-температуры">12.3 Система температуры</a></li>
+<li class="toc-l3"><a href="#124-система-мебели-декор-базы">12.4 Система мебели</a></li>
+<li class="toc-l3"><a href="#125-улучшение-специализаций">12.5 Улучшение специализаций</a></li>
+<li class="toc-l2"><a href="#13-технический-план-реализации">13. Технический план реализации</a></li>
+<li class="toc-l3"><a href="#131-порядок-реализации">13.1 Порядок реализации</a></li>
+<li class="toc-l3"><a href="#132-затрагиваемые-файлы">13.2 Затрагиваемые файлы</a></li>
+<li class="toc-l3"><a href="#133-принципы-при-реализации">13.3 Принципы при реализации</a></li>
+<li class="toc-l3"><a href="#134-сохранения-новые-секции">13.4 Сохранения — новые секции</a></li>
+</ul>
+</nav>
+  </aside>
+
+  <main class="content">
+    <h1 id="after-the-storm-мастер-план-развития-игры">After The Storm — Мастер-план развития игры <a class="anchor" href="#after-the-storm-мастер-план-развития-игры">#</a></h1>
+<blockquote><strong>Версия:</strong> 1.0 · <strong>Дата:</strong> 12.10.2026<br><strong>Текущее состояние:</strong> Глава 1 «Base Restored» завершена (14 этапов, 42 теста)<br><strong>Движок:</strong> Godot 4.7.2 · <strong>Язык:</strong> GDScript 2.0</blockquote>
+<hr>
+<h2 id="оглавление">Оглавление <a class="anchor" href="#оглавление">#</a></h2>
+<ol>
+<li><a href="#1-предыстория-и-сюжетная-канва">Предыстория и сюжетная канва</a></li>
+<li><a href="#2-глава-2--первый-дым">Глава 2 — «Первый дым» (Основы кулинарии и костёр)</a></li>
+<li><a href="#3-глава-3--соседи">Глава 3 — «Соседи» (NPC, торговля и расширение фермы)</a></li>
+<li><a href="#4-глава-4--охотник">Глава 4 — «Охотник» (Фауна, охота и животноводство)</a></li>
+<li><a href="#5-глава-5--мастер">Глава 5 — «Мастер» (Промышленность и автоматизация)</a></li>
+<li><a href="#6-глава-6--возрождение">Глава 6 — «Возрождение» (Восстановление деревни, финал)</a></li>
+<li><a href="#7-система-кулинарии-сквозная">Система кулинарии (сквозная)</a></li>
+<li><a href="#8-расширение-фермы-сквозное">Расширение фермы (сквозное)</a></li>
+<li><a href="#9-система-сезонов-и-погоды">Система сезонов и погоды</a></li>
+<li><a href="#10-новые-машины-и-станки">Новые машины и станки</a></li>
+<li><a href="#11-новые-персонажи-npc">Новые персонажи (NPC)</a></li>
+<li><a href="#12-улучшения-существующих-механик">Улучшения существующих механик</a></li>
+<li><a href="#13-технический-план-реализации">Технический план реализации</a></li>
+</ol>
+<hr>
+<h2 id="1-предыстория-и-сюжетная-канва">1. Предыстория и сюжетная канва <a class="anchor" href="#1-предыстория-и-сюжетная-канва">#</a></h2>
+<h3 id="завязка">Завязка <a class="anchor" href="#завязка">#</a></h3>
+<p>Сильнейший ураган «Буревал» прокатился по долине и разрушил деревню <strong>Тихая Заводь</strong> — два десятка дворов, мельницу, кузницу, общинный склад и мост через овраг. Главный герой — <strong>мастер-снабженец</strong>, живущий на окраине. До бури он содержал мастерскую и небольшое хозяйство: поставлял деревне дрова, кирпич, строительные материалы и продукты с фермы. Ураган уничтожил его станки, дом и склад. В руинах остались лишь <strong>костёр</strong> из обломков и <strong>старый верстак</strong>, переживший удар чудом.</p>
+<h3 id="сюжетная-дуга-по-главам">Сюжетная дуга по главам <a class="anchor" href="#сюжетная-дуга-по-главам">#</a></h3>
+<div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+    A[&quot;Глава 1\nBase Restored\n✅ Готово&quot;] --&gt; B[&quot;Глава 2\nПервый дым\nКостёр, готовка&quot;]
+    B --&gt; C[&quot;Глава 3\nСоседи\nNPC, торговля&quot;]
+    C --&gt; D[&quot;Глава 4\nОхотник\nФауна, мясо&quot;]
+    D --&gt; E[&quot;Глава 5\nМастер\nПромышленность&quot;]
+    E --&gt; F[&quot;Глава 6\nВозрождение\nДеревня&quot;]
+</pre></div>
+<div class="table-container"><table>
+<thead><tr>
+<th>Глава</th>
+<th>Название</th>
+<th>Основная тема</th>
+<th>Финальная веха</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>1 ✅</td>
+<td>Base Restored</td>
+<td>Базовое выживание и восстановление мастерской</td>
+<td>8 вех: дом, склад, станки, ферма, энергосеть</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Первый дым</td>
+<td>Костёр, готовка, первые блюда, грибы</td>
+<td>Печь-кухня построена, 5 блюд приготовлены</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Соседи</td>
+<td>Новые NPC, расширенная ферма, торговые пути</td>
+<td>Рынок открыт, 3 NPC обслужены, 6 культур выращены</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Охотник</td>
+<td>Дикие животные, охота, мясо, кожа, животноводство</td>
+<td>Курятник / загон построены, 3 вида мяса добыты</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Мастер</td>
+<td>Лесопилка, токарный, автоматизация, электрика Lv.2</td>
+<td>Промышленная зона работает, станки Lv.3</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Возрождение</td>
+<td>Восстановление деревни, мост, мельница, кузница</td>
+<td>Деревня восстановлена, финал игры</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="мотивация-героя">Мотивация героя <a class="anchor" href="#мотивация-героя">#</a></h3>
+<p>Каждая глава раскрывает новый аспект мотивации:</p>
+<ul>
+<li><strong>Гл. 1:</strong> Выживание — «Мне нужна крыша и стены, иначе не переживу зиму»</li>
+<li><strong>Гл. 2:</strong> Комфорт — «Сырые овощи и ягоды — не жизнь. Нужен горячий обед»</li>
+<li><strong>Гл. 3:</strong> Связи — «Я не один. Соседи выжили, и мы можем помогать друг другу»</li>
+<li><strong>Гл. 4:</strong> Освоение — «В лесу есть дичь и опасности. Пора стать охотником»</li>
+<li><strong>Гл. 5:</strong> Мастерство — «Ручной труд — прошлый век. Время строить настоящее производство»</li>
+<li><strong>Гл. 6:</strong> Ответственность — «Деревня ждёт. Я — тот, кто её восстановит»</li>
+</ul>
+<hr>
+<h2 id="2-глава-2-первый-дым">2. Глава 2 — «Первый дым» <a class="anchor" href="#2-глава-2-первый-дым">#</a></h2>
+<blockquote><strong>Новый стартовый баланс:</strong> в начале игры доступны только <strong>Костёр</strong> и <strong>Верстак</strong>. Дробилка, плавильня и фильтр — ремонтируются по мере прогресса (как дом и склад в Главе 1).</blockquote>
+<h3 id="21-костёр-новый-станок-стартовый">2.1 Костёр (новый станок — стартовый) <a class="anchor" href="#21-костёр-новый-станок-стартовый">#</a></h3>
+<p>Примитивная точка готовки и обогрева. Доступен с первого дня.</p>
+<div class="table-container"><table>
+<thead><tr>
+<th>Свойство</th>
+<th>Значение</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Энергопотребление</td>
+<td>0 (ручной)</td>
+</tr>
+<tr>
+<td>Топливо</td>
+<td>дрова (15 с), уголь (90 с), брикет (120 с) — 1 слот</td>
+</tr>
+<tr>
+<td>Рецепты</td>
+<td>6 базовых блюд + обжарка + сушка</td>
+</tr>
+<tr>
+<td>Особенность</td>
+<td>Сушит одежду (как печь), даёт свет ночью</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Рецепты костра:</strong></p>
+<div class="table-container"><table>
+<thead><tr>
+<th>Рецепт</th>
+<th>Вход</th>
+<th>Выход</th>
+<th>Время</th>
+<th>Эффект еды</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Печёный картофель</td>
+<td>2 картофеля</td>
+<td>2 печёного картофеля</td>
+<td>30 с</td>
+<td>+55% сытости, +20 энергии</td>
+</tr>
+<tr>
+<td>Жареная морковь</td>
+<td>3 моркови, 1 вода</td>
+<td>2 жареной моркови</td>
+<td>25 с</td>
+<td>+35% сытости, +18% жажды, +12 энергии</td>
+</tr>
+<tr>
+<td>Овощной суп</td>
+<td>1 морковь, 1 картофель, 2 воды</td>
+<td>2 супа</td>
+<td>45 с</td>
+<td>+50% сытости, +30% жажды, +15 энергии</td>
+</tr>
+<tr>
+<td>Ягодный отвар</td>
+<td>4 красных ягоды, 1 вода</td>
+<td>2 ягодного отвара</td>
+<td>20 с</td>
+<td>+20% жажды, +15 энергии, +5 здоровья</td>
+</tr>
+<tr>
+<td>Грибная похлёбка</td>
+<td>2 гриба, 1 вода</td>
+<td>2 похлёбки</td>
+<td>35 с</td>
+<td>+40% сытости, +25% жажды, +10 энергии</td>
+</tr>
+<tr>
+<td>Сушёные грибы</td>
+<td>3 гриба</td>
+<td>2 сушёных гриба</td>
+<td>40 с</td>
+<td>Лёгкие, долго хранятся, +25% сытости</td>
+</tr>
+<tr>
+<td>Жареное мясо <em>(Гл. 4)</em></td>
+<td>1 сырое мясо</td>
+<td>1 жареное мясо</td>
+<td>30 с</td>
+<td>+60% сытости, +25 энергии</td>
+</tr>
+<tr>
+<td>Кипячёная вода</td>
+<td>2 сырой воды</td>
+<td>2 чистой воды</td>
+<td>20 с</td>
+<td>Альтернатива фильтру</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="22-грибы-новый-ресурс">2.2 Грибы (новый ресурс) <a class="anchor" href="#22-грибы-новый-ресурс">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Параметр</th>
+<th>Значение</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Предмет</td>
+<td><code>mushroom</code> — «Лесной гриб» 🍄</td>
+</tr>
+<tr>
+<td>Где растёт</td>
+<td>Тенистые места у деревьев и камней, влажные зоны</td>
+</tr>
+<tr>
+<td>Респаун</td>
+<td>18 игровых часов</td>
+</tr>
+<tr>
+<td>Сезон</td>
+<td>Лето, осень (когда сезоны заработают)</td>
+</tr>
+<tr>
+<td>Сырой</td>
+<td>Съедобен (+12% сытости, +5 энергии), но слаб</td>
+</tr>
+</tbody>
+</table></div>
+<p>Грибы — <strong>первый ингредиент кулинарии</strong>, доступный без фермы. Мотивация осматривать мир.</p>
+<h3 id="23-ремонт-станков-новая-механика">2.3 Ремонт станков (новая механика) <a class="anchor" href="#23-ремонт-станков-новая-механика">#</a></h3>
+<p>Дробилка, плавильня и фильтр воды — <strong>разрушены</strong> и ремонтируются как здания:</p>
+<div class="table-container"><table>
+<thead><tr>
+<th>Станок</th>
+<th>Стоимость ремонта</th>
+<th>Что даёт</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Дробилка</td>
+<td>10 камня, 4 дерева, 50 кр.</td>
+<td>Камень → пыль, дерево → опилки</td>
+</tr>
+<tr>
+<td>Плавильня</td>
+<td>15 кирпичей, 6 камня, 2 глины, 80 кр.</td>
+<td>Обжиг, выплавка, выпечка</td>
+</tr>
+<tr>
+<td>Фильтр воды</td>
+<td>8 песка, 4 дерева, 30 кр.</td>
+<td>Фильтрация воды</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="24-вехи-главы-2">2.4 Вехи Главы 2 <a class="anchor" href="#24-вехи-главы-2">#</a></h3>
+<ol>
+<li class="task-item"><span class="checkbox">☐</span> Приготовить 5 разных блюд на костре</li>
+<li class="task-item"><span class="checkbox">☐</span> Найти и собрать 10 грибов</li>
+<li class="task-item"><span class="checkbox">☐</span> Отремонтировать дробилку</li>
+<li class="task-item"><span class="checkbox">☐</span> Отремонтировать плавильню</li>
+<li class="task-item"><span class="checkbox">☐</span> Построить <strong>Печь-кухню</strong> (улучшенный станок готовки)</li>
+</ol>
+<hr>
+<h2 id="3-глава-3-соседи">3. Глава 3 — «Соседи» <a class="anchor" href="#3-глава-3-соседи">#</a></h2>
+<h3 id="31-новые-npc">3.1 Новые NPC <a class="anchor" href="#31-новые-npc">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>NPC</th>
+<th>Роль</th>
+<th>Где появляется</th>
+<th>Триггер</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>Марта</strong> — фермерша</td>
+<td>Продаёт семена экзотических культур и саженцы фруктов</td>
+<td>У фермы, после ремонта дома (ст. 2+)</td>
+<td>Глава 3, начало</td>
+</tr>
+<tr>
+<td><strong>Кузнец Игорь</strong></td>
+<td>Чинит инструменты до полной прочности, продаёт чертежи</td>
+<td>У наковальни (строится)</td>
+<td>После 5 заказов</td>
+</tr>
+<tr>
+<td><strong>Лесничий Фёдор</strong></td>
+<td>Даёт охотничьи задания, продаёт ловушки</td>
+<td>На опушке леса</td>
+<td>Глава 4</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="32-торговый-рынок">3.2 Торговый рынок <a class="anchor" href="#32-торговый-рынок">#</a></h3>
+<p>Новое здание на базе — <strong>Торговая лавка</strong> (ремонтируется как дом/склад):</p>
+<div class="table-container"><table>
+<thead><tr>
+<th>Стадия</th>
+<th>Что даёт</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>0 — Развалины</td>
+<td>Прилавок со щитом «Закрыто»</td>
+</tr>
+<tr>
+<td>1 — Навес</td>
+<td>Степан торгует: покупает и продаёт базовые предметы</td>
+</tr>
+<tr>
+<td>2 — Лавка</td>
+<td>Расширенный ассортимент, заказы от путешественников</td>
+</tr>
+<tr>
+<td>3 — Рынок</td>
+<td>Марта торгует семенами, Игорь — чертежами, табло цен</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="33-расширение-фермы-новые-культуры-глава-3">3.3 Расширение фермы: новые культуры (Глава 3) <a class="anchor" href="#33-расширение-фермы-новые-культуры-глава-3">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Культура</th>
+<th>Рост (ч)</th>
+<th>Влага</th>
+<th>Урожай</th>
+<th>Сезон</th>
+<th>Откуда семена</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>🌻 Подсолнух</td>
+<td>20</td>
+<td>25–65%</td>
+<td>2–4 семечки</td>
+<td>лето</td>
+<td>Марта, 20 кр.</td>
+</tr>
+<tr>
+<td>🧅 Лук</td>
+<td>14</td>
+<td>35–75%</td>
+<td>3–5 луковиц</td>
+<td>весна–осень</td>
+<td>Марта, 15 кр.</td>
+</tr>
+<tr>
+<td>🥬 Капуста</td>
+<td>26</td>
+<td>40–85%</td>
+<td>1–2 кочана</td>
+<td>лето, осень</td>
+<td>Марта, 25 кр.</td>
+</tr>
+<tr>
+<td>🍅 Помидор</td>
+<td>18</td>
+<td>50–90%</td>
+<td>3–6 шт.</td>
+<td>лето</td>
+<td>Марта, 30 кр.</td>
+</tr>
+<tr>
+<td>🫑 Перец</td>
+<td>22</td>
+<td>35–70%</td>
+<td>2–4 шт.</td>
+<td>лето</td>
+<td>Марта, 35 кр.</td>
+</tr>
+<tr>
+<td>🫘 Фасоль</td>
+<td>12</td>
+<td>30–65%</td>
+<td>4–8 стручков</td>
+<td>весна, лето</td>
+<td>Марта, 12 кр.</td>
+</tr>
+<tr>
+<td>🌿 Травы (укроп/петрушка)</td>
+<td>8</td>
+<td>30–70%</td>
+<td>3–6 пучков</td>
+<td>весна–осень</td>
+<td>Марта, 8 кр.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="34-фруктовые-деревья-долгосрочные">3.4 Фруктовые деревья (долгосрочные) <a class="anchor" href="#34-фруктовые-деревья-долгосрочные">#</a></h3>
+<p>Новая механика: <strong>фруктовые саженцы</strong> — сажаются на свободную землю, растут несколько игровых дней, потом дают урожай каждый сезон.</p>
+<div class="table-container"><table>
+<thead><tr>
+<th>Дерево</th>
+<th>Рост до первого урожая</th>
+<th>Урожай</th>
+<th>Сезон сбора</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>🍎 Яблоня</td>
+<td>3 игровых дня</td>
+<td>4–8 яблок</td>
+<td>Осень</td>
+</tr>
+<tr>
+<td>🍐 Груша</td>
+<td>4 игровых дня</td>
+<td>3–6 груш</td>
+<td>Осень</td>
+</tr>
+<tr>
+<td>🍒 Вишня</td>
+<td>3 дня</td>
+<td>6–12 вишен</td>
+<td>Лето</td>
+</tr>
+</tbody>
+</table></div>
+<p>Фрукты — ингредиенты для десертов, компотов и джемов (рецепты кухни).</p>
+<h3 id="35-контракты-главы-3-новые-волны">3.5 Контракты Главы 3 (новые волны) <a class="anchor" href="#35-контракты-главы-3-новые-волны">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Волна</th>
+<th>Заказ</th>
+<th>Требования</th>
+<th>Награда</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>4 (после 4 заказов)</td>
+<td>Горячие обеды для рабочих</td>
+<td>6 овощных супов, 4 хлеба</td>
+<td>350 кр.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Поставка семян для посёлка</td>
+<td>10 семян моркови, 8 семян пшеницы, 4 семенного картофеля</td>
+<td>280 кр.</td>
+</tr>
+<tr>
+<td>5 (после 6)</td>
+<td>Заготовки на зиму</td>
+<td>8 сушёных грибов, 4 бутилир. воды, 6 хлеба</td>
+<td>420 кр.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Медикаменты</td>
+<td>4 целебной воды, 6 ягодного отвара</td>
+<td>500 кр.</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="4-глава-4-охотник">4. Глава 4 — «Охотник» <a class="anchor" href="#4-глава-4-охотник">#</a></h2>
+<h3 id="41-дикая-фауна">4.1 Дикая фауна <a class="anchor" href="#41-дикая-фауна">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Животное</th>
+<th>Поведение</th>
+<th>Здоровье</th>
+<th>Добыча</th>
+<th>Где встречается</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>🐰 Заяц</td>
+<td>Убегает при приближении</td>
+<td>15</td>
+<td>1 сырое мясо, 1 шкура</td>
+<td>Луга, опушки</td>
+</tr>
+<tr>
+<td>🦌 Олень</td>
+<td>Убегает быстро</td>
+<td>40</td>
+<td>3 сырого мяса, 2 шкуры, 1 рог</td>
+<td>Лес, дальние поляны</td>
+</tr>
+<tr>
+<td>🐗 Кабан</td>
+<td>Агрессивен при приближении</td>
+<td>60</td>
+<td>4 сырого мяса, 2 шкуры, 1 клык</td>
+<td>Чаща, у корней</td>
+</tr>
+<tr>
+<td>🐺 Волк <em>(угроза)</em></td>
+<td>Агрессивен, стая 2–3</td>
+<td>35</td>
+<td>1 шкура, 1 клык</td>
+<td>Ночь, дальний лес</td>
+</tr>
+<tr>
+<td>🐟 Рыба <em>(удочка)</em></td>
+<td>Мини-игра «ожидание + подсечка»</td>
+<td>—</td>
+<td>1–3 рыбы</td>
+<td>Река / пруд</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="42-новые-инструменты">4.2 Новые инструменты <a class="anchor" href="#42-новые-инструменты">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Инструмент</th>
+<th>Рецепт (верстак)</th>
+<th>Назначение</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>🏹 Лук</td>
+<td>3 дерева, 2 ткани, 1 ремень</td>
+<td>Дистанционная охота</td>
+</tr>
+<tr>
+<td>🪤 Ловушка</td>
+<td>2 дерева, 2 болта, 1 ремень</td>
+<td>Пассивная добыча зайцев</td>
+</tr>
+<tr>
+<td>🎣 Удочка</td>
+<td>2 дерева, 1 медный провод, 1 болт</td>
+<td>Рыбалка</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="43-новые-предметы">4.3 Новые предметы <a class="anchor" href="#43-новые-предметы">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Предмет</th>
+<th>Категория</th>
+<th>Описание</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>raw_meat</code> — Сырое мясо 🥩</td>
+<td>food (сырая)</td>
+<td>Нельзя есть сырым, нужно приготовить</td>
+</tr>
+<tr>
+<td><code>hide</code> — Шкура 🟫</td>
+<td>resource</td>
+<td>Для кожи, одежды, мебели</td>
+</tr>
+<tr>
+<td><code>leather</code> — Кожа 🟤</td>
+<td>material</td>
+<td>Выделанная шкура (верстак)</td>
+</tr>
+<tr>
+<td><code>horn</code> — Рог 🦌</td>
+<td>resource</td>
+<td>Декор, компоненты, продажа</td>
+</tr>
+<tr>
+<td><code>tusk</code> — Клык 🐗</td>
+<td>resource</td>
+<td>Оружие, украшения, продажа</td>
+</tr>
+<tr>
+<td><code>fish</code> — Свежая рыба 🐟</td>
+<td>food (сырая)</td>
+<td>Для жарки, ухи, копчения</td>
+</tr>
+<tr>
+<td><code>arrow</code> — Стрела ↗️</td>
+<td>ammo</td>
+<td>1 дерево + 1 камень → 4 стрелы</td>
+</tr>
+<tr>
+<td><code>cooked_meat</code> — Жареное мясо 🍖</td>
+<td>food</td>
+<td>+60% сытости, +25 энергии</td>
+</tr>
+<tr>
+<td><code>stew</code> — Рагу 🍲</td>
+<td>food</td>
+<td>+70% сытости, +30% жажды, +20 энергии</td>
+</tr>
+<tr>
+<td><code>fish_soup</code> — Уха 🐟🍜</td>
+<td>food</td>
+<td>+45% сытости, +40% жажды, +15 энергии, +8 здоровья</td>
+</tr>
+<tr>
+<td><code>smoked_meat</code> — Копчёное мясо 🥓</td>
+<td>food</td>
+<td>+50% сытости, +30 энергии. Не портится</td>
+</tr>
+<tr>
+<td><code>smoked_fish</code> — Копчёная рыба 🐟</td>
+<td>food</td>
+<td>+35% сытости, +20 энергии. Не портится</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="44-животноводство-поздняя-глава-4">4.4 Животноводство (поздняя Глава 4) <a class="anchor" href="#44-животноводство-поздняя-глава-4">#</a></h3>
+<p>Строящиеся загоны — новый тип зданий:</p>
+<div class="table-container"><table>
+<thead><tr>
+<th>Строение</th>
+<th>Стоимость</th>
+<th>Вмещает</th>
+<th>Продукция</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>🐔 Курятник</td>
+<td>12 дерева, 6 камня, 2 ткани</td>
+<td>4 курицы</td>
+<td>1–2 яйца / игровой день</td>
+</tr>
+<tr>
+<td>🐄 Загон</td>
+<td>20 дерева, 10 камня, 4 ткани, 4 болта</td>
+<td>2 коровы</td>
+<td>1 молоко / игровой день</td>
+</tr>
+</tbody>
+</table></div>
+<p>Куриц и корову <strong>покупаем у Марты</strong> после постройки загонов.</p>
+<div class="table-container"><table>
+<thead><tr>
+<th>Предмет</th>
+<th>Эффект</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>egg</code> — Яйцо 🥚</td>
+<td>Ингредиент для выпечки и омлета</td>
+</tr>
+<tr>
+<td><code>milk</code> — Молоко 🥛</td>
+<td>Ингредиент для масла, сыра, каши</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="45-вехи-главы-4">4.5 Вехи Главы 4 <a class="anchor" href="#45-вехи-главы-4">#</a></h3>
+<ol>
+<li class="task-item"><span class="checkbox">☐</span> Скрафтить лук и стрелы</li>
+<li class="task-item"><span class="checkbox">☐</span> Добыть 3 вида мяса (заяц, олень, кабан)</li>
+<li class="task-item"><span class="checkbox">☐</span> Поймать рыбу</li>
+<li class="task-item"><span class="checkbox">☐</span> Приготовить рагу и копчёное мясо</li>
+<li class="task-item"><span class="checkbox">☐</span> Построить курятник или загон</li>
+<li class="task-item"><span class="checkbox">☐</span> Собрать 10 яиц или 5 молока</li>
+</ol>
+<hr>
+<h2 id="5-глава-5-мастер">5. Глава 5 — «Мастер» <a class="anchor" href="#5-глава-5-мастер">#</a></h2>
+<h3 id="51-новые-станки">5.1 Новые станки <a class="anchor" href="#51-новые-станки">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Станок</th>
+<th>Стоимость постройки</th>
+<th>Назначение</th>
+<th>Энерго</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>🪚 <strong>Лесопилка</strong></td>
+<td>15 дерева, 8 слитков, 4 шестерни, 4 болта</td>
+<td>Дерево → доски, балки</td>
+<td>4.0 кВт</td>
+</tr>
+<tr>
+<td>🔧 <strong>Токарный станок</strong></td>
+<td>10 слитков, 6 шестерён, 4 пластины, 100 кр.</td>
+<td>Точные детали, трубы, оси</td>
+<td>3.5 кВт</td>
+</tr>
+<tr>
+<td>🍳 <strong>Кухня</strong></td>
+<td>12 кирпичей, 6 пластин, 4 стекла, 2 дерева</td>
+<td>Продвинутая готовка с рецептами</td>
+<td>2.0 кВт</td>
+</tr>
+<tr>
+<td>🏭 <strong>Коптильня</strong></td>
+<td>8 кирпичей, 6 дерева, 2 пластины</td>
+<td>Копчение мяса и рыбы</td>
+<td>0 (дрова)</td>
+</tr>
+<tr>
+<td>🧵 <strong>Ткацкий станок</strong></td>
+<td>8 дерева, 4 болта, 2 шестерни</td>
+<td>Продвинутая ткань, одежда</td>
+<td>1.5 кВт</td>
+</tr>
+<tr>
+<td>🫒 <strong>Маслобойня</strong></td>
+<td>6 камня, 4 дерева, 2 шестерни</td>
+<td>Семечки → масло, молоко → масло/сыр</td>
+<td>1.0 кВт</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="52-рецепты-лесопилки">5.2 Рецепты лесопилки <a class="anchor" href="#52-рецепты-лесопилки">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Рецепт</th>
+<th>Вход</th>
+<th>Выход</th>
+<th>Время</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Распил: Доски</td>
+<td>2 дерева</td>
+<td>4 доски</td>
+<td>25 с</td>
+</tr>
+<tr>
+<td>Распил: Балки</td>
+<td>3 дерева</td>
+<td>2 балки</td>
+<td>35 с</td>
+</tr>
+<tr>
+<td>Шлифовка: Мебельная доска</td>
+<td>2 доски</td>
+<td>1 мебельная доска</td>
+<td>30 с</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="53-рецепты-кухни-продвинутые">5.3 Рецепты кухни (продвинутые) <a class="anchor" href="#53-рецепты-кухни-продвинутые">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Рецепт</th>
+<th>Вход</th>
+<th>Выход</th>
+<th>Эффект</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Овощное рагу ★</td>
+<td>1 картофель, 1 морковь, 1 лук, 1 масло</td>
+<td>3 рагу</td>
+<td>+70% сытости, +30% жажды, +20 энергии</td>
+</tr>
+<tr>
+<td>Борщ</td>
+<td>1 капуста, 1 картофель, 1 морковь, 1 лук, 2 воды</td>
+<td>3 борща</td>
+<td>+80% сытости, +35% жажды, +25 энергии</td>
+</tr>
+<tr>
+<td>Пирог с мясом</td>
+<td>2 пшеницы, 2 мяса, 1 лук, 1 яйцо</td>
+<td>2 пирога</td>
+<td>+90% сытости, +40 энергии</td>
+</tr>
+<tr>
+<td>Ягодное варенье</td>
+<td>6 ягод (любых), 1 стекло</td>
+<td>2 варенья</td>
+<td>+15% сытости, +15 энергии, +10 здоровья</td>
+</tr>
+<tr>
+<td>Фруктовый компот</td>
+<td>4 яблока/груши, 2 воды, 1 стекло</td>
+<td>3 компота</td>
+<td>+25% жажды, +20 энергии, +5 здоровья</td>
+</tr>
+<tr>
+<td>Яичница с овощами</td>
+<td>2 яйца, 1 помидор, 1 перец, 1 масло</td>
+<td>2 яичницы</td>
+<td>+55% сытости, +20 энергии</td>
+</tr>
+<tr>
+<td>Сыр</td>
+<td>3 молока</td>
+<td>2 сыра</td>
+<td>+45% сытости, +35 энергии</td>
+</tr>
+<tr>
+<td>Масло</td>
+<td>3 семечек подсолнуха ИЛИ 2 молока</td>
+<td>1 масло</td>
+<td>Ингредиент для блюд</td>
+</tr>
+<tr>
+<td>Пшённая каша</td>
+<td>2 пшеницы, 1 молоко, 1 вода</td>
+<td>2 каши</td>
+<td>+50% сытости, +30% жажды, +15 энергии</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="54-система-качество-блюда">5.4 Система «Качество блюда» <a class="anchor" href="#54-система-качество-блюда">#</a></h3>
+<p>Блюда, приготовленные на <strong>кухне</strong> (а не на костре), получают бонус качества:</p>
+<ul>
+<li><strong>Обычное</strong> (костёр): базовые характеристики</li>
+<li><strong>Хорошее</strong> (кухня Lv.1): +20% ко всем эффектам</li>
+<li><strong>Отличное</strong> (кухня Lv.2+): +40% ко всем эффектам, бонус к здоровью</li>
+<li><strong>Мастерское</strong> (кухня Lv.3 + Фермер): +60% ко всем эффектам</li>
+</ul>
+<h3 id="55-промышленная-энергосеть">5.5 Промышленная энергосеть <a class="anchor" href="#55-промышленная-энергосеть">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Улучшение</th>
+<th>Стоимость</th>
+<th>Эффект</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Ветряк Lv.2</td>
+<td>8 стальных пластин, 6 точных шестерён, 4 провода</td>
+<td>5.0–17.0 кВт</td>
+</tr>
+<tr>
+<td>Батарея Lv.2</td>
+<td>6 элементов, 4 стальных пластины</td>
+<td>250 кВт·ч</td>
+</tr>
+<tr>
+<td>Солнечная панель <em>(Lv.3)</em></td>
+<td>6 стекла, 4 провода, 2 стальных пластины</td>
+<td>3.0 кВт днём</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="56-вехи-главы-5">5.6 Вехи Главы 5 <a class="anchor" href="#56-вехи-главы-5">#</a></h3>
+<ol>
+<li class="task-item"><span class="checkbox">☐</span> Построить лесопилку</li>
+<li class="task-item"><span class="checkbox">☐</span> Построить кухню</li>
+<li class="task-item"><span class="checkbox">☐</span> Приготовить 3 продвинутых блюда на кухне</li>
+<li class="task-item"><span class="checkbox">☐</span> Улучшить ветряк до Lv.2</li>
+<li class="task-item"><span class="checkbox">☐</span> Все станки на базе минимум Lv.2</li>
+<li class="task-item"><span class="checkbox">☐</span> Произвести 10 досок и 4 балки</li>
+</ol>
+<hr>
+<h2 id="6-глава-6-возрождение">6. Глава 6 — «Возрождение» <a class="anchor" href="#6-глава-6-возрождение">#</a></h2>
+<h3 id="61-восстановление-деревни">6.1 Восстановление деревни <a class="anchor" href="#61-восстановление-деревни">#</a></h3>
+<p>Деревня <strong>Тихая Заводь</strong> — локация за мостом (мост — первый объект ремонта). После восстановления моста открываются руины деревни.</p>
+<div class="table-container"><table>
+<thead><tr>
+<th>Объект</th>
+<th>Стоимость</th>
+<th>Этапов ремонта</th>
+<th>Что даёт</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>🌉 Мост</td>
+<td>20 балок, 30 досок, 10 болтов, 8 стальных пластин</td>
+<td>2</td>
+<td>Доступ к деревне</td>
+</tr>
+<tr>
+<td>🏠 Дома жителей (×4)</td>
+<td>15 досок, 10 кирпичей, 4 стекла, 6 раствора каждый</td>
+<td>2</td>
+<td>Жители возвращаются, новые NPC</td>
+</tr>
+<tr>
+<td>⚒️ Кузница</td>
+<td>20 обожж. кирпичей, 12 слитков, 6 шестерён</td>
+<td>3</td>
+<td>Ковка Lv.3, рецепты стали</td>
+</tr>
+<tr>
+<td>🌾 Мельница</td>
+<td>15 досок, 8 балок, 4 шестерни, 6 камня</td>
+<td>3</td>
+<td>Автоматический помол муки</td>
+</tr>
+<tr>
+<td>🏛️ Ратуша</td>
+<td>30 обожж. кирпичей, 20 досок, 12 стёкол, 8 стальных пластин</td>
+<td>4</td>
+<td>Финальное здание</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="62-новые-npc-деревни">6.2 Новые NPC деревни <a class="anchor" href="#62-новые-npc-деревни">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>NPC</th>
+<th>Роль</th>
+<th>Появляется после</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>Староста Пётр</strong></td>
+<td>Даёт глобальные квесты на восстановление, торгует чертежами</td>
+<td>Мост + 1 дом</td>
+</tr>
+<tr>
+<td><strong>Пекарь Анна</strong></td>
+<td>Покупает муку, яйца, масло; продаёт редкие рецепты</td>
+<td>Мельница</td>
+</tr>
+<tr>
+<td><strong>Доктор Ольга</strong></td>
+<td>Покупает целебную воду, травы; продаёт лечебные зелья</td>
+<td>2 дома</td>
+</tr>
+<tr>
+<td><strong>Охотник Василий</strong></td>
+<td>Обменивает шкуры на редкие материалы</td>
+<td>Кузница</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="63-финальные-контракты">6.3 Финальные контракты <a class="anchor" href="#63-финальные-контракты">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Заказ</th>
+<th>Требования</th>
+<th>Награда</th>
+<th>От кого</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Пир восстановления</td>
+<td>10 пирогов, 6 борщей, 8 компотов, 4 варенья</td>
+<td>1200 кр.</td>
+<td>Староста</td>
+</tr>
+<tr>
+<td>Оснащение кузницы</td>
+<td>10 стальных слитков, 8 точных шестерён, 6 стальных пластин</td>
+<td>1500 кр.</td>
+<td>Кузнец Игорь</td>
+</tr>
+<tr>
+<td>Электрификация деревни</td>
+<td>12 фонарей, 8 проводов, 4 элемента</td>
+<td>1800 кр.</td>
+<td>Староста</td>
+</tr>
+<tr>
+<td>Зимний запас</td>
+<td>20 копчёного мяса, 15 сушёных грибов, 10 варенья, 8 компотов</td>
+<td>2000 кр.</td>
+<td>Пекарь Анна</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="64-финал-возрождение">6.4 Финал: «Возрождение» <a class="anchor" href="#64-финал-возрождение">#</a></h3>
+<p>Ратуша восстановлена → кат-сцена: жители собираются на площади, Степан произносит речь, камера облетает восстановленную деревню. Экран <strong>«ТИХАЯ ЗАВОДЬ ВОЗРОЖДЕНА»</strong>.</p>
+<hr>
+<h2 id="7-система-кулинарии-сквозная">7. Система кулинарии (сквозная) <a class="anchor" href="#7-система-кулинарии-сквозная">#</a></h2>
+<h3 id="71-принципы-дизайна">7.1 Принципы дизайна <a class="anchor" href="#71-принципы-дизайна">#</a></h3>
+<div class="mermaid-wrap"><pre class="mermaid">
+flowchart TD
+    A[&quot;Сырые ингредиенты&quot;] --&gt; B{&quot;Станок готовки&quot;}
+    B --&gt;|Костёр| C[&quot;Базовые блюда\nОбычное качество&quot;]
+    B --&gt;|Печь-кухня| D[&quot;Продвинутые блюда\nХорошее–Мастерское&quot;]
+    B --&gt;|Коптильня| E[&quot;Копчёности\nДолгое хранение&quot;]
+    
+    F[&quot;Ферма&quot;] --&gt; A
+    G[&quot;Охота&quot;] --&gt; A
+    H[&quot;Собирательство&quot;] --&gt; A
+    I[&quot;Животноводство&quot;] --&gt; A
+</pre></div>
+<div class="callout callout-important"><div class="callout-header"><span class="callout-icon">❗</span> <strong>IMPORTANT</strong></div><div class="callout-body"><strong>Правило:</strong> готовая еда <strong>всегда лучше</strong> сырых ингредиентов по сумме эффектов. Это мотивирует строить кулинарную цепочку, а не просто есть картошку с грядки.</div></div>
+<h3 id="72-категории-блюд">7.2 Категории блюд <a class="anchor" href="#72-категории-блюд">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Категория</th>
+<th>Примеры</th>
+<th>Особенность</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>Лёгкая закуска</strong></td>
+<td>Печёный картофель, жареная морковь</td>
+<td>Быстро, мало ингредиентов</td>
+</tr>
+<tr>
+<td><strong>Суп / похлёбка</strong></td>
+<td>Овощной суп, уха, борщ</td>
+<td>Утоляет жажду + сытость</td>
+</tr>
+<tr>
+<td><strong>Горячее блюдо</strong></td>
+<td>Рагу, пирог, яичница</td>
+<td>Высокая сытость + энергия</td>
+</tr>
+<tr>
+<td><strong>Выпечка</strong></td>
+<td>Хлеб, пирог, булочки</td>
+<td>Макс. сытость, нужна мука</td>
+</tr>
+<tr>
+<td><strong>Напиток</strong></td>
+<td>Ягодный отвар, компот, молоко</td>
+<td>Жажда + здоровье</td>
+</tr>
+<tr>
+<td><strong>Консервы</strong></td>
+<td>Копчёное мясо, сушёные грибы, варенье</td>
+<td>Не портятся, экспедиционная еда</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="73-прогрессия-по-станкам">7.3 Прогрессия по станкам <a class="anchor" href="#73-прогрессия-по-станкам">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Станок</th>
+<th>Когда</th>
+<th>Рецепты</th>
+<th>Качество</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Костёр</td>
+<td>С начала</td>
+<td>Жарка, варка, сушка, кипячение</td>
+<td>Обычное</td>
+</tr>
+<tr>
+<td>Плавильня (хлеб)</td>
+<td>Глава 1</td>
+<td>Только хлеб</td>
+<td>Обычное</td>
+</tr>
+<tr>
+<td>Печь-кухня</td>
+<td>Глава 2–3</td>
+<td>Супы, каши, жарка с маслом</td>
+<td>Хорошее</td>
+</tr>
+<tr>
+<td>Кухня</td>
+<td>Глава 5</td>
+<td>Все рецепты, составные блюда</td>
+<td>Хорошее–Мастерское</td>
+</tr>
+<tr>
+<td>Коптильня</td>
+<td>Глава 4</td>
+<td>Копчение мяса и рыбы</td>
+<td>— (консервация)</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="74-баланс-сравнение-еды">7.4 Баланс: сравнение еды <a class="anchor" href="#74-баланс-сравнение-еды">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Еда</th>
+<th>Сытость</th>
+<th>Жажда</th>
+<th>Энергия</th>
+<th>Здоровье</th>
+<th>Доступность</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Сырая морковь</td>
+<td>28%</td>
+<td>12%</td>
+<td>+10</td>
+<td>—</td>
+<td>Грядка, Гл.1</td>
+</tr>
+<tr>
+<td>Жареная морковь</td>
+<td>35%</td>
+<td>18%</td>
+<td>+12</td>
+<td>—</td>
+<td>Костёр, Гл.2</td>
+</tr>
+<tr>
+<td>Овощной суп</td>
+<td>50%</td>
+<td>30%</td>
+<td>+15</td>
+<td>—</td>
+<td>Костёр, Гл.2</td>
+</tr>
+<tr>
+<td>Борщ (кухня)</td>
+<td>80%</td>
+<td>35%</td>
+<td>+25</td>
+<td>—</td>
+<td>Кухня, Гл.5</td>
+</tr>
+<tr>
+<td>Хлеб</td>
+<td>65%</td>
+<td>—</td>
+<td>+25</td>
+<td>—</td>
+<td>Печь, Гл.1</td>
+</tr>
+<tr>
+<td>Пирог с мясом</td>
+<td>90%</td>
+<td>—</td>
+<td>+40</td>
+<td>—</td>
+<td>Кухня, Гл.5</td>
+</tr>
+<tr>
+<td>Копчёное мясо</td>
+<td>50%</td>
+<td>—</td>
+<td>+30</td>
+<td>—</td>
+<td>Коптильня, Гл.4</td>
+</tr>
+<tr>
+<td>Ягодное варенье</td>
+<td>15%</td>
+<td>—</td>
+<td>+15</td>
+<td>+10</td>
+<td>Кухня, Гл.5</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="8-расширение-фермы-сквозное">8. Расширение фермы (сквозное) <a class="anchor" href="#8-расширение-фермы-сквозное">#</a></h2>
+<h3 id="81-все-культуры-по-главам">8.1 Все культуры по главам <a class="anchor" href="#81-все-культуры-по-главам">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Глава</th>
+<th>Культура</th>
+<th>Рост (ч)</th>
+<th>Урожай</th>
+<th>Применение</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>1 ✅</td>
+<td>🥕 Морковь</td>
+<td>10</td>
+<td>2–3</td>
+<td>Еда, жарка, суп, борщ</td>
+</tr>
+<tr>
+<td>1 ✅</td>
+<td>🥔 Картофель</td>
+<td>16</td>
+<td>2–4</td>
+<td>Еда, печёный, суп, борщ, рагу</td>
+</tr>
+<tr>
+<td>1 ✅</td>
+<td>🌾 Пшеница</td>
+<td>22</td>
+<td>3–5</td>
+<td>Хлеб, мука, ткань, семена, каша</td>
+</tr>
+<tr>
+<td>3</td>
+<td>🌻 Подсолнух</td>
+<td>20</td>
+<td>2–4</td>
+<td>Масло</td>
+</tr>
+<tr>
+<td>3</td>
+<td>🧅 Лук</td>
+<td>14</td>
+<td>3–5</td>
+<td>Суп, борщ, рагу, пирог</td>
+</tr>
+<tr>
+<td>3</td>
+<td>🥬 Капуста</td>
+<td>26</td>
+<td>1–2</td>
+<td>Борщ, щи, засолка</td>
+</tr>
+<tr>
+<td>3</td>
+<td>🍅 Помидор</td>
+<td>18</td>
+<td>3–6</td>
+<td>Суп, соус, яичница</td>
+</tr>
+<tr>
+<td>3</td>
+<td>🫑 Перец</td>
+<td>22</td>
+<td>2–4</td>
+<td>Яичница, рагу, приправа</td>
+</tr>
+<tr>
+<td>3</td>
+<td>🫘 Фасоль</td>
+<td>12</td>
+<td>4–8</td>
+<td>Суп, гарнир, экспорт</td>
+</tr>
+<tr>
+<td>3</td>
+<td>🌿 Травы</td>
+<td>8</td>
+<td>3–6</td>
+<td>Приправа (+качество), отвары, лечебные</td>
+</tr>
+<tr>
+<td>5</td>
+<td>🌽 Кукуруза</td>
+<td>24</td>
+<td>2–4</td>
+<td>Каша, корм, масло</td>
+</tr>
+<tr>
+<td>5</td>
+<td>🍉 Тыква</td>
+<td>30</td>
+<td>1–2</td>
+<td>Каша, пирог, суп</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="82-фруктовые-деревья">8.2 Фруктовые деревья <a class="anchor" href="#82-фруктовые-деревья">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Дерево</th>
+<th>Рост</th>
+<th>Сезон</th>
+<th>Урожай/сезон</th>
+<th>Применение</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>🍎 Яблоня</td>
+<td>3 дня</td>
+<td>Осень</td>
+<td>4–8</td>
+<td>Компот, варенье, пирог</td>
+</tr>
+<tr>
+<td>🍐 Груша</td>
+<td>4 дня</td>
+<td>Осень</td>
+<td>3–6</td>
+<td>Компот, варенье</td>
+</tr>
+<tr>
+<td>🍒 Вишня</td>
+<td>3 дня</td>
+<td>Лето</td>
+<td>6–12</td>
+<td>Варенье, компот, пирог</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="83-ягоды-существующие-новые">8.3 Ягоды (существующие + новые) <a class="anchor" href="#83-ягоды-существующие-новые">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Куст</th>
+<th>Ягода</th>
+<th>Урожай</th>
+<th>Сезон</th>
+<th>Применение</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>✅ Красный</td>
+<td>Красная ягода</td>
+<td>3</td>
+<td>Весна, лето</td>
+<td>Еда, отвар, варенье</td>
+</tr>
+<tr>
+<td>✅ Синий</td>
+<td>Синяя ягода</td>
+<td>6</td>
+<td>Зима</td>
+<td>Еда, отвар, варенье</td>
+</tr>
+<tr>
+<td>🆕 Ежевика</td>
+<td>Ежевика</td>
+<td>4</td>
+<td>Лето, осень</td>
+<td>Варенье, пирог, компот</td>
+</tr>
+<tr>
+<td>🆕 Облепиха</td>
+<td>Облепиха</td>
+<td>8</td>
+<td>Осень</td>
+<td>Масло, лечебный настой (+здоровье)</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="9-система-сезонов-и-погоды">9. Система сезонов и погоды <a class="anchor" href="#9-система-сезонов-и-погоды">#</a></h2>
+<h3 id="91-сезонный-цикл">9.1 Сезонный цикл <a class="anchor" href="#91-сезонный-цикл">#</a></h3>
+<div class="callout callout-note"><div class="callout-header"><span class="callout-icon">ℹ️</span> <strong>NOTE</strong></div><div class="callout-body">Сейчас <code>Seasons.current_season == &quot;&quot;</code> — заглушка. Предлагается активировать систему с Главы 3.</div></div>
+<div class="table-container"><table>
+<thead><tr>
+<th>Сезон</th>
+<th>Длительность (игр. дни)</th>
+<th>Температура</th>
+<th>Дождь</th>
+<th>Особенности</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>🌱 Весна</td>
+<td>7</td>
+<td>Умеренно</td>
+<td>Часто</td>
+<td>Посадка, высокая влажность</td>
+</tr>
+<tr>
+<td>☀️ Лето</td>
+<td>7</td>
+<td>Жарко</td>
+<td>Редко</td>
+<td>Макс. солнце, засуха возможна</td>
+</tr>
+<tr>
+<td>🍂 Осень</td>
+<td>7</td>
+<td>Прохладно</td>
+<td>Часто</td>
+<td>Урожай фруктов, грибы</td>
+</tr>
+<tr>
+<td>❄️ Зима</td>
+<td>7</td>
+<td>Холодно</td>
+<td>Снег</td>
+<td>Замедленный рост, синие ягоды, охота</td>
+</tr>
+</tbody>
+</table></div>
+<p>Полный год = 28 игровых дней ≈ 28 × 24 мин = ~11 часов реального времени.</p>
+<h3 id="92-сезонные-эффекты">9.2 Сезонные эффекты <a class="anchor" href="#92-сезонные-эффекты">#</a></h3>
+<ul>
+<li><strong>Зима:</strong> Персонаж мёрзнет на улице без одежды (-здоровье/ч), огонь/дом обязательны; вода в открытых источниках замёрзла — нужен колодец</li>
+<li><strong>Лето:</strong> Засуха — грядки сохнут вдвое быстрее, нужен больше полив</li>
+<li><strong>Осень:</strong> Грибы × 2, фруктовый урожай, листопад (визуал)</li>
+<li><strong>Весна:</strong> Всё растёт × 1.3, дожди поливают автоматически</li>
+</ul>
+<h3 id="93-погодные-события">9.3 Погодные события <a class="anchor" href="#93-погодные-события">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Событие</th>
+<th>Сезон</th>
+<th>Эффект</th>
+<th>Длительность</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Гроза</td>
+<td>Весна, Лето</td>
+<td>Сильный дождь, возможен удар молнии (поджог дерева)</td>
+<td>2–6 ч</td>
+</tr>
+<tr>
+<td>Засуха</td>
+<td>Лето</td>
+<td>Нет дождя 3+ дня, грядки сохнут ×3</td>
+<td>3–5 дней</td>
+</tr>
+<tr>
+<td>Метель</td>
+<td>Зима</td>
+<td>Замедление, урон от холода ×2, видимость ↓</td>
+<td>4–12 ч</td>
+</tr>
+<tr>
+<td>Ураган <em>(редко)</em></td>
+<td>Осень</td>
+<td>Повреждение забора/крыши (1 стадия), ресурсы разбросаны</td>
+<td>2–4 ч</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="10-новые-машины-и-станки">10. Новые машины и станки <a class="anchor" href="#10-новые-машины-и-станки">#</a></h2>
+<h3 id="сводная-таблица-всех-станков-по-главам">Сводная таблица всех станков по главам <a class="anchor" href="#сводная-таблица-всех-станков-по-главам">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Станок</th>
+<th>Глава</th>
+<th>Тип</th>
+<th>Уровни</th>
+<th>Основные рецепты</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>✅ Верстак</td>
+<td>1</td>
+<td>Сборка</td>
+<td>1–3</td>
+<td>Компоненты, инструменты</td>
+</tr>
+<tr>
+<td>✅ Дробилка</td>
+<td>1→2</td>
+<td>Измельчение</td>
+<td>1–3</td>
+<td>Пыль, опилки</td>
+</tr>
+<tr>
+<td>✅ Плавильня</td>
+<td>1→2</td>
+<td>Термообработка</td>
+<td>1–3</td>
+<td>Кирпич, стекло, слитки, хлеб</td>
+</tr>
+<tr>
+<td>✅ Фильтр воды</td>
+<td>1→2</td>
+<td>Очистка</td>
+<td>1–3</td>
+<td>Вода чистая, целебная</td>
+</tr>
+<tr>
+<td>🆕 Костёр</td>
+<td>2 (старт)</td>
+<td>Готовка/обогрев</td>
+<td>—</td>
+<td>Базовые блюда, сушка, кипячение</td>
+</tr>
+<tr>
+<td>🆕 Печь-кухня</td>
+<td>2</td>
+<td>Готовка</td>
+<td>1–2</td>
+<td>Средние блюда, соусы</td>
+</tr>
+<tr>
+<td>🆕 Коптильня</td>
+<td>4</td>
+<td>Консервация</td>
+<td>1–2</td>
+<td>Копчёности</td>
+</tr>
+<tr>
+<td>🆕 Лесопилка</td>
+<td>5</td>
+<td>Деревообработка</td>
+<td>1–3</td>
+<td>Доски, балки, мебельные</td>
+</tr>
+<tr>
+<td>🆕 Токарный станок</td>
+<td>5</td>
+<td>Металлообработка</td>
+<td>1–3</td>
+<td>Трубы, оси, точные детали</td>
+</tr>
+<tr>
+<td>🆕 Кухня</td>
+<td>5</td>
+<td>Продвинутая готовка</td>
+<td>1–3</td>
+<td>Все рецепты еды</td>
+</tr>
+<tr>
+<td>🆕 Ткацкий станок</td>
+<td>5</td>
+<td>Текстиль</td>
+<td>1–2</td>
+<td>Ткань Lv.2, одежда</td>
+</tr>
+<tr>
+<td>🆕 Маслобойня</td>
+<td>5</td>
+<td>Переработка</td>
+<td>1–2</td>
+<td>Масло из семечек/молока, сыр</td>
+</tr>
+<tr>
+<td>🆕 Колодец</td>
+<td>3</td>
+<td>Водоснабжение</td>
+<td>—</td>
+<td>Бесконечная сырая вода, зимой работает</td>
+</tr>
+<tr>
+<td>🆕 Мельница <em>(деревня)</em></td>
+<td>6</td>
+<td>Помол</td>
+<td>1–2</td>
+<td>Пшеница → мука (автомат)</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="11-новые-персонажи-npc">11. Новые персонажи (NPC) <a class="anchor" href="#11-новые-персонажи-npc">#</a></h2>
+<h3 id="сводка-всех-npc-по-главам">Сводка всех NPC по главам <a class="anchor" href="#сводка-всех-npc-по-главам">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>NPC</th>
+<th>Глава</th>
+<th>Роль</th>
+<th>Особенность</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>✅ Караванщик Степан</td>
+<td>1</td>
+<td>Торговец, заказчик</td>
+<td>Волны контрактов, стартовые семена</td>
+</tr>
+<tr>
+<td>🆕 Фермерша Марта</td>
+<td>3</td>
+<td>Торговка семенами</td>
+<td>Экзотические культуры, саженцы фруктов, животные</td>
+</tr>
+<tr>
+<td>🆕 Кузнец Игорь</td>
+<td>3</td>
+<td>Ремонт, чертежи</td>
+<td>Чинит инструменты, продаёт рецепты Lv.3</td>
+</tr>
+<tr>
+<td>🆕 Лесничий Фёдор</td>
+<td>4</td>
+<td>Охотничьи квесты</td>
+<td>Продаёт ловушки, учит охоте</td>
+</tr>
+<tr>
+<td>🆕 Рыбак Семён</td>
+<td>4</td>
+<td>Рыболовные квесты</td>
+<td>Появляется у реки, продаёт наживку</td>
+</tr>
+<tr>
+<td>🆕 Староста Пётр</td>
+<td>6</td>
+<td>Глобальные квесты</td>
+<td>Восстановление деревни</td>
+</tr>
+<tr>
+<td>🆕 Пекарь Анна</td>
+<td>6</td>
+<td>Торговка продуктами</td>
+<td>Покупает муку/яйца, продаёт рецепты</td>
+</tr>
+<tr>
+<td>🆕 Доктор Ольга</td>
+<td>6</td>
+<td>Лечение, зелья</td>
+<td>Целебные зелья, лекарства</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="диалоговая-система-улучшение">Диалоговая система (улучшение) <a class="anchor" href="#диалоговая-система-улучшение">#</a></h3>
+<p>Каждый NPC имеет:</p>
+<ul>
+<li><strong>Приветствие</strong> — зависит от прогресса и сезона</li>
+<li><strong>Торговлю</strong> — покупка/продажа специализированных товаров</li>
+<li><strong>Квесты</strong> — 2–4 задания, привязанных к специализации</li>
+<li><strong>Реплики</strong> — комментарии к погоде, времени суток, прогрессу</li>
+</ul>
+<hr>
+<h2 id="12-улучшения-существующих-механик">12. Улучшения существующих механик <a class="anchor" href="#12-улучшения-существующих-механик">#</a></h2>
+<h3 id="121-система-прочности-инструментов">12.1 Система прочности инструментов <a class="anchor" href="#121-система-прочности-инструментов">#</a></h3>
+<div class="callout callout-tip"><div class="callout-header"><span class="callout-icon">💡</span> <strong>TIP</strong></div><div class="callout-body">Инструменты ломаются после N использований. Ремонт у кузнеца Игоря или на верстаке.</div></div>
+<div class="table-container"><table>
+<thead><tr>
+<th>Инструмент</th>
+<th>Прочность Lv.1</th>
+<th>Прочность Lv.2</th>
+<th>Ремонт</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Топор</td>
+<td>80 ударов</td>
+<td>150 ударов</td>
+<td>1 дерево + 1 болт</td>
+</tr>
+<tr>
+<td>Кирка</td>
+<td>60 ударов</td>
+<td>120 ударов</td>
+<td>1 камень + 1 болт</td>
+</tr>
+<tr>
+<td>Лопата</td>
+<td>100 ударов</td>
+<td>200 ударов</td>
+<td>1 дерево</td>
+</tr>
+<tr>
+<td>Ведро</td>
+<td>Не ломается</td>
+<td>Не ломается</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="122-система-одежды">12.2 Система одежды <a class="anchor" href="#122-система-одежды">#</a></h3>
+<p>Новая категория предметов <code>clothing</code>:</p>
+<div class="table-container"><table>
+<thead><tr>
+<th>Одежда</th>
+<th>Рецепт</th>
+<th>Эффект</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Шапка</td>
+<td>2 ткани</td>
+<td>Защита от холода +15%</td>
+</tr>
+<tr>
+<td>Куртка</td>
+<td>4 ткани, 2 кожи</td>
+<td>Защита от холода +40%, от дождя +20%</td>
+</tr>
+<tr>
+<td>Сапоги</td>
+<td>2 кожи, 2 болта</td>
+<td>Скорость +10%, защита от грязи</td>
+</tr>
+<tr>
+<td>Перчатки</td>
+<td>1 кожа, 1 ткань</td>
+<td>Добыча +10%, защита рук</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="123-система-температуры">12.3 Система температуры <a class="anchor" href="#123-система-температуры">#</a></h3>
+<p>Расширение существующей системы мокроты:</p>
+<div class="table-container"><table>
+<thead><tr>
+<th>Фактор</th>
+<th>Эффект</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Мороз (зима, ночь)</td>
+<td>-здоровье/ч без одежды/огня</td>
+</tr>
+<tr>
+<td>Жара (лето, полдень)</td>
+<td>+жажда ×1.5</td>
+</tr>
+<tr>
+<td>Одежда</td>
+<td>Снижает урон от холода</td>
+</tr>
+<tr>
+<td>Костёр/печь рядом</td>
+<td>Убирает холод, сушит</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="124-система-мебели-декор-базы">12.4 Система мебели (декор базы) <a class="anchor" href="#124-система-мебели-декор-базы">#</a></h3>
+<p>Новая категория для домашнего уюта:</p>
+<div class="table-container"><table>
+<thead><tr>
+<th>Мебель</th>
+<th>Рецепт</th>
+<th>Бонус</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Кровать</td>
+<td>4 доски, 2 ткани</td>
+<td>Сон ×1.5 эффективнее</td>
+</tr>
+<tr>
+<td>Стол</td>
+<td>4 доски</td>
+<td>Еда даёт +10% бонуса (за столом)</td>
+</tr>
+<tr>
+<td>Полки</td>
+<td>3 доски, 2 болта</td>
+<td>+4 слота к складу</td>
+</tr>
+<tr>
+<td>Сундук</td>
+<td>6 досок, 4 болта, 2 пластины</td>
+<td>Внешнее хранилище, 20 слотов</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="125-улучшение-специализаций">12.5 Улучшение специализаций <a class="anchor" href="#125-улучшение-специализаций">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Класс</th>
+<th>Бонус Глава 1 ✅</th>
+<th>Новый бонус (Гл. 3+)</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>⛏ Шахтёр</td>
+<td>+1 руда/уголь, −20% энергии</td>
+<td>+15% прочность инструментов, видит жилы издалека</td>
+</tr>
+<tr>
+<td>🌾 Фермер</td>
+<td>Рост ×1.35</td>
+<td>Качество еды +1 категория, урожай +20%</td>
+</tr>
+<tr>
+<td>🔬 Учёный</td>
+<td>Станки ×1.4 быстрее</td>
+<td>Рецепты Lv.3 дешевле на 25%, новые рецепты</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="13-технический-план-реализации">13. Технический план реализации <a class="anchor" href="#13-технический-план-реализации">#</a></h2>
+<h3 id="131-порядок-реализации">13.1 Порядок реализации <a class="anchor" href="#131-порядок-реализации">#</a></h3>
+<div class="mermaid-wrap"><pre class="mermaid">
+gantt
+    title Порядок реализации глав
+    dateFormat X
+    axisFormat %s
+    
+    section Подготовка
+    Активация системы сезонов     :a1, 0, 2
+    Костёр (новый станок)         :a2, 0, 3
+    Грибы (новый ресурс)          :a3, 1, 2
+    
+    section Глава 2
+    Рецепты костра                :b1, 3, 3
+    Ремонтируемые станки          :b2, 3, 4
+    Печь-кухня                    :b3, 5, 3
+    Вехи и тесты                  :b4, 7, 2
+    
+    section Глава 3
+    NPC Марта                     :c1, 9, 3
+    Новые культуры                :c2, 9, 4
+    Торговая лавка                :c3, 11, 3
+    Колодец                       :c4, 12, 2
+    
+    section Глава 4
+    Фауна и AI                   :d1, 14, 5
+    Лук и стрелы                  :d2, 14, 3
+    Коптильня                     :d3, 17, 3
+    Животноводство                :d4, 19, 4
+</pre></div>
+<h3 id="132-затрагиваемые-файлы">13.2 Затрагиваемые файлы <a class="anchor" href="#132-затрагиваемые-файлы">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Система</th>
+<th>Файлы для изменения/создания</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Предметы</td>
+<td><code>scripts/inventory/item_db.gd</code> — новые записи</td>
+</tr>
+<tr>
+<td>Рецепты</td>
+<td><code>scripts/crafting/recipe_db.gd</code> — новые рецепты</td>
+</tr>
+<tr>
+<td>Контракты</td>
+<td><code>scripts/economy/contract_db.gd</code> — новые волны</td>
+</tr>
+<tr>
+<td>Культуры</td>
+<td><code>scripts/farming/crop_db.gd</code> — новые культуры</td>
+</tr>
+<tr>
+<td>Сезоны</td>
+<td><code>scripts/core/seasons.gd</code> — активация заглушки</td>
+</tr>
+<tr>
+<td>Костёр</td>
+<td><strong>НОВЫЙ</strong> <code>scripts/crafting/campfire.gd</code></td>
+</tr>
+<tr>
+<td>NPC</td>
+<td><strong>НОВЫЙ</strong> <code>scripts/npc/npc_db.gd</code> — база всех NPC</td>
+</tr>
+<tr>
+<td>Фауна</td>
+<td><strong>НОВЫЙ</strong> <code>scripts/world/wildlife.gd</code></td>
+</tr>
+<tr>
+<td>Охота</td>
+<td><strong>НОВЫЙ</strong> <code>scripts/player/hunting.gd</code></td>
+</tr>
+<tr>
+<td>Животноводство</td>
+<td><strong>НОВЫЙ</strong> <code>scripts/farming/animal_pen.gd</code></td>
+</tr>
+<tr>
+<td>Кулинария</td>
+<td><strong>НОВЫЙ</strong> <code>scripts/crafting/cooking_quality.gd</code></td>
+</tr>
+<tr>
+<td>Температура</td>
+<td><code>scripts/player/player.gd</code> — расширение</td>
+</tr>
+<tr>
+<td>Одежда</td>
+<td><code>scripts/inventory/equipment.gd</code> — <strong>НОВЫЙ</strong></td>
+</tr>
+<tr>
+<td>Мебель</td>
+<td><code>scripts/buildings/furniture.gd</code> — <strong>НОВЫЙ</strong></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="133-принципы-при-реализации">13.3 Принципы при реализации <a class="anchor" href="#133-принципы-при-реализации">#</a></h3>
+<div class="callout callout-important"><div class="callout-header"><span class="callout-icon">❗</span> <strong>IMPORTANT</strong></div><div class="callout-body">1. <strong>Каждая глава — отдельная ветка Git</strong> с полным набором тестов<br>2. <strong>Документация обновляется в том же коммите</strong> (<code>docs/DOCUMENTATION.md</code>)<br>3. <strong>Обратная совместимость сохранений</strong> — новые поля опциональны<br>4. <strong>Баланс тестируется</strong> — <code>test_progression_balance.gd</code> расширяется</div></div>
+<h3 id="134-сохранения-новые-секции">13.4 Сохранения — новые секции <a class="anchor" href="#134-сохранения-новые-секции">#</a></h3>
+<div class="table-container"><table>
+<thead><tr>
+<th>Секция</th>
+<th>Глава</th>
+<th>Содержимое</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>campfire</code></td>
+<td>2</td>
+<td>Состояние костра, топливо</td>
+</tr>
+<tr>
+<td><code>cooking</code></td>
+<td>2</td>
+<td>Рецепты, качество</td>
+</tr>
+<tr>
+<td><code>seasons</code></td>
+<td>3</td>
+<td>Текущий сезон, день в сезоне</td>
+</tr>
+<tr>
+<td><code>market</code></td>
+<td>3</td>
+<td>Стадия лавки, инвентарь NPC</td>
+</tr>
+<tr>
+<td><code>wildlife</code></td>
+<td>4</td>
+<td>Состояние животных, респаун</td>
+</tr>
+<tr>
+<td><code>animal_pens</code></td>
+<td>4</td>
+<td>Загоны, животные, продукция</td>
+</tr>
+<tr>
+<td><code>village</code></td>
+<td>6</td>
+<td>Стадии зданий деревни</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<div class="callout callout-note"><div class="callout-header"><span class="callout-icon">ℹ️</span> <strong>NOTE</strong></div><div class="callout-body">Этот документ — живой план. При начале работы над конкретной главой<br>создаётся детальный технический документ с кодовыми сниппетами,<br>точными числами баланса и списком тестов.</div></div>
+    <footer>
+      <p>🌪️ After The Storm · Мастер-план развития игры · Создан для Godot 4.7.2</p>
+    </footer>
+  </main>
+</div>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+</script>
+
+</body>
+</html>

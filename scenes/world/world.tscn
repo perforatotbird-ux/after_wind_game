@@ -35,6 +35,10 @@
 [ext_resource type="Script" path="res://scripts/world/voxel_deposit.gd" id="37_deposit"]
 [ext_resource type="Script" path="res://scripts/world/meadow_decor.gd" id="38_meadow"]
 [ext_resource type="Script" path="res://scripts/world/berry_bush_spawner.gd" id="39_berries"]
+[ext_resource type="Script" path="res://scripts/world/season_manager.gd" id="40_seasons"]
+[ext_resource type="PackedScene" path="res://scenes/machines/campfire.tscn" id="40_campfire"]
+[ext_resource type="PackedScene" path="res://scenes/machines/kitchen_stove.tscn" id="41_kitchen"]
+[ext_resource type="Script" path="res://scripts/world/mushroom_spawner.gd" id="42_shrooms"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.36, 0.54, 0.75, 1)
@@ -81,6 +85,9 @@ script = ExtResource("16_cycle")
 
 [node name="WeatherManager" parent="." unique_id=147006761 instance=ExtResource("24_weather")]
 
+[node name="SeasonManager" type="Node" parent="."]
+script = ExtResource("40_seasons")
+
 [node name="PowerGrid" type="Node" parent="." unique_id=270830116 groups=["power_grid"]]
 script = ExtResource("25_grid")
 
@@ -116,18 +123,51 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0, -7)
 
 [node name="StoneCrusher" parent="Props" unique_id=1787148247 instance=ExtResource("11_crusher")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 0, -1.95)
+requires_rebuild = true
+rebuild_info = {
+"title": "Разрушена",
+"action": "Восстановить дробилку",
+"description": "Рама перекошена, жернова сорваны. После бури дробилка не запускается — сначала соберите её заново.",
+"perks": "Камень → каменная пыль, древесина → опилки."
+}
+rebuild_cost = {"stone": 10, "wood": 4}
+rebuild_credits = 50
 
 [node name="Workbench" parent="Props" unique_id=421908700 instance=ExtResource("12_bench")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 0, -2.5)
 
 [node name="Smelter" parent="Props" unique_id=615457270 instance=ExtResource("17_smelter")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.5)
+requires_rebuild = true
+rebuild_info = {
+"title": "Разрушена",
+"action": "Восстановить плавильню",
+"description": "Топка треснула, дымоход завален. Печь не разожжётся, пока не сложите кладку заново.",
+"perks": "Обжиг кирпича и стекла, выплавка слитков, выпечка хлеба."
+}
+rebuild_cost = {"poor_brick": 15, "stone": 6, "clay": 2}
+rebuild_credits = 80
+
+[node name="Campfire" parent="Props" instance=ExtResource("40_campfire")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0, 0.6)
+
+[node name="KitchenStove" parent="Props" instance=ExtResource("41_kitchen")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, -6.2)
 
 [node name="DispatchStation" parent="Props" unique_id=2079646939 instance=ExtResource("13_station")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0, -4.5)
 
 [node name="WaterFilter" parent="Props" unique_id=1312238489 instance=ExtResource("19_filter")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8, 0, 1.2)
+requires_rebuild = true
+rebuild_info = {
+"title": "Разрушена",
+"action": "Восстановить фильтр",
+"description": "Песчаная колонна просела, корпус треснул. Фильтр не очищает воду, пока его не переберут.",
+"perks": "Фильтрация сырой воды в чистую."
+}
+rebuild_cost = {"sand": 8, "wood": 4}
+rebuild_credits = 30
 
 [node name="WaterReservoir" parent="Props" unique_id=1352104916 instance=ExtResource("20_reservoir")]
 transform = Transform3D(0.9993801, -0.035205834, 0, 0.035205834, 0.9993801, 0, 0, 0, 1, -1.8, 0, 3.8)
@@ -187,6 +227,7 @@ transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, 7, 0, 8.2)
 
 [node name="WaterWell" parent="Resources" unique_id=1404619995 instance=ExtResource("10_water")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0, 3.8)
+freezes_in_winter = false
 
 [node name="Rock4" parent="Resources" instance=ExtResource("7_rock")]
 transform = Transform3D(-0.4830, 0, -0.7236, 0, 0.8700, 0, 0.7236, 0, -0.4830, 16.89, 0, 15.69)
@@ -209,7 +250,7 @@ transform = Transform3D(0.6310, 0, -0.9132, 0, 1.1100, 0, 0.9132, 0, 0.6310, -3.
 [node name="Rock10" parent="Resources" instance=ExtResource("7_rock")]
 transform = Transform3D(1.0280, 0, 0.3311, 0, 1.0800, 0, -0.3311, 0, 1.0280, 1.6, 0, 25.23)
 
-[node name="Rocks" type="Node3D" parent="Props"]
+[node name="Rocks" type="Node3D" parent="Props" groups=["rock_props"]]
 
 [node name="RockSpire1" parent="Props/Rocks" instance=ExtResource("30_rock_spire")]
 transform = Transform3D(0.5398, 0, 0.9123, 0, 1.0600, 0, -0.9123, 0, 0.5398, 20.35, 0, 14.79)
@@ -465,3 +506,10 @@ script = ExtResource("38_meadow")
 
 [node name="BerryBushes" type="Node3D" parent="." unique_id=1730042011]
 script = ExtResource("39_berries")
+
+[node name="MushroomPatches" type="Node3D" parent="."]
+script = ExtResource("42_shrooms")
+
+[node name="FruitTrees" type="Node3D" parent="."]
+# Контейнер сажаемых игроком фруктовых деревьев (раздел 8.2 мастер-плана).
+# Пуст в новой игре; save_manager создаёт его при загрузке, если отсутствует.

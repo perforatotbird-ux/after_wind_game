@@ -1,0 +1,173 @@
+[gd_scene load_steps=16 format=3 uid="uid://c4kchn0s7t1vw"]
+
+[ext_resource type="Script" path="res://scripts/crafting/kitchen_stove.gd" id="1_kitchen"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
+size = Vector3(2.6, 2.4, 2.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_brick"]
+albedo_color = Color(0.62, 0.34, 0.26, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+material = SubResource("StandardMaterial3D_brick")
+size = Vector3(1.7, 1.1, 1.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_top"]
+albedo_color = Color(0.32, 0.33, 0.36, 1)
+metallic = 0.65
+roughness = 0.4
+
+[sub_resource type="BoxMesh" id="BoxMesh_top"]
+material = SubResource("StandardMaterial3D_top")
+size = Vector3(1.86, 0.12, 1.46)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iron"]
+albedo_color = Color(0.22, 0.23, 0.26, 1)
+metallic = 0.75
+roughness = 0.45
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_burner"]
+material = SubResource("StandardMaterial3D_iron")
+top_radius = 0.22
+bottom_radius = 0.22
+height = 0.05
+radial_segments = 12
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pot"]
+albedo_color = Color(0.26, 0.27, 0.3, 1)
+metallic = 0.7
+roughness = 0.4
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_pot"]
+material = SubResource("StandardMaterial3D_pot")
+top_radius = 0.26
+bottom_radius = 0.22
+height = 0.3
+radial_segments = 12
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_handle"]
+albedo_color = Color(0.45, 0.32, 0.2, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_handle"]
+material = SubResource("StandardMaterial3D_handle")
+size = Vector3(0.04, 0.5, 0.04)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_door"]
+albedo_color = Color(0.28, 0.16, 0.14, 1)
+roughness = 0.9
+emission_enabled = true
+emission = Color(1, 0.45, 0.12, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="BoxMesh" id="BoxMesh_door"]
+material = SubResource("StandardMaterial3D_door")
+size = Vector3(0.9, 0.55, 0.06)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vent"]
+albedo_color = Color(0.26, 0.26, 0.28, 1)
+metallic = 0.6
+roughness = 0.5
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_vent"]
+material = SubResource("StandardMaterial3D_vent")
+top_radius = 0.13
+bottom_radius = 0.13
+height = 1.5
+radial_segments = 10
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_scaffold"]
+albedo_color = Color(0.6, 0.56, 0.44, 1)
+roughness = 0.95
+
+[sub_resource type="BoxMesh" id="BoxMesh_post"]
+material = SubResource("StandardMaterial3D_scaffold")
+size = Vector3(0.09, 1.6, 0.09)
+
+[sub_resource type="BoxMesh" id="BoxMesh_lintel"]
+material = SubResource("StandardMaterial3D_scaffold")
+size = Vector3(1.8, 0.09, 0.09)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_solid"]
+size = Vector3(1.9, 1.2, 1.5)
+
+[node name="KitchenStove" type="Area3D" node_paths=PackedStringArray("visual_node", "ruined_visual")]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_kitchen")
+requires_rebuild = true
+rebuild_info = {
+"title": "Стройплощадка",
+"action": "Построить печь-кухню",
+"description": "Кирпичная кладка и чертеж на кольях: печь ещё не сложена. Место заготовлено — осталось принести материалы.",
+"perks": "Средние блюда и соусы: супы, рагу, выпечка. Lv.2 открывает грибной и ягодный соусы."
+}
+rebuild_cost = {"poor_brick": 8, "stone": 6, "wood": 4}
+rebuild_credits = 90
+visual_node = NodePath("Visual")
+ruined_visual = NodePath("Ruined")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("BoxShape3D_interact")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+mesh = SubResource("BoxMesh_body")
+
+[node name="Top" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.16, 0)
+mesh = SubResource("BoxMesh_top")
+
+[node name="Burner1" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42, 1.24, -0.3)
+mesh = SubResource("CylinderMesh_burner")
+
+[node name="Burner2" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.42, 1.24, -0.3)
+mesh = SubResource("CylinderMesh_burner")
+
+[node name="Pot" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42, 1.41, -0.3)
+mesh = SubResource("CylinderMesh_pot")
+
+[node name="PotHandle" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.66, 1.44, -0.3)
+mesh = SubResource("BoxMesh_handle")
+
+[node name="OvenDoor" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.52, 0.66)
+mesh = SubResource("BoxMesh_door")
+
+[node name="Vent" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 1.95, -0.5)
+mesh = SubResource("CylinderMesh_vent")
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("BoxShape3D_solid")
+
+[node name="Ruined" type="Node3D" parent="."]
+
+[node name="Post1" type="MeshInstance3D" parent="Ruined"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0.8, -0.6)
+mesh = SubResource("BoxMesh_post")
+
+[node name="Post2" type="MeshInstance3D" parent="Ruined"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 0.8, -0.6)
+mesh = SubResource("BoxMesh_post")
+
+[node name="Post3" type="MeshInstance3D" parent="Ruined"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0.7)
+mesh = SubResource("BoxMesh_post")
+
+[node name="Lintel" type="MeshInstance3D" parent="Ruined"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, -0.6)
+mesh = SubResource("BoxMesh_lintel")

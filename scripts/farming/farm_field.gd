@@ -21,6 +21,9 @@ const MeadowDecor = preload("res://scripts/world/meadow_decor.gd")
 const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
 const GROUP: String = "farm_fields"
+## Группа узла сезонов (SeasonManager). Строка, а не имя класса: делянка не должна
+## зависеть от глобального реестра классов — достаточно группы.
+const SEASON_MANAGER_GROUP: String = "season_manager"
 const MAX_CELLS: int = 128
 const BUILD_HOURS: float = 24.0
 const FALLBACK_HOURS_PER_SECOND: float = 1.0 / 60.0
@@ -51,6 +54,7 @@ var zone_size: int = 1
 var target_cell: Vector2i = Vector2i(-1, -1)
 
 var _day_cycle: Node = null
+var _season_mgr: Node = null
 var _cached_player: Node = null
 var _prompt_dirty: bool = false
 var _visual_keys: PackedStringArray = []
@@ -185,8 +189,9 @@ func _tick(h: float) -> void:
 
 func _tick_cell(d: Dictionary, h: float, farmer: bool) -> void:
 	var crop: String = d["crop"]
+	var evap: float = get_evaporation_multiplier()
 	if crop == "" or d["withered"] or float(d["growth"]) >= float(CropDB.get_crop(crop).get("growth_hours", 1.0)):
-		d["moisture"] = maxf(0.0, float(d["moisture"]) - CropDB.EMPTY_EVAPORATION * h)
+		d["moisture"] = maxf(0.0, float(d["moisture"]) - CropDB.EMPTY_EVAPORATION * evap * h)
 		if crop == "":
 			d["fertility"] = minf(100.0, float(d["fertility"]) + CropDB.FALLOW_RECOVERY * h)
 		return
@@ -210,8 +215,32 @@ func _tick_cell(d: Dictionary, h: float, farmer: bool) -> void:
 		speed *= CropDB.FARMER_SPEED
 	if not Seasons.is_in_season(info["seasons"]):
 		speed = 0.0
+	# Сезон и погодное событие: весна ×1.3, зима ×0.4, метель — ещё медленнее.
+	speed *= get_growth_multiplier()
 	d["growth"] = minf(float(info["growth_hours"]), float(d["growth"]) + h * speed)
-	d["moisture"] = maxf(0.0, m - float(info["water_use"]) * h)
+	d["moisture"] = maxf(0.0, m - float(info["water_use"]) * evap * h)
+
+## Множитель испарения: сезон × погодное событие (засуха ×3). Без узла — сезон.
+func get_evaporation_multiplier() -> float:
+	var sm := _get_season_manager()
+	if sm and sm.has_method("get_evaporation_multiplier"):
+		return maxf(0.0, float(sm.get_evaporation_multiplier()))
+	return Seasons.get_evaporation_multiplier()
+
+## Множитель роста: сезон × погодное событие. Без узла — сезон.
+func get_growth_multiplier() -> float:
+	var sm := _get_season_manager()
+	if sm and sm.has_method("get_growth_multiplier"):
+		return maxf(0.0, float(sm.get_growth_multiplier()))
+	return Seasons.get_growth_multiplier()
+
+func _get_season_manager() -> Node:
+	if not is_instance_valid(_season_mgr):
+		_season_mgr = null
+		var tree := get_tree()
+		if tree:
+			_season_mgr = tree.get_first_node_in_group(SEASON_MANAGER_GROUP)
+	return _season_mgr
 
 func _finish_building() -> void:
 	build_progress = BUILD_HOURS
@@ -661,11 +690,12 @@ func harvest(c: Vector2i, player: Node = null) -> Dictionary:
 		var q: int = get_quality(n)
 		var ys: Array = calc_yield(d, q, _rng)
 		var seed_id: String = CropDB.get_crop(crop)["seed"]
+		var prod_id: String = CropDB.get_crop_product(crop)
 		if inv:
-			if not inv.can_add_item(crop, ys[0]):
+			if not inv.can_add_item(prod_id, ys[0]):
 				_notify(player, "🎒 Рюкзак полон — урожай остался на грядке.")
 				break
-			inv.add_item(crop, ys[0])
+			inv.add_item(prod_id, ys[0])
 			# Если после урожая семенам не хватило места (свободен был ровно
 			# один слот) — семена падают кучкой у делянки, а не пропадают.
 			if not inv.can_add_item(seed_id, ys[1]):

@@ -50,6 +50,8 @@ func _run_tests() -> void:
 	var hud = world.get_node_or_null("HUD")
 	var weather = world.find_child("WeatherManager", true, false)
 	if not grid or not turbine or not crusher or not battery or not animator: _fail("Не найдены узлы энергосети")
+	# Глава 2: дробилка стартует разрушенной — для проверки сети включаем её.
+	crusher.force_rebuilt()
 	player.energy = 100.0
 	weather.set_weather(WeatherManagerScript.WeatherType.SUNNY) # генерация 2.0 кВт
 

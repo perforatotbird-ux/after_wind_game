@@ -40,6 +40,8 @@ func _run_tests() -> void:
 	
 	var water_filter = world.find_child("WaterFilter", true, false)
 	if not water_filter: _fail("Фильтр воды (WaterFilter) отсутствует в сцене")
+	# Глава 2: фильтр стартует разрушенным — водоснабжение проверяем на живом.
+	water_filter.force_rebuilt()
 	
 	var water_reservoir = world.find_child("WaterReservoir", true, false)
 	if not water_reservoir: _fail("Резервуар воды (WaterReservoir) отсутствует в сцене")

@@ -17,6 +17,7 @@ const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 const MachineWearScript = preload("res://scripts/crafting/machine_wear.gd")
 const MachineLevelScript = preload("res://scripts/crafting/machine_level.gd")
 const PowerGridScript = preload("res://scripts/energy/power_grid.gd")
+const CookingProgress = preload("res://scripts/crafting/cooking_progress.gd")
 
 ## Максимум циклов в одной партии.
 const MAX_BATCH_CYCLES: int = 99
@@ -57,7 +58,13 @@ const UPGRADE_COSTS: Dictionary = {
 		2: {"sand": 4, "iron_plate": 2, "gear": 1, "bolt": 2},
 		3: {"steel_plate": 2, "precision_gear": 1, "bolt": 4},
 	},
+	"kitchen_stove": {
+		2: {"fired_brick": 4, "iron_plate": 3, "gear": 2},
+	},
 }
+
+## Станки Главы 2, которым нужно топливо и которые не берут энергию из сети.
+const HEAT_MACHINES: Array[String] = ["campfire", "kitchen_stove"]
 
 signal machine_opened(machine: Node)
 signal process_started(recipe_id: String, duration: float)
@@ -67,6 +74,7 @@ signal batch_finished(recipe_id: String, cycles: int)
 signal batch_cancelled(recipe_id: String)
 signal outputs_changed()
 signal machine_upgraded(new_level: int)
+signal machine_rebuilt()
 
 @export var machine_type: String = "crusher"
 @export var machine_display_name: String = "Дробилка камня"
@@ -84,12 +92,32 @@ signal machine_upgraded(new_level: int)
 @export var repair_cost: Dictionary = {"bolt": 2, "wooden_handle": 1}
 ## У печи — отдельный блок из 4 слотов топлива; без топлива цикл приостанавливается.
 @export var has_fuel_slots: bool = false
+## Число топливных слотов (у печи — 4, у костра — 1, у кухни — 2).
+@export var fuel_slot_count: int = FUEL_SLOTS
+## Переопределение времени горения: { item_id: секунды }. Пусто — FUEL_BURN_TIME.
+@export var fuel_burn_times: Dictionary = {}
 ## Прибавка к выходу каждой позиции рецепта за уровень выше первого
 ## (дробилка 1, фильтр 2; у верстака и печи выход растёт только рецептами).
 @export var yield_bonus_per_level: int = 0
 
+@export_group("Глава 2: восстановление / постройка")
+## Станок в мире начинает разрушенным (или не построенным) и не работает,
+## пока его не восстановить за rebuild_cost + rebuild_credits.
+## Стартовый баланс Главы 2: работают только верстак и костёр.
+@export var requires_rebuild: bool = false
+## Что показывает неготовый станок (завалы камней, кирпичная кладка, чертеж на кольях).
+@export var ruined_visual: Node3D
+## Словарь для подсказок и окна станка: { title, description, perks }.
+@export var rebuild_info: Dictionary = {}
+## Материалы восстановления/постройки: { item_id: количество }.
+@export var rebuild_cost: Dictionary = {}
+## Кредиты за восстановление/постройку.
+@export var rebuild_credits: int = 0
+
 var is_machine_running: bool = false
 var is_machine: bool = true
+## Станок восстановлен/построен. Стартовое значение — requires_rebuild.
+var rebuilt: bool = true
 var active_recipe: Dictionary = {}
 var process_timer: float = 0.0
 ## Длительность одного цикла (с учётом бонусов).
@@ -124,7 +152,10 @@ func _ready() -> void:
 	super._ready()
 	object_name = machine_display_name
 	prompt_action = "Открыть"
-	add_to_group("power_consumers")
+	# Станок без потребления (костёр) не встаёт в сеть — иначе он «просит»
+	# энергию, которой у ручного станка быть не может.
+	if power_draw > 0.0:
+		add_to_group("power_consumers")
 	wear = MachineWearScript.new()
 	wear.wear_per_cycle = wear_per_cycle
 	level_state = MachineLevelScript.new()
@@ -133,14 +164,109 @@ func _ready() -> void:
 	if not wear_enabled:
 		wear.condition = wear.max_condition
 	if has_fuel_slots:
-		for i in FUEL_SLOTS:
+		for i in maxi(1, fuel_slot_count):
 			fuel_slots.append({"item_id": "", "count": 0})
 	
 	if not visual_node:
 		visual_node = get_node_or_null("Visual")
 	if visual_node:
 		_original_pos = visual_node.position
+	rebuilt = not requires_rebuild
+	_update_rebuild_visuals()
 	set_process(is_machine_running)
+
+# ---------------------------------------------------------------------------
+# Восстановление / постройка (Глава 2)
+# ---------------------------------------------------------------------------
+
+## Станок готов к работе (или ещё нет).
+func is_operational() -> bool:
+	return rebuilt
+
+## Текст состояния: «Работает» / «Разрушена» / «Не построена».
+func get_rebuild_state_name() -> String:
+	if rebuilt:
+		return "Готова к работе"
+	return str(rebuild_info.get("title", "Разрушена"))
+
+## Всё, что нужно для восстановления: { credits, materials }.
+func get_rebuild_requirements() -> Dictionary:
+	return {"credits": maxi(0, rebuild_credits), "materials": rebuild_cost.duplicate()}
+
+## Хватает ли ресурсов на восстановление.
+func can_rebuild(player: Node) -> Dictionary:
+	var result: Dictionary = {"can_rebuild": false, "reason": "", "missing_credits": 0, "missing_materials": {}}
+	if rebuilt:
+		result["reason"] = "Станок уже готов к работе."
+		return result
+	var inv = player.get("inventory") if player and "inventory" in player else null
+	if inv == null:
+		result["reason"] = "Инвентарь игрока недоступен."
+		return result
+	if maxi(0, rebuild_credits) > 0 and int(inv.get("credits")) < rebuild_credits:
+		result["missing_credits"] = rebuild_credits - int(inv.get("credits"))
+	var missing: Dictionary = {}
+	for item_id in rebuild_cost.keys():
+		var needed: int = int(rebuild_cost[item_id])
+		var avail: int = int(inv.get_item_count(str(item_id)))
+		if avail < needed:
+			missing[str(item_id)] = needed - avail
+	result["missing_materials"] = missing
+	if result["missing_credits"] == 0 and missing.is_empty():
+		result["can_rebuild"] = true
+	else:
+		result["reason"] = "Не хватает ресурсов или кредитов."
+	return result
+
+## Восстанавливает (или строит) станок: списывает ресурсы и кредиты только при
+## успехе. Возвращает true, если станок теперь готов к работе.
+func rebuild(player: Node) -> bool:
+	if rebuilt:
+		if player and player.has_method("notify"):
+			player.notify("✅ «%s» уже готов к работе." % object_name)
+		return false
+	var check: Dictionary = can_rebuild(player)
+	if not check.get("can_rebuild", false):
+		if player and player.has_method("notify"):
+			player.notify("❌ %s: %s" % [str(rebuild_info.get("title", "Восстановление")), check.get("reason", "")])
+		return false
+	var inv = player.get("inventory")
+	if maxi(0, rebuild_credits) > 0:
+		inv.spend_credits(rebuild_credits)
+	for item_id in rebuild_cost.keys():
+		inv.remove_item(str(item_id), int(rebuild_cost[item_id]))
+	set_rebuilt(true)
+	AudioManager.play("build")
+	if player and player.has_method("notify"):
+		player.notify("🎉 %s восстановлен: %s" % [object_name, str(rebuild_info.get("title", "готов к работе"))])
+	machine_rebuilt.emit()
+	return true
+
+## Ставит станок в готовое состояние (или возвращает в разрушенное).
+func set_rebuilt(value: bool) -> void:
+	rebuilt = value
+	if rebuilt:
+		# Восстановление засчитывается в вехи Главы 2 «Первый дым».
+		CookingProgress.register_rebuild(machine_type)
+	else:
+		# Неготовый станок не может быть занятым или повреждённым.
+		cancel_batch()
+		pending_outputs.clear()
+		if wear:
+			wear.set_condition(wear.max_condition)
+	_update_rebuild_visuals()
+
+## Тестовый и отладочный ход: минует стоимость и сразу включает станок.
+func force_rebuilt() -> void:
+	set_rebuilt(true)
+
+func _update_rebuild_visuals() -> void:
+	if ruined_visual:
+		ruined_visual.visible = not rebuilt
+	if visual_node:
+		visual_node.visible = rebuilt
+	if is_inside_tree():
+		set_process(is_machine_running)
 
 func _process(delta: float) -> void:
 	if not is_machine_running:
@@ -174,6 +300,8 @@ func _process(delta: float) -> void:
 
 func get_prompt() -> String:
 	var lvl: String = " (Lv.%d)" % level_state.level if level_state.level > 1 else ""
+	if not rebuilt:
+		return "[E] %s [%s]" % [object_name, get_rebuild_state_name()]
 	if is_machine_running:
 		if not power_ok:
 			return "[E] %s (Нет питания — цикл приостановлен)" % object_name
@@ -205,7 +333,7 @@ func _on_interacted(player: Node) -> void:
 ## пауза снимает нагрузку, чтобы батарея могла зарядиться и вернуть питание.
 ## Улучшенный станок мощнее (Lv.2 ×1.3, Lv.3 ×1.6), но и работает быстрее.
 func get_power_demand() -> float:
-	if not is_machine_running:
+	if not is_machine_running or power_draw <= 0.0:
 		return 0.0
 	if not power_ok:
 		var grid: Node = _get_power_grid()
@@ -293,6 +421,10 @@ func start_recipe(recipe_id: String, player: Node) -> bool:
 	if recipe.is_empty() or recipe.get("machine", "") != machine_type:
 		return false
 
+	if not rebuilt:
+		if player.has_method("notify"):
+			player.notify("⛔ «%s» %s — сначала приведите станок в порядок." % [object_name, get_rebuild_state_name().to_lower()])
+		return false
 	if wear and wear.is_broken():
 		if player.has_method("notify"):
 			player.notify("⛔ «%s» неисправна и требует ремонта." % object_name)
@@ -344,6 +476,10 @@ func start_batch(recipe_id: String, cycles: int, player: Node) -> bool:
 		return false
 	var recipe: Dictionary = RecipeDB.get_recipe(recipe_id)
 	if recipe.is_empty() or recipe.get("machine", "") != machine_type:
+		return false
+	if not rebuilt:
+		if player.has_method("notify"):
+			player.notify("⛔ «%s» %s — сначала приведите станок в порядок." % [object_name, get_rebuild_state_name().to_lower()])
 		return false
 	if wear and wear.is_broken():
 		if player.has_method("notify"):
@@ -423,6 +559,15 @@ func cancel_batch() -> bool:
 	batch_cancelled.emit(recipe_id)
 	return true
 
+# ---------------------------------------------------------------------------
+# Крючок подсистем (Глава 2: кулинария и вехи)
+# ---------------------------------------------------------------------------
+
+## Вызывается после каждого завершённого цикла с выходами одного цикла.
+## Переопределяется станками готовки, чтобы засчитывать приготовленные блюда.
+func _on_outputs_produced(_outputs: Dictionary) -> void:
+	pass
+
 func _complete_process() -> void:
 	completed_runs += 1
 	if wear_enabled and wear:
@@ -439,6 +584,7 @@ func _complete_process() -> void:
 		pending_outputs[item_id] = int(pending_outputs.get(item_id, 0)) + int(outputs[item_id]) + bonus
 	batch_cycles_done += 1
 	AudioManager.play("machine_done")
+	_on_outputs_produced(outputs)
 	process_completed.emit(recipe_id, outputs)
 	outputs_changed.emit()
 	if batch_cycles_done < batch_cycles_total:
@@ -660,6 +806,8 @@ func _upgrade_cost_text(cost: Dictionary) -> String:
 # ---------------------------------------------------------------------------
 
 func get_fuel_burn_time(item_id: String) -> float:
+	if not fuel_burn_times.is_empty():
+		return float(fuel_burn_times.get(item_id, 0.0))
 	return float(FUEL_BURN_TIME.get(item_id, 0.0))
 
 ## Полный запас горения: догорающая единица + всё топливо в слотах, сек.
@@ -685,7 +833,7 @@ func _require_fuel(needed_seconds: float, player: Node, cycles: int) -> bool:
 func _fuel_list_text() -> String:
 	var parts: PackedStringArray = []
 	for f in FUEL_ITEMS:
-		parts.append("%s %s (%d с/шт)" % [ItemDB.get_item_icon(f), ItemDB.get_item_name(f), int(FUEL_BURN_TIME[f])])
+		parts.append("%s %s (%d с/шт)" % [ItemDB.get_item_icon(f), ItemDB.get_item_name(f), int(get_fuel_burn_time(f))])
 	return ", ".join(parts)
 
 ## Кладёт топливо из инвентаря в слоты: сначала в слоты с тем же видом,

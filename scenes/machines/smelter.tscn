@@ -1,8 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://c8m4p7k1y9q5e"]
+[gd_scene load_steps=9 format=3 uid="uid://c8m4p7k1y9q5e"]
 
 [ext_resource type="Script" path="res://scripts/crafting/production_machine.gd" id="1_smelt"]
 [ext_resource type="ArrayMesh" path="res://assets/models/smelter/smelter_body_mesh.tres" id="2_body"]
 [ext_resource type="ArrayMesh" path="res://assets/models/smelter/smelter_glow_mesh.tres" id="3_glow"]
+[ext_resource type="PackedScene" path="res://scenes/machines/machine_rubble.tscn" id="4_rubble"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
 size = Vector3(2.8, 3.8, 2.8)
@@ -25,6 +26,7 @@ machine_display_name = "Печь-плавильня"
 power_draw = 5.0
 has_fuel_slots = true
 visual_node = NodePath("Visual")
+ruined_visual = NodePath("Ruined")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
@@ -50,6 +52,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.82, 0.35, 1.62)
 light_color = Color(1, 0.6, 0.25, 1)
 light_energy = 0.5
 omni_range = 1.6
+
+[node name="Ruined" parent="." instance=ExtResource("4_rubble")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+scale = Vector3(1.05, 1, 1.05)
 
 [node name="SolidBody" type="StaticBody3D" parent="."]
 collision_layer = 1

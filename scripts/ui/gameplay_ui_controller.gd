@@ -9,6 +9,7 @@ extends Node
 const InventoryPanel = preload("res://scripts/ui/inventory_panel.gd")
 const MachinePanel = preload("res://scripts/ui/machine_panel.gd")
 const FarmFieldPlacer = preload("res://scripts/farming/farm_field_placer.gd")
+const FruitTreePlacer = preload("res://scripts/farming/fruit_tree_placer.gd")
 
 const SLOT5_PATH: String = "HotbarUI/Panel/Margin/HBox/Slot5"
 
@@ -75,18 +76,29 @@ func open_inventory_panel() -> Control:
 
 var _placer: Node = null
 
-## Режим размещения постройки мышкой (сейчас — делянка). Рюкзак закрывается.
+## Режим размещения постройки мышкой (делянка или фруктовое дерево). Рюкзак закрывается.
 func start_placement(kind: String = "farm_field") -> Node:
-	if kind != "farm_field" or world == null:
+	if world == null:
 		return null
 	close_panel()
 	if is_instance_valid(_placer):
 		_placer.queue_free()
-	_placer = FarmFieldPlacer.new()
-	_placer.name = "FarmFieldPlacer"
-	_placer.setup(world, player)
-	world.add_child(_placer)
-	return _placer
+	if kind == "farm_field":
+		_placer = FarmFieldPlacer.new()
+		_placer.name = "FarmFieldPlacer"
+		_placer.setup(world, player)
+		world.add_child(_placer)
+		return _placer
+	elif kind.begins_with("fruit_tree"):
+		var sapling_id: String = "apple_sapling"
+		if kind.begins_with("fruit_tree:"):
+			sapling_id = kind.substr("fruit_tree:".length())
+		_placer = FruitTreePlacer.new()
+		_placer.name = "FruitTreePlacer"
+		_placer.setup(world, player, sapling_id)
+		world.add_child(_placer)
+		return _placer
+	return null
 
 func is_placing() -> bool:
 	return is_instance_valid(_placer) and not _placer.is_queued_for_deletion()

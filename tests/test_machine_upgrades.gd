@@ -47,6 +47,10 @@ func _run_tests() -> void:
 	var workbench = world.find_child("Workbench", true, false)
 	var smelter = world.find_child("Smelter", true, false)
 	if not crusher or not workbench or not smelter: _fail("Не найдены станки")
+	# Глава 2: дробилка и печь стартуют разрушенными — для проверки уровней
+	# и износа включаем их напрямую (стоимость восстановления проверяет ch2).
+	crusher.force_rebuilt()
+	smelter.force_rebuilt()
 	player.energy = 100.0
 
 	# ---------- 1. Гейтинг: без ресурсов улучшения нет ----------

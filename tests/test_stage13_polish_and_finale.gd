@@ -105,10 +105,18 @@ func _run_tests() -> void:
 		_fail("BaseProgressLabel в меню паузы не обновлен")
 		return
 	print("  • Индикатор прогресса в меню паузы: '%s'" % hud.base_progress_label.text)
-	if not hud.pause_tasks_list or hud.pause_tasks_list.get_child_count() != 8:
-		_fail("Чек-лист вех восстановления базы должен содержать 8 пунктов, факт: %d" % (hud.pause_tasks_list.get_child_count() if hud.pause_tasks_list else 0))
+	# Глава 1 даёт 8 вех, Глава 2 «Первый дым» — ещё 5 плюс заголовок группы.
+	const CH1_TASKS: int = 8
+	const CH2_TASKS: int = 5
+	var task_count: int = hud.pause_tasks_list.get_child_count() if hud.pause_tasks_list else 0
+	if task_count != CH1_TASKS + 1 + CH2_TASKS:
+		_fail("Чек-лист вех должен содержать %d+%d пунктов и заголовок, факт: %d" % [CH1_TASKS, CH2_TASKS, task_count])
 		return
-	print("  • Чек-лист вех в меню паузы успешно отрисован (8 задач).")
+	if not hud.ch2_progress_label or hud.ch2_progress_label.text.is_empty():
+		_fail("Ch2ProgressLabel в меню паузы не обновлен")
+		return
+	print("  • Индикатор Главы 2: '%s'" % hud.ch2_progress_label.text)
+	print("  • Чек-лист вех в меню паузы успешно отрисован (Глава 1: %d, Глава 2: %d)." % [CH1_TASKS, CH2_TASKS])
 	if hud.sfx_slider:
 		hud.sfx_slider.value = 0.65
 		if abs(audio_mgr.sfx_volume - 0.65) > 0.01:

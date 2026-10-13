@@ -27,16 +27,24 @@ signal character_class_changed(class_id: String, c_name: String)
 @export var hunger_decay_rate: float = 0.15
 @export var max_wetness: float = 100.0
 ## Скорость высыхания (%/сек) на открытом воздухе в сухую погоду.
-## 100 % влаги сохнет ~4.8 мин (~5 игровых часов при 1 ч = 60 с).
-@export var dry_rate_outdoor: float = 0.35
-## Скорость высыхания в укрытии (дом стадии 1+): сухо и теплее, ~1.4 игровых часа.
-@export var dry_rate_sheltered: float = 1.2
-## Скорость высыхания у источника тепла (печь-плавильня), ~17 с на 100 %.
-@export var dry_rate_near_fire: float = 6.0
+## 100 % влаги сохнет примерно 14 минут (баланс после замедления ×3).
+@export var dry_rate_outdoor: float = 0.12
+## Скорость высыхания в укрытии (дом стадии 1+).
+@export var dry_rate_sheltered: float = 0.4
+## Скорость высыхания у источника тепла (печь-плавильня).
+@export var dry_rate_near_fire: float = 2.0
 ## Урон здоровью в секунду при полном истощении сил (энергия 0).
 @export var exhaustion_damage_rate: float = 0.5
 @export var sleep_deprivation_threshold: float = 24.0
 @export var critical_sleep_threshold: float = 36.0
+
+@export_group("Temperature")
+## Ниже этой температуры воздуха (°C) персонаж начинает мёрзнуть на улице.
+@export var cold_threshold_temperature: float = 2.0
+## Урон здоровью в секунду при полной промерзании (температура на 10 °C ниже порога).
+@export var cold_damage_rate: float = 0.6
+## Множитель жажды в летний полдень (12:00–17:00).
+@export var summer_heat_thirst_multiplier: float = 1.5
 
 @export_group("Specialization")
 @export var character_class: String = "miner"
@@ -46,6 +54,7 @@ const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
 const SaveManager = preload("res://scripts/core/save_manager.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
+const Seasons = preload("res://scripts/core/seasons.gd")
 
 # Must match the authored Blender mine action (60 FPS, contact on frame 10).
 # Для новой модели шахтёра из Miner_Character_Package (Track_Pickaxe_Swing 1.5 c)
@@ -60,6 +69,8 @@ const STRIKE_CONTACT_FRACTION_LONG: float = 0.55
 const STRIKE_CONTACT_FRACTION_SHORT: float = 0.38
 const STRIKE_LONG_ANIM_THRESHOLD: float = 0.8
 const STRIKE_LONG_ANIM_SPEED: float = 1.5
+
+const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
 # Алиасы анимаций: логическое имя -> кандидаты в AnimationPlayer.
 # Текущая модель (miner_package_model.tscn, tools/retarget_ual_to_miner.gd) содержит
@@ -97,6 +108,9 @@ var hours_without_sleep: float = 0.0
 var _last_sleep_warning_hour: int = 0
 ## Одноразовое предупреждение «истощение подтачивает здоровье» (сбрасывается при восстановлении).
 var _exhaustion_damage_warned: bool = false
+## Предупреждения о холоде — по одному на эпизод промерзания.
+var _cold_warned: bool = false
+var _freezing_warned: bool = false
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 var nearby_interactables: Array[Area3D] = []
 var current_interactable: Area3D = null
@@ -157,6 +171,7 @@ const FOOTSTEP_STRIDE: float = 1.6
 var _hud: Node = null
 var _day_cycle: Node = null
 var _weather_mgr: Node = null
+var _season_mgr: Node = null
 var _house: Node = null
 var _smelter: Node = null
 
@@ -226,6 +241,7 @@ func _physics_process(delta: float) -> void:
 	_handle_thirst(delta)
 	_handle_hunger(delta)
 	_handle_wetness(delta)
+	_handle_temperature(delta)
 	_handle_sleep_need(delta)
 	_handle_health(delta)
 	_update_best_interactable()
@@ -414,8 +430,14 @@ func get_speed_multiplier() -> float:
 	elif hours_without_sleep >= 18.0:
 		s_mult = 0.92 # -8% легкая вялость под вечер
 
+	# Погода: метель и ураган замедляют (SeasonManager.get_speed_multiplier)
+	var weather_mult: float = 1.0
+	var sm := _find_season_mgr()
+	if sm and sm.has_method("get_speed_multiplier"):
+		weather_mult = float(sm.get_speed_multiplier())
+
 	var mining_mult: float = 0.0 if (is_mining or is_digging or is_scooping) else 1.0
-	return e_mult * t_mult * h_mult * w_mult * s_mult * mining_mult
+	return e_mult * t_mult * h_mult * w_mult * s_mult * weather_mult * mining_mult
 
 func can_sprint() -> bool:
 	if hours_without_sleep >= critical_sleep_threshold:
@@ -470,6 +492,12 @@ func _handle_thirst(delta: float) -> void:
 		var hour: int = _day_cycle.current_hour
 		if hour >= 12 and hour <= 16:
 			drain_rate *= 1.3
+
+	# Летний зной в полдень: жажда ×1.5 (раздел 12.3 мастер-плана)
+	if Seasons.get_current_season() == Seasons.SUMMER:
+		var current_hour: float = float(_day_cycle.current_hour) if (_day_cycle and "current_hour" in _day_cycle) else 12.0
+		if current_hour >= 12.0 and current_hour <= 17.0:
+			drain_rate *= summer_heat_thirst_multiplier
 	
 	var old_thirst: float = thirst
 	thirst = max(0.0, thirst - drain_rate * delta)
@@ -503,12 +531,8 @@ func _handle_wetness(delta: float) -> void:
 		if global_position.distance_to(_house.global_position) < 5.2:
 			is_sheltered = true
 
-	# Проверка источника тепла (печь-плавильня)
-	var is_near_fire: bool = false
-	if not is_instance_valid(_smelter) and get_tree() and get_tree().root:
-		_smelter = get_tree().root.find_child("Smelter", true, false)
-	if _smelter and global_position.distance_to(_smelter.global_position) < 4.2:
-		is_near_fire = true
+	# Проверка источника тепла (печь-плавильня, костёр)
+	var is_near_fire: bool = is_near_heat()
 
 	var old_wetness: float = wetness
 	if is_raining and not is_sheltered:
@@ -532,6 +556,77 @@ func dry_off(amount: float = 50.0) -> void:
 	wetness = max(0.0, wetness - amount)
 	wetness_changed.emit(wetness, max_wetness)
 	notify("🔥 Вы обсохли и согрелись! Мокрота: %d%%." % int(wetness))
+
+# --- Температура и сезон (раздел 12.3 мастер-плана) --------------------------------
+
+func _find_season_mgr() -> Node:
+	if not is_instance_valid(_season_mgr) and get_tree() and get_tree().root:
+		_season_mgr = get_tree().root.find_child("SeasonManager", true, false)
+	return _season_mgr
+
+## Температура воздуха с учётом фазы суток, сезона и погоды, °C.
+func get_ambient_temperature() -> int:
+	var dc: Node = _find_day_cycle()
+	var ambient: int = dc.get_ambient_temperature() if (dc and dc.has_method("get_ambient_temperature")) else 22
+	if not is_instance_valid(_weather_mgr) and get_tree() and get_tree().root:
+		_weather_mgr = get_tree().root.find_child("WeatherManager", true, false)
+	if _weather_mgr and _weather_mgr.has_method("get_temperature_offset"):
+		ambient += int(_weather_mgr.get_temperature_offset())
+	return ambient
+
+## Укрытие (дом) и источник тепла (печь, костёр) спасают от холода и сушат.
+func _is_warm_sheltered() -> bool:
+	if not is_instance_valid(_house) and get_tree() and get_tree().root:
+		_house = get_tree().root.find_child("RepairableHouse", true, false)
+	if _house and "current_stage" in _house and _house.current_stage >= 1:
+		if global_position.distance_to(_house.global_position) < 5.2:
+			return true
+	return is_near_heat()
+
+## Ближайший источник тепла (печь-плавильня, костёр) в пределах dry_rate_near_fire.
+## Печи и костры помечаются группой heat_sources.
+func is_near_heat() -> bool:
+	if not is_instance_valid(_smelter) and get_tree() and get_tree().root:
+		_smelter = get_tree().root.find_child("Smelter", true, false)
+	if _smelter and global_position.distance_to(_smelter.global_position) < 4.2:
+		return true
+	if get_tree():
+		for source in get_tree().get_nodes_in_group("heat_sources"):
+			if is_instance_valid(source) and global_position.distance_to(source.global_position) < 4.2:
+				return true
+	return false
+
+## Насколько персонаж мёрзнет, 0..1 (для подсказок и HUD).
+func get_cold_exposure() -> float:
+	if _is_warm_sheltered():
+		return 0.0
+	var ambient: int = get_ambient_temperature()
+	if ambient >= cold_threshold_temperature:
+		return 0.0
+	var severity: float = (cold_threshold_temperature - float(ambient)) / 10.0
+	# Мокрая одежда отводит тепло намного быстрее сухой.
+	severity *= 1.0 + wetness / 100.0
+	var sm := _find_season_mgr()
+	if sm and sm.has_method("get_cold_damage_multiplier"):
+		severity *= float(sm.get_cold_damage_multiplier())
+	return clampf(severity, 0.0, 3.0)
+
+## Мороз на улице без дома и огня: -здоровье, метель ускоряет вдвое.
+func _handle_temperature(delta: float) -> void:
+	var exposure: float = get_cold_exposure()
+	if exposure > 0.0:
+		var damage: float = cold_damage_rate * exposure * delta
+		health = max(0.0, health - damage)
+		health_changed.emit(health, max_health)
+		if not _cold_warned:
+			_cold_warned = true
+			notify("🥶 Холодно! Найдите дом или разожгите печь — здоровье уходит.")
+		elif exposure >= 1.0 and not _freezing_warned:
+			_freezing_warned = true
+			notify("❄️ Вы сильно мёрзнете! Здоровье падает — срочно к огню!")
+	else:
+		_cold_warned = false
+		_freezing_warned = false
 
 func consume_energy(amount: float) -> void:
 	var mult: float = 1.0
@@ -577,16 +672,20 @@ func _handle_sleep_need(delta: float) -> void:
 
 func _on_sleep_collapse() -> void:
 	notify("😵 Вы потеряли сознание от предельного переутомления (48 часов без сна)!")
-	hours_without_sleep = 0.0
-	_last_sleep_warning_hour = 0
+	if not is_instance_valid(_house) and get_tree() and get_tree().root:
+		_house = get_tree().root.find_child("RepairableHouse", true, false)
+	var house_stage: int = _house.current_stage if (_house and "current_stage" in _house) else 0
+	var dc: Node = _find_day_cycle()
+	var overlay: Control = preload("res://scripts/ui/collapse_transition.gd").new()
+	overlay.setup(self, dc, house_stage)
+	get_tree().root.add_child(overlay)
+	# Игровая логика ставится на паузу, пока splash визуализирует обморок.
+	get_tree().paused = true
 	energy = 30.0
 	health = max(20.0, health - 25.0)
-	if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
-		_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
-	if _day_cycle and _day_cycle.has_method("skip_to_morning"):
-		_day_cycle.skip_to_morning(8.0)
 	energy_changed.emit(energy, max_energy)
 	health_changed.emit(health, max_health)
+	_exhaustion_damage_warned = false
 
 func _handle_health(delta: float) -> void:
 	var old_health: float = health
@@ -638,15 +737,11 @@ func _on_collapse(reason: String = "") -> void:
 		notify("💀 Вы упали без сил от истощения...")
 	else:
 		notify("💀 Вы потеряли сознание...")
-	
-	health = 50.0
-	energy = 40.0
-	thirst = max(25.0, thirst)
-	hunger = max(25.0, hunger)
-	hours_without_sleep = 0.0
-	_last_sleep_warning_hour = 0
-	_exhaustion_damage_warned = false
-	
+
+	# Штраф: часть ресурсов рассыпается кучкой у точки падения.
+	# Кредиты и инструменты (belt‑items) не выбрасываются.
+	_apply_collapse_penalty()
+
 	if not is_instance_valid(_house) and get_tree() and get_tree().root:
 		_house = get_tree().root.find_child("RepairableHouse", true, false)
 	if _house:
@@ -654,11 +749,49 @@ func _on_collapse(reason: String = "") -> void:
 	else:
 		global_position = Vector3(0.0, 0.5, 0.0)
 	velocity = Vector3.ZERO
-	
+
+	health = max(20.0, health - 25.0)
+	energy = 30.0
+	hours_without_sleep = 0.0
+	_last_sleep_warning_hour = 0
+	_exhaustion_damage_warned = false
+
 	health_changed.emit(health, max_health)
 	energy_changed.emit(energy, max_energy)
 	thirst_changed.emit(thirst, max_thirst)
 	hunger_changed.emit(hunger, max_hunger)
+
+	# Переход через splash: утро к дому (stage ≥ 2) или окно поражения.
+	var house_stage: int = _house.current_stage if (_house and "current_stage" in _house) else 0
+	var dc: Node = _find_day_cycle()
+	var overlay: Control = preload("res://scripts/ui/collapse_transition.gd").new()
+	overlay.setup(self, dc, house_stage)
+	get_tree().root.add_child(overlay)
+	get_tree().paused = true
+
+func _apply_collapse_penalty() -> void:
+	if not inventory:
+		return
+	# Выбрасываем по 25 % от каждого ресурсного стека (не инструменты/снаряжение).
+	var to_drop: Dictionary = {}
+	var ids: Array = inventory.items.keys()
+	for item_id in ids:
+		if not inventory.item_uses_slots(item_id):
+			continue
+		var count: int = int(inventory.items[item_id])
+		if count <= 0:
+			continue
+		var lose: int = maxi(1, int(count * 0.25))
+		if lose <= 0:
+			continue
+		if inventory.remove_item(item_id, lose):
+			to_drop[item_id] = lose
+	for item_id in to_drop:
+		DroppedItemScript.spawn(
+			get_parent(), item_id, to_drop[item_id],
+			global_position + Vector3(0.0, 0.3, 0.0)
+		)
+		notify("💀 Потеряно: %s ×%d" % [item_id, to_drop[item_id]])
 
 func drink_water(amount: float = 40.0, is_clean: bool = true, energy_bonus: float = 0.0, health_bonus: float = 0.0) -> bool:
 	# Обычное питьё при полной жажде не нужно; целебная вода пьётся ради здоровья.
@@ -761,7 +894,12 @@ func eat_from_inventory(preferred_item_id: String = "") -> bool:
 	
 	var target_item: String = preferred_item_id
 	if target_item == "" or inventory.get_item_count(target_item) <= 0:
-		for it_id in ["bread", "potato", "carrot", "red_berry", "blue_berry"]:
+		# Порядок перекуса: хлеб и овощи → огородные новинки и фрукты → ягоды
+		# (лечебная облепиха — самой последней, чтобы не тратить лекарство).
+		for it_id in ["bread", "potato", "carrot",
+				"corn", "pumpkin", "cabbage", "bean", "onion", "tomato", "pepper",
+				"sunflower_seeds", "herbs", "apple", "pear", "cherry",
+				"red_berry", "blue_berry", "blackberry", "sea_buckthorn"]:
 			if inventory.get_item_count(it_id) > 0:
 				target_item = it_id
 				break

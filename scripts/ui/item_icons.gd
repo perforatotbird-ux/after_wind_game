@@ -36,12 +36,53 @@ const STYLES: Dictionary = {
 	"seeds_carrot": ["seeds", Color(0.85, 0.55, 0.25), Color(1.0, 0.8, 0.5)],
 	"seeds_potato": ["seeds", Color(0.65, 0.5, 0.35), Color(0.86, 0.73, 0.56)],
 	"seeds_wheat": ["seeds", Color(0.88, 0.75, 0.4), Color(1.0, 0.93, 0.62)],
+	"seeds_sunflower": ["seeds", Color(0.9, 0.75, 0.2), Color(0.3, 0.2, 0.1)],
+	"seeds_onion": ["seeds", Color(0.2, 0.2, 0.2), Color(0.5, 0.5, 0.5)],
+	"seeds_cabbage": ["seeds", Color(0.4, 0.6, 0.3), Color(0.7, 0.85, 0.5)],
+	"seeds_tomato": ["seeds", Color(0.85, 0.65, 0.35), Color(0.95, 0.85, 0.6)],
+	"seeds_pepper": ["seeds", Color(0.9, 0.8, 0.4), Color(1.0, 0.95, 0.7)],
+	"seeds_bean": ["seeds", Color(0.6, 0.35, 0.2), Color(0.85, 0.6, 0.4)],
+	"seeds_herbs": ["seeds", Color(0.45, 0.7, 0.35), Color(0.7, 0.9, 0.6)],
+	"seeds_corn": ["seeds", Color(0.95, 0.8, 0.25), Color(1.0, 0.92, 0.5)],
+	"seeds_pumpkin": ["seeds", Color(0.92, 0.9, 0.8), Color(0.8, 0.6, 0.3)],
+	"apple_sapling": ["sapling", Color(0.35, 0.7, 0.3), Color(0.85, 0.15, 0.15)],
+	"pear_sapling": ["sapling", Color(0.35, 0.7, 0.3), Color(0.82, 0.75, 0.2)],
+	"cherry_sapling": ["sapling", Color(0.35, 0.7, 0.3), Color(0.68, 0.05, 0.15)],
 	"carrot": ["carrot", Color(0.95, 0.5, 0.15), Color(0.35, 0.7, 0.25)],
 	"potato": ["potato", Color(0.75, 0.6, 0.38), Color(0.9, 0.8, 0.6)],
 	"red_berry": ["berries", Color(0.78, 0.08, 0.1), Color(0.3, 0.6, 0.2)],
 	"blue_berry": ["berries", Color(0.18, 0.25, 0.75), Color(0.3, 0.6, 0.2)],
+	"blackberry": ["berries", Color(0.12, 0.05, 0.16), Color(0.35, 0.62, 0.25)],
+	"sea_buckthorn": ["berries", Color(0.95, 0.48, 0.06), Color(0.4, 0.66, 0.25)],
+	# --- Глава 2 «Первый дым»: грибы и блюда ---
+	"mushroom": ["mushroom", Color(0.78, 0.62, 0.42), Color(0.9, 0.86, 0.76)],
+	"baked_potato": ["baked_potato", Color(0.82, 0.62, 0.32), Color(0.95, 0.82, 0.55)],
+	"fried_carrot": ["fried", Color(0.95, 0.55, 0.18), Color(0.98, 0.76, 0.35)],
+	"vegetable_soup": ["soup", Color(0.72, 0.66, 0.58), Color(0.9, 0.66, 0.35)],
+	"berry_brew": ["drink", Color(0.62, 0.4, 0.45), Color(0.82, 0.26, 0.32)],
+	"mushroom_stew": ["soup", Color(0.66, 0.56, 0.44), Color(0.85, 0.75, 0.55)],
+	"dried_mushroom": ["dried", Color(0.78, 0.66, 0.46), Color(0.6, 0.5, 0.34)],
+	"potato_mushroom_dish": ["plate", Color(0.8, 0.66, 0.4), Color(0.6, 0.46, 0.3)],
+	"mushroom_soup": ["soup", Color(0.6, 0.5, 0.4), Color(0.88, 0.78, 0.58)],
+	"glazed_carrot": ["fried", Color(0.95, 0.6, 0.2), Color(0.85, 0.25, 0.3)],
+	"potato_pie": ["bread", Color(0.88, 0.68, 0.34), Color(0.66, 0.44, 0.22)],
+	"berry_compote": ["drink", Color(0.7, 0.32, 0.38), Color(0.9, 0.55, 0.5)],
+	"mushroom_sauce": ["sack", Color(0.56, 0.44, 0.32), Color(0.78, 0.66, 0.48)],
+	"berry_sauce": ["sack", Color(0.62, 0.26, 0.32), Color(0.85, 0.45, 0.45)],
 	"sapling": ["sapling", Color(0.35, 0.7, 0.3), Color(0.5, 0.34, 0.2)],
 	"wheat": ["wheat", Color(0.92, 0.78, 0.35), Color(0.7, 0.55, 0.2)],
+	"sunflower_seeds": ["seeds", Color(0.22, 0.2, 0.18), Color(0.9, 0.75, 0.2)],
+	"onion": ["onion", Color(0.82, 0.58, 0.35), Color(0.45, 0.75, 0.3)],
+	"cabbage": ["cabbage", Color(0.42, 0.72, 0.35), Color(0.7, 0.88, 0.55)],
+	"tomato": ["tomato", Color(0.88, 0.22, 0.15), Color(0.35, 0.7, 0.25)],
+	"pepper": ["pepper", Color(0.85, 0.18, 0.12), Color(0.35, 0.7, 0.25)],
+	"bean": ["bean", Color(0.38, 0.68, 0.28), Color(0.6, 0.85, 0.4)],
+	"herbs": ["herbs", Color(0.3, 0.68, 0.3), Color(0.55, 0.85, 0.45)],
+	"corn": ["corn", Color(0.95, 0.82, 0.2), Color(0.4, 0.72, 0.3)],
+	"pumpkin": ["pumpkin", Color(0.92, 0.52, 0.12), Color(0.4, 0.65, 0.25)],
+	"apple": ["apple", Color(0.88, 0.18, 0.15), Color(0.35, 0.68, 0.25)],
+	"pear": ["pear", Color(0.82, 0.74, 0.22), Color(0.45, 0.35, 0.2)],
+	"cherry": ["cherry", Color(0.72, 0.08, 0.14), Color(0.4, 0.65, 0.25)],
 	"bread": ["bread", Color(0.72, 0.45, 0.2), Color(0.88, 0.65, 0.35)],
 	"fertilizer": ["sack", Color(0.55, 0.45, 0.3), Color(0.4, 0.66, 0.3)],
 	"copper_wire": ["coil", Color(0.8, 0.45, 0.2), Color(0.96, 0.72, 0.46)],
@@ -251,6 +292,86 @@ static func _shape(img: Image, shape: String, base: Color, accent: Color, g: flo
 				_line(img, 11, 24, 21, 24, 1.0, dark)
 				_line(img, 27, 19, 37, 19, 1.0, dark)
 				_ellipse(img, 20, 39, 3, 1.2, accent.lightened(0.25))
+		"apple":
+			_ellipse(img, 24, 27, 13, 13, base, g)
+			_line(img, 24, 15, 24, 7, 2.5, accent, g)
+			_ellipse(img, 29, 9, 4, 2.5, accent, g)
+			if d:
+				_ellipse(img, 19, 21, 4, 3, base.lightened(0.25))
+				_ellipse(img, 24, 15, 2, 1.5, dark)
+		"pear":
+			_ellipse(img, 24, 31, 13, 11, base, g)
+			_ellipse(img, 24, 20, 8, 8, base, g)
+			_line(img, 24, 13, 26, 6, 2.0, accent, g)
+			_ellipse(img, 28, 8, 3.5, 2, Color(0.35, 0.68, 0.25), g)
+			if d:
+				_ellipse(img, 20, 26, 4, 3, base.lightened(0.25))
+		"cherry":
+			_ellipse(img, 18, 32, 7, 7, base, g)
+			_ellipse(img, 30, 29, 7, 7, base, g)
+			_line(img, 18, 26, 24, 10, 2.0, accent, g)
+			_line(img, 30, 23, 24, 10, 2.0, accent, g)
+			_ellipse(img, 28, 10, 4, 2, accent, g)
+			if d:
+				_ellipse(img, 15, 29, 2, 2, Color(1, 1, 1, 0.65))
+				_ellipse(img, 27, 26, 2, 2, Color(1, 1, 1, 0.65))
+		"onion":
+			_ellipse(img, 24, 28, 14, 12, base, g)
+			_line(img, 24, 17, 24, 7, 2.5, accent, g)
+			_line(img, 24, 17, 20, 9, 2.0, accent, g)
+			_line(img, 24, 17, 28, 9, 2.0, accent, g)
+			if d:
+				_ellipse(img, 24, 39, 2, 2, dark)
+				_line(img, 18, 22, 18, 34, 1.2, dark)
+				_line(img, 30, 22, 30, 34, 1.2, dark)
+		"cabbage":
+			_ellipse(img, 24, 25, 15, 14, base, g)
+			if d:
+				_ellipse(img, 24, 25, 10, 10, accent)
+				_line(img, 14, 18, 24, 24, 2.0, base.lightened(0.15))
+				_line(img, 34, 18, 24, 24, 2.0, base.lightened(0.15))
+				_line(img, 24, 24, 24, 36, 2.0, base.lightened(0.15))
+		"tomato":
+			_ellipse(img, 24, 26, 14, 12, base, g)
+			_ellipse(img, 24, 15, 5, 3, accent, g)
+			_line(img, 24, 15, 24, 8, 2.5, accent, g)
+			if d:
+				_ellipse(img, 19, 21, 3.5, 2.5, base.lightened(0.3))
+		"pepper":
+			_ellipse(img, 24, 27, 10, 14, base, g)
+			_rect(img, 22, 9, 4, 7, accent, g)
+			if d:
+				_ellipse(img, 21, 22, 3, 6, base.lightened(0.25))
+				_line(img, 24, 17, 24, 37, 1.5, dark)
+		"bean":
+			_line(img, 14, 15, 34, 35, 7.0, base, g)
+			if d:
+				_ellipse(img, 19, 20, 3, 3, accent)
+				_ellipse(img, 24, 25, 3, 3, accent)
+				_ellipse(img, 29, 30, 3, 3, accent)
+		"herbs":
+			_line(img, 24, 40, 16, 14, 2.5, base, g)
+			_line(img, 24, 40, 32, 14, 2.5, base, g)
+			_line(img, 24, 40, 24, 10, 2.5, base, g)
+			_ellipse(img, 14, 12, 5, 3, accent, g)
+			_ellipse(img, 34, 12, 5, 3, accent, g)
+			_ellipse(img, 24, 9, 3, 5, accent, g)
+		"corn":
+			_line(img, 24, 38, 24, 12, 11, base, g)
+			_line(img, 16, 40, 20, 28, 3.5, accent, g)
+			_line(img, 32, 40, 28, 28, 3.5, accent, g)
+			if d:
+				for ky in range(4):
+					_line(img, 19, 16.0 + ky * 6.0, 29, 16.0 + ky * 6.0, 1.2, dark)
+		"pumpkin":
+			_ellipse(img, 24, 27, 16, 12, base, g)
+			_ellipse(img, 16, 27, 11, 11, base, g)
+			_ellipse(img, 32, 27, 11, 11, base, g)
+			_rect(img, 22, 10, 4, 7, accent, g)
+			if d:
+				_ellipse(img, 24, 27, 7, 11, base.lightened(0.15))
+				_line(img, 18, 17, 18, 37, 1.2, dark)
+				_line(img, 30, 17, 30, 37, 1.2, dark)
 		"bread":
 			_ellipse(img, 24, 29, 18, 11, base, g)
 			_ellipse(img, 24, 25, 16, 9, accent, g)
@@ -264,18 +385,66 @@ static func _shape(img: Image, shape: String, base: Color, accent: Color, g: flo
 			if d:
 				_line(img, 17, 19, 31, 19, 2.0, accent)
 				_ellipse(img, 24, 32, 5, 5, accent)
-		"coil":
-			_ellipse(img, 24, 24, 16, 16, base, g)
+		"mushroom":
+			# Шляпка и ножка гриба.
+			_ellipse(img, 24, 21, 16, 11, base, g)
+			_rect(img, 20, 24, 8, 14, accent, g)
 			if d:
-				_ellipse(img, 24, 24, 12.5, 12.5, accent)
-				_ellipse(img, 24, 24, 11, 11, base)
-				_ellipse(img, 24, 24, 6, 6, base.darkened(0.45))
+				_ellipse(img, 18, 18, 4, 3, base.lightened(0.35))
+				_ellipse(img, 28, 16, 3, 2.5, base.lightened(0.35))
+				_ellipse(img, 31, 22, 2.5, 2, base.lightened(0.35))
+				_ellipse(img, 24, 27, 2.5, 3, accent.darkened(0.25))
+		"baked_potato":
+			_ellipse(img, 24, 27, 17, 13, base, g)
+			if d:
+				_ellipse(img, 18, 23, 4, 2.5, accent)
+				_ellipse(img, 29, 30, 3.5, 2.5, accent)
+				for p in [Vector2(22, 32), Vector2(33, 22), Vector2(16, 31)]:
+					_ellipse(img, p.x, p.y, 1.5, 1.5, dark)
+		"fried":
+			# Жареные кусочки в золотистой корочке.
+			_rect(img, 8, 22, 32, 14, base, g)
+			if d:
+				_rect(img, 11, 18, 26, 11, accent, g)
+				for p in [Vector2(16, 23), Vector2(24, 20), Vector2(31, 24)]:
+					_ellipse(img, p.x, p.y, 2.5, 2, base.darkened(0.2))
+		"soup":
+			# Миска с супом и пар.
+			_ellipse(img, 24, 30, 16, 9, base, g)
+			_ellipse(img, 24, 24, 16, 7, accent, g)
+			if d:
+				_ellipse(img, 24, 31, 11, 5, base.darkened(0.25))
+				_ellipse(img, 19, 23, 4, 2.5, base.lightened(0.3))
+				_line(img, 19, 17, 21, 12, 1.6, accent)
+				_line(img, 29, 17, 27, 12, 1.6, accent)
+		"drink":
+			# Кружка с напитком.
+			_rect(img, 14, 14, 18, 24, base, g)
+			_ellipse(img, 23, 14, 9, 4, accent, g)
+			if d:
+				_ellipse(img, 23, 14, 7, 3, base.darkened(0.2))
+				_line(img, 33, 20, 37, 30, 2.0, base)
+				_line(img, 37, 30, 32, 31, 2.0, base)
+		"dried":
+			# Сушёные грибы в мешочке.
+			_ellipse(img, 24, 29, 13, 14, base, g)
+			_ellipse(img, 24, 15, 11, 4, accent, g)
+			if d:
+				_line(img, 17, 17, 31, 17, 1.6, base)
+				_ellipse(img, 20, 27, 4, 5, base.lightened(0.2))
+				_ellipse(img, 29, 32, 3.5, 4.5, base.lightened(0.2))
 		"plate":
 			_rect(img, 8, 11, 32, 26, base, g)
 			if d:
 				for p in [Vector2(12, 15), Vector2(36, 15), Vector2(12, 33), Vector2(36, 33)]:
 					_ellipse(img, p.x, p.y, 2, 2, accent)
 				_line(img, 15, 21, 33, 21, 1.0, base.lightened(0.2))
+		"coil":
+			_ellipse(img, 24, 24, 16, 16, base, g)
+			if d:
+				_ellipse(img, 24, 24, 12.5, 12.5, accent)
+				_ellipse(img, 24, 24, 11, 11, base)
+				_ellipse(img, 24, 24, 6, 6, base.darkened(0.45))
 		"gear":
 			_ellipse(img, 24, 24, 13, 13, base, g)
 			for k in range(8):

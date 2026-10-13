@@ -40,6 +40,8 @@ func _run_tests() -> void:
 	
 	var smelter = world.find_child("Smelter", true, false)
 	if not smelter: _fail("Печь-плавильня (Smelter) отсутствует в сцене")
+	# Глава 2: печь стартует разрушенной — термообработка проверяется на живой печи.
+	smelter.force_rebuilt()
 	
 	var scrap_node = world.find_child("ScrapHeap1", true, false)
 	if not scrap_node: _fail("ScrapHeap1 отсутствует в сцене")

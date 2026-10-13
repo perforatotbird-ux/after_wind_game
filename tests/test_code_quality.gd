@@ -31,6 +31,8 @@ func _process(_delta: float) -> bool:
 	if crusher == null:
 		quit(1)
 		return true
+	# Глава 2: дробилка стартует разрушенной, для этого теста включаем её.
+	crusher.force_rebuilt()
 
 	inv.items["stone_dust"] = 10
 	inv.items["clay"] = 10

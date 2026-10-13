@@ -18,8 +18,14 @@ const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 const VoxelDepositScript = preload("res://scripts/world/voxel_deposit.gd")
 const RecipeDB = preload("res://scripts/crafting/recipe_db.gd")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
+const CropDB = preload("res://scripts/farming/crop_db.gd")
+const FruitTreeScript = preload("res://scripts/resources/fruit_tree.gd")
 const CharacterClassDB = preload("res://scripts/characters/character_class_db.gd")
 const ContractDB = preload("res://scripts/economy/contract_db.gd")
+const Seasons = preload("res://scripts/core/seasons.gd")
+const SeasonManagerScript = preload("res://scripts/world/season_manager.gd")
+const CookingProgress = preload("res://scripts/crafting/cooking_progress.gd")
+const MushroomSpawnerScript = preload("res://scripts/world/mushroom_spawner.gd")
 
 static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	if not world or not is_instance_valid(world):
@@ -86,6 +92,22 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		if "_cycle_index" in weather_mgr:
 			w_save["cycle_index"] = int(weather_mgr._cycle_index)
 		save_data["weather"] = w_save
+	
+	# 5а. Сезоны и погодные события (SeasonManager)
+	var season_mgr = world.find_child("SeasonManager", true, false)
+	if season_mgr and is_instance_valid(season_mgr) and season_mgr.has_method("get_save_state"):
+		save_data["seasons"] = season_mgr.get_save_state()
+	elif Seasons.is_enabled():
+		# Узла нет (тест/минимальная сцена) — сохраняем хотя бы календарь.
+		save_data["seasons"] = {
+			"enabled": true,
+			"total_day": day_cycle.current_day if (day_cycle and "current_day" in day_cycle) else 1,
+			"current_season": Seasons.get_current_season(),
+			"day_in_season": Seasons.get_day_in_season(),
+			"year": Seasons.get_year(),
+			"active_event": "",
+			"event_hours_left": 0.0
+		}
 	
 	# 6. Здания (House & Storage)
 	var buildings_data: Dictionary = {}
@@ -161,7 +183,8 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"level": int(node.get_level()) if node.level_state else 1,
 				"wear": float(node.wear.condition) if node.wear else 100.0,
 				"fuel_slots": node.fuel_slots.duplicate(true) if node.has_fuel_slots else [],
-				"fuel_burn_left": maxf(0.0, float(node.fuel_burn_left))
+				"fuel_burn_left": maxf(0.0, float(node.fuel_burn_left)),
+				"rebuilt": bool(node.rebuilt) if "rebuilt" in node else true
 			})
 		elif node is ResourceNodeScript:
 			resources.append({
@@ -198,10 +221,23 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		if is_instance_valid(f) and not f.is_queued_for_deletion() and world.is_ancestor_of(f):
 			fields_arr.append(f.get_save_state())
 	save_data["farm_fields"] = fields_arr
+	# 13б. Фруктовые деревья: координаты, вид, стадия, плоды и прогресс.
+	var fruit_trees_arr: Array = []
+	for ft in (world.get_tree().get_nodes_in_group("fruit_trees") if world.is_inside_tree() else []):
+		if is_instance_valid(ft) and not ft.is_queued_for_deletion() and world.is_ancestor_of(ft):
+			fruit_trees_arr.append(ft.get_save_state())
+	save_data["fruit_trees"] = fruit_trees_arr
 	# 13. Ягодные кусты: зерно раскладки и урожай каждого куста.
 	var berry_spawner = world.find_child("BerryBushes", true, false)
 	if berry_spawner and berry_spawner.has_method("get_save_state"):
 		save_data["berry_bushes"] = berry_spawner.get_save_state()
+	# 13г. Лесные грибы: раскладка и состояние каждого гриба.
+	var shroom_spawner = world.find_child("MushroomPatches", true, false)
+	if shroom_spawner and shroom_spawner.has_method("get_save_state"):
+		save_data["mushrooms"] = shroom_spawner.get_save_state()
+
+	# 13д. Глава 2 «Первый дым»: готовые блюда, грибы и восстановленные станки.
+	save_data["cooking"] = CookingProgress.get_save_state()
 
 	# Пишем во временный файл: не обнуляем последнее сохранение при сбое записи.
 	var json_str: String = JSON.stringify(save_data, "\t")
@@ -238,7 +274,8 @@ static func get_format_version(data: Dictionary) -> int:
 
 ## Приводит данные старых версий к текущему формату (без изменения мира).
 ## Новые необязательные поля v2 (machines.batch_total / batch_done / batch_to_buffer,
-## секция dropped_items) версию не меняют: без них действуют значения по умолчанию.
+## секция dropped_items, секция seasons) версию не меняют: без них действуют
+## значения по умолчанию.
 static func _migrate_save_data(data: Dictionary, from_version: int) -> Dictionary:
 	var migrated: Dictionary = data.duplicate(true)
 	if from_version < 2:
@@ -364,9 +401,9 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			inv.inventory_updated.emit()
 	
 	# 2. Суточный цикл
+	var day_cycle = world.find_child("DayNightCycle", true, false)
 	if save_data.has("day_night"):
 		var dn_data: Dictionary = save_data["day_night"]
-		var day_cycle = world.find_child("DayNightCycle", true, false)
 		if day_cycle and is_instance_valid(day_cycle):
 			var s_day: int = int(dn_data.get("current_day", 1))
 			var s_hour: float = float(dn_data.get("current_hour", dn_data.get("time_of_day", 8.0)))
@@ -392,6 +429,22 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				if "_cycle_sequence" in weather_mgr:
 					max_idx = maxi(0, weather_mgr._cycle_sequence.size() - 1)
 				weather_mgr._cycle_index = clampi(int(w_data["cycle_index"]), 0, max_idx)
+	
+	# 3а. Сезоны и погодные события (календарь привязан к игровому дню суточного цикла)
+	var season_mgr = world.find_child("SeasonManager", true, false)
+	if season_mgr and is_instance_valid(season_mgr) and season_mgr.has_method("apply_save_state"):
+		var s_data: Dictionary = save_data.get("seasons", {})
+		if day_cycle and is_instance_valid(day_cycle) and "current_day" in day_cycle:
+			s_data = s_data.duplicate(true)
+			s_data["total_day"] = int(day_cycle.current_day)
+		season_mgr.apply_save_state(s_data)
+	elif save_data.has("seasons"):
+		var s_data2: Dictionary = save_data["seasons"]
+		var saved_season: String = str(s_data2.get("current_season", ""))
+		if bool(s_data2.get("enabled", false)) and Seasons.ALL.has(saved_season):
+			Seasons.activate(saved_season, int(s_data2.get("day_in_season", 1)))
+		else:
+			Seasons.disable()
 	
 	# 4. Здания
 	var house = world.find_child("RepairableHouse", true, false)
@@ -451,10 +504,12 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				if plot.has_method("_update_visuals"):
 					plot._update_visuals()
 	
-	# 8. Контракты
+	# 8. Контракты. Старый сейв без секции не должен наследовать прогресс
+	# из другой игровой сессии, так как ContractDB хранит данные статически.
+	ContractDB.reset_completed()
 	if save_data.has("contracts"):
 		var c_data: Dictionary = save_data["contracts"]
-		if c_data.has("completed"):
+		if c_data.has("completed") and c_data["completed"] is Dictionary:
 			ContractDB.completed_contracts = c_data["completed"].duplicate(true)
 	
 	# 9. Прогресс финала
@@ -488,6 +543,13 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			machine.batch_cycles_total = 0
 			machine.batch_cycles_done = 0
 			machine.batch_to_buffer = false
+		# _ready() выключает _process у нового станка. Одной записи флага
+		# is_machine_running недостаточно: после загрузки цикл иначе зависает.
+		machine.set_process(running)
+		machine._last_emitted_progress = -1.0
+		var grid = world.find_child("PowerGrid", true, false)
+		if running and grid and "has_power" in grid:
+			machine.power_ok = bool(grid.has_power)
 		# Уровень станка — до износа: max_condition зависит от уровня.
 		if machine.level_state and state.has("level"):
 			machine.level_state.set_level(int(state["level"]))
@@ -501,7 +563,8 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		if machine.has_fuel_slots and state.has("fuel_slots") and state["fuel_slots"] is Array:
 			var saved_fuel: Array = state["fuel_slots"]
 			machine.fuel_slots.clear()
-			for i in ProductionMachine.FUEL_SLOTS:
+			var slot_count: int = int(machine.fuel_slot_count) if "fuel_slot_count" in machine else ProductionMachine.FUEL_SLOTS
+			for i in slot_count:
 				if i < saved_fuel.size() and saved_fuel[i] is Dictionary:
 					var fs: Dictionary = saved_fuel[i]
 					var fid: String = str(fs.get("item_id", ""))
@@ -520,6 +583,10 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			if int(saved_pending[item_id]) > 0:
 				pending[item_id] = int(saved_pending[item_id])
 		machine.pending_outputs = pending
+		# Восстановление станка (Глава 2): без поля считаем станок готовым —
+		# старые сохранения не знали о разрушенных станках.
+		if state.has("rebuilt"):
+			machine.set_rebuilt(bool(state["rebuilt"]))
 		if machine.visual_node:
 			machine.visual_node.position = machine._original_pos
 		if machine.has_signal("outputs_changed"):
@@ -574,11 +641,37 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			var field = FarmFieldScript.spawn(fields_root, Vector3(float(f_state["x"]), 0.0, float(f_state["z"])), int(f_state["w"]), int(f_state["h"]))
 			field.apply_save_state(f_state)
 
+	# 13г. Фруктовые деревья (в старых сохранениях секции нет — остаются стартовые).
+	if save_data.has("fruit_trees") and save_data["fruit_trees"] is Array:
+		if world.is_inside_tree():
+			for ft in world.get_tree().get_nodes_in_group("fruit_trees"):
+				if world.is_ancestor_of(ft):
+					ft.get_parent().remove_child(ft)
+					ft.queue_free()
+		var trees_root: Node = world.get_node_or_null("FruitTrees")
+		if trees_root == null:
+			trees_root = Node3D.new()
+			trees_root.name = "FruitTrees"
+			world.add_child(trees_root)
+		for t_state in save_data["fruit_trees"]:
+			var tree = FruitTreeScript.new()
+			trees_root.add_child(tree)
+			tree.apply_save_state(t_state)
+
 	# 13б. Ягодные кусты (в старых сохранениях секции нет — остаётся новая раскладка).
 	if save_data.get("berry_bushes") is Dictionary:
 		var bush_spawner = world.find_child("BerryBushes", true, false)
 		if bush_spawner and bush_spawner.has_method("apply_save_state"):
 			bush_spawner.apply_save_state(save_data["berry_bushes"])
+
+	# 13в. Лесные грибы (в старых сохранениях секции нет — остаётся новая раскладка).
+	if save_data.get("mushrooms") is Dictionary:
+		var shroom_spawner = world.find_child("MushroomPatches", true, false)
+		if shroom_spawner and shroom_spawner.has_method("apply_save_state"):
+			shroom_spawner.apply_save_state(save_data["mushrooms"])
+
+	# 13г. Глава 2 «Первый дым»: блюда, грибы и восстановленные станки.
+	CookingProgress.apply_save_state(save_data.get("cooking", {}) if save_data.get("cooking") is Dictionary else {})
 
 	# 14. Выброшенные предметы: текущие кучки убираются, сохранённые создаются заново.
 	# В старых сохранениях секции нет — тогда кучки тоже убираются (их не было).
@@ -620,7 +713,7 @@ static func _is_integer(value: Variant, minimum: float = 0.0, maximum: float = I
 	return _is_number(value, minimum, maximum) and float(value) == floor(float(value))
 
 static func _validate_save_data(data: Dictionary) -> bool:
-	for section in ["meta", "player", "inventory", "day_night", "weather", "buildings", "energy", "water", "contracts", "traders", "progress"]:
+	for section in ["meta", "player", "inventory", "day_night", "weather", "seasons", "buildings", "energy", "water", "contracts", "traders", "progress"]:
 		if data.has(section) and not data[section] is Dictionary:
 			return false
 	var meta: Dictionary = data.get("meta", {})
@@ -675,11 +768,17 @@ static func _validate_save_data(data: Dictionary) -> bool:
 		if dn.has(key) and not _is_number(dn[key], 0.0, 24.0):
 			return false
 	var weather: Dictionary = data.get("weather", {})
-	if weather.has("current_weather") and not _is_integer(weather["current_weather"], 0.0, 3.0):
+	if weather.has("current_weather") and not _is_integer(weather["current_weather"], 0.0, 4.0):
 		return false
 	if weather.has("timer") and not _is_number(weather["timer"], 0.0):
 		return false
 	if weather.has("cycle_index") and not _is_integer(weather["cycle_index"], 0.0, 6.0):
+		return false
+	if data.has("seasons") and not SeasonManagerScript.is_valid_save_state(data["seasons"]):
+		return false
+	if data.has("cooking") and not CookingProgress.is_valid_save_state(data["cooking"]):
+		return false
+	if data.has("mushrooms") and not MushroomSpawnerScript.is_valid_save_state(data["mushrooms"]):
 		return false
 	var buildings: Dictionary = data.get("buildings", {})
 	for key in ["house_stage", "storage_stage"]:
@@ -701,7 +800,7 @@ static func _validate_save_data(data: Dictionary) -> bool:
 				return false
 			if not _is_integer(plot.get("soil_state", 0), 0.0, 1.0):
 				return false
-			if plot.get("crop_type", "") not in ["", "carrot", "potato", "wheat"]:
+			if plot.get("crop_type", "") != "" and not CropDB.has_crop(plot.get("crop_type", "")):
 				return false
 			for key in ["moisture", "growth_progress"]:
 				if not _is_number(plot.get(key, 0.0), 0.0, 100.0):
@@ -749,7 +848,7 @@ static func _validate_save_data(data: Dictionary) -> bool:
 			if state.has("wear") and not _is_number(state["wear"], 0.0, 150.0):
 				return false
 			if state.has("fuel_slots"):
-				if not state["fuel_slots"] is Array or state["fuel_slots"].size() > ProductionMachine.FUEL_SLOTS:
+				if not state["fuel_slots"] is Array or state["fuel_slots"].size() > 8:
 					return false
 				for fs in state["fuel_slots"]:
 					if not fs is Dictionary:
@@ -760,6 +859,8 @@ static func _validate_save_data(data: Dictionary) -> bool:
 					if not _is_integer(fs.get("count", 0), 0.0, float(ProductionMachine.FUEL_SLOT_STACK)):
 						return false
 			if state.has("fuel_burn_left") and not _is_number(state["fuel_burn_left"], 0.0, 10000.0):
+				return false
+			if state.has("rebuilt") and not state["rebuilt"] is bool:
 				return false
 	for path in data.get("traders", {}):
 		if not _is_relative_path(path) or not data["traders"][path] is bool:
@@ -794,6 +895,22 @@ static func _validate_save_data(data: Dictionary) -> bool:
 		for f_state in data["farm_fields"]:
 			if not FarmFieldScript.is_valid_save_state(f_state):
 				return false
+	if data.has("fruit_trees"):
+		if not data["fruit_trees"] is Array:
+			return false
+		for t_state in data["fruit_trees"]:
+			if not t_state is Dictionary:
+				return false
+			var t_type = t_state.get("type", "")
+			if not t_type is String or not FruitTreeScript.CONFIGS.has(t_type):
+				return false
+			if t_state.has("stage") and not _is_integer(t_state["stage"], 0.0, 2.0):
+				return false
+			if not t_state.has("pos") or not t_state["pos"] is Array or t_state["pos"].size() < 3:
+				return false
+			for val in t_state["pos"]:
+				if not _is_number(val):
+					return false
 	if data.has("berry_bushes"):
 		var bb = data["berry_bushes"]
 		if not bb is Dictionary or not _is_integer(bb.get("seed", 0), 0.0, 2147483647.0) or not bb.get("bushes", []) is Array:

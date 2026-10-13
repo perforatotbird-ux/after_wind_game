@@ -54,6 +54,9 @@ func _run() -> void:
 		return
 	inv = player.inventory
 	crusher = world.find_child("StoneCrusher", true, false)
+	# Глава 2: дробилка стартует разрушенной — здесь проверяются партии и рюкзак.
+	if crusher is ProductionMachine:
+		crusher.force_rebuilt()
 	if not _check(crusher is ProductionMachine and crusher.machine_type == "crusher", "в мире нет дробилки StoneCrusher"):
 		return
 

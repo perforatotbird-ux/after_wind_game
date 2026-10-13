@@ -11,10 +11,13 @@ const MAX_PER_TYPE: int = 2
 const BUSH_SCENES: Dictionary = {
 	"red": preload("res://scenes/resources/berry_bush_red.tscn"),
 	"blue": preload("res://scenes/resources/berry_bush_blue.tscn"),
+	"black": preload("res://scenes/resources/berry_bush_black.tscn"),
+	"sea": preload("res://scenes/resources/berry_bush_sea.tscn"),
 }
+const BUSH_ORDER: Array[String] = ["red", "blue", "black", "sea"]
 
 ## Сколько кустов каждого вида (больше MAX_PER_TYPE не ставится).
-@export var bush_counts: Dictionary = {"red": 2, "blue": 2}
+@export var bush_counts: Dictionary = {"red": 2, "blue": 2, "black": 2, "sea": 2}
 ## 0 — случайное зерно при каждой новой игре.
 @export var spawn_seed: int = 0
 ## Кольцо вокруг центра базы, где ищутся места, м.
@@ -68,7 +71,9 @@ func spawn(seed_value: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
 	var placed: Array[Vector2] = []
-	for bush_type in ["red", "blue"]:
+	# Порядок фиксирован (BUSH_ORDER): раскладка red/blue от того же зерна
+	# не меняется при добавлении новых видов — старые сейвы совместимы.
+	for bush_type in BUSH_ORDER:
 		var want: int = clampi(int(bush_counts.get(bush_type, 0)), 0, MAX_PER_TYPE)
 		var made: int = 0
 		var guard: int = 0

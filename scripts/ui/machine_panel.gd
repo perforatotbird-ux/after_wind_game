@@ -26,6 +26,15 @@ var inventory: Node
 var _recipes: Array = []
 var _selected_recipe: Dictionary = {}
 
+var _rebuild_box: VBoxContainer
+var _rebuild_title: Label
+var _rebuild_desc: Label
+var _rebuild_perks: Label
+var _rebuild_cost: Label
+var _rebuild_btn: Button
+var _production_box: VBoxContainer
+var _bottom_row: HBoxContainer
+
 var _title_label: Label
 var _grid: ItemGrid
 var _recipe_grid: GridContainer
@@ -89,15 +98,47 @@ func _ready() -> void:
 	body.add_theme_constant_override("separation", 14)
 	root.add_child(body)
 
-	# 1. Основная область: сетка рецептов + заказ + состояние (+ топливо у печи)
+# 1. Основная область: сетка рецептов + заказ + состояние (+ топливо у печи)
 	var col_main := VBoxContainer.new()
 	col_main.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(col_main)
-	col_main.add_child(UI.make_section_header("📜 Рецепты"))
+
+	# 1a. Карточка восстановления/постройки (видна, пока станок не готов).
+	_rebuild_box = VBoxContainer.new()
+	_rebuild_box.add_theme_constant_override("separation", 8)
+	col_main.add_child(_rebuild_box)
+	var rebuild_card := UI.make_panel(UI.COLOR_CARD, UI.COLOR_BORDER, 1)
+	_rebuild_box.add_child(rebuild_card)
+	var rebuild_margin := UI.make_margin(14)
+	rebuild_card.add_child(rebuild_margin)
+	var rebuild_col := VBoxContainer.new()
+	rebuild_col.add_theme_constant_override("separation", 8)
+	rebuild_margin.add_child(rebuild_col)
+	_rebuild_title = UI.make_label("", 18, UI.COLOR_TITLE)
+	_rebuild_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rebuild_col.add_child(_rebuild_title)
+	_rebuild_desc = UI.make_label("", 14)
+	_rebuild_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_rebuild_desc.custom_minimum_size = Vector2(360, 0)
+	rebuild_col.add_child(_rebuild_desc)
+	_rebuild_perks = UI.make_label("", 13, UI.COLOR_MUTED)
+	_rebuild_perks.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rebuild_col.add_child(_rebuild_perks)
+	_rebuild_cost = UI.make_label("", 14)
+	_rebuild_cost.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rebuild_col.add_child(_rebuild_cost)
+	_rebuild_btn = UI.make_button("🔨 Восстановить", Vector2(0, 44), true, false, 16)
+	_rebuild_btn.pressed.connect(_on_rebuild_pressed)
+	rebuild_col.add_child(_rebuild_btn)
+
+	_production_box = VBoxContainer.new()
+	_production_box.add_theme_constant_override("separation", 8)
+	col_main.add_child(_production_box)
+	_production_box.add_child(UI.make_section_header("📜 Рецепты"))
 	var rec_scroll := ScrollContainer.new()
 	rec_scroll.custom_minimum_size = Vector2(RECIPE_COLS * RECIPE_CELL.x + 14, 4 * RECIPE_CELL.y + 14)
 	rec_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	col_main.add_child(rec_scroll)
+	_production_box.add_child(rec_scroll)
 	_recipe_grid = GridContainer.new()
 	_recipe_grid.columns = RECIPE_COLS
 	_recipe_grid.add_theme_constant_override("h_separation", 8)
@@ -106,7 +147,7 @@ func _ready() -> void:
 	rec_scroll.add_child(_recipe_grid)
 
 	var card := UI.make_panel(UI.COLOR_CARD, UI.COLOR_BORDER, 1)
-	col_main.add_child(card)
+	_production_box.add_child(card)
 	var cm := UI.make_margin(12)
 	card.add_child(cm)
 	var col := VBoxContainer.new()
@@ -162,6 +203,7 @@ func _ready() -> void:
 	# 3. Нижняя строка: состояние, топливо, продукция
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override("separation", 14)
+	_bottom_row = bottom
 	root.add_child(bottom)
 
 	var col_state := VBoxContainer.new()
@@ -209,7 +251,7 @@ func _ready() -> void:
 		var fuel_row := HBoxContainer.new()
 		fuel_row.add_theme_constant_override("separation", 6)
 		_fuel_box.add_child(fuel_row)
-		for i in int(machine.FUEL_SLOTS):
+		for i in int(machine.fuel_slot_count if "fuel_slot_count" in machine else PM.FUEL_SLOTS):
 			var slot_btn := UI.make_button("", Vector2(56, 56))
 			slot_btn.expand_icon = true
 			slot_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -242,7 +284,7 @@ func _ready() -> void:
 	if inventory:
 		inventory.inventory_updated.connect(_refresh)
 	if machine:
-		for sig in ["outputs_changed", "batch_finished", "batch_cancelled", "process_started"]:
+		for sig in ["outputs_changed", "batch_finished", "batch_cancelled", "process_started", "machine_rebuilt"]:
 			if machine.has_signal(sig):
 				machine.connect(sig, _on_machine_signal)
 		if machine.has_signal("machine_upgraded"):
@@ -352,6 +394,8 @@ func _on_amount_changed(_v: float) -> void:
 
 func _refresh() -> void:
 	if not is_inside_tree() or inventory == null:
+		return
+	if not _refresh_rebuild():
 		return
 	_build_recipe_grid()
 	if not _selected_recipe.is_empty():
@@ -539,6 +583,49 @@ func _on_start() -> void:
 		return
 	if machine.start_batch(str(_selected_recipe.get("id", "")), cycles, player):
 		AudioManager.play("ui_click")
+	_refresh()
+
+## Готов ли станок к работе. Пока нет — показываем карточку восстановления
+## и прячем производство, износ, топливо и продукцию.
+func _refresh_rebuild() -> bool:
+	if machine == null or not machine.has_method("is_operational"):
+		return true
+	var ready_state: bool = machine.is_operational()
+	_rebuild_box.visible = not ready_state
+	_production_box.visible = ready_state
+	_bottom_row.visible = ready_state
+	_collect_btn.disabled = true
+	if ready_state:
+		return true
+	var info: Dictionary = machine.rebuild_info
+	_rebuild_title.text = "🔨 %s — %s" % [str(machine.object_name), str(info.get("title", "Разрушена"))]
+	_rebuild_desc.text = str(info.get("description", "Станок вышел из строя после бури. Его нужно восстановить, чтобы вернуться к работе."))
+	_rebuild_perks.text = str(info.get("perks", "После восстановления: %s" % str(machine.machine_display_name)))
+	var check: Dictionary = machine.can_rebuild(player)
+	var parts: PackedStringArray = []
+	var req: Dictionary = machine.get_rebuild_requirements()
+	if int(req.get("credits", 0)) > 0:
+		var have_cr: int = int(inventory.get("credits")) if "credits" in inventory else 0
+		parts.append("💰 %d/%d кр." % [have_cr, int(req["credits"])])
+	var mats: Dictionary = req.get("materials", {})
+	for item_id in mats.keys():
+		var need: int = int(mats[item_id])
+		var have: int = inventory.get_item_count(str(item_id)) if inventory else 0
+		parts.append("%s %s %d/%d" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), have, need])
+	_rebuild_cost.text = "Нужно: " + ("  ·  ".join(parts) if not parts.is_empty() else "ничего")
+	_rebuild_btn.text = "🔨 %s" % str(info.get("action", "Восстановить"))
+	_rebuild_btn.disabled = not bool(check.get("can_rebuild", false))
+	_rebuild_btn.tooltip_text = str(check.get("reason", ""))
+	return false
+
+func _on_rebuild_pressed() -> void:
+	if machine == null:
+		return
+	if machine.rebuild(player):
+		AudioManager.play("ui_click")
+		_load_recipes()
+		if not _recipes.is_empty():
+			_select_recipe(_recipes[0])
 	_refresh()
 
 func _on_repair_pressed(quality: bool) -> void:

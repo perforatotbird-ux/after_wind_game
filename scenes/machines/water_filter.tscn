@@ -1,6 +1,7 @@
-[gd_scene load_steps=15 format=3 uid="uid://c7w9q4f8e1k2m"]
+[gd_scene load_steps=16 format=3 uid="uid://c7w9q4f8e1k2m"]
 
 [ext_resource type="Script" path="res://scripts/crafting/production_machine.gd" id="1_mach"]
+[ext_resource type="PackedScene" path="res://scenes/machines/machine_rubble.tscn" id="2_rubble"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
 size = Vector3(2.4, 2.5, 2.4)
@@ -73,6 +74,7 @@ machine_display_name = "Песчаный фильтр воды"
 power_draw = 1.2
 yield_bonus_per_level = 2
 visual_node = NodePath("Visual")
+ruined_visual = NodePath("Ruined")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
@@ -125,6 +127,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0.2)
 light_color = Color(0.25, 0.75, 1, 1)
 light_energy = 0.6
 omni_range = 2.5
+
+[node name="Ruined" parent="." instance=ExtResource("2_rubble")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+scale = Vector3(0.8, 0.8, 0.8)
 
 [node name="SolidBody" type="StaticBody3D" parent="."]
 collision_layer = 1

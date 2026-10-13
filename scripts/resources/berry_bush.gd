@@ -1,9 +1,10 @@
 extends "res://scripts/interaction/interactable.gd"
 
-## Ягодный куст: по [E] собирается berry_yield ягод, после чего куст показывает
-## модель без ягод. Ягоды отрастают за regrow_hours игровых часов, но время идёт
-## только в сезоны grow_seasons (см. Seasons — пока система сезонов выключена,
-## куст отрастает круглый год). Здоровье ягоды не лечат — только сытость, жажду и силы.
+## Ягодный куст: по [E] собирается berry_yield ягод (в сезон сбора — с множителем
+## Seasons.get_forage_multiplier(), осенью ×2), после чего куст показывает модель без
+## ягод. Ягоды отрастают за regrow_hours игровых часов, но время идёт только в сезоны
+## grow_seasons (см. Seasons — пока система сезонов выключена, куст отрастает круглый год).
+## Здоровье ягоды не лечат — только сытость, жажду и силы.
 
 const Seasons = preload("res://scripts/core/seasons.gd")
 const GROUP: String = "berry_bushes"
@@ -54,9 +55,13 @@ func _update_model() -> void:
 	if empty_model:
 		empty_model.visible = not has_berries
 
+## Сколько ягод даёт сбор с учётом сезона (осень — ×2, зима — ×0.5).
+func get_harvest_amount() -> int:
+	return maxi(1, int(round(berry_yield * Seasons.get_forage_multiplier())))
+
 func get_prompt() -> String:
 	if has_berries:
-		return "[E] %s (%s ×%d)" % [prompt_action, ItemDB.get_item(berry_item_id).get("name", berry_item_id), berry_yield]
+		return "[E] %s (%s ×%d)" % [prompt_action, ItemDB.get_item(berry_item_id).get("name", berry_item_id), get_harvest_amount()]
 	if not Seasons.is_in_season(grow_seasons):
 		return "%s: ягоды растут только в сезон (%s)" % [object_name, Seasons.describe(grow_seasons)]
 	return "%s: ягоды отрастут через ~%d ч" % [object_name, ceili(maxf(0.0, regrow_hours - regrow_progress))]
@@ -65,14 +70,15 @@ func _on_interacted(player: Node) -> void:
 	if not has_berries:
 		_notify(player, "🌿 " + get_prompt())
 		return
+	var amount: int = get_harvest_amount()
 	var inv = player.get("inventory") if player else null
-	if inv == null or not inv.add_item(berry_item_id, berry_yield):
+	if inv == null or not inv.add_item(berry_item_id, amount):
 		_notify(player, "🎒 Не хватает места в рюкзаке для ягод!")
 		return
 	set_has_berries(false)
 	AudioManager.play("berry_pick")
 	var item: Dictionary = ItemDB.get_item(berry_item_id)
-	_notify(player, "%s Собрано: %s ×%d" % [item.get("icon", "🫐"), item.get("name", berry_item_id), berry_yield])
+	_notify(player, "%s Собрано: %s ×%d" % [item.get("icon", "🫐"), item.get("name", berry_item_id), amount])
 
 func _notify(player: Node, text: String) -> void:
 	if player and player.has_method("notify"):

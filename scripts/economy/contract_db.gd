@@ -4,6 +4,7 @@ extends RefCounted
 ## Реестр контрактов и заказов поселений (Этап 7, разделы 22, 23, 86)
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
+const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
 const CONTRACTS: Array[Dictionary] = [
 	{
@@ -121,6 +122,51 @@ const CONTRACTS: Array[Dictionary] = [
 		"unlock_after": 3,
 		"dialogue_intro": "«Мы снаряжаем поисковую партию на дальние скалы. Нужны надежные крепления, черенки, ткань и сталь для полевого инструмента. Заплатим звонкой монетой!»",
 		"dialogue_complete": "«Первоклассные материалы и оснастка! С такими запасами наши старатели вскроют любую породу. Держи обещанные 450 кредитов!»"
+	},
+	{
+		"id": "contract_marta_seeds",
+		"title": "Посылка с семенами от Марты",
+		"client": "Фермерша Марта (через Степана)",
+		"description": "Марта с соседнего хутора собрала для базы пакет семян новых культур: подсолнух, лук, фасоль и пряные травы. В обмен просит свежие овощи и хлеб.",
+		"requirements": {
+			"carrot": 4,
+			"potato": 4,
+			"bread": 2
+		},
+		"reward_credits": 120,
+		"reward_items": {
+			"seeds_sunflower": 3,
+			"seeds_onion": 3,
+			"seeds_bean": 4,
+			"seeds_herbs": 3
+		},
+		"unlock_after": 2,
+		"dialogue_intro": "«Степан привёз весточку от Марты с хутора! У неё сохранились семена подсолнуха, лука, фасоли и трав. Отправь ей овощей и хлеба — и посылка с семенами твоя!»",
+		"dialogue_complete": "«Марта благодарит за угощение! Держи её семена: сей на делянках, поливай — и будет у базы новое разнотравье!»"
+	},
+	{
+		"id": "contract_marta_orchard",
+		"title": "Саженцы для фруктового сада",
+		"client": "Фермерша Марта (через Степана)",
+		"description": "Марта вырастила саженцы яблони, груши и вишни, а ещё припасла семена поздних культур: капусты, томатов, перца, кукурузы и тыквы. В обмен нужны зерно и бутилированная вода.",
+		"requirements": {
+			"wheat": 6,
+			"bottled_water": 2
+		},
+		"reward_credits": 200,
+		"reward_items": {
+			"apple_sapling": 1,
+			"pear_sapling": 1,
+			"cherry_sapling": 1,
+			"seeds_cabbage": 3,
+			"seeds_tomato": 3,
+			"seeds_pepper": 2,
+			"seeds_corn": 2,
+			"seeds_pumpkin": 2
+		},
+		"unlock_after": 4,
+		"dialogue_intro": "«Марта выходила целый сад! Яблоня, груша, вишня — саженцы уже с корнями. И семена поздних овощей в придачу. Собери ей зерна и чистой воды в стекле!»",
+		"dialogue_complete": "«Саженцы прижились бы и у нас! Сажай кнопкой «Посадить в саду» из рюкзака, поливать не надо — через несколько дней будет первый урожай!»"
 	}
 ]
 
@@ -199,20 +245,36 @@ static func fulfill_contract(contract_id: String, player: Node) -> bool:
 	var reward: int = contract.get("reward_credits", 0)
 	if reward > 0 and inv.has_method("add_credits"):
 		inv.add_credits(reward)
-	
+
+	# Награда предметами (посылки с семенами/саженцами): сначала в рюкзак,
+	# остаток при нехватке места — кучкой у игрока, чтобы не пропадал.
+	var reward_items: Dictionary = contract.get("reward_items", {})
+	var drop_at: Vector3 = player.global_position if player is Node3D else Vector3.ZERO
+	var granted: Array[String] = []
+	for it_id in reward_items.keys():
+		var n: int = int(reward_items[it_id])
+		if n <= 0:
+			continue
+		var fit: int = DroppedItemScript.give_or_drop(player, str(it_id), n, drop_at, player.get_parent() if player is Node else null)
+		if fit > 0:
+			granted.append("%s %s ×%d" % [ItemDB.get_item_icon(str(it_id)), ItemDB.get_item_name(str(it_id)), fit])
+
 	var unlocked_before: int = _count_unlocked()
 	completed_contracts[contract_id] = true
 	var newly_unlocked: int = _count_unlocked() - unlocked_before
-	
+
 	const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 	AudioManager.play("coins")
-	
+
 	if player.has_method("notify"):
 		var title: String = contract.get("title", "Заказ")
-		player.notify("📜 Контракт «%s» выполнен! Получено +%d кредитов!" % [title, reward])
+		var msg: String = "📜 Контракт «%s» выполнен! Получено +%d кредитов!" % [title, reward]
+		if not granted.is_empty():
+			msg += " 🎁 " + ", ".join(granted)
+		player.notify(msg)
 		if newly_unlocked > 0:
 			player.notify("📬 На доске новые заказы: %d. Загляните к Степану!" % newly_unlocked)
-	
+
 	return true
 
 static func reset_completed() -> void:

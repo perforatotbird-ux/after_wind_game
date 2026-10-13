@@ -175,6 +175,126 @@ const RECIPES: Dictionary = {
 		"energy_cost": 1.0,
 		"description": "Ручной обмолот пшеничного снопа для получения чистого посевного зерна."
 	},
+	"extract_sunflower_seeds": {
+		"id": "extract_sunflower_seeds",
+		"name": "Селекция: Семена подсолнуха (x3)",
+		"machine": "workbench",
+		"inputs": {"sunflower_seeds": 1},
+		"outputs": {"seeds_sunflower": 3},
+		"duration": 15.0,
+		"energy_cost": 1.0,
+		"description": "Калибровка и сушка крупных семечек подсолнуха для весеннего посева."
+	},
+	"extract_onion_seeds": {
+		"id": "extract_onion_seeds",
+		"name": "Селекция: Семена лука (x2)",
+		"machine": "workbench",
+		"inputs": {"onion": 1},
+		"outputs": {"seeds_onion": 2},
+		"duration": 15.0,
+		"energy_cost": 1.0,
+		"description": "Заготовка семян репчатого лука из спелых луковиц."
+	},
+	"extract_cabbage_seeds": {
+		"id": "extract_cabbage_seeds",
+		"name": "Селекция: Семена капусты (x2)",
+		"machine": "workbench",
+		"inputs": {"cabbage": 1},
+		"outputs": {"seeds_cabbage": 2},
+		"duration": 15.0,
+		"energy_cost": 1.0,
+		"description": "Отбор стручков семян из кочана капусты."
+	},
+	"extract_tomato_seeds": {
+		"id": "extract_tomato_seeds",
+		"name": "Селекция: Семена томата (x3)",
+		"machine": "workbench",
+		"inputs": {"tomato": 1},
+		"outputs": {"seeds_tomato": 3},
+		"duration": 15.0,
+		"energy_cost": 1.0,
+		"description": "Смыв мякоти и сушка семян сочных спелых помидоров."
+	},
+	"extract_pepper_seeds": {
+		"id": "extract_pepper_seeds",
+		"name": "Селекция: Семена перца (x2)",
+		"machine": "workbench",
+		"inputs": {"pepper": 1},
+		"outputs": {"seeds_pepper": 2},
+		"duration": 15.0,
+		"energy_cost": 1.0,
+		"description": "Извлечение и просушка семян сладкого болгарского перца."
+	},
+	"extract_bean_seeds": {
+		"id": "extract_bean_seeds",
+		"name": "Селекция: Семена фасоли (x3)",
+		"machine": "workbench",
+		"inputs": {"bean": 1},
+		"outputs": {"seeds_bean": 3},
+		"duration": 15.0,
+		"energy_cost": 1.0,
+		"description": "Лущение спелых стручков фасоли на посевные бобы."
+	},
+	"extract_herbs_seeds": {
+		"id": "extract_herbs_seeds",
+		"name": "Селекция: Семена пряных трав (x2)",
+		"machine": "workbench",
+		"inputs": {"herbs": 1},
+		"outputs": {"seeds_herbs": 2},
+		"duration": 15.0,
+		"energy_cost": 1.0,
+		"description": "Сбор семян из цветущих соцветий пряных трав."
+	},
+	"extract_corn_seeds": {
+		"id": "extract_corn_seeds",
+		"name": "Селекция: Семена кукурузы (x2)",
+		"machine": "workbench",
+		"inputs": {"corn": 1},
+		"outputs": {"seeds_corn": 2},
+		"duration": 15.0,
+		"energy_cost": 1.0,
+		"description": "Вылущивание отборных зёрен из спелого початка кукурузы."
+	},
+	"extract_pumpkin_seeds": {
+		"id": "extract_pumpkin_seeds",
+		"name": "Селекция: Семена тыквы (x3)",
+		"machine": "workbench",
+		"inputs": {"pumpkin": 1},
+		"outputs": {"seeds_pumpkin": 3},
+		"duration": 15.0,
+		"energy_cost": 1.0,
+		"description": "Извлечение и сушка крупных тыквенных семечек."
+	},
+	"craft_apple_sapling": {
+		"id": "craft_apple_sapling",
+		"name": "Прививка: Саженец яблони (x1)",
+		"machine": "workbench",
+		"inputs": {"apple": 2, "wood": 1},
+		"outputs": {"apple_sapling": 1},
+		"duration": 30.0,
+		"energy_cost": 2.0,
+		"description": "Черенкование и прививка плодового черенка яблони на подвой из древесины."
+	},
+	"craft_pear_sapling": {
+		"id": "craft_pear_sapling",
+		"name": "Прививка: Саженец груши (x1)",
+		"machine": "workbench",
+		"inputs": {"pear": 2, "wood": 1},
+		"outputs": {"pear_sapling": 1},
+		"duration": 30.0,
+		"energy_cost": 2.0,
+		"description": "Прививка садовой сортовой груши на крепкий подвой."
+	},
+	"craft_cherry_sapling": {
+		"id": "craft_cherry_sapling",
+		"name": "Прививка: Саженец вишни (x1)",
+		"machine": "workbench",
+		"inputs": {"cherry": 4, "wood": 1},
+		"outputs": {"cherry_sapling": 1},
+		"duration": 30.0,
+		"energy_cost": 2.0,
+		"description": "Укоренение и прививка побега вишнёвого дерева."
+	},
 	"bake_bread": {
 		"id": "bake_bread",
 		"name": "Выпечка: Домашний хлеб (x2)",
@@ -374,6 +494,155 @@ const RECIPES: Dictionary = {
 		"duration": 120.0,
 		"energy_cost": 4.0,
 		"description": "Пошив вместительного экспедиционного рюкзака: расширяет вместимость до 20 слотов и грузоподъемность до 75 кг."
+	},
+
+	# --- Глава 2 «Первый дым»: костёр ---------------------------------------------------
+	# Ручной станок без энергии: жарка, варка, сушка и кипячение. Базовые блюда,
+	# обычное качество (мастер-план 7.3). Топливо — дрова/уголь/брикеты в одном слоте.
+	"cook_baked_potato": {
+		"id": "cook_baked_potato",
+		"name": "Печёный картофель (x2)",
+		"machine": "campfire",
+		"inputs": {"potato": 2},
+		"outputs": {"baked_potato": 2},
+		"duration": 30.0,
+		"energy_cost": 1.0,
+		"description": "Клубни в золе на углях костра: сырой картофель становится сытным горячим блюдом."
+	},
+	"cook_fried_carrot": {
+		"id": "cook_fried_carrot",
+		"name": "Жареная морковь (x2)",
+		"machine": "campfire",
+		"inputs": {"carrot": 3, "water": 1},
+		"outputs": {"fried_carrot": 2},
+		"duration": 25.0,
+		"energy_cost": 1.0,
+		"description": "Морковь нарезается и обжаривается на сковородке из листа — быстрый перекус в дорогу."
+	},
+	"cook_vegetable_soup": {
+		"id": "cook_vegetable_soup",
+		"name": "Овощной суп (x2)",
+		"machine": "campfire",
+		"inputs": {"carrot": 1, "potato": 1, "water": 2},
+		"outputs": {"vegetable_soup": 2},
+		"duration": 45.0,
+		"energy_cost": 1.5,
+		"description": "Горячая похлёбка в котелке над огнём: одновременно сытость и жажда."
+	},
+	"cook_berry_brew": {
+		"id": "cook_berry_brew",
+		"name": "Ягодный отвар (x2)",
+		"machine": "campfire",
+		"inputs": {"red_berry": 4, "water": 1},
+		"outputs": {"berry_brew": 2},
+		"duration": 20.0,
+		"energy_cost": 0.5,
+		"description": "Ягоды, залитые кипятком в котелке: быстрый горячий настой, восполняет жажду."
+	},
+	"cook_mushroom_stew": {
+		"id": "cook_mushroom_stew",
+		"name": "Грибная похлёбка (x2)",
+		"machine": "campfire",
+		"inputs": {"mushroom": 2, "water": 1},
+		"outputs": {"mushroom_stew": 2},
+		"duration": 35.0,
+		"energy_cost": 1.0,
+		"description": "Первый настоящий суп из лесных грибов — ради него и нужен костёр."
+	},
+	"dry_mushrooms": {
+		"id": "dry_mushrooms",
+		"name": "Сушка грибов (x2)",
+		"machine": "campfire",
+		"inputs": {"mushroom": 3},
+		"outputs": {"dried_mushroom": 2},
+		"duration": 40.0,
+		"energy_cost": 0.5,
+		"description": "Грибы сушатся над огнём и становятся лёгкой консервой: не портятся и не занимают места."
+	},
+	"boil_water": {
+		"id": "boil_water",
+		"name": "Кипячёная вода (x2)",
+		"machine": "campfire",
+		"inputs": {"water": 2},
+		"outputs": {"clean_water": 2},
+		"duration": 20.0,
+		"energy_cost": 0.5,
+		"description": "Альтернатива фильтру: довести сырую воду до кипения в котелке. Медленнее, зато работает без станка."
+	},
+
+	# --- Глава 2: печь-кухня (улучшенный станок готовки) --------------------------------
+	# Средние блюда и соусы, качество на уровень выше костра (мастер-план 7.3).
+	"cook_potato_mushroom": {
+		"id": "cook_potato_mushroom",
+		"name": "Картошка с грибами (x2)",
+		"machine": "kitchen_stove",
+		"inputs": {"potato": 2, "mushroom": 1, "clean_water": 1},
+		"outputs": {"potato_mushroom_dish": 2},
+		"duration": 40.0,
+		"energy_cost": 2.0,
+		"description": "Горячее блюдо с равномерной подачей: печь держит жар и картошка не разваривается в кашу."
+	},
+	"cook_mushroom_soup": {
+		"id": "cook_mushroom_soup",
+		"name": "Грибной суп (x2)",
+		"machine": "kitchen_stove",
+		"inputs": {"mushroom": 3, "carrot": 1, "clean_water": 2},
+		"outputs": {"mushroom_soup": 2},
+		"duration": 45.0,
+		"energy_cost": 2.0,
+		"description": "Наваренный суп с морковью — лучшая замена костровой похлёбке по сытости и жажде."
+	},
+	"cook_glazed_carrot": {
+		"id": "cook_glazed_carrot",
+		"name": "Глазурованная морковь (x3)",
+		"machine": "kitchen_stove",
+		"inputs": {"carrot": 4, "red_berry": 2, "clean_water": 1},
+		"outputs": {"glazed_carrot": 3},
+		"duration": 35.0,
+		"energy_cost": 2.0,
+		"description": "Ягодная глазурь на тушёной моркови — сладко, сытно и отлично утоляет жажду."
+	},
+	"cook_potato_pie": {
+		"id": "cook_potato_pie",
+		"name": "Картофельный пирог (x2)",
+		"machine": "kitchen_stove",
+		"inputs": {"potato": 3, "wheat": 2, "clean_water": 1},
+		"outputs": {"potato_pie": 2},
+		"duration": 60.0,
+		"energy_cost": 3.0,
+		"description": "Выпечка в духовом шкафу печи-кухни: самая сытная еда Главы 2."
+	},
+	"cook_berry_compote": {
+		"id": "cook_berry_compote",
+		"name": "Ягодный компот (x2)",
+		"machine": "kitchen_stove",
+		"inputs": {"red_berry": 4, "clean_water": 2},
+		"outputs": {"berry_compote": 2},
+		"duration": 30.0,
+		"energy_cost": 1.5,
+		"description": "Проваренный в чистой воде ягодный компот: восполняет жажду лучше кострового отвара."
+	},
+	"cook_mushroom_sauce": {
+		"id": "cook_mushroom_sauce",
+		"name": "Грибной соус (x2)",
+		"machine": "kitchen_stove",
+		"inputs": {"mushroom": 3, "clean_water": 1},
+		"outputs": {"mushroom_sauce": 2},
+		"duration": 35.0,
+		"energy_cost": 2.0,
+		"min_level": 2,
+		"description": "Протёртые грибы с бульоном — приправа для блюд кухни Главы 5."
+	},
+	"cook_berry_sauce": {
+		"id": "cook_berry_sauce",
+		"name": "Ягодный соус (x2)",
+		"machine": "kitchen_stove",
+		"inputs": {"red_berry": 5, "clean_water": 1},
+		"outputs": {"berry_sauce": 2},
+		"duration": 30.0,
+		"energy_cost": 1.5,
+		"min_level": 2,
+		"description": "Уваренная ягодная приправа — сладкая основа для выпечки и соусов Главы 5."
 	}
 }
 

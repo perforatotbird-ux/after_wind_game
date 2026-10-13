@@ -255,9 +255,13 @@ func _update_details() -> void:
 		_use_btn.text = "🍞 Съесть (Y)"
 		_use_btn.visible = true
 	elif str(data.get("category", "")) == "seeds":
-		var chosen: bool = player != null and player.get("selected_seed") == _selected
-		_use_btn.text = "🌱 Выбрано для посадки" if chosen else "🌱 Сажать эти семена"
-		_use_btn.visible = true
+		if ItemDB.is_fruit_sapling(_selected):
+			_use_btn.text = "🌱 Посадить в саду"
+			_use_btn.visible = true
+		else:
+			var chosen: bool = player != null and player.get("selected_seed") == _selected
+			_use_btn.text = "🌱 Выбрано для посадки" if chosen else "🌱 Сажать эти семена"
+			_use_btn.visible = true
 	else:
 		_use_btn.visible = false
 
@@ -303,6 +307,10 @@ func _on_use_pressed() -> void:
 	if player == null or _selected == "":
 		return
 	if str(ItemDB.get_item(_selected).get("category", "")) == "seeds":
+		if ItemDB.is_fruit_sapling(_selected):
+			request_build("fruit_tree:" + _selected)
+			close()
+			return
 		if "selected_seed" in player:
 			player.selected_seed = _selected
 		_update_details()

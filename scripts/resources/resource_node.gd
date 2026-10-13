@@ -6,6 +6,7 @@ extends "res://scripts/interaction/interactable.gd"
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
+const Seasons = preload("res://scripts/core/seasons.gd")
 
 signal resource_gathered(resource_id: String, amount: int)
 signal node_depleted()
@@ -32,6 +33,10 @@ signal node_respawned()
 ## Время роста саженца до взрослого дерева в игровых часах.
 @export var growth_hours: float = 8.0
 
+@export_group("Winter")
+## Открытый водоём замерзает зимой (Seasons.water_freezes). Колодец — нет.
+@export var freezes_in_winter: bool = false
+
 @export_group("Visuals")
 @export var visual_node: Node3D
 @export var depleted_visual_node: Node3D
@@ -50,6 +55,8 @@ var is_growing: bool = false
 var growth_progress_hours: float = 0.0
 var _original_scale: Vector3 = Vector3.ONE
 var _day_cycle: Node = null
+## Предыдущее состояние промерзания — чтобы обновлять лёд один раз на смену.
+var _was_frozen: bool = false
 
 func _ready() -> void:
 	super._ready()
@@ -69,9 +76,18 @@ func _ready() -> void:
 	if depleted_visual_node:
 		depleted_visual_node.visible = false
 	
-	set_process(is_depleted or is_growing)
+	_update_frozen_visual()
+	set_process(is_depleted or is_growing or freezes_in_winter)
 
 func _process(delta: float) -> void:
+	# Открытая вода следит за сезоном: промерзание и оттепель меняют вид и подсказку.
+	if freezes_in_winter:
+		var frozen_now: bool = is_frozen()
+		if frozen_now != _was_frozen:
+			_was_frozen = frozen_now
+			_update_frozen_visual()
+		if not is_depleted and not is_growing:
+			return
 	if not is_depleted and not is_growing:
 		set_process(false)
 		return
@@ -139,7 +155,44 @@ func _update_growth_visual() -> void:
 	var k: float = lerpf(SAPLING_START_SCALE, 0.9, get_growth_ratio())
 	visual_node.scale = _original_scale * k
 
+## Открытый водоём зимой замёрз: добывать из него нельзя (колодец работает круглый год).
+func is_frozen() -> bool:
+	return freezes_in_winter and Seasons.water_freezes()
+
+func get_frozen_prompt() -> String:
+	return "❄️ %s: вода замёрзла — дождитесь оттепели или копайте колодец" % object_name
+
+func _update_frozen_visual() -> void:
+	if not visual_node:
+		return
+	var surface: Node = visual_node.get_node_or_null("WaterSurface")
+	if not (surface is MeshInstance3D):
+		return
+	var mesh: MeshInstance3D = surface
+	var mat: StandardMaterial3D = null
+	if mesh.material_override is StandardMaterial3D:
+		mat = mesh.material_override
+	elif mesh.mesh is PrimitiveMesh:
+		var prim: PrimitiveMesh = mesh.mesh
+		var surf_mat: Material = prim.material
+		if surf_mat is StandardMaterial3D:
+			# Материал лежит на общем ресурсе сцены — копируем, чтобы лёд не утёк на все водоёмы.
+			var prim_copy: PrimitiveMesh = prim.duplicate()
+			mat = (surf_mat as StandardMaterial3D).duplicate()
+			prim_copy.material = mat
+			mesh.mesh = prim_copy
+	if mat == null:
+		return
+	if is_frozen():
+		mat.albedo_color = Color(0.82, 0.90, 0.98, 0.95)
+		mat.roughness = 0.55
+	else:
+		mat.albedo_color = Color(0.18, 0.58, 0.82, 0.88)
+		mat.roughness = 0.15
+
 func get_prompt() -> String:
+	if is_frozen():
+		return get_frozen_prompt()
 	if is_depleted and requires_planting:
 		if is_growing:
 			return "🌱 Саженец растёт: %d%% (ещё ~%d игр. ч.)" % [int(get_growth_ratio() * 100.0), int(ceil(growth_hours - growth_progress_hours))]
@@ -161,6 +214,10 @@ func get_prompt() -> String:
 	]
 
 func _on_interacted(player: Node) -> void:
+	if is_frozen():
+		if player and player.has_method("notify"):
+			player.notify(get_frozen_prompt())
+		return
 	if is_depleted and requires_planting:
 		if is_growing:
 			if player.has_method("notify"):

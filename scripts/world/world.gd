@@ -7,6 +7,7 @@ const SaveSlots = preload("res://scripts/core/save_slots.gd")
 const MainMenu = preload("res://scripts/ui/main_menu.gd")
 const PauseMenuController = preload("res://scripts/ui/pause_menu_controller.gd")
 const GameplayUIController = preload("res://scripts/ui/gameplay_ui_controller.gd")
+const ContractDB = preload("res://scripts/economy/contract_db.gd")
 
 ## Интервал автосохранения в секундах реального времени (только во время игры, не в паузе и не в меню).
 const AUTOSAVE_INTERVAL: float = 300.0
@@ -24,6 +25,7 @@ var _autosave_timer: float = 0.0
 @onready var hud: CanvasLayer = $HUD
 @onready var day_night_cycle: Node = $DayNightCycle
 @onready var weather_manager: Node = $WeatherManager
+@onready var season_manager: Node = $SeasonManager
 @onready var power_grid: Node = $PowerGrid
 
 func _ready() -> void:
@@ -56,6 +58,8 @@ func _ready() -> void:
 		if not weather_manager.weather_changed.is_connected(_on_weather_changed):
 			weather_manager.weather_changed.connect(_on_weather_changed)
 		_on_weather_changed(weather_manager.current_weather, "", "")
+	
+	_connect_seasons()
 	
 	if power_grid and hud and hud.has_method("update_power_display"):
 		if not power_grid.grid_updated.is_connected(_on_grid_updated):
@@ -91,6 +95,9 @@ func _init_session() -> void:
 		_show_main_menu()
 		return
 	var slot_id: String = str(request.get("load_slot", ""))
+	if slot_id == "":
+		# Новая игра не наследует статический прогресс контрактов прошлой сессии.
+		ContractDB.reset_completed()
 	if slot_id != "" and not SaveSlots.load_from_slot(self, slot_id):
 		if hud and hud.has_method("show_notification"):
 			hud.show_notification("⚠️ Не удалось загрузить %s — начата новая игра" % SaveSlots.get_slot_title(slot_id))
@@ -117,6 +124,23 @@ func _process(delta: float) -> void:
 		SaveSlots.save_to_slot(self, SaveSlots.AUTOSAVE_ID)
 
 # --- Подключение станций и погоды ---
+
+## Подключает SeasonManager: календарь в HUD, погодные события и их последствия.
+func _connect_seasons() -> void:
+	if not season_manager:
+		return
+	if hud and hud.has_method("update_season_display"):
+		if not season_manager.calendar_changed.is_connected(hud.update_season_display):
+			season_manager.calendar_changed.connect(hud.update_season_display)
+		if not season_manager.weather_event_started.is_connected(_on_season_event_started):
+			season_manager.weather_event_started.connect(_on_season_event_started)
+		hud.update_season_display()
+
+## Событие началось: применяем разрушения (молния, ураган) и обновляем HUD.
+func _on_season_event_started(event_id: String, _event_name: String) -> void:
+	season_manager.apply_event_effects(event_id)
+	if hud and hud.has_method("update_season_display"):
+		hud.update_season_display()
 
 func _connect_interactive_stations() -> void:
 	if not hud:

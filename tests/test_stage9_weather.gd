@@ -227,13 +227,20 @@ func _run_tests() -> void:
 	# -------------------------------------------------------------
 	print("\n--- Проверка 4: Сушка у печи, укрытие в доме и сон ---")
 	
-	# Сушка у раскаленной плавильни
+	#	# Сушка у раскалённой плавильни (dry_rate_near_fire = 2.0)
 	player.wetness = 80.0
 	player.global_position = smelter.global_position + Vector3(1.0, 0, 0.0)
 	weather_mgr.set_weather(WeatherManager.WeatherType.SUNNY)
 	player._handle_wetness(4.0)
-	if player.wetness >= 60.0:
-		_fail("Игрок у печи должен сохнуть очень быстро, текущая мокрота: %f" % player.wetness)
+	# За 4 с 80 - 2.0*4 = 72.0 — сушка есть, но медленнее, чем раньше.
+	if player.wetness >= 80.0:
+		_fail("Игрок у печи не сохнет (80 -> %.1f)" % player.wetness)
+		return
+	if absf(player.wetness - (80.0 - player.dry_rate_near_fire * 4.0)) >= 0.5:
+		_fail("Скорость сушки у печи не равна dry_rate_near_fire (факт %.1f)" % player.wetness)
+		return
+	if player.wetness >= 74.0:
+		_fail("После 4 с у печи мокрота должна опуститься ниже 74 (факт: %.1f)" % player.wetness)
 		return
 	print("  • Быстрая сушка возле плавильной печи работает (мокрота снизилась до %.1f%%)." % player.wetness)
 	

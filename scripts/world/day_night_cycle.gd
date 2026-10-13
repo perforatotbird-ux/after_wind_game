@@ -3,10 +3,22 @@ extends Node
 
 ## Система суточного цикла, динамического освещения и времени суток
 ## Соответствует разделам 7, 12, 13, 72 дизайн-документа
+## Сезон (Seasons) подкрашивает небо и солнце поверх суточного расчёта —
+## см. set_season_tint, который вызывает SeasonManager.
 
 signal time_changed(day: int, hour: int, minute: int, formatted: String, phase: String)
 signal day_passed(new_day: int)
 signal phase_changed(new_phase: String)
+
+const Seasons = preload("res://scripts/core/seasons.gd")
+
+## Оттенок неба и солнца по сезонам: [небо, горизонт, свет, сила подмешивания].
+const SEASON_TINTS: Dictionary = {
+	Seasons.SPRING: [Color(0.80, 0.90, 0.86), Color(0.78, 0.90, 0.80), Color(1.0, 1.0, 0.96), 0.18],
+	Seasons.SUMMER: [Color(0.55, 0.78, 0.98), Color(0.86, 0.88, 0.78), Color(1.0, 0.98, 0.88), 0.22],
+	Seasons.AUTUMN: [Color(0.78, 0.74, 0.66), Color(0.88, 0.74, 0.54), Color(1.0, 0.90, 0.74), 0.26],
+	Seasons.WINTER: [Color(0.72, 0.80, 0.92), Color(0.86, 0.90, 0.96), Color(0.88, 0.93, 1.0), 0.32],
+}
 
 @export_group("Time Settings")
 ## Длительность полных суток в секундах реального времени.
@@ -24,6 +36,9 @@ signal phase_changed(new_phase: String)
 var current_phase: String = "Утро"
 var _sky_material: ProceduralSkyMaterial = null
 var _last_reported_minute: int = -1
+## Активный сезонный оттенок: [небо, горизонт, свет, сила]. Пустой — без подкраски.
+var _season_tint: Array = []
+var _season: String = ""
 
 const GROUP: String = "day_night_cycle"
 
@@ -103,14 +118,27 @@ func get_time_string() -> String:
 	return "%s День %d | %02d:%02d (%s)" % [icon, current_day, hour_int, minute_int, get_current_phase()]
 
 func get_ambient_temperature() -> int:
-	# Температура в зависимости от времени суток
+	# Температура в зависимости от времени суток и сезона
+	var base: int = 14
 	if is_night():
-		return 11
-	match get_current_phase():
-		"Утро": return 16
-		"День": return 22
-		"Вечер": return 18
-		_: return 14
+		base = 11
+	else:
+		match get_current_phase():
+			"Утро": base = 16
+			"День": base = 22
+			"Вечер": base = 18
+			_: base = 14
+	return base + Seasons.get_temperature_offset()
+
+## Подкрашивает небо и солнце под сезон. season = "" — убрать подкраску
+## (система сезонов выключена или ещё не определена).
+func set_season_tint(season: String) -> void:
+	_season = season if SEASON_TINTS.has(season) else ""
+	_season_tint = SEASON_TINTS.get(season, []) as Array
+	_update_lighting_and_sky(true)
+
+func get_season() -> String:
+	return _season
 
 func set_time(day: int, hour: float) -> void:
 	current_day = max(1, day)
@@ -222,6 +250,14 @@ func _update_lighting_and_sky(force: bool) -> void:
 		sun_light.rotation_degrees = Vector3(-sun_pitch_deg, sun_yaw_deg, 0.0)
 		sun_light.light_energy = light_energy
 		sun_light.light_color = light_color
+	
+	# Сезонный оттенок поверх суточного расчёта: зима — белее и холоднее, лето — сочнее.
+	if _season_tint.size() >= 4:
+		var strength: float = float(_season_tint[3])
+		sky_top = sky_top.lerp(_season_tint[0], strength)
+		sky_horiz = sky_horiz.lerp(_season_tint[1], strength)
+		ground_horiz = ground_horiz.lerp(_season_tint[1], strength * 0.5)
+		light_color = light_color.lerp(_season_tint[2], strength)
 	
 	if _sky_material:
 		_sky_material.sky_top_color = sky_top
