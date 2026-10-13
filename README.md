@@ -2,7 +2,7 @@
 
 [![Engine: Godot 4.7.2](https://img.shields.io/badge/Engine-Godot%204.7.2-blue.svg)](https://godotengine.org)
 [![Status: Chapter 1](https://img.shields.io/badge/Status-Chapter%201%20%7C%20Base%20Restored-brightgreen.svg)]()
-[![Tests: 47](https://img.shields.io/badge/Godot_tests-47-blue.svg)](tests/)
+[![Tests: 48](https://img.shields.io/badge/Godot_tests-48-blue.svg)](tests/)
 
 > Изометрический 3D-симулятор выживания, добычи, переработки, фермерства, электрогенерации и восстановления разрушенного поселения после катаклизма.
 
@@ -58,6 +58,7 @@ Linux / macOS: `python3 tools/run_tests.py --godot godot`.
 13. Улучшение машин на месте до Lv.3: быстрее, долговечнее, мощнее; улучшенные верстак и печь делают компоненты нового уровня (сталь, точные шестерни, целебная вода).
 14. Финал «BASE RESTORED» по 8 вехам; станки должны отработать хотя бы один цикл.
 15. Анимации героя (ретаргет UAL), орбитальная камера.
-16. Камни и деревья: стилизованные генераторы (`tools/generate_rocks.gd`, `tools/generate_trees.gd`).
+16. Костёр по референсу: поленья и каменное кольцо, живое пламя, угли, искры, дым; топливо горит и без готовки, после его окончания огонь гаснет.
+17. Камни и деревья: стилизованные генераторы (`tools/generate_rocks.gd`, `tools/generate_trees.gd`).
 
 Модель героя (Шахтёр) используется в игре; в репозитории остаются неиспользуемыми старые скелетные модели `scenes/player/miner_model.tscn` и `scenes/player/character_model.tscn` (Фермер). Портреты классов прописаны в `CharacterClassDB`, но в интерфейсе пока не показываются.

@@ -48,3 +48,6 @@ trader_build/
 
 # Сборка исправной и разрушенной моделей очистителя
 water_filter_build/
+
+# Blender-сборка костра по референсу
+campfire_build/

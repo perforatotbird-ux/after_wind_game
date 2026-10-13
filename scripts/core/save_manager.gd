@@ -170,7 +170,7 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	var deposits: Array = []
 	for node in world.find_children("*", "", true, false):
 		if node is ProductionMachine:
-			machines.append({
+			var machine_data: Dictionary = {
 				"path": str(world.get_path_to(node)),
 				"recipe_id": node.active_recipe.get("id", "") if node.is_machine_running else "",
 				"timer": node.process_timer,
@@ -185,7 +185,10 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"fuel_slots": node.fuel_slots.duplicate(true) if node.has_fuel_slots else [],
 				"fuel_burn_left": maxf(0.0, float(node.fuel_burn_left)),
 				"rebuilt": bool(node.rebuilt) if "rebuilt" in node else true
-			})
+			}
+			if node is Campfire:
+				machine_data["fire_has_burned"] = node.has_burned
+			machines.append(machine_data)
 		elif node is ResourceNodeScript:
 			resources.append({
 				"path": str(world.get_path_to(node)),
@@ -587,6 +590,9 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		# старые сохранения не знали о разрушенных станках.
 		if state.has("rebuilt"):
 			machine.set_rebuilt(bool(state["rebuilt"]))
+		if machine is Campfire:
+			machine.has_burned = bool(state.get("fire_has_burned", false)) or machine.is_lit()
+			machine.refresh_fire_visuals(true)
 		if machine.visual_node:
 			machine.visual_node.position = machine._original_pos
 		if machine.has_signal("outputs_changed"):
@@ -859,6 +865,8 @@ static func _validate_save_data(data: Dictionary) -> bool:
 					if not _is_integer(fs.get("count", 0), 0.0, float(ProductionMachine.FUEL_SLOT_STACK)):
 						return false
 			if state.has("fuel_burn_left") and not _is_number(state["fuel_burn_left"], 0.0, 10000.0):
+				return false
+			if state.has("fire_has_burned") and not state["fire_has_burned"] is bool:
 				return false
 			if state.has("rebuilt") and not state["rebuilt"] is bool:
 				return false

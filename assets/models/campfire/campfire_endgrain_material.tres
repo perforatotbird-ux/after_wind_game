@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/models/campfire/campfire_endgrain_texture.tres" id="1_yoc1f"]
+
+[resource]
+resource_name = "CampfireEndgrain"
+cull_mode = 2
+albedo_texture = ExtResource("1_yoc1f")
+roughness = 0.95
+texture_filter = 5
+metadata/_gltf_primary_texture_coord = 0

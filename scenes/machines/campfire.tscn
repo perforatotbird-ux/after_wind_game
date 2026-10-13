@@ -1,212 +1,25 @@
-[gd_scene load_steps=19 format=3 uid="uid://c2mpfi7q1x3dw"]
-
+[gd_scene load_steps=5 format=3 uid="uid://c2mpfi7q1x3dw"]
 [ext_resource type="Script" path="res://scripts/crafting/campfire.gd" id="1_fire"]
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
-size = Vector3(2.4, 1.4, 2.4)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_stone"]
-albedo_color = Color(0.44, 0.43, 0.41, 1)
-roughness = 0.95
-
-[sub_resource type="SphereMesh" id="SphereMesh_stone"]
-material = SubResource("StandardMaterial3D_stone")
-radius = 0.22
-height = 0.36
-radial_segments = 8
-rings = 5
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_log"]
-albedo_color = Color(0.32, 0.21, 0.13, 1)
-roughness = 0.9
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_log"]
-material = SubResource("StandardMaterial3D_log")
-top_radius = 0.09
-bottom_radius = 0.11
-height = 0.9
-radial_segments = 8
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ember"]
-albedo_color = Color(0.62, 0.18, 0.05, 1)
-roughness = 0.6
-emission_enabled = true
-emission = Color(1, 0.42, 0.08, 1)
-emission_energy_multiplier = 2.4
-
-[sub_resource type="SphereMesh" id="SphereMesh_ember"]
-material = SubResource("StandardMaterial3D_ember")
-radius = 0.2
-height = 0.16
-radial_segments = 10
-rings = 6
-
-[sub_resource type="Gradient" id="Gradient_flame"]
-colors = PackedColorArray(1, 0.86, 0.35, 1, 1, 0.52, 0.14, 0.85, 0.75, 0.18, 0.05, 0)
-
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_flame"]
-gradient = SubResource("Gradient_flame")
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_flame"]
-transparency = 1
-vertex_color_use_as_albedo = true
-shading_mode = 0
-billboard_mode = 3
-emission_enabled = true
-emission = Color(1, 0.6, 0.2, 1)
-emission_energy_multiplier = 3.0
-
-[sub_resource type="QuadMesh" id="QuadMesh_flame"]
-material = SubResource("StandardMaterial3D_flame")
-size = Vector2(0.55, 0.75)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ash"]
-albedo_color = Color(0.26, 0.24, 0.22, 1)
-roughness = 1.0
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_ash"]
-material = SubResource("StandardMaterial3D_ash")
-top_radius = 0.55
-bottom_radius = 0.62
-height = 0.08
-radial_segments = 12
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pot"]
-albedo_color = Color(0.2, 0.2, 0.22, 1)
-metallic = 0.7
-roughness = 0.45
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_pot"]
-material = SubResource("StandardMaterial3D_pot")
-top_radius = 0.22
-bottom_radius = 0.18
-height = 0.3
-radial_segments = 10
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_spork"]
-albedo_color = Color(0.35, 0.35, 0.38, 1)
-metallic = 0.8
-roughness = 0.35
-
-[sub_resource type="BoxMesh" id="BoxMesh_spork"]
-material = SubResource("StandardMaterial3D_spork")
-size = Vector3(0.025, 0.5, 0.025)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_smoke"]
-transparency = 1
-albedo_color = Color(0.6, 0.6, 0.62, 0.3)
-shading_mode = 0
-
-[sub_resource type="QuadMesh" id="QuadMesh_smoke"]
-material = SubResource("StandardMaterial3D_smoke")
-size = Vector2(0.7, 0.7)
-
-[node name="Campfire" type="Area3D" node_paths=PackedStringArray("visual_node", "fire_light", "flame_particles")]
+[ext_resource type="PackedScene" path="res://assets/models/campfire/campfire_model.tscn" id="2_model"]
+[sub_resource type="BoxShape3D" id="Interaction"]
+size = Vector3(2.4, 1.6, 2.4)
+[sub_resource type="CylinderShape3D" id="Solid"]
+height = 0.45
+radius = 0.73
+[node name="Campfire" type="Area3D" node_paths=PackedStringArray("visual_node")]
 collision_layer = 8
 collision_mask = 0
 script = ExtResource("1_fire")
 visual_node = NodePath("Visual")
-fire_light = NodePath("FireLight")
-flame_particles = NodePath("FlameParticles")
-
+shake_strength = 0.0
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("BoxShape3D_interact")
-
+position = Vector3(0, 0.6, 0)
+shape = SubResource("Interaction")
 [node name="Visual" type="Node3D" parent="."]
-
-[node name="AshBed" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, 0)
-mesh = SubResource("CylinderMesh_ash")
-
-[node name="Stone1" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.62, 0.13, 0.12)
-mesh = SubResource("SphereMesh_stone")
-
-[node name="Stone2" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(0.94, 0, 0.34, 0, 0.94, 0, -0.34, 0, 0.94, -0.16, 0.13, 0.6)
-mesh = SubResource("SphereMesh_stone")
-
-[node name="Stone3" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, 0.13, 0.28)
-mesh = SubResource("SphereMesh_stone")
-
-[node name="Stone4" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(0.9, 0, -0.42, 0, 0.9, 0, 0.42, 0, 0.9, 0.1, 0.13, -0.62)
-mesh = SubResource("SphereMesh_stone")
-
-[node name="Stone5" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, 0.13, -0.56)
-mesh = SubResource("SphereMesh_stone")
-
-[node name="Stone6" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0.13, -0.6)
-mesh = SubResource("SphereMesh_stone")
-
-[node name="Log1" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(0.42, -0.66, 0, 0.66, 0.42, 0, 0, 0, 1, 0, 0.2, 0)
-mesh = SubResource("CylinderMesh_log")
-
-[node name="Log2" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(-0.42, 0.66, 0, -0.66, 0.42, 0, 0, 0, 1, 0, 0.2, 0)
-mesh = SubResource("CylinderMesh_log")
-
-[node name="Log3" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(-0.4, 0.68, 0, -0.68, -0.4, 0, 0, 0, 1, 0, 0.24, 0)
-mesh = SubResource("CylinderMesh_log")
-
-[node name="Log4" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(0.4, -0.68, 0, 0.68, -0.4, 0, 0, 0, 1, 0, 0.24, 0)
-mesh = SubResource("CylinderMesh_log")
-
-[node name="Embers" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09, 0)
-mesh = SubResource("SphereMesh_ember")
-
-[node name="Pot" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.33, 0.34)
-mesh = SubResource("CylinderMesh_pot")
-
-[node name="Spork" type="MeshInstance3D" parent="Visual"]
-transform = Transform3D(0.22, 0.97, 0, 0, 1, 0, -0.97, 0, 0.22, 0.22, 0.45, 0.42)
-mesh = SubResource("BoxMesh_spork")
-
-[node name="FireLight" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
-light_color = Color(1, 0.68, 0.36, 1)
-light_energy = 0.5
-omni_range = 9.0
-omni_attenuation = 1.2
-
-[node name="FlameParticles" type="CPUParticles3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
-emitting = false
-amount = 28
-lifetime = 0.7
-mesh = SubResource("QuadMesh_flame")
-emission_shape = 1
-emission_sphere_radius = 0.24
-direction = Vector3(0, 1, 0)
-spread = 12.0
-gravity = Vector3(0, 1.6, 0)
-initial_velocity_min = 0.6
-initial_velocity_max = 1.1
-scale_min = 0.7
-scale_max = 1.4
-color_initial_ramp = SubResource("GradientTexture1D_flame")
-
-[node name="SmokeParticles" type="CPUParticles3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-emitting = false
-amount = 12
-lifetime = 2.4
-mesh = SubResource("QuadMesh_smoke")
-emission_shape = 1
-emission_sphere_radius = 0.18
-direction = Vector3(0.2, 1, 0.1)
-spread = 8.0
-gravity = Vector3(0.35, 0.8, 0.1)
-initial_velocity_min = 0.5
-initial_velocity_max = 0.9
-scale_min = 0.5
-scale_max = 1.6
+[node name="CampfireModel" parent="Visual" instance=ExtResource("2_model")]
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+position = Vector3(0, 0.225, 0)
+shape = SubResource("Solid")

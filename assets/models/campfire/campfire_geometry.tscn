@@ -1,0 +1,31 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/models/campfire/campfire_logs_mesh.tres" id="1_e1umc"]
+[ext_resource type="ArrayMesh" path="res://assets/models/campfire/campfire_kindling_mesh.tres" id="2_ttv31"]
+[ext_resource type="ArrayMesh" path="res://assets/models/campfire/campfire_stone_ring_mesh.tres" id="3_dns8f"]
+[ext_resource type="ArrayMesh" path="res://assets/models/campfire/campfire_charcoal_mesh.tres" id="4_gklkd"]
+[ext_resource type="ArrayMesh" path="res://assets/models/campfire/campfire_ground_bed_mesh.tres" id="5_yceiq"]
+
+[node name="CampfireGeometry" type="Node3D" unique_id=701009246]
+
+[node name="Logs" type="MeshInstance3D" parent="." unique_id=1093338693]
+mesh = ExtResource("1_e1umc")
+skeleton = NodePath("")
+
+[node name="Kindling" type="MeshInstance3D" parent="." unique_id=2000990209]
+mesh = ExtResource("2_ttv31")
+skeleton = NodePath("")
+
+[node name="StoneRing" type="MeshInstance3D" parent="." unique_id=1078005676]
+transform = Transform3D(0.2728821, 0, 0.9620475, 0, 1, 0, -0.9620475, 0, 0.2728821, 0.7795459, 0.15, 0)
+mesh = ExtResource("3_dns8f")
+skeleton = NodePath("")
+
+[node name="Charcoal" type="MeshInstance3D" parent="." unique_id=1532760823]
+transform = Transform3D(0.6923604, 0, -0.7215519, 0, 1, 0, 0.7215519, 0, 0.6923604, -0.15493156, 0.075, -0.030477913)
+mesh = ExtResource("4_gklkd")
+skeleton = NodePath("")
+
+[node name="GroundBed" type="MeshInstance3D" parent="." unique_id=469177505]
+mesh = ExtResource("5_yceiq")
+skeleton = NodePath("")

@@ -592,6 +592,8 @@ func is_near_heat() -> bool:
 		return true
 	if get_tree():
 		for source in get_tree().get_nodes_in_group("heat_sources"):
+			if is_instance_valid(source) and source.has_method("is_lit") and not source.is_lit():
+				continue
 			if is_instance_valid(source) and global_position.distance_to(source.global_position) < 4.2:
 				return true
 	return false
