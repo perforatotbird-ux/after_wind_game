@@ -1,0 +1,21 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/models/water_filter/filter_albedo.tres" id="1_4cihe"]
+[ext_resource type="Texture2D" path="res://assets/models/water_filter/filter_orm.tres" id="2_rvacp"]
+[ext_resource type="Texture2D" path="res://assets/models/water_filter/filter_normal.tres" id="3_s7tsh"]
+
+[resource]
+resource_name = "FilterDamagedPBR"
+cull_mode = 2
+vertex_color_use_as_albedo = true
+albedo_color = Color(0.85, 0.79, 0.7, 1)
+albedo_texture = ExtResource("1_4cihe")
+metallic = 0.35
+metallic_texture = ExtResource("2_rvacp")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_rvacp")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_s7tsh")
+texture_filter = 5
+metadata/_gltf_primary_texture_coord = 0
