@@ -1,0 +1,16 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/models/house/house_wood_texture.tres" id="1_e3rpn"]
+[ext_resource type="Texture2D" path="res://assets/models/house/house_wood_normal_texture.tres" id="2_yysxp"]
+
+[resource]
+resource_name = "HouseTrim"
+cull_mode = 2
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("1_e3rpn")
+roughness = 0.86
+normal_enabled = true
+normal_scale = 0.5
+normal_texture = ExtResource("2_yysxp")
+texture_filter = 5
+metadata/_gltf_primary_texture_coord = 0
