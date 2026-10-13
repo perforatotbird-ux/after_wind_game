@@ -1,0 +1,82 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/buildings/warehouse_visual.gd" id="1_6kji4"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_foundation_mesh.tres" id="2_q0rqu"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_shell_mesh.tres" id="3_jg2ql"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_hardware_mesh.tres" id="4_irv8t"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_frame_mesh.tres" id="5_r0xm0"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_roof_mesh.tres" id="6_vkhgn"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_doors_mesh.tres" id="7_422cm"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_goods_mesh.tres" id="8_o1e5f"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_gear_mesh.tres" id="9_ob7dk"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_crank_mesh.tres" id="10_ymryd"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_chain_mesh.tres" id="11_el65i"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_hook_mesh.tres" id="12_k3ldp"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_lanterns_mesh.tres" id="13_lqneo"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_glow_mesh.tres" id="14_0diin"]
+[ext_resource type="ArrayMesh" path="res://assets/models/warehouse/warehouse_restored_tarp_mesh.tres" id="15_qwyhg"]
+
+[node name="WarehouseRestored" type="Node3D" unique_id=2072550430]
+script = ExtResource("1_6kji4")
+storage_stage = 2
+
+[node name="Foundation" type="MeshInstance3D" parent="." unique_id=1120064799]
+mesh = ExtResource("2_q0rqu")
+skeleton = NodePath("")
+
+[node name="Shell" type="MeshInstance3D" parent="." unique_id=69918986]
+mesh = ExtResource("3_jg2ql")
+skeleton = NodePath("")
+
+[node name="Hardware" type="MeshInstance3D" parent="." unique_id=294609817]
+mesh = ExtResource("4_irv8t")
+skeleton = NodePath("")
+
+[node name="Frame" type="MeshInstance3D" parent="." unique_id=252896314]
+mesh = ExtResource("5_r0xm0")
+skeleton = NodePath("")
+
+[node name="Roof" type="MeshInstance3D" parent="." unique_id=1575119027]
+mesh = ExtResource("6_vkhgn")
+skeleton = NodePath("")
+
+[node name="Doors" type="MeshInstance3D" parent="." unique_id=2112620884]
+mesh = ExtResource("7_422cm")
+skeleton = NodePath("")
+
+[node name="Goods" type="MeshInstance3D" parent="." unique_id=368883967]
+mesh = ExtResource("8_o1e5f")
+skeleton = NodePath("")
+
+[node name="Gear" type="MeshInstance3D" parent="." unique_id=2009953240]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.15, 2.16)
+mesh = ExtResource("9_ob7dk")
+skeleton = NodePath("")
+
+[node name="Crank" type="MeshInstance3D" parent="." unique_id=1815326332]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.28, 3.15, 2.17)
+mesh = ExtResource("10_ymryd")
+skeleton = NodePath("")
+
+[node name="Chain" type="MeshInstance3D" parent="." unique_id=1429149035]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.16, 2.2)
+mesh = ExtResource("11_el65i")
+skeleton = NodePath("")
+
+[node name="Hook" type="MeshInstance3D" parent="." unique_id=1419812394]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 2.2)
+mesh = ExtResource("12_k3ldp")
+skeleton = NodePath("")
+
+[node name="Lanterns" type="MeshInstance3D" parent="." unique_id=824316786]
+mesh = ExtResource("13_lqneo")
+skeleton = NodePath("")
+
+[node name="Glow" type="MeshInstance3D" parent="." unique_id=665350899]
+mesh = ExtResource("14_0diin")
+skeleton = NodePath("")
+
+[node name="Tarp" type="MeshInstance3D" parent="." unique_id=1225939333]
+visible = false
+mesh = ExtResource("15_qwyhg")
+skeleton = NodePath("")
