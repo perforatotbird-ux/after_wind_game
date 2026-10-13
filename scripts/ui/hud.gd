@@ -1132,6 +1132,8 @@ func set_credits(amount: int) -> void:
 
 # --- Окно Контрактов и NPC ---
 func open_contract_window(source_node: Node = null) -> void:
+	if is_instance_valid(_current_active_npc) and _current_active_npc != source_node and _current_active_npc.has_method("end_dialogue"):
+		_current_active_npc.end_dialogue()
 	_current_active_npc = source_node
 	if not contract_window:
 		return
@@ -1144,6 +1146,8 @@ func open_contract_window(source_node: Node = null) -> void:
 	_refresh_contract_window()
 
 func close_contract_window() -> void:
+	if is_instance_valid(_current_active_npc) and _current_active_npc.has_method("end_dialogue"):
+		_current_active_npc.end_dialogue()
 	if contract_window:
 		contract_window.visible = false
 	_current_active_npc = null

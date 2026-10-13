@@ -12,8 +12,10 @@ const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 @export var greeting_text: String = "Приветствую, выживший! Буря натворила бед, но смотрю, твоя база оживает. У меня есть срочные заказы от соседних поселений — заплатят щедро!"
 @export var visual_node: Node3D
 
-var _orig_y: float = 0.0
-var _anim_time: float = 0.0
+var animation_player: AnimationPlayer
+var _dialogue_active: bool = false
+var _target_player: Node3D
+var _rest_yaw: float = 0.0
 var is_trader: bool = true
 var is_npc: bool = true
 var starter_seeds_given: bool = false
@@ -26,18 +28,48 @@ func _ready() -> void:
 	if not visual_node:
 		visual_node = get_node_or_null("Visual")
 	if visual_node:
-		_orig_y = visual_node.position.y
+		_rest_yaw = visual_node.rotation.y
+		animation_player = visual_node.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	if animation_player:
+		animation_player.animation_finished.connect(_on_animation_finished)
+		animation_player.play("idle")
 
 func _process(delta: float) -> void:
-	if visual_node:
-		_anim_time += delta * 2.5
-		# Мягкое дыхание / покачивание персонажа
-		visual_node.position.y = _orig_y + sin(_anim_time) * 0.03
+	# Feet stay on the ground; only the visual turns toward the interlocutor.
+	if not visual_node:
+		return
+	var yaw := _rest_yaw
+	if _dialogue_active and is_instance_valid(_target_player):
+		var direction := global_transform.basis.inverse() * (_target_player.global_position - global_position)
+		if Vector2(direction.x, direction.z).length_squared() > 0.01:
+			yaw = atan2(direction.x, direction.z)
+	visual_node.rotation.y = lerp_angle(visual_node.rotation.y, yaw, minf(delta * 5.0, 1.0))
+
+func begin_dialogue(player: Node = null) -> void:
+	_target_player = player as Node3D
+	if _dialogue_active:
+		return
+	_dialogue_active = true
+	_play_animation("greet")
+
+func end_dialogue() -> void:
+	_dialogue_active = false
+	_target_player = null
+	_play_animation("idle")
+
+func _play_animation(anim: StringName) -> void:
+	if animation_player and animation_player.has_animation(anim):
+		animation_player.play(anim, 0.2)
+
+func _on_animation_finished(anim: StringName) -> void:
+	if anim in [&"greet", &"talk"]:
+		_play_animation("talk" if _dialogue_active else "idle")
 
 func get_prompt() -> String:
 	return "[E] Поговорить: %s" % object_name
 
 func _on_interacted(player: Node) -> void:
+	begin_dialogue(player)
 	dialogue_opened.emit(self)
 	var inv = player.get("inventory") if player else null
 	if inv and not starter_seeds_given:

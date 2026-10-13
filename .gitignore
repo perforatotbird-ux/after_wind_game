@@ -42,3 +42,6 @@ smelter_build/
 crusher_build/
 storage_build/
 hero_build/
+
+# Сборка присланной модели торговца
+trader_build/
