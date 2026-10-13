@@ -114,7 +114,7 @@ func _build_ui() -> void:
 	_add_menu_button(v, "⚙  Настройки", _on_settings_pressed)
 	_add_menu_button(v, "⏻  Выход", _on_quit_pressed)
 
-	var tip := UI.make_label("WASD — ходьба · ПКМ + мышь — камера · E — действие · Esc — пауза", 11, UI.COLOR_DIM)
+	var tip := UI.make_label("WASD — ходьба · Пробел — прыжок · ПКМ + мышь — камера · E — действие · Esc — пауза", 11, UI.COLOR_DIM)
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(tip)

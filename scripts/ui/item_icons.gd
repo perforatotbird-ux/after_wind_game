@@ -520,11 +520,10 @@ static func _shape(img: Image, shape: String, base: Color, accent: Color, g: flo
 			_line(img, 9, 17, 25, 10, 5, base, g)
 			_line(img, 25, 10, 39, 15, 5, base, g)
 		"shovel":
-			_line(img, 24, 7, 24, 30, 4, accent, g)
-			_rect(img, 18, 4, 12, 4, accent, g)
-			_ellipse(img, 24, 36, 9, 9, base, g)
+			_line(img, 16, 42, 29, 9, 4, accent, g)
+			_rect(img, 26, 8, 17, 8, base, g)
 			if d:
-				_line(img, 21, 33, 21, 40, 1.5, base.lightened(0.35))
+				_line(img, 29, 15, 42, 15, 1.5, base.lightened(0.35))
 		"bucket":
 			_rect(img, 12, 16, 24, 24, base, g)
 			_rect(img, 10, 14, 28, 4, accent, g)

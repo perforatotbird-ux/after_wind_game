@@ -14,13 +14,22 @@ const BucketInHandScene = preload("res://scenes/tools/bucket_inhand.tscn")
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 
 var _test_executed: bool = false
+var fixture_frames := 0
 
 func _init() -> void:
 	print(">>> Инициализация теста Equipped Tools...")
 	var player_instance = PlayerScene.instantiate()
+	var floor_ := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new(); box.size = Vector3(40, 1, 40)
+	shape.shape = box; floor_.add_child(shape); floor_.position.y = -0.5
+	root.add_child(floor_)
 	root.add_child(player_instance)
 
 func _process(_delta: float) -> bool:
+	fixture_frames += 1
+	if fixture_frames < 10:
+		return false
 	if _test_executed:
 		return false
 	_test_executed = true

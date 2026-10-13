@@ -80,7 +80,7 @@ func _on_interacted(player: Node) -> void:
 		DroppedItemScript.give_or_drop(player, "seeds_potato", 2, drop_at, get_parent())
 		DroppedItemScript.give_or_drop(player, "seeds_wheat", 3, drop_at, get_parent())
 		if player.has_method("notify"):
-			player.notify("👨‍🌾 Степан: «Держи семена моркови, картошки и пшеницы! Вскопай грядку лопатой и наладь урожай.»")
+			player.notify("👨‍🌾 Степан: «Держи семена моркови, картошки и пшеницы! Вскопай грядку мотыгой и наладь урожай.»")
 			return
 	
 	if player.has_method("notify"):

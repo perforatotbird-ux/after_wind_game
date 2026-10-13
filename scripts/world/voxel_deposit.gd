@@ -4,7 +4,7 @@ extends "res://scripts/interaction/interactable.gd"
 ## Копаемая жила: участок земли из разрушаемых вокселей 0.5 м.
 ##
 ## Игрок наводит курсор (или просто смотрит) на блок грунта рядом с собой и бьёт
-## лопатой или киркой: каждый блок разбивается за несколько ударов и выдаёт свой
+## мотыгой или киркой: каждый блок разбивается за несколько ударов и выдаёт свой
 ## ресурс. Сверху участок неотличим от травы (кроме камешков-«выходов» породы),
 ## внутри — грунт и 1–3 вида простых ресурсов: песок, глина, уголь, железная руда.
 ## Внешнее кольцо блоков (стенки) и нижний слой (скальное основание) не копаются,
@@ -366,7 +366,7 @@ func _equipped_dig_tool(inv: Object) -> String:
 		return "pickaxe"
 	return ""
 
-## Ударов на блок: мягкий грунт киркой копается на удар дольше, чем лопатой.
+## Ударов на блок: мягкий грунт киркой копается на удар дольше, чем мотыгой.
 func hits_for(mat: int, tool_type: String) -> int:
 	var hits: int = MAT_HITS[mat]
 	if tool_type == "pickaxe" and MAT_TOOL[mat] == "shovel":
@@ -421,7 +421,7 @@ func get_prompt() -> String:
 	var tool_data: Dictionary = ItemDB.get_item(MAT_TOOL[mat])
 	var tool_label: String = "%s %s" % [tool_data.get("icon", ""), tool_data.get("name", MAT_TOOL[mat])]
 	if MAT_TOOL[mat] == "shovel":
-		tool_label = "🪏 лопата или ⛏️ кирка"
+		tool_label = "🪏 мотыга или ⛏️ кирка"
 	if not _target_ok:
 		return "%s: нужна %s (клавиши 1–5)%s" % [MAT_NAMES[mat], tool_label, found]
 	return "[E/ЛКМ] Копать: %s (%s) [%d/%d]%s" % [MAT_NAMES[mat], tool_label, current_hits, max_hits, found]

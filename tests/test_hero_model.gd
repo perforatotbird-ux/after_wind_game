@@ -75,8 +75,21 @@ func _process(_d: float) -> bool:
 	var near := INF
 	var far := 0.0
 	for v in pv:
-		near = minf(near, (pick.transform * v).length())
 		far = maxf(far, (pick.transform * v).length())
+	# Нормализованная low-poly рукоять имеет длинные грани: близких к хвату
+	# вершин может не быть. Измеряем расстояние до поверхности, а не до вершин.
+	var indices: PackedInt32Array = pick.mesh.surface_get_arrays(0)[Mesh.ARRAY_INDEX]
+	for i in range(0, indices.size(), 3):
+		var a: Vector3 = pick.transform * pv[indices[i]]
+		var b: Vector3 = pick.transform * pv[indices[i + 1]]
+		var c: Vector3 = pick.transform * pv[indices[i + 2]]
+		var normal := (b - a).cross(c - a).normalized()
+		var projected := normal * normal.dot(a)
+		if (b-a).cross(projected-a).dot(normal) >= 0 and (c-b).cross(projected-b).dot(normal) >= 0 and (a-c).cross(projected-c).dot(normal) >= 0:
+			near = minf(near, projected.length())
+		else:
+			for edge in [[a,b],[b,c],[c,a]]:
+				near = minf(near, Geometry3D.get_closest_point_to_segment(Vector3.ZERO, edge[0], edge[1]).length())
 	if near > 0.05:
 		errors.append("черенок не проходит через кулак (%.3f м от центра хвата)" % near)
 	if far < 0.5 or far > 1.4:

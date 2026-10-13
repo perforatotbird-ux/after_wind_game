@@ -2,7 +2,7 @@
 
 [ext_resource type="ArrayMesh" path="res://assets/models/character/hero/hero_helmet_mesh.tres" id="1_da8m5"]
 [ext_resource type="ArrayMesh" path="res://assets/models/character/hero/hero_body_mesh.tres" id="2_or28x"]
-[ext_resource type="ArrayMesh" path="res://assets/models/character/hero/hero_pickaxe_mesh.tres" id="3_64ye8"]
+[ext_resource type="ArrayMesh" path="res://assets/models/tools/pickaxe_equipped_mesh.tres" id="3_64ye8"]
 [ext_resource type="AnimationLibrary" path="res://assets/animations/miner_ual_animations.tres" id="4_fi276"]
 
 [sub_resource type="Skin" id="Skin_8xj4e"]

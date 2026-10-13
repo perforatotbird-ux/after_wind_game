@@ -582,7 +582,9 @@ func _build_scene(dst: Rig, lib: AnimationLibrary, fist: Animation) -> void:
 	var psrc := proot.find_child("Pickaxe", true, false) as MeshInstance3D
 	var pick := MeshInstance3D.new()
 	pick.name = "Pickaxe"
-	pick.mesh = _save_mesh(psrc.mesh, mats["pickaxe"], HERO_DIR + "hero_pickaxe_mesh.tres", false)
+	# Отделённый инструмент исходного AI-меша имел силуэт топора.
+	# Игровая кирка одинакова в idle и mine; ресурс создаёт create_hoe_model.gd.
+	pick.mesh = load("res://assets/models/tools/pickaxe_equipped_mesh.tres")
 	# В исходной модели черенок перпендикулярен предплечью. В ударе (UAL OverhandThrow) кулак
 	# повёрнут большим пальцем внутрь, и длинная кирка уходила вбок; наклон черенка к костяшкам
 	# (+X сокета) — естественный хват: головка опускается вперёд-вниз, к цели.

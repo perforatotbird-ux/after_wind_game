@@ -16,6 +16,16 @@ signal character_class_changed(class_id: String, c_name: String)
 @export var sprint_speed: float = 7.2
 @export var acceleration: float = 12.0
 @export var rotation_speed: float = 10.0
+@export var jump_speed: float = 4.6
+const JUMP_BUFFER_TIME := 0.12
+const COYOTE_TIME := 0.10
+var is_jumping := false
+var _jump_buffer := 0.0
+var _coyote_left := 0.0
+var _jump_elapsed := 0.0
+var _landing_left := 0.0
+var _air_elapsed := 0.0
+var hoe_grip: SkeletonModifier3D
 
 @export_group("Stats")
 @export var max_health: float = 100.0
@@ -84,6 +94,9 @@ const ANIM_ALIASES: Dictionary = {
 	"mine": ["mine", "Track_Pickaxe_Swing", "Track_Pickaxe_Swing_Heavy", "ual_Chop"],
 	"chop": ["chop", "mine", "ual_Chop", "Track_Pickaxe_Swing"],
 	"dig": ["dig", "Track_Pickaxe_Dig_Loop", "Track_Pickaxe_Dig", "mine", "Track_Pickaxe_Swing"],
+	"jump_start": ["jump_start"],
+	"jump_loop": ["jump_loop"],
+	"jump_land": ["jump_land"],
 	"scoop": ["scoop", "Track_Pickaxe_Dig_Loop", "Track_Pickaxe_Dig", "idle", "Track_Idle"],
 }
 ## Выше этой скорости (м/с) вместо шага играется лёгкий бег (jog): walk_speed = 4.5 м/с.
@@ -127,7 +140,7 @@ var equipped_tool_nodes: Dictionary = {}
 var bucket_full_mesh: Node3D = null
 var bucket_filled: bool = false
 var _bucket_full_timer: float = 0.0
-# Копание лопатой (анимация dig) и набор воды (анимация scoop + капли).
+# Копание мотыгой (анимация dig) и набор воды (анимация scoop + капли).
 var is_digging: bool = false
 var _dig_elapsed: float = 0.0
 var _dig_duration: float = 1.1
@@ -141,7 +154,8 @@ var _scoop_droplets_done: bool = false
 var _scoop_filled_done: bool = false
 
 const AxeInHandScene = preload("res://scenes/tools/axe_inhand.tscn")
-const ShovelInHandScene = preload("res://scenes/tools/shovel_inhand.tscn")
+const ShovelInHandScene = preload("res://scenes/tools/hoe_inhand.tscn")
+const HoeGripModifier = preload("res://scripts/player/hoe_grip_modifier.gd")
 const BucketInHandScene = preload("res://scenes/tools/bucket_inhand.tscn")
 const BucketFullInHandScene = preload("res://scenes/tools/bucket_full_inhand.tscn")
 ## Хват in-hand моделей в сокете ToolSocket.R героя: начало сокета — центр кулака,
@@ -149,8 +163,7 @@ const BucketFullInHandScene = preload("res://scenes/tools/bucket_full_inhand.tsc
 ## Меш axe_inhand смоделирован топорищем вверх и головой вниз (-Y): в руке он был
 ## перевёрнут. Поворот на 180° вокруг X ставит голову над кулаком, сохраняя направление
 ## лезвия (+X), а сдвиг переносит хват к концу топорища (12 см от торца).
-## Лопата (лезвие +Y) остаётся как есть: в клипе dig кисть повёрнута большим пальцем
-## к земле, и лезвие смотрит в грунт.
+## Мотыга: ось черенка +Y; обе кисти и положение лезвия задаёт HoeTwoHandGrip.
 const INHAND_GRIP: Dictionary = {
 	"axe": Transform3D(Basis(Vector3.RIGHT, PI), Vector3(0.0, 0.20, 0.0)),
 }
@@ -201,6 +214,7 @@ func _ready() -> void:
 	_setup_equipped_tool_socket()
 	_refresh_tool_visibility()
 	if anim_player:
+		anim_player.add_animation_library("tools", load("res://assets/animations/hero_actions.tres"))
 		for a_name in ["idle", "walk", "jog", "run"]:
 			var resolved: String = _resolve_anim(a_name)
 			if resolved != "" and anim_player.has_animation(resolved):
@@ -235,6 +249,7 @@ func _process(delta: float) -> void:
 			_refresh_tool_visibility()
 
 func _physics_process(delta: float) -> void:
+	_update_jump_input(delta)
 	_handle_gravity(delta)
 	_handle_movement(delta)
 	_handle_energy_regen(delta)
@@ -248,6 +263,7 @@ func _physics_process(delta: float) -> void:
 	_handle_interaction_input()
 	_try_step_up(delta)
 	move_and_slide()
+	_update_jump_state(delta)
 	_update_footsteps(delta)
 	_update_character_animation()
 	_check_bounds()
@@ -264,6 +280,11 @@ func _notification(what: int) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if is_resting:
+		return
+	if event.is_action_pressed("jump") and not event.is_echo():
+		if not _is_gameplay_blocked() and not (is_mining or is_digging or is_scooping):
+			_jump_buffer = JUMP_BUFFER_TIME
+		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if _is_gameplay_blocked():
@@ -1013,6 +1034,41 @@ func _check_bounds() -> void:
 		global_position = Vector3(0.0, 0.5, 0.0)
 		velocity = Vector3.ZERO
 
+## Ввод проходит через unhandled_input: пробел в меню не запускает прыжок.
+func _update_jump_input(delta: float) -> void:
+	_landing_left = maxf(0.0, _landing_left - delta)
+	if _is_gameplay_blocked() or is_resting or is_mining or is_digging or is_scooping:
+		_jump_buffer = 0.0
+		return
+	if is_on_floor() and not is_jumping:
+		_coyote_left = COYOTE_TIME
+	else:
+		_coyote_left = maxf(0.0, _coyote_left - delta)
+	if _jump_buffer > 0.0 and _coyote_left > 0.0 and not is_jumping:
+		velocity.y = jump_speed
+		is_jumping = true
+		_jump_elapsed = 0.0
+		_landing_left = 0.0
+		_jump_buffer = 0.0
+		_coyote_left = 0.0
+		current_anim = ""
+		_update_character_animation()
+	else:
+		_jump_buffer = maxf(0.0, _jump_buffer - delta)
+
+func _update_jump_state(delta: float) -> void:
+	if is_jumping:
+		_jump_elapsed += delta
+	if not is_on_floor():
+		_air_elapsed += delta
+	elif is_jumping or _air_elapsed > 0.15:
+		is_jumping = false
+		_air_elapsed = 0.0
+		_landing_left = 0.28
+		current_anim = ""
+	else:
+		_air_elapsed = 0.0
+
 func _handle_gravity(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= gravity * delta
@@ -1115,7 +1171,7 @@ func _interaction_point(item: Node3D) -> Vector3:
 ## Шаг на уступ высотой в блок жилы (0.5 м): иначе из ямы не выбраться.
 ## Работает только для тел группы voxel_terrain — заборы и стены остаются препятствием.
 func _try_step_up(delta: float) -> bool:
-	if not is_on_floor():
+	if not is_on_floor() or is_jumping or velocity.y > 0.0:
 		return false
 	var horiz := Vector3(velocity.x, 0.0, velocity.z)
 	if horiz.length_squared() < 0.04:
@@ -1182,7 +1238,7 @@ func trigger_tool_strike() -> void:
 		_strike_held = false
 		_strike_buffered = false
 		return
-	if is_digging or is_scooping:
+	if is_digging or is_scooping or is_jumping or _air_elapsed > 0.12:
 		return
 	if is_mining:
 		# One queued click, only near recovery; never an unbounded click backlog.
@@ -1274,7 +1330,7 @@ func _current_tool_type() -> String:
 	return d.get("tool_type", "pickaxe")
 
 ## Создаёт BoneAttachment на кости ToolSocket.R и цепляет in-hand модели
-## топора/лопаты/ведра. Кирка уже заскинена в модели персонажа — используем её узел.
+## топора/мотыги/ведра. Кирка уже заскинена в модели персонажа — используем её узел.
 ## Новая модель из Miner_Character_Package не имеет кости ToolSocket.R:
 ## откатываемся на Pickaxe_Attachment_R / Hand_R / Hand.R.
 const TOOL_SOCKET_BONES: Array[String] = [
@@ -1315,6 +1371,10 @@ func _setup_equipped_tool_socket() -> void:
 	_attach_inhand_tool("shovel", ShovelInHandScene)
 	_attach_inhand_tool("bucket", BucketInHandScene)
 	_bucket_full_mesh_setup()
+	hoe_grip = HoeGripModifier.new()
+	hoe_grip.name = "HoeTwoHandGrip"
+	hoe_grip.player = self
+	skeleton.add_child(hoe_grip)
 
 func _attach_inhand_tool(tool_type: String, scene: PackedScene) -> void:
 	if tool_socket == null or scene == null:
@@ -1341,8 +1401,7 @@ func _bucket_full_mesh_setup() -> void:
 	bucket_full_mesh = inst
 
 ## Единая точка управления видимостью: во время замаха виден инструмент,
-## соответствующий экипированному слоту; вне замаха все скрыты, кроме ведра
-## (ведро несут в руке постоянно — у него нет анимации удара, только набор воды).
+## соответствующий экипированному слоту, и остаётся видимым в покое/ходьбе.
 func _hide_all_tools() -> void:
 	for k in equipped_tool_nodes:
 		var n: Node3D = equipped_tool_nodes[k]
@@ -1360,7 +1419,7 @@ func _show_bucket() -> void:
 func _refresh_tool_visibility() -> void:
 	_hide_all_tools()
 	if is_digging:
-		# Копание всегда лопатой, даже если экипирован другой инструмент.
+		# Работа с грунтом всегда мотыгой, даже если выбран другой инструмент.
 		if equipped_tool_nodes.has("shovel"):
 			equipped_tool_nodes["shovel"].visible = true
 		return
@@ -1377,14 +1436,25 @@ func _refresh_tool_visibility() -> void:
 			equipped_tool_nodes[t].visible = true
 	elif t == "bucket":
 		_show_bucket()
-	elif t == "pickaxe" and _pickaxe_is_builtin:
-		# Встроенная кирка новой модели — часть образа шахтёра, несём в руке всегда.
+	elif t in ["axe", "pickaxe", "shovel"]:
+		# Экипированный инструмент остаётся в руке и после удара.
 		equipped_tool_nodes[t].visible = true
 
 func _update_character_animation() -> void:
 	if not anim_player or is_mining or is_digging or is_scooping:
 		return
-	
+	if is_jumping:
+		play_character_anim("jump_start" if _jump_elapsed < 0.20 else "jump_loop")
+		anim_player.speed_scale = 6.7 if _jump_elapsed < 0.20 else 1.0
+		return
+	if _air_elapsed > 0.12:
+		play_character_anim("jump_loop")
+		anim_player.speed_scale = 1.0
+		return
+	if _landing_left > 0.0:
+		play_character_anim("jump_land")
+		anim_player.speed_scale = 4.5
+		return
 	var h_vel: Vector2 = Vector2(velocity.x, velocity.z)
 	var speed: float = h_vel.length()
 	
@@ -1431,6 +1501,8 @@ func _anim_play_speed(anim_name: String, fallback: float) -> float:
 ## Возвращает первое существующее в AnimationPlayer имя из алиасов.
 ## Пустая строка — анимация отсутствует в текущей модели.
 func _resolve_anim(logical_name: String) -> String:
+	if logical_name == "dig" and anim_player and anim_player.has_animation("tools/hoe_dig"):
+		return "tools/hoe_dig"
 	if anim_player == null:
 		return ""
 	if anim_player.has_animation(logical_name):
@@ -1466,10 +1538,10 @@ func _face_toward(world_pos: Vector3) -> void:
 	if dir.length_squared() > 0.001:
 		visual_root.rotation.y = atan2(-dir.x, -dir.z)
 
-## Копание лопатой: поза dig (fallback — mine), в руке принудительно лопата.
+## Работа мотыгой: поза dig (fallback — mine), в руке мотыга с двуручным хватом.
 ## Возвращает false, если персонаж занят другим действием.
 func play_dig_animation(target: Node3D = null) -> bool:
-	if is_mining or is_digging or is_scooping:
+	if is_mining or is_digging or is_scooping or is_resting or is_jumping or _air_elapsed > 0.12 or _is_gameplay_blocked():
 		return false
 	if is_instance_valid(target):
 		_face_toward(target.global_position)
@@ -1529,7 +1601,7 @@ func _update_footsteps(delta: float) -> void:
 	AudioManager.play("footstep_grass" if on_grass else "footstep_dirt", 1.0, vol)
 
 func play_scoop_animation(source_pos: Vector3) -> bool:
-	if is_mining or is_digging or is_scooping:
+	if is_mining or is_digging or is_scooping or is_resting or is_jumping or _air_elapsed > 0.12 or _is_gameplay_blocked():
 		return false
 	_face_toward(source_pos)
 	velocity.x = 0.0
@@ -1646,8 +1718,8 @@ func _play_interaction_swing() -> void:
 	_strike_duration = 0.42
 	_strike_contact_time = STRIKE_CONTACT_TIME
 	if anim_player:
-		# Топор рубит горизонтально (chop), остальные инструменты — удар сверху (mine).
-		var swing_anim: String = _resolve_anim("chop" if _current_tool_type() == "axe" else "mine")
+		# Топор — chop; мотыга — двуручный hoe_dig; кирка — удар сверху mine.
+		var swing_anim: String = _resolve_anim("dig" if _current_tool_type() == "shovel" else ("chop" if _current_tool_type() == "axe" else "mine"))
 		if swing_anim != "":
 			var swing: Animation = anim_player.get_animation(swing_anim)
 			var swing_len: float = swing.length

@@ -2,7 +2,7 @@ class_name FarmlandPlot
 extends "res://scripts/interaction/interactable.gd"
 
 ## Интерактивная грядка / Участок фермы (Разделы 17, 31, 33 дизайн-документа)
-## Поддерживает вскопку лопатой, посадку культур, полив, внесение удобрений и сбор урожая
+## Поддерживает вскопку мотыгой, посадку культур, полив, внесение удобрений и сбор урожая
 
 const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const CropDB = preload("res://scripts/farming/crop_db.gd")
@@ -149,7 +149,7 @@ func _process(delta: float) -> void:
 
 func get_prompt() -> String:
 	if soil_state == SoilState.UNTILLED:
-		return "[E] Вскопать грядку (Нужна лопата)"
+		return "[E] Вскопать грядку (Нужна мотыга)"
 	
 	if crop_type == "":
 		if moisture > 10.0:
@@ -232,7 +232,7 @@ func till_soil(player: Node) -> bool:
 	
 	if not has_shovel:
 		if player and player.has_method("notify"):
-			player.notify("⚠️ Для вскопки земли нужна лопата!")
+			player.notify("⚠️ Для вскопки земли нужна мотыга!")
 		return false
 	
 	var energy_needed: float = 6.0
@@ -251,7 +251,7 @@ func till_soil(player: Node) -> bool:
 		player.play_dig_animation(self)
 	
 	if player and player.has_method("notify"):
-		var shovel_info: String = " (легкая работа железной лопатой -50% сил)" if shovel_level >= 2 else ""
+		var shovel_info: String = " (легкая работа железной мотыгой -50% сил)" if shovel_level >= 2 else ""
 		player.notify("🌾 Вы вскопали грядку и подготовили борозды к посеву!%s" % shovel_info)
 	return true
 

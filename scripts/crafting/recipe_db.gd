@@ -467,13 +467,13 @@ const RECIPES: Dictionary = {
 	},
 	"upgrade_iron_shovel": {
 		"id": "upgrade_iron_shovel",
-		"name": "Кузница: Железная лопата Lv.2",
+		"name": "Кузница: Железная мотыга Lv.2",
 		"machine": "workbench",
 		"inputs": {"iron_ingot": 1, "iron_plate": 1, "wooden_handle": 1, "bolt": 1},
 		"outputs": {"iron_shovel": 1},
 		"duration": 80.0,
 		"energy_cost": 3.5,
-		"description": "Ковка усиленной железной лопаты Lv.2: снижает трату энергии на вскопку вдвое (-50% сил) и ускоряет добычу глины."
+		"description": "Ковка усиленной железной мотыги Lv.2: снижает трату энергии на вскопку вдвое (-50% сил) и ускоряет добычу глины."
 	},
 	"upgrade_reinforced_bucket": {
 		"id": "upgrade_reinforced_bucket",

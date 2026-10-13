@@ -34,9 +34,9 @@ const ITEMS: Dictionary = {
 	},
 	"shovel": {
 		"id": "shovel",
-		"name": "Лопата",
+		"name": "Мотыга",
 		"icon": "⛏",
-		"texture": "res://assets/tools/shovel_icon.png",
+		"texture": "res://assets/tools/hoe_icon.tres",
 		"category": "tool",
 		"tool_type": "shovel",
 		"level": 1,
@@ -1104,9 +1104,9 @@ const ITEMS: Dictionary = {
 	},
 	"iron_shovel": {
 		"id": "iron_shovel",
-		"name": "Железная лопата",
+		"name": "Железная мотыга",
 		"icon": "🪚",
-		"texture": "res://assets/tools/shovel_icon.png",
+		"texture": "res://assets/tools/hoe_icon.tres",
 		"category": "tool",
 		"tool_type": "shovel",
 		"level": 2,
@@ -1114,7 +1114,7 @@ const ITEMS: Dictionary = {
 		"weight": 1.2,
 		"max_stack": 1,
 		"sell_price": 95,
-		"description": "Острое стальное полотно лопаты. Вскапывает грядки вдвое легче (-50% энергии) и ускоряет сбор глины и песка."
+		"description": "Кованое стальное полотно мотыги. Вскапывает грядки вдвое легче (-50% энергии) и ускоряет сбор глины и песка."
 	},
 	"reinforced_bucket": {
 		"id": "reinforced_bucket",
