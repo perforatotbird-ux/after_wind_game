@@ -53,6 +53,7 @@ func _run_tests() -> void:
 	test_mouse_wheel_zoom_and_clamps()
 	test_focus_out_safety()
 	test_camera_relative_player_movement()
+	test_auto_follow_rotation()
 	
 	print("=================================================================")
 	print("🎉 ВСЕ ТЕСТЫ ОРБИТАЛЬНОЙ КАМЕРЫ УСПЕШНО ПРОЙДЕНЫ! (CODE 0)")
@@ -285,3 +286,75 @@ func test_camera_relative_player_movement() -> void:
 	print("  • Ракурс 90° (поворот): W направляет персонажа в (-1, 0, 0)")
 	
 	print("✅ Камеро-зависимое движение полностью проверено и математически выверено.")
+
+func test_auto_follow_rotation() -> void:
+	print("\n--- Проверка 7: Автоматическое следование камеры за направлением движения ---")
+	
+	# Сброс камеры
+	cam.target_yaw = 0.0
+	cam.yaw = 0.0
+	cam.is_orbiting = false
+	cam._manual_orbit_timer = 0.0
+	cam.auto_rotate = true
+	
+	# Создаем мок-ноду с вектором скорости
+	var mover: CharacterBody3D = CharacterBody3D.new()
+	mover.name = "TestMover"
+	root.add_child(mover)
+	mover.global_position = Vector3(0, 0, 0)
+	cam.target_node = mover
+	cam._ready()
+	
+	# Сценарий A: Персонаж неподвижен -> target_yaw не меняется
+	mover.velocity = Vector3.ZERO
+	cam._process(0.1)
+	if cam.target_yaw != 0.0:
+		_fail("Камера не должна поворачиваться при неподвижной цели")
+		return
+	print("  • Неподвижная цель: target_yaw стабилен (%.2f rad)" % cam.target_yaw)
+	
+	# Сценарий B: Персонаж движется вправо (+X, velocity = (5, 0, 0))
+	mover.velocity = Vector3(5.0, 0.0, 0.0)
+	var prev_yaw: float = cam.target_yaw
+	cam._process(0.2)
+	# При движении в +X желаемый yaw = atan2(-5, 0) = -PI/2 (~ -1.571 rad)
+	if cam.target_yaw >= prev_yaw:
+		_fail("target_yaw должен поворачиваться в сторону -PI/2 при движении на восток (+X)")
+		return
+	print("  • Движение вправо (+X): target_yaw доворачивается за игроком (было %.2f rad, стало %.2f rad)" % [prev_yaw, cam.target_yaw])
+	
+	# Сценарий C: Ручное вращение (ПКМ) блокирует автоповорот
+	cam.is_orbiting = true
+	var yaw_during_orbit: float = cam.target_yaw
+	cam._process(0.2)
+	if cam.target_yaw != yaw_during_orbit:
+		_fail("Автоповорот не должен срабатывать при активном ручном вращении (is_orbiting)")
+		return
+	print("  • Ручное вращение (ПКМ): автоповорот корректно приостановлен")
+	
+	# Сценарий D: Таймер задержки после отпускания ПКМ
+	cam.is_orbiting = false
+	cam._manual_orbit_timer = 0.8
+	cam._process(0.2)
+	if cam.target_yaw != yaw_during_orbit:
+		_fail("Автоповорот не должен срабатывать пока действует _manual_orbit_timer")
+		return
+	print("  • Таймер задержки: автоповорот не вмешивается сразу после отпускания ПКМ")
+	
+	# Сценарий E: Движение назад (S, против взгляда камеры) защищено от спирали
+	cam._manual_orbit_timer = 0.0
+	cam.target_yaw = 0.0
+	cam.yaw = 0.0
+	# Камера смотрит вдоль -Z, движение вдоль +Z (чисто назад)
+	mover.velocity = Vector3(0.0, 0.0, 5.0)
+	cam._process(0.2)
+	if cam.target_yaw != 0.0:
+		_fail("Камера не должна разворачиваться при движении назад (защита от спирали S-клавиши)")
+		return
+	print("  • Защита от спирали: движение назад сохраняет стабильный ракурс")
+	
+	# Очистка
+	mover.queue_free()
+	cam.target_node = target
+	print("✅ Автоматическое следование камеры за персонажем полностью подтверждено.")
+

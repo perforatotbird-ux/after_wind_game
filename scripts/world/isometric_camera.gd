@@ -19,6 +19,19 @@ extends Camera3D
 ## на поясе (scripts/ui/gameplay_ui_controller.gd).
 @export var zoom_requires_ctrl: bool = true
 
+@export_group("Auto Follow Rotation")
+## Включено ли автоматическое вращение камеры вслед за движением персонажа.
+@export var auto_rotate: bool = true
+## Скорость плавного доворота камеры за игроком (рад/сек).
+@export var auto_rotate_speed: float = 2.5
+## Задержка (в секундах) после ручного вращения (ПКМ), перед тем как автоповорот снова включится.
+@export var auto_rotate_delay: float = 0.8
+## Минимальная скорость цели (м/с), при которой активируется автоповорот камеры.
+@export var auto_rotate_min_speed: float = 0.3
+## Порог движения относительно взгляда камеры (-1..1). При значениях выше порога
+## камера доворачивается за игроком. Защищает от вращения камеры при отступлении назад (S).
+@export var reverse_rotation_threshold: float = -0.3
+
 var yaw: float = 0.0
 var pitch: float = 0.832 # ~47.7 градусов (atan2(11, 10))
 var current_distance: float = 14.866 # sqrt(11^2 + 10^2)
@@ -28,6 +41,9 @@ var target_pitch: float = 0.832
 var target_distance: float = 14.866
 
 var is_orbiting: bool = false
+var _manual_orbit_timer: float = 0.0
+var _last_target_pos: Vector3 = Vector3.ZERO
+var _last_target_node: Node3D = null
 
 func _ready() -> void:
 	target_distance = current_distance
@@ -35,6 +51,8 @@ func _ready() -> void:
 	target_pitch = pitch
 	
 	if target_node:
+		_last_target_node = target_node
+		_last_target_pos = target_node.global_position
 		_apply_camera_transform(true)
 
 func _notification(what: int) -> void:
@@ -42,6 +60,7 @@ func _notification(what: int) -> void:
 		if is_orbiting:
 			is_orbiting = false
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			_manual_orbit_timer = auto_rotate_delay
 
 ## Колесо с модификатором — зум; без него событие остаётся для смены инструмента.
 func is_zoom_event(mb: InputEventMouseButton) -> bool:
@@ -59,6 +78,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				is_orbiting = false
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+				_manual_orbit_timer = auto_rotate_delay
 		elif mb.pressed and is_zoom_event(mb):
 			if mb.button_index == MOUSE_BUTTON_WHEEL_UP:
 				target_distance = clampf(target_distance - zoom_step, min_distance, max_distance)
@@ -76,11 +96,69 @@ func _process(delta: float) -> void:
 	if not target_node:
 		return
 		
+	if _manual_orbit_timer > 0.0:
+		_manual_orbit_timer = maxf(0.0, _manual_orbit_timer - delta)
+		
+	_update_auto_rotation(delta)
+		
 	yaw = lerp_angle(yaw, target_yaw, rotation_damping * delta)
 	pitch = lerpf(pitch, target_pitch, rotation_damping * delta)
 	current_distance = lerpf(current_distance, target_distance, zoom_speed * delta)
 	
 	_apply_camera_transform(false, delta)
+
+func _update_auto_rotation(delta: float) -> void:
+	if not auto_rotate or is_orbiting or _manual_orbit_timer > 0.0:
+		return
+	if not is_instance_valid(target_node):
+		return
+		
+	if target_node != _last_target_node:
+		_last_target_node = target_node
+		_last_target_pos = target_node.global_position
+		return
+		
+	# 1. Вычисляем текущую горизонтальную скорость перемещения цели
+	var vel_h: Vector2 = Vector2.ZERO
+	if "velocity" in target_node:
+		var v: Vector3 = target_node.velocity
+		vel_h = Vector2(v.x, v.z)
+	
+	var current_pos: Vector3 = target_node.global_position
+	if vel_h.length_squared() < 0.01 and delta > 0.0:
+		var pos_delta: Vector3 = current_pos - _last_target_pos
+		vel_h = Vector2(pos_delta.x, pos_delta.z) / delta
+	_last_target_pos = current_pos
+	
+	var speed: float = vel_h.length()
+	if speed < auto_rotate_min_speed:
+		return
+		
+	# 2. Проверяем вектор движения относительно текущего направления камеры
+	var move_dir: Vector2 = vel_h / speed
+	var cam_forward_2d: Vector2 = Vector2(-sin(target_yaw), -cos(target_yaw))
+	var forward_dot: float = move_dir.dot(cam_forward_2d)
+	
+	# Не крутим камеру в спираль при чистом отступлении назад (клавиша S)
+	if forward_dot <= reverse_rotation_threshold:
+		return
+		
+	# 3. Желаемый угол камеры позади направления движения игрока
+	var desired_yaw: float = atan2(-move_dir.x, -move_dir.y)
+	
+	# Если у игрока есть визуальная нода с плавным разворотом тела, используем её направление
+	if "visual_root" in target_node and is_instance_valid(target_node.visual_root):
+		desired_yaw = target_node.visual_root.global_rotation.y
+	elif target_node.has_node("Visuals"):
+		var visuals: Node3D = target_node.get_node("Visuals") as Node3D
+		if is_instance_valid(visuals):
+			desired_yaw = visuals.global_rotation.y
+			
+	var angle_diff: float = abs(angle_difference(target_yaw, desired_yaw))
+	if angle_diff < 0.01:
+		return
+		
+	target_yaw = lerp_angle(target_yaw, desired_yaw, auto_rotate_speed * delta)
 
 func _apply_camera_transform(instant: bool = false, delta: float = 0.0) -> void:
 	if not target_node:
