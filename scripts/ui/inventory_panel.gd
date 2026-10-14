@@ -336,11 +336,17 @@ func _open_drop_dialog(item_id: String) -> void:
 func _input(event: InputEvent) -> void:
 	if _modal and is_instance_valid(_modal):
 		return
+	if event.is_action_pressed("toggle_inventory") and not event.is_echo():
+		if not (get_viewport().gui_get_focus_owner() is LineEdit):
+			close()
+			get_viewport().set_input_as_handled()
+			return
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return
 	if get_viewport().gui_get_focus_owner() is LineEdit:
 		return
-	if event.keycode in [KEY_ESCAPE, KEY_TAB, KEY_I]:
+	var code: Key = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+	if code in [KEY_ESCAPE, KEY_TAB, KEY_I]:
 		close()
 		get_viewport().set_input_as_handled()
 

@@ -19,6 +19,7 @@ const STYLES: Dictionary = {
 	"stone": ["rock", Color(0.55, 0.56, 0.58), Color(0.78, 0.8, 0.82)],
 	"clay": ["clay", Color(0.72, 0.42, 0.28), Color(0.88, 0.6, 0.45)],
 	"sand": ["pile", Color(0.9, 0.8, 0.52), Color(1.0, 0.93, 0.7)],
+	"soil": ["pile", Color(0.37, 0.27, 0.18), Color(0.55, 0.42, 0.3)],
 	"coal": ["coal", Color(0.16, 0.15, 0.16), Color(0.55, 0.56, 0.62)],
 	"iron_ore": ["ore", Color(0.5, 0.48, 0.46), Color(0.78, 0.45, 0.24)],
 	"water": ["drop", Color(0.25, 0.55, 0.9), Color(0.7, 0.88, 1.0)],

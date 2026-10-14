@@ -303,8 +303,12 @@ func _unhandled_input(event: InputEvent) -> void:
 					current_interactable.interact(self)
 		get_viewport().set_input_as_handled()
 		return
+	if event.is_action_pressed("toggle_inventory") and not event.is_echo():
+		inventory_toggle_requested.emit()
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		match event.keycode:
+		var code: Key = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+		match code:
 			KEY_1:
 				equip_slot(0)
 			KEY_2:
@@ -324,7 +328,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_C:
 				class_select_toggle_requested.emit()
 			KEY_R, KEY_G, KEY_X:
-				_farm_key(event.keycode)
+				_farm_key(code)
 			KEY_F5:
 				quick_save()
 			KEY_F9:
@@ -1233,6 +1237,18 @@ func _is_mining_resource(target: Area3D) -> bool:
 		return false
 	return req in ["pickaxe", "axe", "shovel"]
 
+## Жила с копаемым блоком строго под курсором мыши (для удара мотыгой).
+## Возвращает null без мыши/headless или если курсор не на копаемом блоке в досягаемости.
+func _deposit_under_cursor() -> Area3D:
+	for item in nearby_interactables:
+		if not is_instance_valid(item) or not item.is_in_group("voxel_deposits"):
+			continue
+		if item.get("is_interactable") == false:
+			continue
+		if item.has_method("aim_at_cursor") and item.aim_at_cursor(self):
+			return item
+	return null
+
 func trigger_tool_strike() -> void:
 	if _is_gameplay_blocked():
 		_strike_held = false
@@ -1245,20 +1261,31 @@ func trigger_tool_strike() -> void:
 		if _strike_duration - _strike_elapsed <= STRIKE_BUFFER_WINDOW:
 			_strike_buffered = true
 		return
-	if is_instance_valid(current_interactable) and not _is_mining_resource(current_interactable):
+	# Кучки с земли подбираются клавишей E: удар ЛКМ их игнорирует и бьёт инструментом.
+	var current_is_pile: bool = is_instance_valid(current_interactable) and current_interactable.is_in_group("dropped_items")
+	if is_instance_valid(current_interactable) and not current_is_pile and not _is_mining_resource(current_interactable):
 		# Machines, traders and water don't need a tool-swing animation.
 		current_interactable.interact(self)
 		_strike_held = false
 		return
-	_strike_target = current_interactable if is_instance_valid(current_interactable) else null
+	_strike_target = null if current_is_pile else (current_interactable if is_instance_valid(current_interactable) else null)
+	if _current_tool_type() == "shovel":
+		# Мотыга бьёт туда, куда указывает курсор мыши, а не по направлению взгляда.
+		var cursor_hit: Area3D = _deposit_under_cursor()
+		if is_instance_valid(cursor_hit):
+			_strike_target = cursor_hit
 	if is_instance_valid(_strike_target) and visual_root:
 		var dir_to_target: Vector3 = _interaction_point(_strike_target) - global_position
 		dir_to_target.y = 0.0
 		if dir_to_target.length_squared() > 0.001:
-			var current_facing: Vector3 = -visual_root.global_transform.basis.z
-			current_facing.y = 0.0
-			if current_facing.length_squared() < 0.001 or current_facing.dot(dir_to_target.normalized()) > -0.2:
+			if _current_tool_type() == "shovel" and _strike_target.is_in_group("voxel_deposits"):
+				# Мотыга всегда доворачивается к курсору — даже через спину.
 				visual_root.rotation.y = atan2(-dir_to_target.x, -dir_to_target.z)
+			else:
+				var current_facing: Vector3 = -visual_root.global_transform.basis.z
+				current_facing.y = 0.0
+				if current_facing.length_squared() < 0.001 or current_facing.dot(dir_to_target.normalized()) > -0.2:
+					visual_root.rotation.y = atan2(-dir_to_target.x, -dir_to_target.z)
 	_play_interaction_swing()
 
 func _update_strike(delta: float) -> void:
@@ -1718,32 +1745,54 @@ func _play_interaction_swing() -> void:
 	_strike_duration = 0.42
 	_strike_contact_time = STRIKE_CONTACT_TIME
 	if anim_player:
-		# Топор — chop; мотыга — двуручный hoe_dig; кирка — удар сверху mine.
-		var swing_anim: String = _resolve_anim("dig" if _current_tool_type() == "shovel" else ("chop" if _current_tool_type() == "axe" else "mine"))
+		# Топор — chop; мотыга — двуручный hoe_dig; кирка — удар сверху mine,
+		# но темп удара киркой — как удар топором по дереву.
+		var tool_type: String = _current_tool_type()
+		var swing_anim: String = _resolve_anim("dig" if tool_type == "shovel" else ("chop" if tool_type == "axe" else "mine"))
 		if swing_anim != "":
+			var timing: Array = _swing_timing(swing_anim)
+			if tool_type == "pickaxe":
+				timing = _pickaxe_timing()
+			_strike_duration = timing[0]
+			_strike_contact_time = timing[1]
 			var swing: Animation = anim_player.get_animation(swing_anim)
-			var swing_len: float = swing.length
-			var swing_speed: float = 1.0
-			if swing.has_meta("contact_time"):
-				# Запечённый клип: темп и момент контакта заданы в metadata
-				# (tools/retarget_ual_to_miner.gd).
-				swing_speed = _anim_play_speed(swing_anim, 1.0)
-				_strike_duration = swing_len / swing_speed
-				_strike_contact_time = float(swing.get_meta("contact_time")) / swing_speed
-			# Длинный замах (1.5 c) играем ускоренно до ~1.0 c, контакт на 55% замаха.
-			# Короткий замах старой модели (~0.42 c) — как есть, контакт на 38%.
-			elif swing_len >= STRIKE_LONG_ANIM_THRESHOLD:
-				swing_speed = STRIKE_LONG_ANIM_SPEED
-				_strike_duration = swing_len / swing_speed
-				_strike_contact_time = _strike_duration * STRIKE_CONTACT_FRACTION_LONG
-			else:
-				_strike_duration = swing_len
-				_strike_contact_time = _strike_duration * STRIKE_CONTACT_FRACTION_SHORT
+			var play_speed: float = float(swing.length) / maxf(0.05, _strike_duration)
 			current_anim = swing_anim
 			anim_player.speed_scale = 1.0
-			anim_player.play(swing_anim, 0.0, swing_speed)
+			anim_player.play(swing_anim, 0.0, play_speed)
 			# Apply the first raised-tool pose now, not on the next animation tick.
 			anim_player.advance(0.0)
+
+## Длительность замаха и момент контакта для клипа: метаданные contact_time/play_speed
+## из запекания, иначе эвристика по длине. Возвращает [duration, contact_time].
+func _swing_timing(anim_name: String) -> Array:
+	var swing: Animation = anim_player.get_animation(anim_name)
+	var swing_len: float = swing.length
+	if swing.has_meta("contact_time"):
+		# Запечённый клип: темп и момент контакта заданы в metadata
+		# (tools/retarget_ual_to_miner.gd).
+		var timed_speed: float = _anim_play_speed(anim_name, 1.0)
+		return [swing_len / timed_speed, float(swing.get_meta("contact_time")) / timed_speed]
+	# Длинный замах (1.5 c) играем ускоренно до ~1.0 c, контакт на 55% замаха.
+	# Короткий замах старой модели (~0.42 c) — как есть, контакт на 38%.
+	if swing_len >= STRIKE_LONG_ANIM_THRESHOLD:
+		var duration: float = swing_len / STRIKE_LONG_ANIM_SPEED
+		return [duration, duration * STRIKE_CONTACT_FRACTION_LONG]
+	return [swing_len, swing_len * STRIKE_CONTACT_FRACTION_SHORT]
+
+## Темп удара киркой: длительность замаха — как у топора по дереву (chop),
+## а момент контакта — в той же фазе своего клипа, что у кирки (вспышка урона
+## синхронна с приземлением головки, а не раньше/позже).
+## Возвращает [duration, contact_time].
+func _pickaxe_timing() -> Array:
+	var chop_name: String = _resolve_anim("chop")
+	var mine_name: String = _resolve_anim("mine")
+	if chop_name == "" or mine_name == "":
+		return _swing_timing(mine_name if mine_name != "" else chop_name)
+	var chop_t: Array = _swing_timing(chop_name)
+	var mine_t: Array = _swing_timing(mine_name)
+	var frac: float = float(mine_t[1]) / maxf(0.05, float(mine_t[0]))
+	return [float(chop_t[0]), float(chop_t[0]) * frac]
 
 func notify(text: String) -> void:
 	notification_received.emit(text)

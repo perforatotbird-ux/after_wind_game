@@ -214,15 +214,15 @@ func _test_fruit_trees() -> void:
 		tree.advance_hours(30.0)
 		check(tree.has_fruit == (season == "autumn"), "Яблоня плодоносит в сезон %s" % season)
 	Seasons.current_season = ""
-	# Рубка топором: 3 удара, древесина и саженец, узел удаляется.
+	# Рубка топором Lv.1: 8 ударов, древесина и саженец, узел удаляется.
 	tree.current_hits = tree.max_hits
 	var wood_before: int = mock.inventory.get_item_count("wood")
 	var sap_before: int = mock.inventory.get_item_count("apple_sapling")
-	check(not tree.chop(mock), "Дерево упало раньше 3 ударов")
-	check(not tree.chop(mock), "Дерево упало раньше 3 ударов")
-	check(tree.chop(mock), "Дерево не упало за 3 удара")
+	for i in 7:
+		check(not tree.chop(mock), "Дерево упало раньше 8 ударов")
+	check(tree.chop(mock), "Дерево не упало за 8 ударов")
 	check(tree.is_queued_for_deletion(), "Срубленное дерево не удалено")
-	check(mock.inventory.get_item_count("wood") - wood_before >= 3, "За рубку мало древесины")
+	check(mock.inventory.get_item_count("wood") - wood_before == 4, "За рубку должно быть 4 древесины (8×0.25+2)")
 	check(mock.inventory.get_item_count("apple_sapling") - sap_before == 1, "Саженец не вернулся при рубке")
 	# Сохранение: снимок и восстановление.
 	var tree2: Node = FruitTreeScript.new()

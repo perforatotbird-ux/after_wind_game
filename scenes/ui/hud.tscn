@@ -392,7 +392,7 @@ text = "2: ⛏ Кирка"
 custom_minimum_size = Vector2(72, 42)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_slot_normal")
-text = "3: ⛏ Лопата"
+text = "3: ⛏ Мотыга"
 
 [node name="Slot4" type="Button" parent="HotbarUI/Panel/Margin/HBox"]
 custom_minimum_size = Vector2(72, 42)

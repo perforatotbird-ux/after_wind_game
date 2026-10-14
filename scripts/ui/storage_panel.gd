@@ -76,8 +76,16 @@ func _move(id: String, count: int, deposit_: bool) -> void:
 	status.text='Перенесено: %d из %d. Остаток остаётся на прежнем месте.'%[n,count] if n<count else 'Перенесено: %d.'%n
 	if n>0: Audio.play('ui_click')
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ESCAPE,KEY_TAB,KEY_I] and not is_instance_valid(modal):
-		get_viewport().set_input_as_handled();close()
+	if not is_instance_valid(modal):
+		if event.is_action_pressed("toggle_inventory") and not event.is_echo():
+			get_viewport().set_input_as_handled()
+			close()
+			return
+		if event is InputEventKey and event.pressed and not event.echo:
+			var code: Key = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+			if code in [KEY_ESCAPE, KEY_TAB, KEY_I]:
+				get_viewport().set_input_as_handled()
+				close()
 func close() -> void:
 	if _closing: return
 	_closing=true

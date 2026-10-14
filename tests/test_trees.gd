@@ -65,9 +65,11 @@ func _process(_d: float) -> bool:
 	tree._on_interacted(player)
 	check(tree.current_hits == tree.max_hits, "Дерево рубится без топора")
 	player.inventory.equip_tool("axe")
+	var wood_before: int = player.inventory.get_item_count("wood")
 	for k in tree.max_hits:
 		tree._on_interacted(player)
 	check(tree.is_depleted, "Дерево не срублено после %d ударов топором" % tree.max_hits)
+	check(player.inventory.get_item_count("wood") == wood_before + 2, "С дерева должно быть 2 древесины (8×0.25), есть %d" % (player.inventory.get_item_count("wood") - wood_before))
 	check(tree.get_node("DepletedVisual").visible, "Пенёк не появился")
 	return false
 

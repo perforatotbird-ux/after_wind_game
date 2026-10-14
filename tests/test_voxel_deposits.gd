@@ -1,6 +1,6 @@
 extends SceneTree
 ## Жилы из разрушаемых вокселей: текстуры, генерация 1–3 ресурсов, дыра в земле,
-## копание лопатой/киркой, прицел, шаг на уступ, сохранение и предметы.
+## копание мотыгой/киркой, прицел, шаг на уступ, сохранение и предметы.
 const VoxelDeposit = preload("res://scripts/world/voxel_deposit.gd")
 const VoxelTextures = preload("res://scripts/world/voxel_textures.gd")
 const SaveManager = preload("res://scripts/core/save_manager.gd")
@@ -127,15 +127,21 @@ func _check_digging() -> void:
 	var near: Node = world.get_node("Deposits/NearDeposit")
 	var soil := Vector3i(5, near.depth_cells - 1, 5)
 	var faces_before: int = near.get_node("TerrainBody/Shape").shape.get_faces().size()
+	var stone_before: int = inv.get_item_count("stone")
+	var soil_before: int = inv.get_item_count("soil")
 	near.dig_cell(soil, player)
-	check(near.get_voxel(soil) == M.AIR, "Грунт не выкопан лопатой за 1 удар")
+	check(near.get_voxel(soil) == M.AIR, "Грунт не выкопан мотыгой за 1 удар")
+	check(inv.get_item_count("soil") == soil_before + 1, "Грунт не дал +1 земли")
+	check(inv.get_item_count("stone") == stone_before, "Мотыга добыла камень из грунта")
 	check(near.get_node("TerrainBody/Shape").shape.get_faces().size() > faces_before, "Коллизия не перестроена после копания")
-	# Песок — лопатой за удар, +2.
+	# Песок мотыгой — 2 удара, +2.
 	var sand_dep: Node = _deposit_with("sand")
 	var sand: Vector3i = _find(sand_dep, M.SAND)
 	var before: int = inv.get_item_count("sand")
 	sand_dep.dig_cell(sand, player)
-	check(sand_dep.get_voxel(sand) == M.AIR and inv.get_item_count("sand") == before + 2, "Песок: блок не выкопан или не +2")
+	check(sand_dep.get_voxel(sand) == M.SAND, "Песок не должен ломаться мотыгой за 1 удар")
+	sand_dep.dig_cell(sand, player)
+	check(sand_dep.get_voxel(sand) == M.AIR and inv.get_item_count("sand") == before + 2, "Песок: блок не выкопан за 2 удара или не +2")
 	check("sand" in sand_dep.discovered, "Песок не отмечен найденным")
 	# Глина — два удара.
 	var clay_dep: Node = _deposit_with("clay")
@@ -144,15 +150,16 @@ func _check_digging() -> void:
 	check(clay_dep.get_voxel(clay) == M.CLAY and clay_dep.current_hits == 1, "Глина должна выдержать первый удар (осталось 1)")
 	clay_dep.dig_cell(clay, player)
 	check(clay_dep.get_voxel(clay) == M.AIR and inv.get_item_count("clay") >= 2, "Глина не выкопана за 2 удара")
-	# Уголь — лопатой нельзя, киркой 3 удара.
+	# Уголь — мотыгой нельзя, киркой 1 ур. — 13 ударов.
 	var coal_dep: Node = _deposit_with("coal")
 	var coal: Vector3i = _find(coal_dep, M.COAL)
 	coal_dep.dig_cell(coal, player)
-	check(coal_dep.get_voxel(coal) == M.COAL and not coal_dep.damage.has(coal), "Уголь копается лопатой")
+	check(coal_dep.get_voxel(coal) == M.COAL and not coal_dep.damage.has(coal), "Уголь копается мотыгой")
 	inv.equipped_tool = "pickaxe"
-	for i in 3:
+	var coal_before: int = inv.get_item_count("coal")
+	for i in 13:
 		coal_dep.dig_cell(coal, player)
-	check(coal_dep.get_voxel(coal) == M.AIR and inv.get_item_count("coal") >= 2, "Уголь не добыт киркой за 3 удара")
+	check(coal_dep.get_voxel(coal) == M.AIR and inv.get_item_count("coal") == coal_before + 4, "Уголь не добыт киркой за 13 ударов (13×0.25=3 + шахтёр 1)")
 	var iron_dep: Node = _deposit_with("iron_ore")
 	var iron: Vector3i = _find(iron_dep, M.IRON_ORE)
 	for i in 3:
@@ -198,6 +205,9 @@ func _check_aim() -> void:
 			break
 		player._update_strike(0.05)
 	check(d.get_voxel(target) == M.AIR, "Удар персонажа не выкопал блок")
+	# Прицел строго по курсору: в headless мыши нет — false, обычный прицел восстанавливается.
+	check(not d.aim_at_cursor(player), "aim_at_cursor должен вернуть false без мыши")
+	check(d.update_aim(player), "Прицел не восстановился после aim_at_cursor")
 	# Далёкий блок вне досягаемости.
 	d.set_target_cell(Vector3i(14, 2, 14), player)
 	check(not d.is_in_reach(player), "Далёкий блок считается досягаемым")

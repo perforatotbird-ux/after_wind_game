@@ -702,9 +702,10 @@ func _input(event: InputEvent) -> void:
 		return
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return
-	if get_viewport().gui_get_focus_owner() is LineEdit and event.keycode != KEY_ESCAPE:
+	var code: Key = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+	if get_viewport().gui_get_focus_owner() is LineEdit and code != KEY_ESCAPE:
 		return
-	if event.keycode == KEY_ESCAPE or event.keycode == KEY_E:
+	if code in [KEY_ESCAPE, KEY_E] or event.is_action_pressed("interact"):
 		close()
 		get_viewport().set_input_as_handled()
 

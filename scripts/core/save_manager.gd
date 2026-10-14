@@ -27,6 +27,7 @@ const Seasons = preload("res://scripts/core/seasons.gd")
 const SeasonManagerScript = preload("res://scripts/world/season_manager.gd")
 const CookingProgress = preload("res://scripts/crafting/cooking_progress.gd")
 const MushroomSpawnerScript = preload("res://scripts/world/mushroom_spawner.gd")
+const CampfireScript = preload("res://scripts/crafting/campfire.gd")
 
 static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	if not world or not is_instance_valid(world):
@@ -189,7 +190,7 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"fuel_burn_left": maxf(0.0, float(node.fuel_burn_left)),
 				"rebuilt": bool(node.rebuilt) if "rebuilt" in node else true
 			}
-			if node is Campfire:
+			if node is CampfireScript:
 				machine_data["fire_has_burned"] = node.has_burned
 			machines.append(machine_data)
 		elif node is ResourceNodeScript:
@@ -596,7 +597,7 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		# старые сохранения не знали о разрушенных станках.
 		if state.has("rebuilt"):
 			machine.set_rebuilt(bool(state["rebuilt"]))
-		if machine is Campfire:
+		if machine is CampfireScript:
 			machine.has_burned = bool(state.get("fire_has_burned", false)) or machine.is_lit()
 			machine.refresh_fire_visuals(true)
 		if machine.visual_node:

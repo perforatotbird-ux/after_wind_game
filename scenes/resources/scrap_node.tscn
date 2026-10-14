@@ -45,7 +45,7 @@ max_hits = 3
 current_hits = 3
 yield_per_hit = 2
 bonus_depleted_yield = 1
-energy_cost = 4.0
+energy_cost = 3.0
 visual_node = NodePath("Visual")
 depleted_visual_node = NodePath("DepletedVisual")
 

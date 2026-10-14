@@ -19,7 +19,9 @@ signal node_respawned()
 @export var action_verb: String = "Рубить"
 @export var max_hits: int = 3
 @export var current_hits: int = 3
-@export var yield_per_hit: int = 2
+## Добыча за удар (дробная: 0.25 камня/дерева, 2 воды). Целые штуки выдаются
+## по мере накопления; остаток < 1 хранится в _yield_pool и сгорает при истощении.
+@export var yield_per_hit: float = 2.0
 @export var bonus_depleted_yield: int = 1
 @export var energy_cost: float = 3.0
 @export var respawn_time: float = 40.0
@@ -49,6 +51,11 @@ const FALLBACK_HOURS_PER_SECOND: float = 1.0 / 60.0
 
 var is_depleted: bool = false
 var respawn_timer: float = 0.0
+## Накопленная дробная добыча (< 1): целые штуки выдаются по мере накопления.
+## В сейв не пишется и при истощении/возрождении сгорает.
+var _yield_pool: float = 0.0
+## Всего добыто с узла за его жизнь (для итога «Жила выработана»).
+var _harvest_total: int = 0
 ## Саженец посажен на пень и растёт.
 var is_growing: bool = false
 ## Сколько игровых часов саженец уже растёт.
@@ -283,7 +290,10 @@ func _on_interacted(player: Node) -> void:
 	
 	# Добыча
 	current_hits -= hit_power
-	var gained: int = yield_per_hit + bonus_yield
+	_yield_pool += float(yield_per_hit) + float(bonus_yield)
+	var gained: int = int(floor(_yield_pool))
+	_yield_pool -= float(gained)
+	_harvest_total += gained
 	var item_icon: String = ItemDB.get_item_icon(resource_id)
 	
 	if current_hits <= 0:
@@ -297,14 +307,14 @@ func _on_interacted(player: Node) -> void:
 		_set_depleted(true)
 
 		var msg_depleted: String = "✅ %s %s +%d! Жила полностью выработана." % [
-			item_icon, resource_display_name, gained
+			item_icon, resource_display_name, _harvest_total
 		]
 		if requires_planting:
 			var saplings: int = maxi(0, sapling_yield)
 			if inv and saplings > 0:
 				DroppedItemScript.give_or_drop(player, SAPLING_ID, saplings, global_position, get_parent())
 			msg_depleted = "✅ %s %s +%d, 🌱 саженец +%d. Дерево не отрастёт само — посадите саженец на пень." % [
-				item_icon, resource_display_name, gained, saplings
+				item_icon, resource_display_name, _harvest_total, saplings
 			]
 		if player.has_method("notify"):
 			player.notify(msg_depleted)
@@ -315,9 +325,15 @@ func _on_interacted(player: Node) -> void:
 
 		resource_gathered.emit(resource_id, gained)
 		
-		var msg_hit: String = "%s %s +%d (Прочность: %d/%d)" % [
-			item_icon, resource_display_name, gained, current_hits, max_hits
-		]
+		var msg_hit: String
+		if gained > 0:
+			msg_hit = "%s %s +%d (Прочность: %d/%d)" % [
+				item_icon, resource_display_name, gained, current_hits, max_hits
+			]
+		else:
+			msg_hit = "%s %s +0 (до целого %.2f; Прочность: %d/%d)" % [
+				item_icon, resource_display_name, _yield_pool, current_hits, max_hits
+			]
 		if player.has_method("notify"):
 			player.notify(msg_hit)
 		# Набор воды ведром из пруда: персонаж выставляет ведро, капли, полное ведро.
@@ -334,6 +350,10 @@ func _play_hit_effect() -> void:
 
 func _set_depleted(depleted: bool) -> void:
 	is_depleted = depleted
+	# Недобранная дробная добыча (< 1) при истощении и возрождении сгорает.
+	_yield_pool = 0.0
+	if not depleted:
+		_harvest_total = 0
 	# Пень дерева остаётся интерактивным: на него сажают саженец.
 	is_interactable = (not depleted) or requires_planting
 	if not depleted:

@@ -208,6 +208,10 @@ func _ready() -> void:
 		repair_upgrade_button.get_parent().add_child(repair_storage_button)
 		repair_storage_button.pressed.connect(func():
 			var controller = get_node_or_null("GameplayUIController")
+			if not controller:
+				var world = _get_world()
+				if world:
+					controller = world.get_node_or_null("GameplayUIController")
 			if controller and is_instance_valid(_current_active_building):
 				controller.open_storage_panel(_current_active_building)
 		)

@@ -1,6 +1,7 @@
 extends SceneTree
 
 const PlayerScene = preload("res://scenes/player/player.tscn")
+const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
 var _test_executed: bool = false
 var fixture_frames := 0
@@ -212,6 +213,31 @@ func _run_tests() -> void:
 		return
 	print("  • Удар по объекту через ЛКМ успешно активировал добычу!")
 	mock_interactable.free()
+
+	# -------------------------------------------------------------
+	# Проверка 6: ЛКМ рядом с выброшенной кучкой — удар, а не подбор
+	# -------------------------------------------------------------
+	print("\n--- Проверка 6: ЛКМ по кучке с земли не подбирает её ---")
+	var pile = DroppedItemScript.spawn(root, "stone", 3, player.global_position + Vector3(0.5, 0, 0))
+	if pile == null:
+		_fail("Не создана кучка для проверки ЛКМ")
+		return
+	player.current_interactable = pile
+	player.is_mining = false
+	var pile_before: int = player.inventory.get_item_count("stone")
+	player._unhandled_input(lmb_event)
+	if not player.is_mining:
+		_fail("ЛКМ рядом с кучкой должен запускать взмах, а не подбор")
+		return
+	player._update_strike(player._strike_duration + 0.1)
+	if player.inventory.get_item_count("stone") != pile_before:
+		_fail("ЛКМ подобрал кучку вместо удара")
+		return
+	if not is_instance_valid(pile):
+		_fail("Кучка исчезла после удара ЛКМ")
+		return
+	print("  • ЛКМ рядом с кучкой бьёт инструментом, подбор только по E!")
+	pile.free()
 
 	print("\n=================================================================")
 	print("🎉 ВСЕ ТЕСТЫ ОРИЕНТАЦИИ КИРКИ, ВЗМАХА И ЛКМ УСПЕШНО ПРОЙДЕНЫ! (CODE 0)")

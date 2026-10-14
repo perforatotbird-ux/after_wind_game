@@ -191,29 +191,29 @@ func _run_tests() -> void:
 	plot1.growth_progress = 0.0
 	plot1.is_ripe = false
 	
-	# Попытка вскопки без лопаты
+	# Попытка вскопки без мотыгы
 	var orig_tools = inv.tools.duplicate()
 	inv.tools.clear()
 	inv.equipped_tool = "axe"
 	inv.items["shovel"] = 0
 	var till_fail = plot1.till_soil(player)
 	if till_fail or plot1.soil_state == FarmlandPlot.SoilState.TILLED:
-		_fail("Вскопка должна требовать лопату")
+		_fail("Вскопка должна требовать мотыгу")
 		return
-	print("  - Попытка вскопки без лопаты: успешно отклонена.")
+	print("  - Попытка вскопки без мотыгы: успешно отклонена.")
 	
-	# Вскопка с лопатой
+	# Вскопка с мотыгой
 	inv.tools = orig_tools
 	inv.equipped_tool = "shovel"
 	var player_energy_before = player.energy
 	var till_ok = plot1.till_soil(player)
 	if not till_ok or plot1.soil_state != FarmlandPlot.SoilState.TILLED:
-		_fail("Вскопка с лопатой не сработала")
+		_fail("Вскопка с мотыгой не сработала")
 		return
 	if player.energy >= player_energy_before:
 		_fail("Вскопка должна расходовать энергию игрока")
 		return
-	print("  - Вскопка лопатой выполнена. Земля взрыхлена (TILLED). Энергия израсходована.")
+	print("  - Вскопка мотыгой выполнена. Земля взрыхлена (TILLED). Энергия израсходована.")
 	
 	# Посадка моркови
 	var carrot_seeds_before = inv.get_item_count("seeds_carrot")

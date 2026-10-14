@@ -18,10 +18,11 @@ resource_id = "stone"
 resource_display_name = "Камень"
 required_tool = "pickaxe"
 action_verb = "Добывать"
-max_hits = 3
-current_hits = 3
-yield_per_hit = 2
+max_hits = 10
+current_hits = 10
+yield_per_hit = 0.25
 bonus_depleted_yield = 2
+energy_cost = 2.0
 visual_node = NodePath("Visual")
 depleted_visual_node = NodePath("DepletedVisual")
 

@@ -165,7 +165,7 @@ func get_prompt() -> String:
 	return "[E] %s: Рост %d%% | Влажность %d%%%s" % [c_name, int(growth_progress), int(moisture), fert_txt]
 
 func _on_interacted(player: Node) -> void:
-	# 1. Если земля не вскопана — требуем лопату
+	# 1. Если земля не вскопана — требуем мотыгу
 	if soil_state == SoilState.UNTILLED:
 		till_soil(player)
 		return

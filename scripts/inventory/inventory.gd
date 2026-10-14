@@ -73,6 +73,7 @@ var items: Dictionary = {
 	"stone": 0,
 	"clay": 0,
 	"sand": 0,
+	"soil": 0,
 	"coal": 0,
 	"iron_ore": 0,
 	"water": 0,
@@ -629,7 +630,7 @@ func add_item(item_id: String, amount: int) -> bool:
 	return true
 
 func remove_item(item_id: String, amount: int) -> bool:
-	if amount <= 0 or not items.has(item_id):
+	if amount <= 0:
 		return false
 	
 	var current: int = items.get(item_id, 0)

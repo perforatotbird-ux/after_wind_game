@@ -17,10 +17,11 @@ collision_layer = 8
 collision_mask = 0
 script = ExtResource("1_lcy5i")
 resource_display_name = "Дуб"
-max_hits = 3
-current_hits = 3
-yield_per_hit = 1
+max_hits = 8
+current_hits = 8
+yield_per_hit = 0.25
 bonus_depleted_yield = 0
+energy_cost = 1.5
 visual_node = NodePath("Visual")
 depleted_visual_node = NodePath("DepletedVisual")
 

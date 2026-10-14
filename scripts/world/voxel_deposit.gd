@@ -29,8 +29,8 @@ const GROUP: String = "voxel_deposits"
 ## Группа твёрдых тел вокселей: на их уступы персонаж умеет шагать (player._try_step_up).
 const TERRAIN_GROUP: String = "voxel_terrain"
 const VOXEL_SIZE: float = 0.5
-## Досягаемость блока от груди персонажа, м.
-const REACH: float = 2.4
+## Досягаемость блока от груди персонажа, м (хватает на второй слой сверху).
+const REACH: float = 3.0
 const NO_CELL: Vector3i = Vector3i(-1, -1, -1)
 const MAX_VOXELS: int = 32 * 32 * 16
 
@@ -43,14 +43,15 @@ const MAT_TILES: Array[int] = [0, 2, 3, 4, 5, 6, 7]
 const MAT_COLORS: Array[Color] = [Color.WHITE, Color(0.37, 0.27, 0.18), Color(0.84, 0.74, 0.5), Color(0.69, 0.41, 0.29), Color(0.15, 0.14, 0.15), Color(0.62, 0.42, 0.3), Color(0.2, 0.2, 0.21)]
 ## Оттенок камешков-«выходов» на траве: уголь темнее, руда рыжее — видно издалека.
 const MARKER_TINTS: Dictionary = {Mat.COAL: Color(0.45, 0.45, 0.47), Mat.IRON_ORE: Color(1.0, 0.7, 0.5), Mat.CLAY: Color(1.0, 0.85, 0.78)}
-## Ударов на блок (инструментом 1 ур.), нужный инструмент, затраты энергии, добыча.
-const MAT_HITS: Array[int] = [0, 1, 1, 2, 3, 4, 0]
+## Ударов на блок инструментом 1 ур. (мотыга: грунт 1, песок 2, глина 2;
+## кирка: уголь 13, руда 4), нужный инструмент, затраты энергии, добыча.
+const MAT_HITS: Array[int] = [0, 1, 2, 2, 13, 4, 0]
 const MAT_TOOL: Array[String] = ["", "shovel", "shovel", "shovel", "pickaxe", "pickaxe", ""]
-const MAT_ENERGY: Array[float] = [0.0, 1.2, 1.4, 1.8, 2.4, 3.0, 0.0]
-const MAT_ITEM: Array[String] = ["", "", "sand", "clay", "coal", "iron_ore", ""]
-const MAT_YIELD: Array[int] = [0, 0, 2, 2, 2, 1, 0]
-## Шанс найти камень в простом грунте.
-const SOIL_STONE_CHANCE: float = 0.12
+const MAT_ENERGY: Array[float] = [0.0, 1.2, 1.4, 1.8, 1.4, 2.0, 0.0]
+const MAT_ITEM: Array[String] = ["", "soil", "sand", "clay", "coal", "iron_ore", ""]
+## Добыча за удар (дробная: уголь и руда по 0.25). Блок выдаёт целые штуки
+## по мере накопления; остаток < 1 хранится в yield_pool и сгорает при разрушении.
+const MAT_YIELD: Array[float] = [0.0, 1.0, 1.0, 1.0, 0.25, 0.25, 0.0]
 
 ## Ресурсы, которые могут лежать в жиле, и их глубина (слой 0 — верхний, травяной).
 const RESOURCE_MATS: Dictionary = {"sand": Mat.SAND, "clay": Mat.CLAY, "coal": Mat.COAL, "iron_ore": Mat.IRON_ORE}
@@ -77,6 +78,8 @@ const RESOURCE_LAYOUT: Dictionary = {
 var voxels: PackedByteArray = PackedByteArray()
 ## Накопленные удары по блокам, которые ещё не разрушены: Vector3i -> int.
 var damage: Dictionary = {}
+## Накопленная дробная добыча по блокам: Vector3i -> float (остаток < 1 сгорает при разрушении).
+var yield_pool: Dictionary = {}
 ## Найденные игроком ресурсы этой жилы (item_id).
 var discovered: Array[String] = []
 var active_resources: Array[String] = []
@@ -97,9 +100,6 @@ var _rng := RandomNumberGenerator.new()
 var _mesh_instance: MeshInstance3D
 var _body: StaticBody3D
 var _body_shape: ConcavePolygonShape3D
-var _highlight: MeshInstance3D
-var _highlight_mat: StandardMaterial3D
-var _edge_material: StandardMaterial3D
 
 const _DIRS: Array[Vector3i] = [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, -1, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]
 ## Углы граней единичного куба (против часовой стрелки снаружи); треугольники выводятся
@@ -135,6 +135,7 @@ func generate() -> void:
 		for x in n:
 			voxels[_index(Vector3i(x, 0, z))] = Mat.BEDROCK
 	damage.clear()
+	yield_pool.clear()
 	discovered.clear()
 	_markers.clear()
 	_rng.seed = hash(deposit_seed)
@@ -259,6 +260,23 @@ func update_aim(player: Node3D) -> bool:
 
 func has_target() -> bool:
 	return _target != NO_CELL
+
+## Прицел строго по курсору мыши: мотыга бьёт туда, куда указывает курсор.
+## В отличие от update_aim, без fallback на направление взгляда персонажа.
+## Возвращает true, если под курсором копаемый блок в досягаемости и мотыга годится.
+func aim_at_cursor(player: Node3D) -> bool:
+	_last_player = player
+	_aim_msec = Time.get_ticks_msec()
+	var cell: Vector3i = NO_CELL
+	if use_mouse_aim and DisplayServer.get_name() != "headless" and is_inside_tree():
+		cell = _pick_by_mouse(player)
+	if cell == NO_CELL:
+		# Курсор не на копаемом блоке (или нет мыши): текущий прицел не трогаем.
+		return false
+	_target = cell
+	_prompt_dirty = true
+	_refresh_target(player)
+	return _target_ok and is_cell_diggable(_target)
 
 func get_target_cell() -> Vector3i:
 	return _target
@@ -439,6 +457,23 @@ func _on_interacted(player: Node) -> void:
 		return
 	var inv: Object = player.get("inventory") if "inventory" in player else null
 	var tool_type: String = _equipped_dig_tool(inv)
+	if tool_type == "shovel":
+		# Мотыга разрушает строго то место, куда попало лезвие: нужен свежий
+		# прицел по курсору; соседние блоки «по взгляду» не трогаем.
+		# Без мыши (headless-тесты) работает обычный прицел через dig_cell.
+		var cursor_ok: bool = aim_at_cursor(player)
+		var mouse_active: bool = use_mouse_aim and DisplayServer.get_name() != "headless" and is_inside_tree()
+		if not cursor_ok and mouse_active:
+			_notify(player, "⛏️ Наведите курсор на грунт рядом с персонажем")
+			return
+		if _target == NO_CELL or not is_solid(_target):
+			_notify(player, "⛏️ Наведите курсор на грунт рядом с персонажем")
+			return
+		cell = _target
+		mat = get_voxel(cell)
+		if not is_cell_diggable(cell):
+			_notify(player, "🪨 " + get_prompt())
+			return
 	if tool_type == "" or (MAT_TOOL[mat] == "pickaxe" and tool_type != "pickaxe"):
 		var need: Dictionary = ItemDB.get_item(MAT_TOOL[mat])
 		var held: String = ItemDB.get_item_name(inv.get_equipped_tool()) if inv else "—"
@@ -459,6 +494,7 @@ func _on_interacted(player: Node) -> void:
 		AudioManager.play("dig")
 	var hits: int = int(damage.get(cell, 0)) + hit_power
 	var needed: int = hits_for(mat, tool_type)
+	yield_pool[cell] = float(yield_pool.get(cell, 0.0)) + MAT_YIELD[mat] * float(hit_power)
 	if hits < needed:
 		damage[cell] = hits
 		_spawn_crumbs(cell, mat, 4)
@@ -470,7 +506,8 @@ func _break_cell(cell: Vector3i, mat: int, player: Node, level: int, is_miner: b
 	voxels[_index(cell)] = Mat.AIR
 	damage.erase(cell)
 	var item_id: String = MAT_ITEM[mat]
-	var amount: int = MAT_YIELD[mat]
+	var amount: int = int(floor(float(yield_pool.get(cell, 0.0))))
+	yield_pool.erase(cell)
 	if mat == Mat.IRON_ORE and _rng.randf() < 0.5:
 		amount += 1
 	if item_id != "":
@@ -478,9 +515,6 @@ func _break_cell(cell: Vector3i, mat: int, player: Node, level: int, is_miner: b
 			amount += 1
 		if is_miner and (mat == Mat.COAL or mat == Mat.IRON_ORE):
 			amount += 1
-	elif _rng.randf() < SOIL_STONE_CHANCE:
-		item_id = "stone"
-		amount = 1
 	if item_id != "" and amount > 0:
 		_give(player, item_id, amount, cell)
 		if item_id in RESOURCE_MATS and not item_id in discovered:
@@ -542,77 +576,14 @@ func _build_nodes() -> void:
 	_body.add_child(col)
 	add_child(_body)
 
-	_highlight = MeshInstance3D.new()
-	_highlight.name = "TargetHighlight"
-	var hb := BoxMesh.new()
-	hb.size = Vector3.ONE * VOXEL_SIZE * 1.04
-	_highlight_mat = StandardMaterial3D.new()
-	_highlight_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_highlight_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_highlight_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	_highlight_mat.albedo_color = Color(1.0, 1.0, 0.6, 0.22)
-	hb.material = _highlight_mat
-	_highlight.mesh = hb
-	_highlight.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_highlight.visible = false
-	add_child(_highlight)
-	# Рёбра блока под прицелом — чтобы подсветка читалась и на ярком песке.
-	var edges := MeshInstance3D.new()
-	edges.name = "Edges"
-	var im := ImmediateMesh.new()
-	var edge_mat := StandardMaterial3D.new()
-	edge_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	edge_mat.vertex_color_use_as_albedo = true
-	edge_mat.no_depth_test = true
-	edge_mat.render_priority = 1
-	im.surface_begin(Mesh.PRIMITIVE_LINES, edge_mat)
-	var h: float = VOXEL_SIZE * 0.53
-	for a in 3:
-		for sx in [-1.0, 1.0]:
-			for sy in [-1.0, 1.0]:
-				var p0 := Vector3.ZERO
-				var p1 := Vector3.ZERO
-				p0[a] = -h
-				p1[a] = h
-				p0[(a + 1) % 3] = sx * h
-				p1[(a + 1) % 3] = sx * h
-				p0[(a + 2) % 3] = sy * h
-				p1[(a + 2) % 3] = sy * h
-				im.surface_set_color(Color.WHITE)
-				im.surface_add_vertex(p0)
-				im.surface_set_color(Color.WHITE)
-				im.surface_add_vertex(p1)
-	im.surface_end()
-	edges.mesh = im
-	edges.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_highlight.add_child(edges)
-	_edge_material = edge_mat
-
 func _process(_delta: float) -> void:
-	if _highlight and _highlight.visible:
-		# Подсветка гаснет, если персонаж ушёл или выбрал другой объект.
-		var focused: bool = is_instance_valid(_last_player) and _last_player.get("current_interactable") == self
-		if not focused or Time.get_ticks_msec() - _aim_msec > 250:
-			_highlight.visible = false
-			set_process(false)
-	else:
-		set_process(false)
+	# Квадратной подсветки блока больше нет: мотыга разрушает то место,
+	# куда попало лезвие (курсор), а не заранее обведённый куб.
+	set_process(false)
 
 func _update_highlight() -> void:
-	if _highlight == null:
-		return
-	if _target == NO_CELL:
-		_highlight.visible = false
-		set_process(false)
-		return
-	_highlight.position = cell_to_local(_target) + Vector3.ONE * VOXEL_SIZE * 0.5
-	var ok: bool = _target_ok
-	_highlight_mat.albedo_color = Color(0.55, 1.0, 0.5, 0.28) if ok else Color(1.0, 0.35, 0.3, 0.3)
-	if _edge_material:
-		_edge_material.albedo_color = Color(0.85, 1.0, 0.8) if ok else Color(1.0, 0.55, 0.5)
-	var should_vis: bool = is_instance_valid(_last_player) and _last_player.get("current_interactable") == self
-	_highlight.visible = should_vis
-	set_process(should_vis)
+	# Заглушка: квадратный блок прицела удалён, курсор — сам прицел.
+	set_process(false)
 
 ## Перестраивает видимый меш (только открытые грани) и коллизию участка.
 func rebuild() -> void:
@@ -742,6 +713,7 @@ func apply_save_state(state: Dictionary) -> bool:
 		return false
 	voxels = decode_voxels(state)
 	damage.clear()
+	yield_pool.clear()
 	discovered.clear()
 	for item_id in state.get("discovered", []):
 		discovered.append(str(item_id))

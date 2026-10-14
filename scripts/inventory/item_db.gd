@@ -86,7 +86,7 @@ const ITEMS: Dictionary = {
 		"name": "Камень",
 		"icon": "⛰",
 		"category": "resource",
-		"weight": 1.5,
+		"weight": 0.25,
 		"max_stack": 50,
 		"description": "Крепкая каменная порода. Измельчается в пыль для кирпичей."
 	},
@@ -107,6 +107,15 @@ const ITEMS: Dictionary = {
 		"weight": 1.0,
 		"max_stack": 50,
 		"description": "Мелкий речной песок. Необходим для растворов и восстановления построек."
+	},
+	"soil": {
+		"id": "soil",
+		"name": "Земля",
+		"icon": "🟫",
+		"category": "resource",
+		"weight": 1.0,
+		"max_stack": 50,
+		"description": "Рыхлая земля из жилы. Пока ни во что не перерабатывается."
 	},
 	"coal": {
 		"id": "coal",

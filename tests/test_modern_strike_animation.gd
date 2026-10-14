@@ -40,9 +40,11 @@ func _run() -> void:
 	var mine: Animation = ap.get_animation(swing_name)
 	check(mine.length >= 0.8 and mine.length <= 1.6, "Strike clip must be 0.8-1.6s")
 	check(mine.has_meta("contact_time") and mine.has_meta("play_speed"), "Strike clip must carry contact_time/play_speed metadata")
-	var speed: float = float(mine.get_meta("play_speed", 1.0))
-	var DUR: float = mine.length / speed
-	var CONTACT: float = float(mine.get_meta("contact_time", mine.length * 0.5)) / speed
+	# Кирка бьёт в темпе топора (длительность — от chop, фаза контакта — своя):
+	# ожидание берём тем же расчётом, что в ударе.
+	var timing: Array = player._pickaxe_timing()
+	var DUR: float = timing[0]
+	var CONTACT: float = timing[1]
 	check(DUR >= 0.4 and DUR <= 1.2, "Strike must feel snappy (0.4-1.2s)")
 	for bone_name in ["Spine1", "Spine2", "Forearm.r", "Hand.r", "Thigh.l"]:
 		var found: bool = false

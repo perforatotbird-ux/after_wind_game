@@ -70,7 +70,8 @@ func _process(_d: float) -> bool:
 		rock._on_interacted(player)
 	check(rock.is_depleted, "Валун не истощился после %d ударов киркой" % rock.max_hits)
 	if player.inventory.has_method("get_item_count"):
-		check(player.inventory.get_item_count("stone") > before, "Камень не добавился в инвентарь")
+		# Дробная добыча: 10 ударов × 0.25 + шахтёр 10 × 1 + бонус 2 = 14 камня.
+		check(player.inventory.get_item_count("stone") == before + 14, "С валуна должно быть 14 камня, есть %d" % (player.inventory.get_item_count("stone") - before))
 	return false
 
 func _finish() -> bool:

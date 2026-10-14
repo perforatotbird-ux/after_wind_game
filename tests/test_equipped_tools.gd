@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Тест динамической экипировки: в руке персонажа виден инструмент
-## экипированного слота (топор/кирка/лопата/ведро), а не всегда кирка.
+## экипированного слота (топор/кирка/мотыга/ведро), а не всегда кирка.
 ## Ведро носят в руке постоянно (у него нет анимации замаха).
 
 const PlayerScene = preload("res://scenes/player/player.tscn")
@@ -121,12 +121,12 @@ func _run_tests() -> void:
 	_assert_only_visible(player, "axe")
 	print("  • iron_axe показывает модель топора.")
 
-	# 4. Лопата в руке при экипированной лопате
-	print("\n--- Проверка 4: Лопата (слот 3) ---")
+	# 4. Мотыга в руке при экипированной мотыге
+	print("\n--- Проверка 4: Мотыга (слот 3) ---")
 	player.inventory.equip_tool("shovel")
 	player.set_equipped_tool_visible(true)
 	_assert_only_visible(player, "shovel")
-	print("  • Видна только лопата.")
+	print("  • Видна только мотыга.")
 
 	# 5. Ведро носят в руке постоянно (persistent, без замаха)
 	print("\n--- Проверка 5: Ведро (слот 4, persistent) ---")
@@ -147,7 +147,7 @@ func _run_tests() -> void:
 		inst.free()
 
 	# 7. Иконки в ItemDB
-	print("\n--- Проверка 7: Иконки топора/лопаты/ведра в ItemDB ---")
+	print("\n--- Проверка 7: Иконки топора/мотыгы/ведра в ItemDB ---")
 	for item_id in ["axe", "shovel", "bucket", "iron_axe", "iron_shovel", "reinforced_bucket"]:
 		var d: Dictionary = ItemDB.get_item(item_id)
 		if d.is_empty():
@@ -158,7 +158,7 @@ func _run_tests() -> void:
 			return
 		print("  • '%s' -> %s." % [item_id, d.get("texture")])
 
-	# 8. Анимация копания лопатой
+	# 8. Анимация копания мотыгой
 	print("\n--- Проверка 8: Анимация копания dig ---")
 	var dig_name: String = _resolve_tool_anim(player.anim_player, "dig")
 	if dig_name == "":
@@ -174,9 +174,9 @@ func _run_tests() -> void:
 		return
 	var dig_shovel: Node3D = player.equipped_tool_nodes.get("shovel")
 	if dig_shovel == null or not dig_shovel.visible:
-		_fail("Во время копания в руке должна быть лопата (даже если экипирован топор)")
+		_fail("Во время копания в руке должна быть мотыга (даже если экипирован топор)")
 		return
-	print("  • Копание запущено: is_digging=true, в руке лопата.")
+	print("  • Копание запущено: is_digging=true, в руке мотыга.")
 	player._process(5.0)
 	if player.is_digging:
 		_fail("Копание должно завершиться по истечении длительности")
