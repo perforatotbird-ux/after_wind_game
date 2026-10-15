@@ -936,7 +936,8 @@ func eat_from_inventory(preferred_item_id: String = "") -> bool:
 		# (лечебная облепиха — самой последней, чтобы не тратить лекарство).
 		for it_id in ["bread", "potato", "carrot",
 				"corn", "pumpkin", "cabbage", "bean", "onion", "tomato", "pepper",
-				"sunflower_seeds", "herbs", "apple", "pear", "cherry",
+				"apricot_pie", "dried_apricot", "apricot_compote",
+				"sunflower_seeds", "herbs", "apple", "pear", "cherry", "apricot",
 				"red_berry", "blue_berry", "blackberry", "sea_buckthorn"]:
 			if inventory.get_item_count(it_id) > 0:
 				target_item = it_id

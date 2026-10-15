@@ -12,6 +12,7 @@ const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
 const CherryModel = preload("res://assets/models/cherry/cherry_with_fruit.tscn")
 const AppleModel = preload("res://assets/models/apple/apple_with_fruit.tscn")
+const ApricotModel = preload("res://assets/models/apricot/apricot_with_fruit.tscn")
 
 const GROUP: String = "fruit_trees"
 const FALLBACK_HOURS_PER_SECOND: float = 1.0 / 60.0
@@ -58,6 +59,18 @@ const CONFIGS: Dictionary = {
 		"grow_hours": [24.0, 48.0],
 		"fruit_color": Color(0.72, 0.08, 0.14),
 		"canopy_color": Color(0.35, 0.62, 0.26),
+		"seasons": ["summer"],
+	},
+	"apricot_tree": {
+		"name": "Абрикос",
+		"fruit_id": "apricot",
+		"fruit_name": "абрикосы",
+		"sapling_id": "apricot_sapling",
+		"yield_range": [5, 9],
+		# Абрикос — 3 игровых дня (24 + 48 ч) до первого урожая.
+		"grow_hours": [24.0, 48.0],
+		"fruit_color": Color(0.96, 0.60, 0.15),
+		"canopy_color": Color(0.30, 0.58, 0.24),
 		"seasons": ["summer"],
 	}
 }
@@ -166,10 +179,14 @@ func _build_visuals() -> void:
 	_visuals_root.name = "TreeVisuals"
 	add_child(_visuals_root)
 
-	# Яблоня и вишня по референсам: общий ствол и крона, отдельный узел плодов.
+	# Яблоня, вишня и абрикос по референсам: общий ствол и крона, отдельный узел плодов.
 	# Молодые стадии используют ту же модель без плодов; сбор не перестраивает меши.
-	if tree_type in ["cherry_tree", "apple_tree"]:
-		var packed: PackedScene = CherryModel if tree_type == "cherry_tree" else AppleModel
+	if tree_type in ["cherry_tree", "apple_tree", "apricot_tree"]:
+		var packed: PackedScene = AppleModel
+		if tree_type == "cherry_tree":
+			packed = CherryModel
+		elif tree_type == "apricot_tree":
+			packed = ApricotModel
 		var model: Node3D = packed.instantiate()
 		_visuals_root.add_child(model)
 		_trunk_mesh = model.get_node("Trunk")
@@ -377,6 +394,8 @@ func get_save_state() -> Dictionary:
 
 func apply_save_state(data: Dictionary) -> void:
 	tree_type = str(data.get("type", tree_type))
+	var cfg: Dictionary = _get_config()
+	object_name = cfg.get("name", object_name)
 	stage = int(data.get("stage", stage))
 	# Числа зажимаем, как в berry_bush/resource_node: битый сейв не должен
 	# давать мгновенное созревание, вечное ожидание плодов или падение с 1 удара.

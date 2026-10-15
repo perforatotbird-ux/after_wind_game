@@ -491,6 +491,17 @@ const ITEMS: Dictionary = {
 		"sell_price": 30,
 		"description": "Саженец вишнёвого дерева. Весной пышно цветет белым цветом, а летом осыпается ягодами."
 	},
+	"apricot_sapling": {
+		"id": "apricot_sapling",
+		"name": "Саженец абрикоса",
+		"icon": "🌱🍑",
+		"category": "seeds",
+		"tree_type": "apricot_tree",
+		"weight": 0.8,
+		"max_stack": 10,
+		"sell_price": 30,
+		"description": "Привитый саженец абрикосового дерева. Любит летнее солнце и приносит сочные золотистые плоды."
+	},
 	"carrot": {
 		"id": "carrot",
 		"name": "Свежая морковь",
@@ -743,6 +754,20 @@ const ITEMS: Dictionary = {
 		"energy_bonus": 6.0,
 		"description": "Горсть кисло-сладкой садовой вишни (+8% сытости, +10% жажды, +6 энергии)."
 	},
+	"apricot": {
+		"id": "apricot",
+		"name": "Спелый абрикос",
+		"icon": "🍑",
+		"category": "food",
+		"weight": 0.1,
+		"max_stack": 40,
+		"sell_price": 12,
+		"is_edible": true,
+		"hunger_recovery": 14.0,
+		"thirst_recovery": 12.0,
+		"energy_bonus": 8.0,
+		"description": "Сладкий бархатистый абрикос из сада (+14% сытости, +12% жажды, +8 энергии)."
+	},
 	"blackberry": {
 		"id": "blackberry",
 		"name": "Ежевика",
@@ -960,6 +985,50 @@ const ITEMS: Dictionary = {
 		"energy_bonus": 12.0,
 		"health_bonus": 6.0,
 		"description": "Ягоды, проваренные в чистой воде (+45% жажды, +12 энергии, +6 здоровья)."
+	},
+	"dried_apricot": {
+		"id": "dried_apricot",
+		"name": "Курага",
+		"icon": "🫓",
+		"category": "food",
+		"weight": 0.05,
+		"max_stack": 40,
+		"sell_price": 24,
+		"is_edible": true,
+		"hunger_recovery": 22.0,
+		"thirst_recovery": 0.0,
+		"energy_bonus": 16.0,
+		"description": "Сушёные на огне абрикосы без косточек: лёгкий, сытный и долговечный сухофрукт (+22% сытости, +16 энергии)."
+	},
+	"apricot_compote": {
+		"id": "apricot_compote",
+		"name": "Абрикосовый компот",
+		"icon": "🫗",
+		"category": "food",
+		"weight": 0.35,
+		"max_stack": 20,
+		"sell_price": 48,
+		"is_edible": true,
+		"is_drinkable": true,
+		"hunger_recovery": 12.0,
+		"thirst_recovery": 40.0,
+		"energy_bonus": 14.0,
+		"health_bonus": 4.0,
+		"description": "Ароматный компот из спелых абрикосов (+40% жажды, +12% сытости, +14 энергии)."
+	},
+	"apricot_pie": {
+		"id": "apricot_pie",
+		"name": "Абрикосовый пирог",
+		"icon": "🥧",
+		"category": "food",
+		"weight": 0.5,
+		"max_stack": 20,
+		"sell_price": 70,
+		"is_edible": true,
+		"hunger_recovery": 65.0,
+		"thirst_recovery": 10.0,
+		"energy_bonus": 24.0,
+		"description": "Румяный пирог с сочной абрикосовой начинкой из печи (+65% сытости, +10% жажды, +24 энергии)."
 	},
 	"mushroom_sauce": {
 		"id": "mushroom_sauce",

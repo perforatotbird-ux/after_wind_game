@@ -295,6 +295,16 @@ const RECIPES: Dictionary = {
 		"energy_cost": 2.0,
 		"description": "Укоренение и прививка побега вишнёвого дерева."
 	},
+	"craft_apricot_sapling": {
+		"id": "craft_apricot_sapling",
+		"name": "Прививка: Саженец абрикоса (x1)",
+		"machine": "workbench",
+		"inputs": {"apricot": 2, "wood": 1},
+		"outputs": {"apricot_sapling": 1},
+		"duration": 30.0,
+		"energy_cost": 2.0,
+		"description": "Прививка плодового черенка абрикоса на подвой из древесины."
+	},
 	"bake_bread": {
 		"id": "bake_bread",
 		"name": "Выпечка: Домашний хлеб (x2)",
@@ -304,6 +314,36 @@ const RECIPES: Dictionary = {
 		"duration": 45.0,
 		"energy_cost": 2.5,
 		"description": "Замес теста из молотой пшеницы и чистой воды с выпечкой подового хлеба. Топливо — в топливных слотах печи."
+	},
+	"dry_apricots": {
+		"id": "dry_apricots",
+		"name": "Сушка: Курага (x2)",
+		"machine": "furnace",
+		"inputs": {"apricot": 3},
+		"outputs": {"dried_apricot": 2},
+		"duration": 35.0,
+		"energy_cost": 1.0,
+		"description": "Термическая сушка спелых абрикосов в печи: получается сладкая питательная курага."
+	},
+	"cook_apricot_compote": {
+		"id": "cook_apricot_compote",
+		"name": "Варка: Абрикосовый компот (x2)",
+		"machine": "furnace",
+		"inputs": {"apricot": 3, "clean_water": 1},
+		"outputs": {"apricot_compote": 2},
+		"duration": 30.0,
+		"energy_cost": 1.5,
+		"description": "Сладкий наваристый компот из свежих абрикосов, сваренный в печи: отлично утоляет жажду и восстанавливает силы."
+	},
+	"cook_apricot_pie": {
+		"id": "cook_apricot_pie",
+		"name": "Выпечка: Абрикосовый пирог (x2)",
+		"machine": "furnace",
+		"inputs": {"apricot": 3, "wheat": 2, "clean_water": 1},
+		"outputs": {"apricot_pie": 2},
+		"duration": 55.0,
+		"energy_cost": 3.0,
+		"description": "Праздничный пирог с сочными абрикосами из печи: превосходная сытность."
 	},
 
 	# --- Компоненты улучшенных станков (доступны со Lv.2, min_level) ---

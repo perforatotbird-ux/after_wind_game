@@ -1039,7 +1039,8 @@ func _on_quick_sell_pressed() -> void:
 	var to_sell: Dictionary = {}
 	for product_id in ["poor_brick", "mortar", "fuel_briquette", "fired_brick", "glass", "iron_ingot", "clean_water", "bottled_water", "carrot", "potato", "wheat", "bread",
 			"sunflower_seeds", "onion", "cabbage", "tomato", "pepper", "bean", "herbs", "corn", "pumpkin",
-			"apple", "pear", "cherry", "red_berry", "blue_berry", "blackberry", "sea_buckthorn"]:
+			"apple", "pear", "cherry", "apricot", "dried_apricot", "apricot_compote", "apricot_pie",
+			"red_berry", "blue_berry", "blackberry", "sea_buckthorn"]:
 		var c: int = inv.get_item_count(product_id)
 		if c > 0:
 			to_sell[product_id] = c

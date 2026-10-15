@@ -49,6 +49,7 @@ const STYLES: Dictionary = {
 	"apple_sapling": ["sapling", Color(0.35, 0.7, 0.3), Color(0.85, 0.15, 0.15)],
 	"pear_sapling": ["sapling", Color(0.35, 0.7, 0.3), Color(0.82, 0.75, 0.2)],
 	"cherry_sapling": ["sapling", Color(0.35, 0.7, 0.3), Color(0.68, 0.05, 0.15)],
+	"apricot_sapling": ["sapling", Color(0.35, 0.7, 0.3), Color(0.96, 0.60, 0.15)],
 	"carrot": ["carrot", Color(0.95, 0.5, 0.15), Color(0.35, 0.7, 0.25)],
 	"potato": ["potato", Color(0.75, 0.6, 0.38), Color(0.9, 0.8, 0.6)],
 	"red_berry": ["berries", Color(0.78, 0.08, 0.1), Color(0.3, 0.6, 0.2)],
@@ -68,6 +69,9 @@ const STYLES: Dictionary = {
 	"glazed_carrot": ["fried", Color(0.95, 0.6, 0.2), Color(0.85, 0.25, 0.3)],
 	"potato_pie": ["bread", Color(0.88, 0.68, 0.34), Color(0.66, 0.44, 0.22)],
 	"berry_compote": ["drink", Color(0.7, 0.32, 0.38), Color(0.9, 0.55, 0.5)],
+	"dried_apricot": ["dried", Color(0.85, 0.45, 0.12), Color(0.65, 0.35, 0.10)],
+	"apricot_compote": ["drink", Color(0.92, 0.62, 0.22), Color(0.96, 0.78, 0.40)],
+	"apricot_pie": ["bread", Color(0.92, 0.70, 0.32), Color(0.85, 0.50, 0.15)],
 	"mushroom_sauce": ["sack", Color(0.56, 0.44, 0.32), Color(0.78, 0.66, 0.48)],
 	"berry_sauce": ["sack", Color(0.62, 0.26, 0.32), Color(0.85, 0.45, 0.45)],
 	"sapling": ["sapling", Color(0.35, 0.7, 0.3), Color(0.5, 0.34, 0.2)],
@@ -84,6 +88,7 @@ const STYLES: Dictionary = {
 	"apple": ["apple", Color(0.88, 0.18, 0.15), Color(0.35, 0.68, 0.25)],
 	"pear": ["pear", Color(0.82, 0.74, 0.22), Color(0.45, 0.35, 0.2)],
 	"cherry": ["cherry", Color(0.72, 0.08, 0.14), Color(0.4, 0.65, 0.25)],
+	"apricot": ["apricot", Color(0.96, 0.60, 0.15), Color(0.35, 0.65, 0.25)],
 	"bread": ["bread", Color(0.72, 0.45, 0.2), Color(0.88, 0.65, 0.35)],
 	"fertilizer": ["sack", Color(0.55, 0.45, 0.3), Color(0.4, 0.66, 0.3)],
 	"copper_wire": ["coil", Color(0.8, 0.45, 0.2), Color(0.96, 0.72, 0.46)],
@@ -316,6 +321,13 @@ static func _shape(img: Image, shape: String, base: Color, accent: Color, g: flo
 			if d:
 				_ellipse(img, 15, 29, 2, 2, Color(1, 1, 1, 0.65))
 				_ellipse(img, 27, 26, 2, 2, Color(1, 1, 1, 0.65))
+		"apricot":
+			_ellipse(img, 24, 27, 12, 12, base, g)
+			_line(img, 24, 15, 25, 8, 2.0, Color(0.45, 0.3, 0.15), g)
+			_ellipse(img, 29, 9, 4, 2.2, accent, g)
+			if d:
+				_ellipse(img, 19, 23, 4, 3, base.lightened(0.28))
+				_line(img, 24, 16, 23, 38, 1.2, dark)
 		"onion":
 			_ellipse(img, 24, 28, 14, 12, base, g)
 			_line(img, 24, 17, 24, 7, 2.5, accent, g)
