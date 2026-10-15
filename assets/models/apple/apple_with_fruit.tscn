@@ -1,0 +1,46 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_trunk_mesh.tres" id="1_pb330"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_0_mesh.tres" id="2_52f16"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_1_mesh.tres" id="3_bih4s"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_2_mesh.tres" id="4_84y4b"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_3_mesh.tres" id="5_xgpiq"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_4_mesh.tres" id="6_xwa68"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_5_mesh.tres" id="7_envp4"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_6_mesh.tres" id="8_7jn1f"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_apples_mesh.tres" id="9_py43i"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_stems_mesh.tres" id="10_ev32l"]
+
+[node name="AppleTree" type="Node3D" unique_id=1392799414]
+
+[node name="Trunk" type="MeshInstance3D" parent="." unique_id=1518518384]
+mesh = ExtResource("1_pb330")
+
+[node name="Canopy0" type="MeshInstance3D" parent="." unique_id=986421277]
+mesh = ExtResource("2_52f16")
+
+[node name="Canopy1" type="MeshInstance3D" parent="." unique_id=497461712]
+mesh = ExtResource("3_bih4s")
+
+[node name="Canopy2" type="MeshInstance3D" parent="." unique_id=1487262564]
+mesh = ExtResource("4_84y4b")
+
+[node name="Canopy3" type="MeshInstance3D" parent="." unique_id=1910842676]
+mesh = ExtResource("5_xgpiq")
+
+[node name="Canopy4" type="MeshInstance3D" parent="." unique_id=1435225924]
+mesh = ExtResource("6_xwa68")
+
+[node name="Canopy5" type="MeshInstance3D" parent="." unique_id=892363609]
+mesh = ExtResource("7_envp4")
+
+[node name="Canopy6" type="MeshInstance3D" parent="." unique_id=844797157]
+mesh = ExtResource("8_7jn1f")
+
+[node name="Fruits" type="Node3D" parent="." unique_id=114344424]
+
+[node name="Apples" type="MeshInstance3D" parent="Fruits" unique_id=1843984404]
+mesh = ExtResource("9_py43i")
+
+[node name="Stems" type="MeshInstance3D" parent="Fruits" unique_id=1240039057]
+mesh = ExtResource("10_ev32l")

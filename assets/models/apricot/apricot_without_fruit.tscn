@@ -1,0 +1,36 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/models/apricot/apricot_trunk_mesh.tres" id="1_1uf1k"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apricot/apricot_canopy_0_mesh.tres" id="2_ais7u"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apricot/apricot_canopy_1_mesh.tres" id="3_yii00"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apricot/apricot_canopy_2_mesh.tres" id="4_48h4r"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apricot/apricot_canopy_3_mesh.tres" id="5_up8ri"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apricot/apricot_canopy_4_mesh.tres" id="6_oat4b"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apricot/apricot_canopy_5_mesh.tres" id="7_b8eua"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apricot/apricot_canopy_6_mesh.tres" id="8_cfgwe"]
+
+[node name="ApricotTree" type="Node3D" unique_id=1605166424]
+
+[node name="Trunk" type="MeshInstance3D" parent="." unique_id=106776451]
+mesh = ExtResource("1_1uf1k")
+
+[node name="Canopy0" type="MeshInstance3D" parent="." unique_id=1495500773]
+mesh = ExtResource("2_ais7u")
+
+[node name="Canopy1" type="MeshInstance3D" parent="." unique_id=975911614]
+mesh = ExtResource("3_yii00")
+
+[node name="Canopy2" type="MeshInstance3D" parent="." unique_id=204260701]
+mesh = ExtResource("4_48h4r")
+
+[node name="Canopy3" type="MeshInstance3D" parent="." unique_id=706182280]
+mesh = ExtResource("5_up8ri")
+
+[node name="Canopy4" type="MeshInstance3D" parent="." unique_id=1298207433]
+mesh = ExtResource("6_oat4b")
+
+[node name="Canopy5" type="MeshInstance3D" parent="." unique_id=163306738]
+mesh = ExtResource("7_b8eua")
+
+[node name="Canopy6" type="MeshInstance3D" parent="." unique_id=1749758466]
+mesh = ExtResource("8_cfgwe")

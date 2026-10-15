@@ -10,6 +10,9 @@ const Seasons = preload("res://scripts/core/seasons.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
+const CherryModel = preload("res://assets/models/cherry/cherry_with_fruit.tscn")
+const AppleModel = preload("res://assets/models/apple/apple_with_fruit.tscn")
+
 const GROUP: String = "fruit_trees"
 const FALLBACK_HOURS_PER_SECOND: float = 1.0 / 60.0
 
@@ -153,11 +156,25 @@ func advance_hours(hours: float) -> void:
 
 func _build_visuals() -> void:
 	if _visuals_root:
+		remove_child(_visuals_root)
 		_visuals_root.queue_free()
+	_trunk_mesh = null
+	_canopy_mesh = null
+	_fruits_node = null
 
 	_visuals_root = Node3D.new()
 	_visuals_root.name = "TreeVisuals"
 	add_child(_visuals_root)
+
+	# Яблоня и вишня по референсам: общий ствол и крона, отдельный узел плодов.
+	# Молодые стадии используют ту же модель без плодов; сбор не перестраивает меши.
+	if tree_type in ["cherry_tree", "apple_tree"]:
+		var packed: PackedScene = CherryModel if tree_type == "cherry_tree" else AppleModel
+		var model: Node3D = packed.instantiate()
+		_visuals_root.add_child(model)
+		_trunk_mesh = model.get_node("Trunk")
+		_fruits_node = model.get_node("Fruits")
+		return
 
 	var cfg: Dictionary = _get_config()
 	var wood_col: Color = Color(0.42, 0.28, 0.16)

@@ -1,0 +1,46 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_trunk_mesh.tres" id="1_kyaay"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_0_mesh.tres" id="2_pmy6k"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_1_mesh.tres" id="3_l2id6"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_2_mesh.tres" id="4_lkqjb"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_3_mesh.tres" id="5_4qymf"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_4_mesh.tres" id="6_anatn"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_5_mesh.tres" id="7_b401p"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_6_mesh.tres" id="8_nj8dd"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_cherries_mesh.tres" id="9_8t881"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_stems_mesh.tres" id="10_cslwp"]
+
+[node name="CherryTree" type="Node3D" unique_id=1853745484]
+
+[node name="Trunk" type="MeshInstance3D" parent="." unique_id=1396238887]
+mesh = ExtResource("1_kyaay")
+
+[node name="Canopy0" type="MeshInstance3D" parent="." unique_id=1037091580]
+mesh = ExtResource("2_pmy6k")
+
+[node name="Canopy1" type="MeshInstance3D" parent="." unique_id=2006320360]
+mesh = ExtResource("3_l2id6")
+
+[node name="Canopy2" type="MeshInstance3D" parent="." unique_id=714559316]
+mesh = ExtResource("4_lkqjb")
+
+[node name="Canopy3" type="MeshInstance3D" parent="." unique_id=698977635]
+mesh = ExtResource("5_4qymf")
+
+[node name="Canopy4" type="MeshInstance3D" parent="." unique_id=1747539127]
+mesh = ExtResource("6_anatn")
+
+[node name="Canopy5" type="MeshInstance3D" parent="." unique_id=1897613513]
+mesh = ExtResource("7_b401p")
+
+[node name="Canopy6" type="MeshInstance3D" parent="." unique_id=156134517]
+mesh = ExtResource("8_nj8dd")
+
+[node name="Fruits" type="Node3D" parent="." unique_id=136897071]
+
+[node name="Cherries" type="MeshInstance3D" parent="Fruits" unique_id=655913545]
+mesh = ExtResource("9_8t881")
+
+[node name="Stems" type="MeshInstance3D" parent="Fruits" unique_id=1448881994]
+mesh = ExtResource("10_cslwp")

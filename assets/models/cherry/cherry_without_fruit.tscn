@@ -1,0 +1,36 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_trunk_mesh.tres" id="1_u0t35"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_0_mesh.tres" id="2_okt7i"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_1_mesh.tres" id="3_u3ke4"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_2_mesh.tres" id="4_wr1lh"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_3_mesh.tres" id="5_3j1t1"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_4_mesh.tres" id="6_sk1gb"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_5_mesh.tres" id="7_8rcgv"]
+[ext_resource type="ArrayMesh" path="res://assets/models/cherry/cherry_canopy_6_mesh.tres" id="8_y5k5x"]
+
+[node name="CherryTree" type="Node3D" unique_id=1853745484]
+
+[node name="Trunk" type="MeshInstance3D" parent="." unique_id=1396238887]
+mesh = ExtResource("1_u0t35")
+
+[node name="Canopy0" type="MeshInstance3D" parent="." unique_id=1037091580]
+mesh = ExtResource("2_okt7i")
+
+[node name="Canopy1" type="MeshInstance3D" parent="." unique_id=2006320360]
+mesh = ExtResource("3_u3ke4")
+
+[node name="Canopy2" type="MeshInstance3D" parent="." unique_id=714559316]
+mesh = ExtResource("4_wr1lh")
+
+[node name="Canopy3" type="MeshInstance3D" parent="." unique_id=698977635]
+mesh = ExtResource("5_3j1t1")
+
+[node name="Canopy4" type="MeshInstance3D" parent="." unique_id=1747539127]
+mesh = ExtResource("6_sk1gb")
+
+[node name="Canopy5" type="MeshInstance3D" parent="." unique_id=1897613513]
+mesh = ExtResource("7_8rcgv")
+
+[node name="Canopy6" type="MeshInstance3D" parent="." unique_id=156134517]
+mesh = ExtResource("8_y5k5x")
