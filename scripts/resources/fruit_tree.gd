@@ -335,6 +335,10 @@ func harvest(player: Node) -> int:
 	var fruit_id: String = cfg.get("fruit_id", "apple")
 	var yr: Array = cfg.get("yield_range", [3, 5])
 	var count: int = randi_range(int(yr[0]), int(yr[1]))
+	
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	if skills and skills.has_method("roll_bonus_yield") and skills.roll_bonus_yield("orchard"):
+		count += 1
 
 	var drop_at: Vector3 = global_position + Vector3(0.0, 1.2, 0.0)
 	DroppedItemScript.give_or_drop(player, fruit_id, count, drop_at, get_parent())
@@ -344,18 +348,27 @@ func harvest(player: Node) -> int:
 	regrow_progress = 0.0
 	_update_visuals()
 
+	if skills and skills.has_method("add_xp"):
+		skills.add_xp("orchard", 15)
+
 	if player and player.has_method("notify"):
 		player.notify("🧺 Собрано: %s ×%d!" % [ItemDB.get_item_name(fruit_id), count])
 
 	return count
 
 func chop(player: Node) -> bool:
-	# Энергия рубки вдвое меньше базовой (1.5), как у обычных деревьев.
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	var energy_cost: float = 1.5
+	if skills and skills.has_method("get_energy_discount"):
+		energy_cost *= skills.get_energy_discount("woodcutting")
+	
 	if player and player.has_method("consume_energy"):
-		player.consume_energy(1.5)
+		player.consume_energy(energy_cost)
 
 	current_hits -= 1
 	AudioManager.play("hit_wood")
+	if skills and skills.has_method("add_xp"):
+		skills.add_xp("woodcutting", 3)
 
 	# Древесина капает дробно (0.25 за удар): целая выдаётся каждую 4-ю.
 	var drop_at: Vector3 = global_position + Vector3(0.0, 0.5, 0.0)
@@ -366,6 +379,8 @@ func chop(player: Node) -> bool:
 		DroppedItemScript.give_or_drop(player, "wood", whole, drop_at, get_parent())
 
 	if current_hits <= 0:
+		if skills and skills.has_method("add_xp"):
+			skills.add_xp("woodcutting", 15)
 		# Дерево срублено! Возвращаем древесину и саженец
 		var cfg: Dictionary = _get_config()
 		var sapling_id: String = cfg.get("sapling_id", "apple_sapling")

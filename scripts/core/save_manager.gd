@@ -59,7 +59,8 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			"thirst": player.thirst if "thirst" in player else 100.0,
 			"hunger": player.hunger if "hunger" in player else 100.0,
 			"wetness": player.wetness if "wetness" in player else 0.0,
-			"hours_without_sleep": player.hours_without_sleep if "hours_without_sleep" in player else 0.0
+			"hours_without_sleep": player.hours_without_sleep if "hours_without_sleep" in player else 0.0,
+			"skills": player.skills.serialize() if ("skills" in player and player.skills and player.skills.has_method("serialize")) else {}
 		}
 		
 		# 3. Инвентарь (max_slots / max_weight — справочно: при загрузке пересчитываются)
@@ -382,6 +383,8 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			player.wetness = p_data["wetness"]
 			if player.has_signal("wetness_changed"):
 				player.wetness_changed.emit(player.wetness, player.max_wetness)
+		if p_data.has("skills") and "skills" in player and player.skills and player.skills.has_method("deserialize"):
+			player.skills.deserialize(p_data["skills"])
 	
 	var inv = null
 	if player and is_instance_valid(player) and "inventory" in player:

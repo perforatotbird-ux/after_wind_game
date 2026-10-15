@@ -9,6 +9,7 @@ signal hunger_changed(current: float, max_val: float)
 signal wetness_changed(current: float, max_val: float)
 signal inventory_toggle_requested()
 signal class_select_toggle_requested()
+signal skills_toggle_requested()
 signal character_class_changed(class_id: String, c_name: String)
 
 @export_group("Movement")
@@ -84,6 +85,7 @@ const STRIKE_LONG_ANIM_THRESHOLD: float = 0.8
 const STRIKE_LONG_ANIM_SPEED: float = 1.5
 
 const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
+const PlayerSkills = preload("res://scripts/skills/player_skills.gd")
 
 # Алиасы анимаций: логическое имя -> кандидаты в AnimationPlayer.
 # Текущая модель (miner_package_model.tscn, tools/retarget_ual_to_miner.gd) содержит
@@ -112,6 +114,8 @@ const LOCOMOTION_SPEED_SCALE_MAX: float = 1.6
 @onready var visual_root: Node3D = $Visuals
 @onready var interaction_detector: Area3D = $InteractionDetector
 @onready var inventory: Node = $Inventory
+@onready var skills: Node = get_node_or_null("Skills")
+var _sprint_distance_accum: float = 0.0
 ## Семена, выбранные для посадки на делянке (R у делянки или кнопка в рюкзаке).
 var selected_seed: String = ""
 
@@ -198,6 +202,16 @@ func _ready() -> void:
 		inventory.name = "Inventory"
 		add_child(inventory)
 	
+	if not skills:
+		skills = get_node_or_null("Skills")
+		if not skills:
+			skills = PlayerSkills.new()
+			skills.name = "Skills"
+			add_child(skills)
+	if skills and skills.has_signal("skills_updated") and not skills.skills_updated.is_connected(_on_skills_updated):
+		skills.skills_updated.connect(_on_skills_updated)
+	_on_skills_updated()
+	
 	if interaction_detector:
 		interaction_detector.area_entered.connect(_on_interaction_area_entered)
 		interaction_detector.area_exited.connect(_on_interaction_area_exited)
@@ -235,10 +249,18 @@ func _ready() -> void:
 	hours_without_sleep = 0.0
 	_last_sleep_warning_hour = 0
 	health_changed.emit(health, max_health)
-	energy_changed.emit(energy, max_energy)
+	energy_changed.emit(energy, get_effective_max_energy())
 	thirst_changed.emit(thirst, max_thirst)
 	hunger_changed.emit(hunger, max_hunger)
 	wetness_changed.emit(wetness, max_wetness)
+
+func _on_skills_updated() -> void:
+	if skills == null:
+		return
+	if inventory and inventory.has_method("set_weight_bonus"):
+		var cap_bonus: float = skills.get_capacity_bonus() if skills.has_method("get_capacity_bonus") else 0.0
+		inventory.set_weight_bonus("skill:construction", cap_bonus)
+	energy_changed.emit(energy, get_effective_max_energy())
 
 func _process(delta: float) -> void:
 	# Render-frame clock: no physics-tick input delay or anonymous finish timers.
@@ -330,6 +352,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				inventory_toggle_requested.emit()
 			KEY_C:
 				class_select_toggle_requested.emit()
+			KEY_K:
+				skills_toggle_requested.emit()
 			KEY_R, KEY_G, KEY_X:
 				_farm_key(code)
 			KEY_F5:
@@ -394,11 +418,14 @@ func equip_slot(slot_index: int) -> void:
 			focused_interactable_changed.emit(current_interactable)
 
 func get_effective_max_energy() -> float:
+	var base_max: float = max_energy
+	if skills and skills.has_method("get_max_energy_bonus"):
+		base_max += skills.get_max_energy_bonus()
 	if hours_without_sleep >= critical_sleep_threshold:
-		return 50.0
+		return minf(base_max, 50.0)
 	elif hours_without_sleep >= sleep_deprivation_threshold:
-		return 75.0
-	return max_energy
+		return minf(base_max, 75.0)
+	return base_max
 
 func is_sleep_deprived() -> bool:
 	return hours_without_sleep >= sleep_deprivation_threshold
@@ -479,13 +506,20 @@ func _handle_energy_regen(delta: float) -> void:
 		var drain: float = 6.0
 		if hours_without_sleep >= sleep_deprivation_threshold:
 			drain = 9.0 # при бессоннице бег истощает гораздо сильнее
+		if skills and skills.has_method("get_energy_discount"):
+			drain *= skills.get_energy_discount("athletics")
 		consume_energy(drain * delta)
+		if skills and skills.has_method("award_athletics_sprint"):
+			_sprint_distance_accum += velocity.length() * delta
+			if _sprint_distance_accum >= 15.0:
+				skills.award_athletics_sprint(_sprint_distance_accum)
+				_sprint_distance_accum = 0.0
 	else:
 		var eff_max: float = get_effective_max_energy()
 		if energy > eff_max:
 			# Плавное снижение излишка при накатившей бессоннице
 			energy = move_toward(energy, eff_max, 2.0 * delta)
-			energy_changed.emit(energy, max_energy)
+			energy_changed.emit(energy, eff_max)
 		elif energy < eff_max:
 			# Бессонница (>= 24 ч) блокирует естественное восстановление —
 			# силы возвращает только сон.
@@ -513,7 +547,7 @@ func _handle_energy_regen(delta: float) -> void:
 			if wetness >= 50.0:
 				regen *= 0.7
 			energy = min(eff_max, energy + regen * delta)
-			energy_changed.emit(energy, max_energy)
+			energy_changed.emit(energy, eff_max)
 
 func _handle_thirst(delta: float) -> void:
 	var drain_rate: float = thirst_decay_rate
@@ -905,6 +939,12 @@ func eat_food(food_item_id: String) -> bool:
 	var item_name: String = item_data.get("name", food_item_id)
 	var item_icon: String = item_data.get("icon", "🍎")
 
+	if skills and skills.has_method("get_cooking_nutrition_mult"):
+		var n_mult: float = skills.get_cooking_nutrition_mult()
+		h_rec *= n_mult
+		if e_rec > 0.0:
+			e_rec *= n_mult
+
 	inventory.remove_item(food_item_id, 1)
 
 	hunger = min(max_hunger, hunger + h_rec)
@@ -1091,6 +1131,8 @@ func _update_jump_input(delta: float) -> void:
 		_coyote_left = 0.0
 		current_anim = ""
 		_update_character_animation()
+		if skills and skills.has_method("award_athletics_jump"):
+			skills.award_athletics_jump()
 	else:
 		_jump_buffer = maxf(0.0, _jump_buffer - delta)
 

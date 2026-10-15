@@ -477,6 +477,9 @@ func deliver_materials(player: Node) -> bool:
 		state_changed.emit(state)
 		AudioManager.play("build")
 		_refresh_all_visuals()
+		var skills: Object = player.get("skills") if player and "skills" in player else null
+		if skills and skills.has_method("add_xp"):
+			skills.add_xp("construction", 30)
 		_notify(player, "🏗 Материалы на месте! Стройка делянки займёт 1 игровой день (%d ч)." % int(BUILD_HOURS))
 		return true
 	if given.is_empty():
@@ -568,6 +571,7 @@ func plant(c: Vector2i, seed_id: String, player: Node = null) -> int:
 	if crop == "":
 		return 0
 	var inv = player.get("inventory") if player else null
+	var skills: Object = player.get("skills") if player and "skills" in player else null
 	var planted: int = 0
 	for n in zone_cells(c):
 		var d: Dictionary = get_cell(n)
@@ -576,7 +580,9 @@ func plant(c: Vector2i, seed_id: String, player: Node = null) -> int:
 		if inv:
 			if inv.get_item_count(seed_id) <= 0:
 				break
-			inv.remove_item(seed_id, 1)
+			var save_seed: bool = skills and skills.has_method("roll_seed_save") and skills.roll_seed_save()
+			if not save_seed:
+				inv.remove_item(seed_id, 1)
 		d["crop"] = crop
 		d["growth"] = 0.0
 		d["withered"] = false
@@ -587,6 +593,8 @@ func plant(c: Vector2i, seed_id: String, player: Node = null) -> int:
 		planted += 1
 		cell_changed.emit(n)
 	if planted > 0:
+		if skills and skills.has_method("add_xp"):
+			skills.add_xp("farming", 3 * planted)
 		AudioManager.play("plant")
 		_prompt_dirty = true
 		_refresh_all_visuals()
@@ -617,6 +625,9 @@ func water(c: Vector2i, player: Node = null) -> bool:
 		d["moisture"] = minf(100.0, float(d["moisture"]) + amount)
 		d["drought"] = 0.0
 	AudioManager.play("water_splash")
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	if skills and skills.has_method("add_xp"):
+		skills.add_xp("farming", 4)
 	_prompt_dirty = true
 	_refresh_all_visuals()
 	_notify(player, "💧 Полито клеток: %d (+%d%% влаги)." % [zone.size(), int(amount)])
@@ -645,6 +656,9 @@ func fertilize(c: Vector2i, player: Node = null) -> int:
 		d["fertility"] = minf(100.0, float(d["fertility"]) + CropDB.FERTILIZER_BONUS)
 	_prompt_dirty = true
 	_refresh_all_visuals()
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	if skills and skills.has_method("add_xp") and done > 0:
+		skills.add_xp("farming", 6 * done)
 	_notify(player, "✨ Удобрено клеток: %d (рост ×%.1f, +1 к урожаю, почва +%d%%)." % [done, CropDB.FERTILIZED_SPEED, int(CropDB.FERTILIZER_BONUS)])
 	return done
 
@@ -680,15 +694,20 @@ static func calc_yield(d: Dictionary, quality: int, rng: RandomNumberGenerator) 
 
 func harvest(c: Vector2i, player: Node = null) -> Dictionary:
 	var inv = player.get("inventory") if player else null
+	var skills: Object = player.get("skills") if player and "skills" in player else null
 	var totals: Dictionary = {}
 	var best_q: int = 0
+	var harvested_cells: int = 0
 	for n in zone_cells(c):
 		if not is_ripe(n):
 			continue
+		harvested_cells += 1
 		var d: Dictionary = get_cell(n)
 		var crop: String = d["crop"]
 		var q: int = get_quality(n)
 		var ys: Array = calc_yield(d, q, _rng)
+		if skills and skills.has_method("roll_bonus_yield") and skills.roll_bonus_yield("farming"):
+			ys[0] += 1
 		var seed_id: String = CropDB.get_crop(crop)["seed"]
 		var prod_id: String = CropDB.get_crop_product(crop)
 		if inv:
@@ -720,6 +739,8 @@ func harvest(c: Vector2i, player: Node = null) -> Dictionary:
 		d["total"] = 0.0
 		cell_changed.emit(n)
 	if not totals.is_empty():
+		if skills and skills.has_method("add_xp"):
+			skills.add_xp("farming", 15 * harvested_cells)
 		AudioManager.play("harvest")
 		_prompt_dirty = true
 		_refresh_all_visuals()

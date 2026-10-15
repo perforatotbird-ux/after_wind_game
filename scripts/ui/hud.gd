@@ -9,6 +9,7 @@ const VictoryManager = preload("res://scripts/core/victory_manager.gd")
 const CookingProgress = preload("res://scripts/crafting/cooking_progress.gd")
 const Seasons = preload("res://scripts/core/seasons.gd")
 const UI = preload("res://scripts/ui/ui_style.gd")
+const SkillDB = preload("res://scripts/skills/skill_db.gd")
 
 ## Желаемые размеры окон HUD в логических пикселях (база растяжения 1600×900,
 ## см. project.godot). Если окно игры меньше, окно ужимается, а списки
@@ -20,6 +21,7 @@ const WINDOW_SIZES: Dictionary = {
 	"RepairWindow": Vector2(680, 560),
 	"ContractWindow": Vector2(760, 700),
 	"ClassSelectWindow": Vector2(780, 660),
+	"SkillsWindow": Vector2(800, 680),
 	"PauseWindow": Vector2(640, 700),
 	"VictoryWindow": Vector2(760, 560),
 }
@@ -36,6 +38,13 @@ const HOTBAR_SLOT_SIZE: Vector2 = Vector2(118, 46)
 @onready var class_window: PanelContainer = get_node_or_null("ClassSelectWindow")
 @onready var class_close_button: Button = get_node_or_null("ClassSelectWindow/Margin/VBox/HeaderHBox/CloseButton")
 @onready var classes_list: VBoxContainer = get_node_or_null("ClassSelectWindow/Margin/VBox/ScrollContainer/ClassesList")
+
+@onready var skills_button: Button = get_node_or_null("TopLeftUI/Panel/Margin/VBox/SkillsButton")
+@onready var skills_window: PanelContainer = get_node_or_null("SkillsWindow")
+@onready var skills_close_button: Button = get_node_or_null("SkillsWindow/Margin/VBox/HeaderHBox/CloseButton")
+@onready var skills_overall_level_label: Label = get_node_or_null("SkillsWindow/Margin/VBox/OverallHBox/OverallLevelLabel")
+@onready var skills_overall_title_label: Label = get_node_or_null("SkillsWindow/Margin/VBox/OverallHBox/OverallTitleLabel")
+@onready var skills_list: VBoxContainer = get_node_or_null("SkillsWindow/Margin/VBox/ScrollContainer/SkillsList")
 
 # Меню паузы и звука
 @onready var pause_button: Button = get_node_or_null("TopRightUI/Panel/Margin/VBox/PauseButton")
@@ -221,6 +230,12 @@ func _ready() -> void:
 		class_close_button.pressed.connect(close_class_window)
 	if class_button:
 		class_button.pressed.connect(toggle_class_window)
+	if skills_window:
+		skills_window.visible = false
+	if skills_close_button:
+		skills_close_button.pressed.connect(close_skills_window)
+	if skills_button:
+		skills_button.pressed.connect(toggle_skills_window)
 	
 	if pause_button:
 		pause_button.pressed.connect(toggle_pause_menu)
@@ -251,7 +266,7 @@ func _apply_hud_layout() -> void:
 	var top_left := get_node_or_null("TopLeftUI") as Control
 	if top_left:
 		top_left.offset_right = top_left.offset_left + 300.0
-		top_left.offset_bottom = top_left.offset_top + 186.0
+		top_left.offset_bottom = top_left.offset_top + 224.0
 	for bar in [health_bar, energy_bar, hunger_bar, thirst_bar, wetness_bar]:
 		if bar:
 			bar.custom_minimum_size.y = 20.0
@@ -259,8 +274,11 @@ func _apply_hud_layout() -> void:
 		if lbl:
 			lbl.add_theme_font_size_override("font_size", 13)
 	if class_button:
-		class_button.add_theme_font_size_override("font_size", 14)
-		class_button.custom_minimum_size.y = 26.0
+		class_button.add_theme_font_size_override("font_size", 13)
+		class_button.custom_minimum_size.y = 24.0
+	if skills_button:
+		skills_button.add_theme_font_size_override("font_size", 13)
+		skills_button.custom_minimum_size.y = 24.0
 	var top_right := get_node_or_null("TopRightUI") as Control
 	if top_right:
 		top_right.offset_left = top_right.offset_right - 300.0
@@ -369,6 +387,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif class_window and class_window.visible:
 				close_class_window()
 				get_viewport().set_input_as_handled()
+			elif skills_window and skills_window.visible:
+				close_skills_window()
+				get_viewport().set_input_as_handled()
 			elif contract_window and contract_window.visible:
 				close_contract_window()
 				get_viewport().set_input_as_handled()
@@ -392,7 +413,7 @@ func is_gameplay_input_blocked() -> bool:
 	# Режимы размещения (делянка) и прочие перехватчики мыши.
 	if is_inside_tree() and get_tree().get_first_node_in_group("ui_input_blockers") != null:
 		return true
-	for window in [inventory_window, machine_window, sales_window, repair_window, contract_window, class_window, pause_window, victory_window]:
+	for window in [inventory_window, machine_window, sales_window, repair_window, contract_window, class_window, skills_window, pause_window, victory_window]:
 		if is_instance_valid(window) and window.visible:
 			return true
 	return false
@@ -456,6 +477,14 @@ func bind_player(player: Node) -> void:
 		player.character_class_changed.connect(_on_character_class_changed)
 	if "character_class" in player:
 		_on_character_class_changed(player.character_class, CharacterClassDB.get_class_display_name(player.character_class))
+	
+	if player.has_signal("skills_toggle_requested"):
+		player.skills_toggle_requested.connect(toggle_skills_window)
+	if "skills" in player and player.skills:
+		var p_skills = player.skills
+		if p_skills.has_signal("skills_updated"):
+			p_skills.skills_updated.connect(_update_skills_button)
+		_update_skills_button()
 	
 	if "inventory" in player and player.inventory:
 		var inv = player.inventory
@@ -1474,6 +1503,165 @@ func _populate_class_cards() -> void:
 		
 		classes_list.add_child(card)
 	_polish(class_window)
+
+# --- Прокачка навыков персонажа (Learn by Doing) ---
+func _update_skills_button() -> void:
+	if not skills_button:
+		return
+	var overall_lvl: int = 11
+	if _bound_player and "skills" in _bound_player and _bound_player.skills:
+		if _bound_player.skills.has_method("get_overall_level"):
+			overall_lvl = _bound_player.skills.get_overall_level()
+	skills_button.text = "⭐ [K] Навыки (Ур. %d)" % overall_lvl
+
+func toggle_skills_window() -> void:
+	if not skills_window:
+		return
+	AudioManager.play("ui_click")
+	skills_window.visible = not skills_window.visible
+	if skills_window.visible:
+		if inventory_window and inventory_window.visible:
+			toggle_inventory()
+		if class_window and class_window.visible:
+			close_class_window()
+		_populate_skills_cards()
+
+func close_skills_window() -> void:
+	if skills_window and skills_window.visible:
+		AudioManager.play("ui_click")
+		skills_window.visible = false
+
+func _populate_skills_cards() -> void:
+	if not skills_list:
+		return
+	for c in skills_list.get_children():
+		c.queue_free()
+	
+	var p_skills: Node = null
+	if _bound_player and "skills" in _bound_player and _bound_player.skills:
+		p_skills = _bound_player.skills
+	
+	var overall_lvl: int = p_skills.get_overall_level() if (p_skills and p_skills.has_method("get_overall_level")) else 11
+	var overall_title: String = p_skills.get_overall_title() if (p_skills and p_skills.has_method("get_overall_title")) else SkillDB.get_overall_title(overall_lvl)
+	
+	if skills_overall_level_label:
+		skills_overall_level_label.text = "⭐ Общий уровень: %d" % overall_lvl
+	if skills_overall_title_label:
+		skills_overall_title_label.text = "«%s»" % overall_title
+	if skills_button:
+		skills_button.text = "⭐ [K] Навыки (Ур. %d)" % overall_lvl
+	
+	for sid in SkillDB.SKILL_IDS:
+		var s_meta: Dictionary = SkillDB.get_skill_data(sid)
+		var s_name: String = s_meta.get("name", sid)
+		var s_icon: String = s_meta.get("icon", "⭐")
+		var s_color: Color = s_meta.get("color", Color(0.85, 0.88, 0.92))
+		var s_desc: String = s_meta.get("description", "")
+		var s_actions: String = s_meta.get("actions", "")
+		
+		var lvl: int = p_skills.get_level(sid) if (p_skills and p_skills.has_method("get_level")) else 1
+		var xp: int = p_skills.get_xp(sid) if (p_skills and p_skills.has_method("get_xp")) else 0
+		var is_max: bool = (lvl >= SkillDB.MAX_LEVEL)
+		var next_base: int = SkillDB.get_xp_for_level(mini(lvl + 1, SkillDB.MAX_LEVEL))
+		var progress: float = (p_skills.get_progress(sid) if (p_skills and p_skills.has_method("get_progress")) else 0.0) * 100.0
+		
+		var card: PanelContainer = PanelContainer.new()
+		var card_style: StyleBoxFlat = StyleBoxFlat.new()
+		if is_max:
+			card_style.bg_color = Color(0.16, 0.22, 0.18, 0.95)
+			card_style.border_color = Color(1.0, 0.85, 0.3, 1.0)
+			card_style.set_border_width_all(2)
+		else:
+			card_style.bg_color = Color(0.12, 0.14, 0.18, 0.9)
+			card_style.border_color = Color(0.3, 0.36, 0.44, 0.6)
+			card_style.set_border_width_all(1)
+		card_style.set_corner_radius_all(6)
+		card.add_theme_stylebox_override("panel", card_style)
+		
+		var m: MarginContainer = MarginContainer.new()
+		m.add_theme_constant_override("margin_left", 12)
+		m.add_theme_constant_override("margin_top", 10)
+		m.add_theme_constant_override("margin_right", 12)
+		m.add_theme_constant_override("margin_bottom", 10)
+		card.add_child(m)
+		
+		var vbox: VBoxContainer = VBoxContainer.new()
+		vbox.add_theme_constant_override("separation", 6)
+		m.add_child(vbox)
+		
+		# Заголовок карточки: Иконка + Название слева, Уровень справа
+		var header_hbox: HBoxContainer = HBoxContainer.new()
+		header_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		vbox.add_child(header_hbox)
+		
+		var title_label: Label = Label.new()
+		title_label.text = "%s %s" % [s_icon, s_name]
+		title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		title_label.add_theme_font_size_override("font_size", 14)
+		title_label.add_theme_color_override("font_color", s_color)
+		header_hbox.add_child(title_label)
+		
+		var lvl_badge: Label = Label.new()
+		lvl_badge.add_theme_font_size_override("font_size", 13)
+		if is_max:
+			lvl_badge.text = "🏆 МАКС. УР. %d" % lvl
+			lvl_badge.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
+		else:
+			lvl_badge.text = "Ур. %d / %d" % [lvl, SkillDB.MAX_LEVEL]
+			lvl_badge.add_theme_color_override("font_color", Color(0.5, 0.95, 0.7))
+		header_hbox.add_child(lvl_badge)
+		
+		# Описание навыка
+		if not s_desc.is_empty():
+			var desc_label: Label = Label.new()
+			desc_label.text = s_desc
+			desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			desc_label.add_theme_font_size_override("font_size", 11)
+			desc_label.add_theme_color_override("font_color", Color(0.75, 0.8, 0.85))
+			vbox.add_child(desc_label)
+		
+		# Полоса опыта
+		var bar: ProgressBar = ProgressBar.new()
+		bar.custom_minimum_size = Vector2(0, 16)
+		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bar.show_percentage = false
+		bar.value = 100.0 if is_max else progress
+		
+		var bar_label: Label = Label.new()
+		bar_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		bar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		bar_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		bar_label.add_theme_font_size_override("font_size", 10)
+		if is_max:
+			bar_label.text = "МАКСИМАЛЬНЫЙ УРОВЕНЬ (%d XP)" % xp
+			bar_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.7))
+		else:
+			bar_label.text = "%d / %d XP (до след. %d XP)" % [xp, next_base, maxi(0, next_base - xp)]
+			bar_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+		bar.add_child(bar_label)
+		vbox.add_child(bar)
+		
+		# Список активных перков
+		var perks_summary: String = SkillDB.get_perks_summary(sid, lvl)
+		var perks_label: Label = Label.new()
+		perks_label.text = perks_summary
+		perks_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		perks_label.add_theme_font_size_override("font_size", 11)
+		perks_label.add_theme_color_override("font_color", Color(0.45, 0.9, 0.65))
+		vbox.add_child(perks_label)
+		
+		# Подсказка как качать
+		if not s_actions.is_empty():
+			var train_label: Label = Label.new()
+			train_label.text = "Практика: %s" % s_actions
+			train_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			train_label.add_theme_font_size_override("font_size", 10)
+			train_label.add_theme_color_override("font_color", Color(0.65, 0.72, 0.8))
+			vbox.add_child(train_label)
+		
+		skills_list.add_child(card)
+	
+	_polish(skills_window)
 
 # --- Меню паузы и звука (Этап 13) ---
 func toggle_pause_menu() -> void:

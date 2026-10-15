@@ -486,6 +486,13 @@ func _on_interacted(player: Node) -> void:
 	var is_miner: bool = "character_class" in player and player.character_class == "miner"
 	if is_miner and is_ore:
 		energy *= 0.8
+	
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	if skills and skills.has_method("get_energy_discount"):
+		energy *= skills.get_energy_discount("mining")
+	if skills and skills.has_method("add_xp"):
+		skills.add_xp("mining", 2 if mat in [Mat.SOIL, Mat.SAND, Mat.CLAY] else 5)
+	
 	if player.has_method("consume_energy"):
 		player.consume_energy(energy)
 	if is_ore or tool_type == "pickaxe":
@@ -510,6 +517,11 @@ func _break_cell(cell: Vector3i, mat: int, player: Node, level: int, is_miner: b
 	yield_pool.erase(cell)
 	if mat == Mat.IRON_ORE and _rng.randf() < 0.5:
 		amount += 1
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	if skills and skills.has_method("roll_bonus_yield") and skills.roll_bonus_yield("mining"):
+		amount += 1
+	if skills and skills.has_method("add_xp"):
+		skills.add_xp("mining", 8 if mat in [Mat.SOIL, Mat.SAND, Mat.CLAY] else 20)
 	if item_id != "":
 		if level >= 2:
 			amount += 1

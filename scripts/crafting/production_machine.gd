@@ -416,6 +416,15 @@ func _apply_job(kind: String) -> void:
 					object_name, next_level, level_state.get_level_name(), level_state.get_speed_mult(),
 					int(level_state.get_max_condition()), level_state.get_power_mult()])
 			machine_upgraded.emit(next_level)
+	
+	var skills: Object = _last_user.get("skills") if _last_user and is_instance_valid(_last_user) and "skills" in _last_user else null
+	if skills and skills.has_method("add_xp"):
+		if kind == "rebuild":
+			skills.add_xp("construction", 40)
+		elif kind in ["repair", "repair_q"]:
+			skills.add_xp("crafting", 15)
+		elif kind == "upgrade":
+			skills.add_xp("construction", 50)
 
 ## Восстанавливает (или строит) станок: компоненты переносятся внутрь станка
 ## порциями, станок встаёт в ready, когда комплект собран.
@@ -594,6 +603,13 @@ func get_cycle_params(recipe: Dictionary, player: Node) -> Dictionary:
 	if player and "character_class" in player and player.character_class == "scientist":
 		energy_cost *= SCIENTIST_ENERGY_MULT
 		duration /= SCIENTIST_SPEED_MULT
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	if skills:
+		if skills.has_method("get_machine_speed_mult"):
+			duration /= skills.get_machine_speed_mult()
+		var sk_id: String = "hydrology" if machine_type == "water_filter" else "crafting"
+		if skills.has_method("get_energy_discount"):
+			energy_cost *= skills.get_energy_discount(sk_id)
 	return {"duration": duration, "energy": energy_cost}
 
 # ---------------------------------------------------------------------------
@@ -758,12 +774,25 @@ func _on_outputs_produced(_outputs: Dictionary) -> void:
 
 func _complete_process() -> void:
 	completed_runs += 1
+	var user_valid: bool = _last_user != null and is_instance_valid(_last_user)
+	var skills: Object = _last_user.get("skills") if user_valid and "skills" in _last_user else null
 	if wear_enabled and wear:
 		# Улучшенный станок изнашивается медленнее (множитель уровня).
-		wear.add_wear(wear_per_cycle * level_state.get_wear_mult())
+		var w_amount: float = wear_per_cycle * level_state.get_wear_mult()
+		if skills and skills.has_method("get_wear_discount"):
+			w_amount *= skills.get_wear_discount()
+		wear.add_wear(w_amount)
+	
+	if skills and skills.has_method("add_xp"):
+		if machine_type == "water_filter":
+			skills.add_xp("hydrology", 10)
+		elif machine_type in HEAT_MACHINES:
+			skills.add_xp("cooking", 15)
+		else:
+			skills.add_xp("crafting", 12)
+	
 	var outputs: Dictionary = active_recipe.get("outputs", {})
 	var recipe_id: String = active_recipe.get("id", "")
-	var user_valid: bool = _last_user != null and is_instance_valid(_last_user)
 
 	# Бонус выхода за уровень (дробилка +1/ур., фильтр +2/ур.): каждая позиция
 	# рецепта получает прибавку — цикл делает больше продукции, сырьё то же.

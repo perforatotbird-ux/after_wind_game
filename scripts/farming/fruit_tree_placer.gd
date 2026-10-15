@@ -209,6 +209,9 @@ func place() -> bool:
 		world.add_child(tree)
 
 	AudioManager.play("plant")
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	if skills and skills.has_method("add_xp"):
+		skills.add_xp("orchard", 25)
 	_notify("🌱 Саженец успешно посажен в саду!")
 	finished.emit(tree)
 	queue_free()

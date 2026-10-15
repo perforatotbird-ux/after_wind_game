@@ -300,6 +300,10 @@ func contribute(player: Node) -> bool:
 			brought.append("%s ×%d" % [ItemDB.get_item_name(mat_id), take])
 
 	var progress: Dictionary = get_delivery_progress()
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	if not brought.is_empty() and skills and skills.has_method("add_xp"):
+		skills.add_xp("construction", 10)
+
 	if not bool(progress.get("ready", false)):
 		if player and player.has_method("notify"):
 			var msg: String = "📦 Внесено в «%s»:" % building_title
@@ -325,6 +329,9 @@ func contribute(player: Node) -> bool:
 	_update_visuals()
 	_update_prompt_text()
 	_play_upgrade_effect()
+
+	if skills and skills.has_method("add_xp"):
+		skills.add_xp("construction", 50)
 
 	stage_upgraded.emit(self, current_stage)
 

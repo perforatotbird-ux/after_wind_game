@@ -242,8 +242,11 @@ static func fulfill_contract(contract_id: String, player: Node) -> bool:
 		var needed: int = reqs[it_id]
 		inv.remove_item(it_id, needed)
 	
-	# Начисление кредитов
-	var reward: int = contract.get("reward_credits", 0)
+	# Начисление кредитов с бонусом навыка торговли
+	var base_reward: int = contract.get("reward_credits", 0)
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	var mult: float = skills.get_trade_bonus_mult() if skills and skills.has_method("get_trade_bonus_mult") else 1.0
+	var reward: int = int(round(base_reward * mult))
 	if reward > 0 and inv.has_method("add_credits"):
 		inv.add_credits(reward)
 
@@ -267,9 +270,14 @@ static func fulfill_contract(contract_id: String, player: Node) -> bool:
 	const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 	AudioManager.play("coins")
 
+	if skills and skills.has_method("add_xp"):
+		skills.add_xp("trading", 25)
+
 	if player.has_method("notify"):
 		var title: String = contract.get("title", "Заказ")
 		var msg: String = "📜 Контракт «%s» выполнен! Получено +%d кредитов!" % [title, reward]
+		if mult > 1.0:
+			msg += " (бонус торговли +%d%%)" % int(round((mult - 1.0) * 100.0))
 		if not granted.is_empty():
 			msg += " 🎁 " + ", ".join(granted)
 		player.notify(msg)

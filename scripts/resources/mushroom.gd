@@ -69,15 +69,21 @@ func _on_interacted(player: Node) -> void:
 	if not has_mushroom:
 		_notify(player, "🌿 " + get_prompt())
 		return
+	var count: int = mushroom_amount
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	if skills and skills.has_method("roll_bonus_yield") and skills.roll_bonus_yield("foraging"):
+		count += 1
 	var inv = player.get("inventory") if player else null
-	if inv == null or not inv.add_item(mushroom_item_id, mushroom_amount):
+	if inv == null or not inv.add_item(mushroom_item_id, count):
 		_notify(player, "🎒 Не хватает места в рюкзаке для грибов!")
 		return
 	set_has_mushroom(false)
-	CookingProgress.register_mushrooms(mushroom_amount)
+	CookingProgress.register_mushrooms(count)
 	AudioManager.play("berry_pick")
+	if skills and skills.has_method("add_xp"):
+		skills.add_xp("foraging", 8)
 	var item: Dictionary = ItemDB.get_item(mushroom_item_id)
-	_notify(player, "%s Собрано: %s ×%d" % [item.get("icon", "🍄"), item.get("name", mushroom_item_id), mushroom_amount])
+	_notify(player, "%s Собрано: %s ×%d" % [item.get("icon", "🍄"), item.get("name", mushroom_item_id), count])
 
 func _notify(player: Node, text: String) -> void:
 	if player and player.has_method("notify"):

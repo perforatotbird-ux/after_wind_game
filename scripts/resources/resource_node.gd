@@ -152,6 +152,9 @@ func plant_sapling(player: Node) -> bool:
 		visual_node.visible = true
 	_update_growth_visual()
 	AudioManager.play("plant")
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	if skills and skills.has_method("add_xp"):
+		skills.add_xp("woodcutting", 10)
 	if player and player.has_method("notify"):
 		player.notify("🌱 Саженец посажен! %s вырастет через %d игр. ч." % [resource_display_name, int(ceil(growth_hours))])
 	return true
@@ -273,6 +276,24 @@ func _on_interacted(player: Node) -> void:
 		bonus_yield += 1
 		final_energy_cost *= 0.80
 	
+	# Прокачка навыков (Learn by doing)
+	var skills: Object = player.get("skills") if player and "skills" in player else null
+	var target_skill: String = "mining"
+	if required_tool == "axe" or resource_id == "wood":
+		target_skill = "woodcutting"
+	elif required_tool == "bucket" or resource_id in ["dirty_water", "water", "clean_water"]:
+		target_skill = "hydrology"
+	elif is_mining_node:
+		target_skill = "mining"
+	
+	if skills:
+		if skills.has_method("get_energy_discount"):
+			final_energy_cost *= skills.get_energy_discount(target_skill)
+		if skills.has_method("roll_bonus_yield") and skills.roll_bonus_yield(target_skill):
+			bonus_yield += 1
+		if skills.has_method("add_xp"):
+			skills.add_xp(target_skill, 5)
+	
 	# Трата энергии
 	if player.has_method("consume_energy"):
 		player.consume_energy(final_energy_cost)
@@ -298,6 +319,8 @@ func _on_interacted(player: Node) -> void:
 	
 	if current_hits <= 0:
 		# Истощение
+		if skills and skills.has_method("add_xp"):
+			skills.add_xp(target_skill, 25)
 		gained += bonus_depleted_yield
 		if inv:
 			# Рюкзак полон — добыча падает кучкой у узла, а не пропадает.
