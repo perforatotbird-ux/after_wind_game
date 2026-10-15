@@ -77,6 +77,31 @@ func _test_lake_model_assets() -> void:
 	if water_mat is ShaderMaterial:
 		check(water_mat.shader != null, "У lake_water_material.tres не назначен шейдер")
 
+	# Проверка EarthStrata: узел существует, но скрыт (не торчит срез диорамы над лугом)
+	var earth = model.get_node_or_null("EarthStrata")
+	check(earth != null, "EarthStrata должен присутствовать в LakeModel")
+	if earth:
+		check(not earth.visible, "EarthStrata должен быть скрыт (visible = false), чтобы срез диорамы не выступал над поверхностью")
+
+	# Проверка сглаживания внешнего края берега SculptedBank до Y = 0.0
+	var bank = model.get_node_or_null("SculptedBank")
+	check(bank != null, "SculptedBank должен присутствовать в LakeModel")
+	if bank:
+		var max_outer_y: float = -999.0
+		for mi in bank.find_children("*", "MeshInstance3D", true, false):
+			var mesh: ArrayMesh = mi.mesh
+			var arrays = mesh.surface_get_arrays(0)
+			var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			for v in verts:
+				var a = atan2(-v.z / 0.91, v.x)
+				var r = sqrt(v.x * v.x + (-v.z / 0.91) * (-v.z / 0.91))
+				var r_in = 3.35 * (1.0 + 0.068 * sin(a * 3.0 + 0.4) + 0.039 * sin(a * 5.0 - 0.9) + 0.017 * sin(a * 9.0))
+				var r_out = 4.92 / pow(pow(absf(cos(a)), 4.0) + pow(absf(sin(a)), 4.0), 0.25) * (1.0 + 0.013 * sin(a * 7.0) + 0.009 * sin(a * 11.0))
+				var t = (r - r_in * 0.948) / (r_out - r_in * 0.948)
+				if t >= 0.99:
+					max_outer_y = maxf(max_outer_y, v.y)
+		check(max_outer_y <= 0.001, "Внешний край берега озера должен лежать вровень с землёй Y=0.0 (факт: %.4f)" % max_outer_y)
+
 	model.queue_free()
 
 func _test_lake_scene_and_properties() -> void:
@@ -107,6 +132,11 @@ func _test_lake_scene_and_properties() -> void:
 	# Физическое ограничение глубокой воды
 	var solid = lake.get_node_or_null("SolidBody")
 	check(solid != null and solid is StaticBody3D, "У озера должен быть SolidBody для предотвращения проваливания")
+
+	# Проверка отсутствия тряски/мигания при заборе воды
+	var initial_scale: Vector3 = lake.visual_node.scale
+	lake._play_hit_effect()
+	check(lake.visual_node.scale == initial_scale, "Озеро не должно масштабироваться или мигать при заборе воды (_play_hit_effect)")
 
 	lake.queue_free()
 
@@ -139,6 +169,9 @@ func _test_water_harvesting() -> void:
 
 	check(lake.is_depleted, "После исчерпания ударов озеро должно быть is_depleted")
 	check(lake.get_prompt().contains("истощён"), "Подсказка должна сообщать об истощении озера")
+	# Озеро НЕ должно исчезать или сжиматься в точку
+	check(lake.visual_node != null and lake.visual_node.visible == true, "Озеро не должно скрываться при истощении жилы (visual_node.visible must be true)")
+	check(lake.visual_node.scale == lake._original_scale, "Озеро не должно сжиматься при истощении (scale must remain _original_scale)")
 
 	lake.queue_free()
 	player.queue_free()

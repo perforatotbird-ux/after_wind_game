@@ -67,6 +67,7 @@ mesh = ExtResource("4_ualt5")
 mesh = ExtResource("5_xrku8")
 
 [node name="EarthStrata" type="Node3D" parent="." unique_id=897222684]
+visible = false
 
 [node name="Part00" type="MeshInstance3D" parent="EarthStrata" unique_id=873106793]
 mesh = ExtResource("6_isr64")

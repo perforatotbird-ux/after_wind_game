@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3]
 
-[ext_resource type="Script" path="res://scripts/resources/resource_node.gd" id="1_res"]
+[ext_resource type="Script" path="res://scripts/resources/lake_node.gd" id="1_res"]
 [ext_resource type="PackedScene" path="res://assets/models/lake/lake_model.tscn" id="2_model"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_interact"]
