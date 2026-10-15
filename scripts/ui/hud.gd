@@ -1066,7 +1066,9 @@ func _on_quick_sell_pressed() -> void:
 		return
 	
 	var to_sell: Dictionary = {}
-	for product_id in ["poor_brick", "mortar", "fuel_briquette", "fired_brick", "glass", "iron_ingot", "clean_water", "bottled_water", "carrot", "potato", "wheat", "bread",
+	for product_id in ["poor_brick", "mortar", "fuel_briquette", "fired_brick", "glass", "iron_ingot", "clean_water", "bottled_water",
+			"coal_powder", "glass_bottle", "clay_pot", "glassware_set",
+			"carrot", "potato", "wheat", "bread",
 			"sunflower_seeds", "onion", "cabbage", "tomato", "pepper", "bean", "herbs", "corn", "pumpkin",
 			"apple", "pear", "cherry", "apricot", "dried_apricot", "apricot_compote", "apricot_pie",
 			"red_berry", "blue_berry", "blackberry", "sea_buckthorn"]:
@@ -1149,29 +1151,47 @@ func _refresh_repair_window() -> void:
 	
 	# Кредиты в требованиях
 	if cost_cr > 0:
+		var remaining_cr: int = maxi(0, cost_cr - in_building_cr)
+		var player_cr: int = inv.get("credits") if (inv and "credits" in inv) else 0
 		var row_cr: HBoxContainer = HBoxContainer.new()
 		var l_cr: Label = Label.new()
-		var player_cr: int = inv.get("credits") if (inv and "credits" in inv) else 0
-		var cr_ok: bool = player_cr + in_building_cr >= cost_cr
-		l_cr.text = "💰 Кредиты: %d / %d (внесено %d)" % [player_cr + in_building_cr, cost_cr, in_building_cr]
-		l_cr.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if cr_ok else Color(1.0, 0.4, 0.4))
+		if remaining_cr == 0:
+			l_cr.text = "✓ 💰 Кредиты: Собрано (%d / %d)" % [in_building_cr, cost_cr]
+			l_cr.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4))
+		else:
+			l_cr.text = "💰 Кредиты: Требуется %d (внесено %d / %d) [В кошельке: %d]" % [remaining_cr, in_building_cr, cost_cr, player_cr]
+			if player_cr >= remaining_cr:
+				l_cr.add_theme_color_override("font_color", Color(0.5, 0.95, 0.85))
+			elif player_cr > 0:
+				l_cr.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+			else:
+				l_cr.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
 		l_cr.add_theme_font_size_override("font_size", 13)
 		row_cr.add_child(l_cr)
 		repair_requirements_list.add_child(row_cr)
 	
-	# Материалы в требованиях (с учётом уже внесённых в здание)
+	# Материалы в требованиях (динамический остаток «Требуется»)
 	for mat_id in mats.keys():
 		var needed: int = mats[mat_id]
 		var in_building: int = int(_current_active_building.delivered.get(mat_id, 0)) if "delivered" in _current_active_building else 0
+		var remaining: int = maxi(0, needed - in_building)
 		var avail: int = inv.get_item_count(mat_id) if inv else 0
 		var mat_name: String = ItemDB.get_item_name(mat_id)
 		var mat_icon: String = ItemDB.get_item_icon(mat_id)
-		var ok: bool = avail + in_building >= needed
 		
 		var row_mat: HBoxContainer = HBoxContainer.new()
 		var l_mat: Label = Label.new()
-		l_mat.text = "%s %s: %d / %d (внесено %d)" % [mat_icon, mat_name, avail + in_building, needed, in_building]
-		l_mat.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if ok else Color(1.0, 0.4, 0.4))
+		if remaining == 0:
+			l_mat.text = "✓ %s %s: Собрано (%d / %d)" % [mat_icon, mat_name, in_building, needed]
+			l_mat.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4))
+		else:
+			l_mat.text = "%s %s: Требуется %d (внесено %d / %d) [В рюкзаке: %d]" % [mat_icon, mat_name, remaining, in_building, needed, avail]
+			if avail >= remaining:
+				l_mat.add_theme_color_override("font_color", Color(0.5, 0.95, 0.85))
+			elif avail > 0:
+				l_mat.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+			else:
+				l_mat.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
 		l_mat.add_theme_font_size_override("font_size", 13)
 		row_mat.add_child(l_mat)
 		repair_requirements_list.add_child(row_mat)

@@ -7,18 +7,18 @@ extends RefCounted
 const MAX_LEVEL: int = 10
 
 ## Пороги суммарного опыта для каждого уровня (индекс = уровень - 1).
-## Lv.1 = 0, Lv.2 = 100, ..., Lv.10 = 3200 (MAX).
+## Lv.1 = 0, Lv.2 = 400, ..., Lv.10 = 13000 (MAX).
 const XP_THRESHOLDS: Array[int] = [
-	0,     # Lv. 1
-	100,   # Lv. 2
-	250,   # Lv. 3
-	450,   # Lv. 4
-	700,   # Lv. 5
-	1000,  # Lv. 6
-	1400,  # Lv. 7
-	1900,  # Lv. 8
-	2500,  # Lv. 9
-	3200   # Lv. 10 (MAX)
+	0,      # Lv. 1
+	400,    # Lv. 2
+	1000,   # Lv. 3
+	1800,   # Lv. 4
+	2800,   # Lv. 5
+	4000,   # Lv. 6
+	5600,   # Lv. 7
+	7600,   # Lv. 8
+	10000,  # Lv. 9
+	13000   # Lv. 10 (MAX)
 ]
 
 const SKILL_IDS: Array[String] = [

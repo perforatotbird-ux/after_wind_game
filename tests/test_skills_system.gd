@@ -49,15 +49,15 @@ func _test_skill_db_structure_and_formulas() -> void:
 	# Проверка порогов опыта
 	check(SkillDB.XP_THRESHOLDS.size() == 10, "Должно быть 10 порогов опыта")
 	check(SkillDB.get_xp_for_level(1) == 0, "Уровень 1 должен требовать 0 XP")
-	check(SkillDB.get_xp_for_level(2) == 100, "Уровень 2 должен требовать 100 XP")
-	check(SkillDB.get_xp_for_level(10) == 3200, "Уровень 10 должен требовать 3200 XP")
+	check(SkillDB.get_xp_for_level(2) == 400, "Уровень 2 должен требовать 400 XP")
+	check(SkillDB.get_xp_for_level(10) == 13000, "Уровень 10 должен требовать 13000 XP")
 	
 	check(SkillDB.calculate_level(0) == 1, "0 XP должно давать 1 уровень")
-	check(SkillDB.calculate_level(99) == 1, "99 XP должно давать 1 уровень")
-	check(SkillDB.calculate_level(100) == 2, "100 XP должно давать 2 уровень")
-	check(SkillDB.calculate_level(249) == 2, "249 XP должно давать 2 уровень")
-	check(SkillDB.calculate_level(250) == 3, "250 XP должно давать 3 уровень")
-	check(SkillDB.calculate_level(3200) == 10, "3200 XP должно давать 10 уровень")
+	check(SkillDB.calculate_level(399) == 1, "399 XP должно давать 1 уровень")
+	check(SkillDB.calculate_level(400) == 2, "400 XP должно давать 2 уровень")
+	check(SkillDB.calculate_level(999) == 2, "999 XP должно давать 2 уровень")
+	check(SkillDB.calculate_level(1000) == 3, "1000 XP должно давать 3 уровень")
+	check(SkillDB.calculate_level(13000) == 10, "13000 XP должно давать 10 уровень")
 	check(SkillDB.calculate_level(99999) == 10, "Опыт выше максимума должен ограничиваться 10 уровнем")
 
 	# Проверка расчёта бонусов
@@ -95,30 +95,30 @@ func _test_player_skills_xp_and_leveling() -> void:
 	ps.skill_leveled_up.connect(func(_id, _lvl, _desc): fired["level_up"] = true)
 	ps.skills_updated.connect(func(): fired["updated"] = true)
 
-	# Начисление 40 XP: без левелапа
-	var leveled: bool = ps.add_xp("woodcutting", 40)
-	check(not leveled, "40 XP не должны вызывать левелап")
+	# Начисление 200 XP: без левелапа (нужно 400 на Lv.2)
+	var leveled: bool = ps.add_xp("woodcutting", 200)
+	check(not leveled, "200 XP не должны вызывать левелап")
 	check(fired["xp"], "Сигнал skill_xp_gained должен быть вызван")
 	check(fired["updated"], "Сигнал skills_updated должен быть вызван")
 	check(not fired["level_up"], "Сигнал skill_leveled_up не должен быть вызван")
-	check(ps.get_xp("woodcutting") == 40, "XP лесозаготовки должен быть 40")
+	check(ps.get_xp("woodcutting") == 200, "XP лесозаготовки должен быть 200")
 	check(ps.get_level("woodcutting") == 1, "Уровень лесозаготовки должен оставаться 1")
 
-	# Начисление ещё 70 XP: суммарно 110 XP -> Lv. 2
+	# Начисление ещё 250 XP: суммарно 450 XP -> Lv. 2
 	fired["xp"] = false
 	fired["updated"] = false
 	fired["level_up"] = false
 
-	leveled = ps.add_xp("woodcutting", 70)
-	check(leveled, "Суммарно 110 XP должны вызвать повышение уровня до 2")
+	leveled = ps.add_xp("woodcutting", 250)
+	check(leveled, "Суммарно 450 XP должны вызвать повышение уровня до 2")
 	check(fired["level_up"], "Сигнал skill_leveled_up должен сработать")
 	check(ps.get_level("woodcutting") == 2, "Уровень лесозаготовки должен стать 2")
-	check(ps.get_xp("woodcutting") == 110, "XP лесозаготовки должен быть 110")
+	check(ps.get_xp("woodcutting") == 450, "XP лесозаготовки должен быть 450")
 
-	# Проверка капа 10 уровня
-	ps.add_xp("mining", 5000)
+	# Проверка капа 10 уровня (13000 XP)
+	ps.add_xp("mining", 20000)
 	check(ps.get_level("mining") == 10, "Майнинг должен достичь максимального 10 уровня")
-	check(ps.get_xp("mining") == 3200, "Опыт майнинга должен быть ограничен 3200")
+	check(ps.get_xp("mining") == 13000, "Опыт майнинга должен быть ограничен 13000")
 	var extra_add: bool = ps.add_xp("mining", 100)
 	check(not extra_add, "Добавление опыта на максимальном уровне должно возвращать false")
 
@@ -128,18 +128,18 @@ func _test_player_skills_perks_query() -> void:
 	var ps: PlayerSkills = PlayerSkills.new()
 	root.add_child(ps)
 
-	ps.add_xp("woodcutting", 100) # Lv. 2
+	ps.add_xp("woodcutting", 400) # Lv. 2
 	check(is_equal_approx(ps.get_energy_discount("woodcutting"), 0.03), "Скидка энергии на Lv.2 должна быть 3%")
 	check(is_equal_approx(ps.get_energy_discount("mining"), 0.0), "Скидка энергии на Lv.1 майнинга должна быть 0%")
 
-	ps.add_xp("crafting", 450) # Lv. 4
+	ps.add_xp("crafting", 1800) # Lv. 4
 	check(is_equal_approx(ps.get_machine_speed_mult(), 1.075), "Скорость станков на Lv.4 ремесла должна быть 1.075")
 	check(is_equal_approx(ps.get_wear_discount(), 0.075), "Скидка износа станков на Lv.4 ремесла должна быть 0.075")
 
-	ps.add_xp("construction", 250) # Lv. 3
+	ps.add_xp("construction", 1000) # Lv. 3
 	check(is_equal_approx(ps.get_capacity_bonus(), 2.0), "Бонус к весу на Lv.3 строительства должен быть +2 кг")
 
-	ps.add_xp("athletics", 100) # Lv. 2
+	ps.add_xp("athletics", 400) # Lv. 2
 	check(is_equal_approx(ps.get_max_energy_bonus(), 3.0), "Бонус к макс. энергии на Lv.2 атлетики должен быть +3")
 	check(is_equal_approx(ps.get_sprint_energy_discount(), 0.025), "Скидка спринта на Lv.2 атлетики должна быть 2.5%")
 
@@ -148,24 +148,24 @@ func _test_player_skills_perks_query() -> void:
 func _test_player_skills_serialization() -> void:
 	var ps1: PlayerSkills = PlayerSkills.new()
 	root.add_child(ps1)
-	ps1.add_xp("woodcutting", 150)
-	ps1.add_xp("farming", 300)
+	ps1.add_xp("woodcutting", 500)
+	ps1.add_xp("farming", 1200)
 	ps1.add_xp("athletics", 50)
 
 	var saved_data: Dictionary = ps1.serialize()
 	check(saved_data.has("skills") and saved_data.has("version"), "Сериализованные данные должны иметь 'skills' и 'version'")
 	check(saved_data["skills"].has("woodcutting"), "Сериализованные данные должны содержать woodcutting")
 	check(saved_data["skills"]["woodcutting"]["level"] == 2, "Сохраненный уровень woodcutting должен быть 2")
-	check(saved_data["skills"]["woodcutting"]["xp"] == 150, "Сохраненный XP woodcutting должен быть 150")
+	check(saved_data["skills"]["woodcutting"]["xp"] == 500, "Сохраненный XP woodcutting должен быть 500")
 
 	var ps2: PlayerSkills = PlayerSkills.new()
 	root.add_child(ps2)
 	ps2.deserialize(saved_data)
 
 	check(ps2.get_level("woodcutting") == 2, "Восстановленный уровень woodcutting должен быть 2")
-	check(ps2.get_xp("woodcutting") == 150, "Восстановленный XP woodcutting должен быть 150")
+	check(ps2.get_xp("woodcutting") == 500, "Восстановленный XP woodcutting должен быть 500")
 	check(ps2.get_level("farming") == 3, "Восстановленный уровень farming должен быть 3")
-	check(ps2.get_xp("farming") == 300, "Восстановленный XP farming должен быть 300")
+	check(ps2.get_xp("farming") == 1200, "Восстановленный XP farming должен быть 1200")
 	check(ps2.get_level("mining") == 1, "Не тронутый навык mining должен быть 1 уровня")
 
 	# Проверка совместимости со старыми сохранениями (пустой словарь)
@@ -204,12 +204,12 @@ func _test_player_scene_integration() -> void:
 	var base_max_energy: float = player.get_effective_max_energy()
 	check(is_equal_approx(base_max_energy, 100.0), "Базовая максимальная энергия игрока должна быть 100.0, получено %.1f" % base_max_energy)
 
-	player.skills.add_xp("athletics", 100) # Lv. 2 -> +3 энергии
+	player.skills.add_xp("athletics", 400) # Lv. 2 -> +3 энергии
 	var boosted_max_energy: float = player.get_effective_max_energy()
 	check(is_equal_approx(boosted_max_energy, 103.0), "Максимальная энергия игрока на Lv.2 атлетики должна быть 103.0, получено %.1f" % boosted_max_energy)
 
 	# Проверка масштабирования питательности еды от кулинарии
-	player.skills.add_xp("cooking", 250) # Lv. 3 -> +6% к питательности
+	player.skills.add_xp("cooking", 1000) # Lv. 3 -> +6% к питательности
 	player.hunger = 50.0
 	player.energy = 50.0
 	player.inventory.add_item("cabbage", 1) # cabbage: hunger_recovery = 32.0, energy_bonus = 10.0

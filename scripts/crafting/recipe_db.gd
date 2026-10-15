@@ -25,6 +25,16 @@ const RECIPES: Dictionary = {
 		"energy_cost": 2.0,
 		"description": "Перемалывает 2 бревна в 3 порции древесных опилок."
 	},
+	"crush_coal": {
+		"id": "crush_coal",
+		"name": "Уголь → Угольный порошок (x2)",
+		"machine": "crusher",
+		"inputs": {"coal": 1},
+		"outputs": {"coal_powder": 2},
+		"duration": 16.0,
+		"energy_cost": 2.0,
+		"description": "Измельчение кускового каменного угля в мелкодисперсный порошок для смесей и фильтров."
+	},
 	"craft_brick": {
 		"id": "craft_brick",
 		"name": "Формовка: Говённый кирпич (x2)",
@@ -74,6 +84,26 @@ const RECIPES: Dictionary = {
 		"duration": 55.0,
 		"energy_cost": 2.5,
 		"description": "Высокотемпературное плавление трёх порций кварцевого песка в прозрачное стекло. Топливо — в топливных слотах печи."
+	},
+	"craft_glass_bottle": {
+		"id": "craft_glass_bottle",
+		"name": "Выдувание: Стеклянная бутылка (x2)",
+		"machine": "furnace",
+		"inputs": {"glass": 1},
+		"outputs": {"glass_bottle": 2},
+		"duration": 22.0,
+		"energy_cost": 2.0,
+		"description": "Формовка и выдувание двух стеклянных бутылок из заготовки листового стекла."
+	},
+	"smelt_clay_pot": {
+		"id": "smelt_clay_pot",
+		"name": "Обжиг: Глиняный горшок (x1)",
+		"machine": "furnace",
+		"inputs": {"clay": 2},
+		"outputs": {"clay_pot": 1},
+		"duration": 25.0,
+		"energy_cost": 2.5,
+		"description": "Запекание формованного глиняного горшка в высокотемпературной печи."
 	},
 	"smelt_iron": {
 		"id": "smelt_iron",
@@ -129,11 +159,31 @@ const RECIPES: Dictionary = {
 		"id": "bottle_water",
 		"name": "Розлив: Бутилированная вода (x1)",
 		"machine": "workbench",
-		"inputs": {"clean_water": 1, "glass": 1},
+		"inputs": {"clean_water": 1, "glass_bottle": 1},
 		"outputs": {"bottled_water": 1},
 		"duration": 15.0,
 		"energy_cost": 1.0,
 		"description": "Розлив фильтрованной воды в герметичные стеклянные бутылки для длительного хранения и продажи."
+	},
+	"craft_glassware_set": {
+		"id": "craft_glassware_set",
+		"name": "Сборка: Комплект стеклянной посуды (x1)",
+		"machine": "workbench",
+		"inputs": {"glass": 2, "glass_bottle": 1},
+		"outputs": {"glassware_set": 1},
+		"duration": 30.0,
+		"energy_cost": 3.0,
+		"description": "Тонкая шлифовка и комплектование набора посуды из листового стекла и бутылки."
+	},
+	"craft_coal_briquette": {
+		"id": "craft_coal_briquette",
+		"name": "Прессование: Угольные брикеты (x3)",
+		"machine": "workbench",
+		"inputs": {"coal_powder": 2, "clay": 1},
+		"outputs": {"fuel_briquette": 3},
+		"duration": 28.0,
+		"energy_cost": 2.5,
+		"description": "Прессование тонкого угольного порошка с глиной-связкой в плотные высококалорийные брикеты."
 	},
 	"craft_fertilizer": {
 		"id": "craft_fertilizer",

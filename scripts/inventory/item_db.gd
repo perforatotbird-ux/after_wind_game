@@ -172,6 +172,16 @@ const ITEMS: Dictionary = {
 		"sell_price": 1,
 		"description": "Древесные опилки из дробилки. Сырьё для топливных брикетов."
 	},
+	"coal_powder": {
+		"id": "coal_powder",
+		"name": "Угольный порошок",
+		"icon": "⚫",
+		"category": "material",
+		"weight": 0.4,
+		"max_stack": 50,
+		"sell_price": 7,
+		"description": "Мелкодисперсный угольный порошок из дробилки. Топливная основа и компонент фильтрации."
+	},
 
 	# --- Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6) ---
 	"mortar": {
@@ -233,6 +243,36 @@ const ITEMS: Dictionary = {
 		"max_stack": 40,
 		"sell_price": 22,
 		"description": "Прозрачное закалённое стекло из выплавленного кварцевого песка."
+	},
+	"glass_bottle": {
+		"id": "glass_bottle",
+		"name": "Стеклянная бутылка",
+		"icon": "🍾",
+		"category": "material",
+		"weight": 0.3,
+		"max_stack": 40,
+		"sell_price": 16,
+		"description": "Прочная выдувная стеклянная бутылка. Тара для чистой воды, настоев и компотов."
+	},
+	"clay_pot": {
+		"id": "clay_pot",
+		"name": "Глиняный горшок",
+		"icon": "🏺",
+		"category": "product",
+		"weight": 1.0,
+		"max_stack": 30,
+		"sell_price": 26,
+		"description": "Обожжённый прочный керамический горшок. Используется для хранения и кулинарии."
+	},
+	"glassware_set": {
+		"id": "glassware_set",
+		"name": "Комплект стеклянной посуды",
+		"icon": "🥂",
+		"category": "product",
+		"weight": 1.4,
+		"max_stack": 20,
+		"sell_price": 68,
+		"description": "Изящный комплект граненой стеклянной посуды: графин, стаканы и пиалы."
 	},
 	"steel_plate": {
 		"id": "steel_plate",
