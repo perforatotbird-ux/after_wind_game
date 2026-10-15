@@ -172,7 +172,12 @@ var items: Dictionary = {
 	"iron_shovel": 0,
 	"reinforced_bucket": 0,
 	"large_backpack": 0,
-	"whetstone": 0
+	"whetstone": 0,
+	# --- Керамика, стекло, угольная пыль (Глава 2) ---
+	"coal_powder": 0,
+	"glass_bottle": 0,
+	"clay_pot": 0,
+	"glassware_set": 0
 }
 
 var _load_state: int = LoadState.NORMAL

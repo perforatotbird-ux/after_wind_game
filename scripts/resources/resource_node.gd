@@ -303,7 +303,7 @@ func _on_interacted(player: Node) -> void:
 	
 	if skills:
 		if skills.has_method("get_energy_discount"):
-			final_energy_cost *= skills.get_energy_discount(target_skill)
+			final_energy_cost *= maxf(0.1, 1.0 - skills.get_energy_discount(target_skill))
 		if skills.has_method("roll_bonus_yield") and skills.roll_bonus_yield(target_skill):
 			bonus_yield += 1
 		if skills.has_method("add_xp"):

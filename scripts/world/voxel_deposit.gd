@@ -500,7 +500,7 @@ func _on_interacted(player: Node) -> void:
 
 	var skills: Object = player.get("skills") if player and "skills" in player else null
 	if skills and skills.has_method("get_energy_discount"):
-		energy *= skills.get_energy_discount("mining")
+		energy *= maxf(0.1, 1.0 - skills.get_energy_discount("mining"))
 	if skills and skills.has_method("add_xp"):
 		skills.add_xp("mining", 2 if mat in [Mat.SOIL, Mat.SAND, Mat.CLAY] else 5)
 	

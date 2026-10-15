@@ -16,7 +16,11 @@ def verify_all_item_ids():
 
     # Check inventory.gd items dictionary
     inv_content = (ROOT / "scripts/inventory/inventory.gd").read_text(encoding="utf-8")
-    inv_items = set(re.findall(r'^\s*"([a-zA-Z0-9_]+)":\s*0,?', inv_content, re.MULTILINE))
+    items_block = re.search(r"var items:\s*Dictionary\s*=\s*\{(.*?)\n\}", inv_content, re.DOTALL)
+    if items_block:
+        inv_items = set(re.findall(r'^\s*"([a-zA-Z0-9_]+)":\s*0,?', items_block.group(1), re.MULTILINE))
+    else:
+        inv_items = set(re.findall(r'^\s*"([a-zA-Z0-9_]+)":\s*0,?', inv_content, re.MULTILINE))
     print(f"Total items in inventory.gd default dictionary: {len(inv_items)}")
 
     missing_in_item_db = inv_items - defined_items

@@ -65,6 +65,8 @@ func _process(_d: float) -> bool:
 	var player = world.get_node("Player")
 	var rock = big[big.size() - 1]
 	player.inventory.equip_tool("pickaxe")
+	if "tool_sharpness" in player.inventory:
+		player.inventory.tool_sharpness["pickaxe"] = 50.0 # Рабочая заточка (без крит-бонуса)
 	var before: int = player.inventory.get_item_count("stone") if player.inventory.has_method("get_item_count") else 0
 	for k in rock.max_hits:
 		rock._on_interacted(player)

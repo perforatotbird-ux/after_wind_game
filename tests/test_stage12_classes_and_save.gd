@@ -133,6 +133,7 @@ func _run_tests() -> void:
 	player.set_character_class("scientist")
 	inv.tools = ["axe", "pickaxe", "shovel", "bucket", "backpack"] as Array[String]
 	inv.equip_tool("pickaxe")
+	inv.tool_sharpness["pickaxe"] = 50.0 # Рабочая заточка (без бонуса крита и скидки -10% энергии)
 	player.energy = 100.0
 	inv.items["stone"] = 0
 	stone_node._on_interacted(player)

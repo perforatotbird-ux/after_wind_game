@@ -280,15 +280,20 @@ func _run_world_tests() -> void:
 	Seasons.activate(Seasons.SPRING, 1)
 	field.queue_free()
 
-	# 5. Открытая вода замерзает, колодец — нет.
-	var well: Node = world.get_node_or_null("Resources/WaterWell")
-	check(well != null, "В мире нет колодца")
+	# 5. Проверка промерзания воды в зависимости от типа источника.
+	var well: Node = world.get_node_or_null("Resources/Lake")
+	if well == null:
+		well = world.get_node_or_null("Resources/WaterWell")
+	check(well != null, "В мире нет источника воды (Lake или WaterWell)")
 	if well:
 		Seasons.activate(Seasons.SPRING, 1)
 		check(not well.is_frozen(), "Весной вода не должна быть замёрзшей")
-		check(well.get_prompt().contains("[E]"), "Весной с колодца можно брать воду")
+		check(well.get_prompt().contains("[E]"), "Весной с водоёма можно брать воду")
 		Seasons.activate(Seasons.WINTER, 1)
-		check(not well.is_frozen(), "Колодец не должен замерзать (нужен круглый год)")
+		if well.get("freezes_in_winter"):
+			check(well.is_frozen(), "Открытый водоём должен промерзать зимой")
+		else:
+			check(not well.is_frozen(), "Закрытый колодец не должен замерзать")
 		var mock := MockPlayer.new()
 		mock.inventory = InventoryScript.new()
 		mock.add_child(mock.inventory)

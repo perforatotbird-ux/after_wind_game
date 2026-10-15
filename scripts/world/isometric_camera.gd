@@ -159,7 +159,7 @@ func _update_auto_rotation(delta: float) -> void:
 	if "visual_root" in target_node and is_instance_valid(target_node.visual_root):
 		desired_yaw = target_node.visual_root.global_rotation.y
 	elif target_node.has_node("Visuals"):
-		var visuals: Node3D = target_node.get_node("Visuals") as Node3D
+		var visuals: Node3D = target_node.get_node_or_null("Visuals") as Node3D
 		if is_instance_valid(visuals):
 			desired_yaw = visuals.global_rotation.y
 			

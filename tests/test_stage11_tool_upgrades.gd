@@ -197,6 +197,7 @@ func _run_tests() -> void:
 	# Тест с базовым топором Lv.1
 	inv.tools = ["axe", "pickaxe", "shovel", "bucket", "backpack"] as Array[String]
 	inv.equipped_tool = "axe"
+	inv.tool_sharpness["axe"] = 50.0 # Рабочая заточка (без бритвенного бонуса -10% сил)
 	player.energy = 100.0
 	inv.items["wood"] = 0
 
@@ -252,6 +253,7 @@ func _run_tests() -> void:
 	# Вскопка базовой мотыгой Lv.1
 	inv.tools = ["axe", "pickaxe", "shovel", "bucket", "backpack"] as Array[String]
 	inv.equipped_tool = "shovel"
+	inv.tool_sharpness["shovel"] = 50.0 # Рабочая заточка (без скидки -10% энергии)
 	player.energy = 100.0
 	plot1.till_soil(player)
 	var energy_dig_lv1 = 100.0 - player.energy

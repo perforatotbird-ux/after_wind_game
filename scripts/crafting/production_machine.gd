@@ -609,7 +609,7 @@ func get_cycle_params(recipe: Dictionary, player: Node) -> Dictionary:
 			duration /= skills.get_machine_speed_mult()
 		var sk_id: String = "hydrology" if machine_type == "water_filter" else "crafting"
 		if skills.has_method("get_energy_discount"):
-			energy_cost *= skills.get_energy_discount(sk_id)
+			energy_cost *= maxf(0.1, 1.0 - skills.get_energy_discount(sk_id))
 	return {"duration": duration, "energy": energy_cost}
 
 # ---------------------------------------------------------------------------
@@ -785,7 +785,7 @@ func _complete_process() -> void:
 		# Улучшенный станок изнашивается медленнее (множитель уровня).
 		var w_amount: float = wear_per_cycle * level_state.get_wear_mult()
 		if skills and skills.has_method("get_wear_discount"):
-			w_amount *= skills.get_wear_discount()
+			w_amount *= maxf(0.1, 1.0 - skills.get_wear_discount())
 		wear.add_wear(w_amount)
 	
 	if skills and skills.has_method("add_xp"):

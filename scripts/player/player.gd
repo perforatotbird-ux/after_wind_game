@@ -507,7 +507,7 @@ func _handle_energy_regen(delta: float) -> void:
 		if hours_without_sleep >= sleep_deprivation_threshold:
 			drain = 9.0 # при бессоннице бег истощает гораздо сильнее
 		if skills and skills.has_method("get_energy_discount"):
-			drain *= skills.get_energy_discount("athletics")
+			drain *= maxf(0.1, 1.0 - skills.get_energy_discount("athletics"))
 		consume_energy(drain * delta)
 		if skills and skills.has_method("award_athletics_sprint"):
 			_sprint_distance_accum += velocity.length() * delta

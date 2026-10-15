@@ -191,8 +191,8 @@ func _build_visuals() -> void:
 			packed = ApricotModel
 		var model: Node3D = packed.instantiate()
 		_visuals_root.add_child(model)
-		_trunk_mesh = model.get_node("Trunk")
-		_fruits_node = model.get_node("Fruits")
+		_trunk_mesh = model.get_node_or_null("Trunk")
+		_fruits_node = model.get_node_or_null("Fruits")
 		return
 
 	var cfg: Dictionary = _get_config()
@@ -367,7 +367,7 @@ func chop(player: Node) -> bool:
 	var skills: Object = player.get("skills") if player and "skills" in player else null
 	var energy_cost: float = 1.5 * float(sharpness_eff.get("energy_cost_mult", 1.0))
 	if skills and skills.has_method("get_energy_discount"):
-		energy_cost *= skills.get_energy_discount("woodcutting")
+		energy_cost *= maxf(0.1, 1.0 - skills.get_energy_discount("woodcutting"))
 	
 	if player and player.has_method("consume_energy"):
 		player.consume_energy(energy_cost)
