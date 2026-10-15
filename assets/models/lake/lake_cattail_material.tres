@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "LakeCattail"
+cull_mode = 2
+albedo_color = Color(0.5321355, 0.4030275, 0.25278953, 1)
+roughness = 0.99
+texture_filter = 5
