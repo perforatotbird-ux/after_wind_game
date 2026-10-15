@@ -10,6 +10,8 @@ const Seasons = preload("res://scripts/core/seasons.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
+const CherryModel = preload("res://assets/models/cherry/cherry_with_fruit.tscn")
+
 const GROUP: String = "fruit_trees"
 const FALLBACK_HOURS_PER_SECOND: float = 1.0 / 60.0
 
@@ -65,10 +67,8 @@ const CONFIGS: Dictionary = {
 @export var fruit_regrow_hours: float = 24.0
 @export var regrow_progress: float = 0.0
 @export var growth_progress: float = 0.0
-@export var max_hits: int = 8
-@export var current_hits: int = 8
-## Накопленная дробная древесина (0.25 за удар, как у лесных деревьев).
-var _wood_pool: float = 0.0
+@export var max_hits: int = 3
+@export var current_hits: int = 3
 
 var _visuals_root: Node3D = null
 var _trunk_mesh: MeshInstance3D = null
@@ -153,11 +153,24 @@ func advance_hours(hours: float) -> void:
 
 func _build_visuals() -> void:
 	if _visuals_root:
+		remove_child(_visuals_root)
 		_visuals_root.queue_free()
+	_trunk_mesh = null
+	_canopy_mesh = null
+	_fruits_node = null
 
 	_visuals_root = Node3D.new()
 	_visuals_root.name = "TreeVisuals"
 	add_child(_visuals_root)
+
+	# Вишня по референсу: общий ствол и крона, отдельные плоды и плодоножки.
+	# Молодые стадии используют ту же модель без плодов; сбор не перестраивает меши.
+	if tree_type == "cherry_tree":
+		var model: Node3D = CherryModel.instantiate()
+		_visuals_root.add_child(model)
+		_trunk_mesh = model.get_node("Trunk")
+		_fruits_node = model.get_node("Fruits")
+		return
 
 	var cfg: Dictionary = _get_config()
 	var wood_col: Color = Color(0.42, 0.28, 0.16)
@@ -316,20 +329,16 @@ func harvest(player: Node) -> int:
 	return count
 
 func chop(player: Node) -> bool:
-	# Энергия рубки вдвое меньше базовой (1.5), как у обычных деревьев.
+	# Энергия тратится как у обычных деревьев (player.consume_energy -> void).
 	if player and player.has_method("consume_energy"):
-		player.consume_energy(1.5)
+		player.consume_energy(3.0)
 
 	current_hits -= 1
 	AudioManager.play("hit_wood")
 
-	# Древесина капает дробно (0.25 за удар): целая выдаётся каждую 4-ю.
+	# За каждый удар выпадает древесина
 	var drop_at: Vector3 = global_position + Vector3(0.0, 0.5, 0.0)
-	_wood_pool += 0.25
-	var whole: int = int(floor(_wood_pool))
-	_wood_pool -= float(whole)
-	if whole > 0:
-		DroppedItemScript.give_or_drop(player, "wood", whole, drop_at, get_parent())
+	DroppedItemScript.give_or_drop(player, "wood", 1, drop_at, get_parent())
 
 	if current_hits <= 0:
 		# Дерево срублено! Возвращаем древесину и саженец

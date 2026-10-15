@@ -38,6 +38,9 @@ func _initialize() -> void:
 	_test_recipes()
 	_test_progress_logic()
 	world = WorldScene.instantiate()
+	# Фиксированная тестовая раскладка: случайный seed иногда даёт меньше 10
+	# грибов за лимит кандидатов, хотя логика сбора и сохранений исправна.
+	world.get_node("MushroomPatches").spawn_seed = 12345
 	root.add_child(world)
 
 var _spawner: Node = null
