@@ -531,10 +531,10 @@ func _refresh_order() -> void:
 		var ok: bool = have >= total
 		enough_all = enough_all and ok
 		_grid.highlight_items[item_id] = UI.COLOR_OK if ok else UI.COLOR_DANGER
-		_inputs_box.add_child(_make_line(item_id, "%s: %d × %d = %d  (есть %d)" % [ItemDB.get_item_name(item_id), need, maxi(cycles, 1), total, have], UI.COLOR_OK if ok else UI.COLOR_DANGER))
+		_inputs_box.add_child(_make_line(item_id, "%s: нужно %d  (есть %d)" % [ItemDB.get_item_name(item_id), total, have], UI.COLOR_OK if ok else UI.COLOR_DANGER))
 	var outputs: Dictionary = _selected_recipe.get("outputs", {})
 	for item_id in outputs.keys():
-		_inputs_box.add_child(_make_line(item_id, "→ %s ×%d" % [ItemDB.get_item_name(item_id), int(outputs[item_id]) * maxi(cycles, 1)], UI.COLOR_TITLE))
+		_inputs_box.add_child(_make_line(item_id, "→ %s: %d шт." % [ItemDB.get_item_name(item_id), int(outputs[item_id]) * maxi(cycles, 1)], UI.COLOR_TITLE))
 	_grid.set_stacks(inventory.get_slot_cells(), inventory.max_slots)
 
 	var params: Dictionary = machine.get_cycle_params(_selected_recipe, player) if machine else {"duration": 0.0, "energy": 0.0}

@@ -35,6 +35,8 @@ var _d_desc: Label
 var _d_count: Label
 var _d_weight: Label
 var _use_btn: Button
+var _craft_btn: Button
+var _whetstone_header_btn: Button
 var _drop_btn: Button
 var _selected: String = ""
 var _modal: Control
@@ -78,6 +80,12 @@ func _ready() -> void:
 	farm_btn.tooltip_text = "Разметить фермерскую делянку мышкой (до 128 клеток). Материалы: древесина по периметру, камень и опилки по площади. Стройка — 1 игровой день."
 	farm_btn.pressed.connect(func(): request_build("farm_field"))
 	header.add_child(farm_btn)
+	var whetstone_btn := UI.make_button("🪨 Оселок (крафт)", Vector2(150, 32))
+	whetstone_btn.name = "CraftWhetstoneButton"
+	whetstone_btn.tooltip_text = "Скрафтить точильный брусок (оселок) прямо из рюкзака. Требуется: 2 камня, 1 песок."
+	whetstone_btn.pressed.connect(_craft_whetstone_in_backpack)
+	_whetstone_header_btn = whetstone_btn
+	header.add_child(whetstone_btn)
 	var sort_btn := UI.make_button("⇅ Сортировать", Vector2(130, 32))
 	sort_btn.tooltip_text = "Упорядочить рюкзак по типу и названию"
 	sort_btn.pressed.connect(_on_sort_pressed)
@@ -166,6 +174,10 @@ func _ready() -> void:
 	_use_btn = UI.make_button("", Vector2(0, 36), true)
 	_use_btn.pressed.connect(_on_use_pressed)
 	details.add_child(_use_btn)
+	_craft_btn = UI.make_button("", Vector2(0, 36), true)
+	_craft_btn.visible = false
+	_craft_btn.pressed.connect(_craft_whetstone_in_backpack)
+	details.add_child(_craft_btn)
 	_drop_btn = UI.make_button("🫳 Выбросить…", Vector2(0, 36), false, true)
 	_drop_btn.pressed.connect(func(): _open_drop_dialog(_selected))
 	details.add_child(_drop_btn)
@@ -208,6 +220,10 @@ func _refresh() -> void:
 		_weight_label.text += "  — не могу идти!"
 	_slots_label.text = "Слоты: %d / %d" % [inventory.get_used_slots(), inventory.max_slots]
 	_credits_label.text = "💰 %d кр.   " % int(inventory.credits)
+	if _whetstone_header_btn:
+		var stones: int = inventory.get_item_count("stone")
+		var sands: int = inventory.get_item_count("sand")
+		_whetstone_header_btn.tooltip_text = "Скрафтить точильный брусок (оселок) прямо из рюкзака. Нужно: 2 камня, 1 песок.\nВ наличии: %d камня, %d песка." % [stones, sands]
 	_build_belt()
 	_update_details()
 
@@ -271,6 +287,7 @@ func _update_details() -> void:
 		_d_count.text = ""
 		_d_weight.text = ""
 		_use_btn.visible = false
+		_craft_btn.visible = false
 		_drop_btn.visible = false
 		return
 	var data: Dictionary = ItemDB.get_item(_selected)
@@ -301,6 +318,40 @@ func _update_details() -> void:
 		_use_btn.visible = true
 	else:
 		_use_btn.visible = false
+
+	if _selected in ["stone", "sand"]:
+		var stones: int = inventory.get_item_count("stone")
+		var sands: int = inventory.get_item_count("sand")
+		_craft_btn.text = "🪨 Скрафтить оселок (2 камня, 1 песок) [%d/2, %d/1]" % [stones, sands]
+		_craft_btn.visible = true
+	else:
+		_craft_btn.visible = false
+
+func _craft_whetstone_in_backpack() -> void:
+	if inventory == null:
+		return
+	var stones: int = inventory.get_item_count("stone")
+	var sands: int = inventory.get_item_count("sand")
+	if stones < 2 or sands < 1:
+		AudioManager.play("ui_error")
+		if player and player.has_method("notify"):
+			player.notify("❌ Для создания оселка нужно: 2 камня, 1 песок (есть: %d камня, %d песка)" % [stones, sands])
+		return
+	
+	if not inventory.can_add_item("whetstone", 1):
+		AudioManager.play("ui_error")
+		if player and player.has_method("notify"):
+			player.notify("❌ В рюкзаке нет свободного места!")
+		return
+	
+	inventory.remove_item("stone", 2)
+	inventory.remove_item("sand", 1)
+	inventory.add_item("whetstone", 1)
+	AudioManager.play("ui_click")
+	if player and player.has_method("notify"):
+		player.notify("✨ Скрафчен оселок! Используйте его для заточки инструментов.")
+	_selected = "whetstone"
+	_refresh()
 
 func _on_cell_pressed(item_id: String, _count: int, _index: int) -> void:
 	AudioManager.play("ui_click")

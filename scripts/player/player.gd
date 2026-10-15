@@ -153,6 +153,9 @@ var _dig_elapsed: float = 0.0
 var _dig_duration: float = 1.1
 ## Идёт переход отдыха/сна (RestTransition): движение и ввод заблокированы.
 var is_resting: bool = false
+var _rest_start_day: int = 1
+var _rest_start_energy: float = 0.0
+var _rest_start_health: float = 0.0
 var is_scooping: bool = false
 var _scoop_elapsed: float = 0.0
 var _scoop_duration: float = 1.2
@@ -1039,6 +1042,12 @@ func start_rest(hours: float, is_sleep: bool = false) -> void:
 	if is_resting or hours <= 0.0:
 		return
 	var dc: Node = _find_day_cycle()
+	if dc and "current_day" in dc:
+		_rest_start_day = int(dc.current_day)
+	else:
+		_rest_start_day = 1
+	_rest_start_energy = energy
+	_rest_start_health = health
 	if DisplayServer.get_name() == "headless" or dc == null or not dc.has_method("advance_hours"):
 		if dc and dc.has_method("advance_hours"):
 			dc.advance_hours(hours)
@@ -1064,20 +1073,26 @@ func _find_day_cycle() -> Node:
 
 ## Один шаг симуляции отдыха за hours игровых часов из total (elapsed — сколько
 ## часов отдыха уже прошло, включая этот шаг). Сон: энергия и здоровье к концу
-## выходят на максимум; организм тратит воду и еду (во сне — медленнее),
-## мокрая одежда сохнет в тепле дома.
+## выходят на максимум при длительном сне (>=6 ч), либо восстанавливаются пропорционально;
+## организм тратит воду и еду (во сне — медленнее), мокрая одежда сохнет в тепле дома.
 func _apply_rest_step(hours: float, total: float, elapsed: float, is_sleep: bool) -> void:
 	if hours <= 0.0:
 		return
 	var frac: float = clampf(elapsed / maxf(0.01, total), 0.0, 1.0)
 	if is_sleep:
 		var eff_max: float = get_effective_max_energy()
-		energy = lerpf(energy, eff_max, frac)
+		var sleep_ratio: float = clampf(total / 6.0, 0.0, 1.0)
+		var target_energy: float = lerpf(_rest_start_energy, eff_max, sleep_ratio)
+		energy = clampf(lerpf(_rest_start_energy, target_energy, frac), 0.0, eff_max)
 		energy_changed.emit(energy, max_energy)
 		if hunger >= 25.0 and thirst >= 25.0:
-			health = lerpf(health, max_health, frac)
+			var target_health: float = lerpf(_rest_start_health, max_health, sleep_ratio)
+			health = clampf(lerpf(_rest_start_health, target_health, frac), 0.0, max_health)
 			health_changed.emit(health, max_health)
-		hours_without_sleep = 0.0
+		if total >= 4.0:
+			hours_without_sleep = 0.0
+		else:
+			hours_without_sleep = maxf(0.0, hours_without_sleep - hours * 2.0)
 		_last_sleep_warning_hour = 0
 	else:
 		# Короткий отдых восстанавливает силы слабее полноценного сна.
@@ -1120,7 +1135,7 @@ func _finish_rest(actual_hours: float, is_sleep: bool) -> void:
 		if dc and "current_day" in dc:
 			new_day = int(dc.current_day)
 		notify("💤 Вы отдыхали %d ч. Энергия: %d%%, здоровье: %d%%." % [hours_int, int(energy), int(health)])
-		if new_day > 0:
+		if new_day > _rest_start_day:
 			notify("🌅 Наступил День %d." % new_day)
 		quick_save()
 	else:

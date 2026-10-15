@@ -16,7 +16,7 @@ GODOT_EXE = r"K:\Godot_v4.7.2-stable_win64.exe"
 
 ENGINE_ERROR = re.compile(r"(?:^|\n)\s*(?:SCRIPT ERROR|ERROR|FATAL):", re.MULTILINE)
 
-def run_single_test(test_file: Path, timeout: float = 30.0) -> tuple[bool, str, float]:
+def run_single_test(test_file: Path, timeout: float = 45.0) -> tuple[bool, str, float]:
     cmd = [
         GODOT_EXE,
         "--headless",

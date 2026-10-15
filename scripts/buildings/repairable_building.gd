@@ -403,8 +403,9 @@ func sleep(player: Node, hours: float = -1.0) -> void:
 		hours = 8.0
 		var dc: Node = get_tree().root.find_child("DayNightCycle", true, false)
 		if dc and "current_hour" in dc:
-			# Часов до 6:00 утра следующего дня (например, 23:00 -> 7 ч, 07:00 -> 23 ч).
-			hours = (24.0 - float(dc.current_hour)) + 6.0
+			var cur_h: float = float(dc.current_hour)
+			# Часов до 6:00 утра (если уже ночь после 00:00, например 02:00 -> 4 ч; если 23:00 -> 7 ч).
+			hours = (6.0 - cur_h) if cur_h < 6.0 else (24.0 - cur_h + 6.0)
 	# Сон через переход отдыха (часы, ускорение времени, рост и производство
 	# догоняют перемотку). В headless-режиме и без UI start_rest применяет
 	# результат мгновенно.

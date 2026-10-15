@@ -27,13 +27,16 @@ var _slider: HSlider
 var _spin: SpinBox
 var _info: Label
 var _syncing: bool = false
+var selected_hours: float = FULL_SLEEP_HOURS
+var _quick_buttons: Array[Button] = []
+var _quick_values: Array[float] = [1.0, 4.0, 6.0, 8.0, 12.0]
 
 func setup(building: Node, player: Node) -> void:
 	_building = building
 	_player = player
 
 func get_hours() -> float:
-	return snappedf(_slider.value, STEP_HOURS) if _slider else FULL_SLEEP_HOURS
+	return selected_hours
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -46,7 +49,7 @@ func _ready() -> void:
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(center)
 	var panel := UI.make_panel(UI.COLOR_BG, UI.COLOR_ACCENT, 2)
-	panel.custom_minimum_size = Vector2(460, 0)
+	panel.custom_minimum_size = Vector2(480, 0)
 	center.add_child(panel)
 	var margin := UI.make_margin(20)
 	panel.add_child(margin)
@@ -58,7 +61,7 @@ func _ready() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
-	var hint := UI.make_label("Сколько спать? Ползунком задаётся длительность — часы со стрелками покажут бег времени, пока вы спите.", 13, UI.COLOR_MUTED)
+	var hint := UI.make_label("Сколько спать? Выберите готовое время или задайте ползунком. Короткий сон освежит силы, долгий — полностью восстановит здоровье и энергию.", 13, UI.COLOR_MUTED)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(hint)
 
@@ -66,18 +69,20 @@ func _ready() -> void:
 	_slider.min_value = MIN_HOURS
 	_slider.max_value = MAX_HOURS
 	_slider.step = STEP_HOURS
-	_slider.custom_minimum_size = Vector2(400, 26)
+	_slider.custom_minimum_size = Vector2(420, 26)
 	_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_slider.value_changed.connect(_on_slider_changed)
 	vbox.add_child(_slider)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
+	row.add_theme_constant_override("separation", 6)
 	vbox.add_child(row)
-	for quick in [1, 4, 6, 8, 12]:
-		var btn := UI.make_button("%d ч" % quick, Vector2(60, 32))
-		btn.pressed.connect(_set_hours.bind(float(quick)))
+	_quick_buttons.clear()
+	for quick in _quick_values:
+		var btn := UI.make_button("%d ч" % int(quick), Vector2(56, 32))
+		btn.pressed.connect(_set_hours.bind(quick))
 		row.add_child(btn)
+		_quick_buttons.append(btn)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
@@ -86,7 +91,7 @@ func _ready() -> void:
 	_spin.max_value = MAX_HOURS
 	_spin.step = STEP_HOURS
 	_spin.rounded = true
-	_spin.custom_minimum_size = Vector2(110, 32)
+	_spin.custom_minimum_size = Vector2(95, 32)
 	_spin.value_changed.connect(_on_spin_changed)
 	row.add_child(_spin)
 
@@ -125,14 +130,33 @@ func _wake_text(hours: float) -> String:
 
 func _set_hours(h: float) -> void:
 	var n: float = clampf(snappedf(h, STEP_HOURS), MIN_HOURS, MAX_HOURS)
+	selected_hours = n
 	_syncing = true
-	_slider.value = n
-	_spin.value = n
+	if _slider and not is_equal_approx(_slider.value, n):
+		_slider.value = n
+	if _spin and not is_equal_approx(_spin.value, n):
+		_spin.value = n
 	_syncing = false
+	
+	# Подсветка активной быстрой кнопки
+	for i in range(_quick_buttons.size()):
+		var b: Button = _quick_buttons[i]
+		var val: float = _quick_values[i]
+		var is_selected: bool = is_equal_approx(val, n)
+		if is_selected:
+			b.add_theme_stylebox_override("normal", UI.make_stylebox(Color(0.24, 0.28, 0.36), UI.COLOR_ACCENT, 2, 4))
+			b.add_theme_color_override("font_color", UI.COLOR_ACCENT)
+		else:
+			b.add_theme_stylebox_override("normal", UI.make_stylebox(UI.COLOR_CARD, UI.COLOR_BORDER, 1, 4))
+			b.add_theme_color_override("font_color", UI.COLOR_TEXT)
+	
 	var text: String = "Длительность: %d ч  ·  %s" % [int(n), _wake_text(n)]
 	if n < FULL_SLEEP_HOURS:
-		text += "\n⚠️ Короткий сон восстановит силы не полностью."
-	_info.text = text
+		text += "\n⚠️ Короткий сон восстановит силы частично (+%d%% энергии)." % int(round((n / FULL_SLEEP_HOURS) * 100.0))
+	else:
+		text += "\n✨ Полноценный сон: 100% энергии и полное здоровье."
+	if _info:
+		_info.text = text
 
 func _on_slider_changed(v: float) -> void:
 	if not _syncing:

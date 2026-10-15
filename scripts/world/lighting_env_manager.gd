@@ -139,7 +139,7 @@ func _update_ambient() -> void:
 	var base: Color = SEASON_AMBIENT.get(_season, SEASON_AMBIENT[""])
 	match _day_phase:
 		"Ночь":
-			base = base.lerp(Color(0.08, 0.10, 0.22), 0.75)
+			base = base.lerp(Color(0.04, 0.05, 0.12), 0.85)
 		"Утро":
 			base = base.lerp(Color(0.55, 0.45, 0.35), 0.25)
 		"Вечер":
@@ -151,7 +151,7 @@ func _update_ambient() -> void:
 	_target_ambient = Color(base.r * mult, base.g * mult, base.b * mult)
 	
 	var env: Environment = world_environment.environment
-	env.ambient_light_energy = 0.65 if _day_phase == "День" else (0.35 if _day_phase == "Ночь" else 0.50)
+	env.ambient_light_energy = 0.65 if _day_phase == "День" else (0.10 if _day_phase == "Ночь" else 0.50)
 
 func _update_water_tint() -> void:
 	if not lake_material:

@@ -274,6 +274,8 @@ func _update_lighting_and_sky(force: bool) -> void:
 	var sky_top: Color
 	var sky_horiz: Color
 	var ground_horiz: Color
+	var ground_bottom: Color = Color(0.20, 0.18, 0.15)
+	var sky_energy: float = 1.0
 	
 	if current_hour >= 5.0 and current_hour < 11.0:
 		# Утро
@@ -284,6 +286,8 @@ func _update_lighting_and_sky(force: bool) -> void:
 		sky_top = Color(0.25, 0.35, 0.55).lerp(Color(0.36, 0.54, 0.78), factor)
 		sky_horiz = Color(0.92, 0.70, 0.50).lerp(Color(0.65, 0.72, 0.78), factor)
 		ground_horiz = Color(0.40, 0.35, 0.30).lerp(Color(0.50, 0.48, 0.45), factor)
+		ground_bottom = Color(0.12, 0.10, 0.08).lerp(Color(0.20, 0.18, 0.15), factor)
+		sky_energy = lerpf(0.6, 1.0, factor)
 		
 	elif current_hour >= 11.0 and current_hour < 17.0:
 		# День
@@ -293,6 +297,8 @@ func _update_lighting_and_sky(force: bool) -> void:
 		sky_top = Color(0.36, 0.54, 0.78)
 		sky_horiz = Color(0.65, 0.72, 0.78)
 		ground_horiz = Color(0.50, 0.48, 0.45)
+		ground_bottom = Color(0.20, 0.18, 0.15)
+		sky_energy = 1.0
 		
 	elif current_hour >= 17.0 and current_hour < 21.0:
 		# Вечер / Закат
@@ -303,6 +309,8 @@ func _update_lighting_and_sky(force: bool) -> void:
 		sky_top = Color(0.36, 0.54, 0.78).lerp(Color(0.20, 0.22, 0.45), factor)
 		sky_horiz = Color(0.65, 0.72, 0.78).lerp(Color(0.95, 0.45, 0.25), factor)
 		ground_horiz = Color(0.50, 0.48, 0.45).lerp(Color(0.35, 0.28, 0.25), factor)
+		ground_bottom = Color(0.20, 0.18, 0.15).lerp(Color(0.08, 0.06, 0.05), factor)
+		sky_energy = lerpf(1.0, 0.45, factor)
 		
 	else:
 		# Ночь
@@ -311,12 +319,14 @@ func _update_lighting_and_sky(force: bool) -> void:
 			night_t = (current_hour - 21.0) / 8.0
 		else:
 			night_t = (current_hour + 3.0) / 8.0
-		sun_pitch_deg = 35.0 # Луна над горизонтом
-		light_energy = 0.20
-		light_color = Color(0.35, 0.45, 0.70) # Холодный лунный свет
-		sky_top = Color(0.04, 0.05, 0.12)
-		sky_horiz = Color(0.08, 0.10, 0.18)
-		ground_horiz = Color(0.12, 0.12, 0.15)
+		sun_pitch_deg = -35.0 # Солнце глубоко под горизонтом ночью
+		light_energy = 0.0 # Солнце полностью выключено ночью
+		light_color = Color(0.10, 0.12, 0.20)
+		sky_top = Color(0.015, 0.02, 0.05)
+		sky_horiz = Color(0.03, 0.04, 0.08)
+		ground_horiz = Color(0.02, 0.025, 0.035)
+		ground_bottom = Color(0.015, 0.015, 0.025)
+		sky_energy = 0.22
 	
 	var weather_mult: float = 1.0
 	if not is_instance_valid(_weather_mgr) and get_parent():
@@ -332,7 +342,7 @@ func _update_lighting_and_sky(force: bool) -> void:
 	var night: bool = is_night()
 	if sun_light:
 		sun_light.rotation_degrees = Vector3(-sun_pitch_deg, sun_yaw_deg, 0.0)
-		sun_light.light_energy = light_energy * weather_mult
+		sun_light.light_energy = 0.0 if night else (light_energy * weather_mult)
 		sun_light.light_color = light_color
 		sun_light.shadow_enabled = not night
 	
@@ -340,9 +350,9 @@ func _update_lighting_and_sky(force: bool) -> void:
 		_moon_light.visible = night
 		if night:
 			var moon_yaw: float = fposmod(sun_yaw_deg + 180.0, 360.0)
-			_moon_light.rotation_degrees = Vector3(-35.0, moon_yaw, 0.0)
-			_moon_light.light_energy = 0.18 * weather_mult
-			_moon_light.light_color = Color(0.60, 0.70, 1.00)
+			_moon_light.rotation_degrees = Vector3(-45.0, moon_yaw, 0.0)
+			_moon_light.light_energy = 0.09 * weather_mult
+			_moon_light.light_color = Color(0.55, 0.68, 0.95)
 			_moon_light.shadow_enabled = false
 	
 	# Сезонный оттенок поверх суточного расчёта: зима — белее и холоднее, лето — сочнее.
@@ -357,6 +367,8 @@ func _update_lighting_and_sky(force: bool) -> void:
 		_sky_material.sky_top_color = sky_top
 		_sky_material.sky_horizon_color = sky_horiz
 		_sky_material.ground_horizon_color = ground_horiz
+		_sky_material.ground_bottom_color = ground_bottom
+		_sky_material.energy_multiplier = sky_energy
 		var star_alpha: float = 0.0
 		if night:
 			star_alpha = 1.0
