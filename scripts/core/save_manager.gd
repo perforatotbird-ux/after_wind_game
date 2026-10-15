@@ -131,7 +131,10 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			buildings_data["storage_delivered_credits"] = int(storage.delivered_credits) if "delivered_credits" in storage else 0
 	if storage and "storage_inventory" in storage:
 		buildings_data["storage_inventory"] = storage.storage_inventory.export_state()
+	if storage and storage.has_method("export_fermentation_state"):
+		buildings_data["storage_fermentation"] = storage.export_fermentation_state()
 	save_data["buildings"] = buildings_data
+
 	
 	# 7. Энергетика (BatteryBank)
 	var battery = world.find_child("BatteryBank", true, false)
@@ -487,7 +490,10 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	# Старые сейвы не содержат склада: очищаем его, а не дублируем текущие вещи.
 	if storage and "storage_inventory" in storage:
 		storage.storage_inventory.restore_state(save_data.get("buildings", {}).get("storage_inventory", {}))
+	if storage and storage.has_method("restore_fermentation_state") and save_data.get("buildings", {}).has("storage_fermentation"):
+		storage.restore_fermentation_state(save_data.get("buildings", {}).get("storage_fermentation", []))
 	# Бонусы грузоподъёмности от зданий выставляются всегда (идемпотентно).
+
 	for building in [house, storage]:
 		if building and is_instance_valid(building) and building.has_method("apply_capacity_bonus"):
 			building.apply_capacity_bonus(player)

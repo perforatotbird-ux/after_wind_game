@@ -129,7 +129,7 @@ func _on_weather_changed(_type, w_name: String, _icon: String) -> void:
 	_weather_name = w_name.to_upper().replace(" ", "_")
 	_update_ambient()
 
-func _on_season_changed(season: String) -> void:
+func _on_season_changed(season: String, _season_name: String = "", _day_in_season: int = 1) -> void:
 	_season = season
 	_update_ambient()
 

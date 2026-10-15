@@ -1271,6 +1271,208 @@ const ITEMS: Dictionary = {
 		"max_stack": 1,
 		"sell_price": 140,
 		"description": "Экспедиционный рюкзак с боковыми карманами (20 слотов) и усиленными лямками (грузоподъемность: 75 кг)."
+	},
+
+	# --- Домашнее виноделие, пивоварение и дистилляция ---
+	"beer_wort_raw": {
+		"id": "beer_wort_raw",
+		"name": "Сырое пивное сусло",
+		"icon": "🥣",
+		"category": "material",
+		"weight": 1.0,
+		"max_stack": 20,
+		"sell_price": 15,
+		"description": "Затёртое на костре зерновое сусло из пшеницы и чистой воды. Требует кипячения с пряными травами."
+	},
+	"beer_wort_boiled": {
+		"id": "beer_wort_boiled",
+		"name": "Сваренное пивное сусло",
+		"icon": "🫕",
+		"category": "material",
+		"weight": 1.0,
+		"max_stack": 20,
+		"sell_price": 25,
+		"description": "Охмелённое и проваренное сусло. Готово к переносу на склад для брожения в бочках."
+	},
+	"berry_must": {
+		"id": "berry_must",
+		"name": "Ягодное сусло",
+		"icon": "🍇",
+		"category": "material",
+		"weight": 0.8,
+		"max_stack": 20,
+		"sell_price": 22,
+		"description": "Свежевыжатый сок лесных ягод с чистой водой. Готов к брожению в бочках склада."
+	},
+	"grain_wash": {
+		"id": "grain_wash",
+		"name": "Зерновой затор",
+		"icon": "🌾",
+		"category": "material",
+		"weight": 1.2,
+		"max_stack": 20,
+		"sell_price": 20,
+		"description": "Затор из измельчённых злаков и воды. Основа для сбраживания крепкой браги."
+	},
+	"fermented_wash": {
+		"id": "fermented_wash",
+		"name": "Сброженная брага",
+		"icon": "🪣",
+		"category": "material",
+		"weight": 1.2,
+		"max_stack": 20,
+		"sell_price": 40,
+		"description": "Перебродившая созревшая брага из бочек склада. Готова к перегонке в дистилляторе."
+	},
+	"beer": {
+		"id": "beer",
+		"name": "Домашнее пиво",
+		"icon": "🍺",
+		"category": "drink",
+		"weight": 0.5,
+		"max_stack": 20,
+		"sell_price": 45,
+		"is_drinkable": true,
+		"thirst_recovery": 35.0,
+		"energy_bonus": 15.0,
+		"hunger_recovery": 10.0,
+		"warmth_bonus": 10.0,
+		"description": "Пенный освежающий эль из пшеницы и душистых трав (+35% жажды, +15 энергии, +10% сытости, лёгкое согревание)."
+	},
+	"berry_wine": {
+		"id": "berry_wine",
+		"name": "Ягодное вино",
+		"icon": "🍷",
+		"category": "drink",
+		"weight": 0.5,
+		"max_stack": 20,
+		"sell_price": 65,
+		"is_drinkable": true,
+		"thirst_recovery": 30.0,
+		"energy_bonus": 25.0,
+		"health_bonus": 8.0,
+		"warmth_bonus": 15.0,
+		"description": "Благородное выдержанное домашнее вино из спелых ягод (+30% жажды, +25 энергии, +8 здоровья, согревает кровь)."
+	},
+	"moonshine": {
+		"id": "moonshine",
+		"name": "Домашний самогон",
+		"icon": "🍶",
+		"category": "drink",
+		"weight": 0.5,
+		"max_stack": 20,
+		"sell_price": 85,
+		"is_drinkable": true,
+		"thirst_recovery": 10.0,
+		"energy_bonus": 35.0,
+		"health_bonus": 0.0,
+		"warmth_bonus": 25.0,
+		"description": "Крепкий дистиллят первой перегонки (45°). Мгновенный прилив сил (+35 энергии), прогоняет холод и сырость (-25% влаги)."
+	},
+	"pure_spirit": {
+		"id": "pure_spirit",
+		"name": "Очищенный спирт",
+		"icon": "🧪",
+		"category": "drink",
+		"weight": 0.4,
+		"max_stack": 20,
+		"sell_price": 110,
+		"is_drinkable": true,
+		"thirst_recovery": 5.0,
+		"energy_bonus": 45.0,
+		"health_bonus": 5.0,
+		"warmth_bonus": 35.0,
+		"description": "Высокоочищенный спирт двойной перегонки (95°). Мощное согревание (+45 энергии, -35% сырости), основа для целебных настоек."
+	},
+	"blueberry_tincture": {
+		"id": "blueberry_tincture",
+		"name": "Черничная настойка",
+		"icon": "🫐",
+		"category": "drink",
+		"weight": 0.4,
+		"max_stack": 20,
+		"sell_price": 95,
+		"is_drinkable": true,
+		"thirst_recovery": 15.0,
+		"energy_bonus": 30.0,
+		"health_bonus": 12.0,
+		"warmth_bonus": 20.0,
+		"description": "Ароматная настойка на синих ягодах и чистом спирту (+30 энергии, +12 здоровья, проясняет зрение)."
+	},
+	"red_berry_tincture": {
+		"id": "red_berry_tincture",
+		"name": "Брусничная настойка",
+		"icon": "🍒",
+		"category": "drink",
+		"weight": 0.4,
+		"max_stack": 20,
+		"sell_price": 90,
+		"is_drinkable": true,
+		"thirst_recovery": 15.0,
+		"energy_bonus": 28.0,
+		"health_bonus": 10.0,
+		"warmth_bonus": 20.0,
+		"description": "Тонизирующий кисло-сладкий настой на красных ягодах (+28 энергии, +10 здоровья, снимает ломоту)."
+	},
+	"blackberry_tincture": {
+		"id": "blackberry_tincture",
+		"name": "Ежевичная настойка",
+		"icon": "🍇",
+		"category": "drink",
+		"weight": 0.4,
+		"max_stack": 20,
+		"sell_price": 105,
+		"is_drinkable": true,
+		"thirst_recovery": 15.0,
+		"energy_bonus": 32.0,
+		"health_bonus": 15.0,
+		"warmth_bonus": 20.0,
+		"description": "Глубокая терпкая настойка на лесной ежевике (+32 энергии, +15 здоровья, восстанавливает силы)."
+	},
+	"sea_buckthorn_tincture": {
+		"id": "sea_buckthorn_tincture",
+		"name": "Облепиховый бальзам",
+		"icon": "🟠",
+		"category": "drink",
+		"weight": 0.4,
+		"max_stack": 20,
+		"sell_price": 130,
+		"is_drinkable": true,
+		"thirst_recovery": 15.0,
+		"energy_bonus": 25.0,
+		"health_bonus": 30.0,
+		"warmth_bonus": 20.0,
+		"description": "Мощный целебный бальзам на спирту и золотой облепихе (+25 энергии, +30 здоровья — затягивает тяжёлые раны)."
+	},
+	"mushroom_tincture": {
+		"id": "mushroom_tincture",
+		"name": "Грибная настойка",
+		"icon": "🍄",
+		"category": "drink",
+		"weight": 0.4,
+		"max_stack": 20,
+		"sell_price": 100,
+		"is_drinkable": true,
+		"thirst_recovery": 10.0,
+		"energy_bonus": 40.0,
+		"health_bonus": 15.0,
+		"warmth_bonus": 25.0,
+		"description": "Старинный лесной настой на грибах и спирту (+40 энергии, +15 здоровья, защита от переохлаждения)."
+	},
+	"special_mushroom_tincture": {
+		"id": "special_mushroom_tincture",
+		"name": "Особая настойка на сушёных грибах",
+		"icon": "🏺",
+		"category": "drink",
+		"weight": 0.4,
+		"max_stack": 20,
+		"sell_price": 145,
+		"is_drinkable": true,
+		"thirst_recovery": 10.0,
+		"energy_bonus": 50.0,
+		"health_bonus": 20.0,
+		"warmth_bonus": 30.0,
+		"description": "Концентрированный эликсир из сушёных грибов и пряных трав (+50 энергии, +20 здоровья, мощный стимулятор)."
 	}
 }
 
@@ -1338,4 +1540,29 @@ static func get_tree_type(item_id: String) -> String:
 	if ITEMS.has(item_id):
 		return ITEMS[item_id].get("tree_type", "")
 	return ""
+
+static func get_health_bonus(item_id: String) -> float:
+	if ITEMS.has(item_id):
+		return ITEMS[item_id].get("health_bonus", 0.0)
+	return 0.0
+
+static func get_warmth_bonus(item_id: String) -> float:
+	if ITEMS.has(item_id):
+		return ITEMS[item_id].get("warmth_bonus", 0.0)
+	return 0.0
+
+static func is_fermentable(item_id: String) -> bool:
+	return item_id in ["beer_wort_boiled", "berry_must", "grain_wash"]
+
+static func get_fermentation_output(item_id: String) -> Dictionary:
+	match item_id:
+		"beer_wort_boiled":
+			return {"output": "beer", "count": 2, "duration": 50.0, "name": "Домашнее пиво"}
+		"berry_must":
+			return {"output": "berry_wine", "count": 2, "duration": 50.0, "name": "Ягодное вино"}
+		"grain_wash":
+			return {"output": "fermented_wash", "count": 2, "duration": 50.0, "name": "Сброженная брага"}
+		_:
+			return {}
+
 

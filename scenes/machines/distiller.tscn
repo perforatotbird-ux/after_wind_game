@@ -1,0 +1,124 @@
+[gd_scene load_steps=15 format=3 uid="uid://b2d8s7m4k9q1a"]
+
+[ext_resource type="Script" path="res://scripts/crafting/distiller.gd" id="1_dist"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
+size = Vector3(2.4, 2.2, 2.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_brick"]
+albedo_color = Color(0.52, 0.32, 0.22, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_furnace"]
+material = SubResource("StandardMaterial3D_brick")
+size = Vector3(0.85, 0.55, 0.85)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_copper"]
+albedo_color = Color(0.86, 0.46, 0.22, 1)
+metallic = 0.88
+roughness = 0.25
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_boiler"]
+material = SubResource("StandardMaterial3D_copper")
+top_radius = 0.34
+bottom_radius = 0.38
+height = 0.6
+radial_segments = 16
+
+[sub_resource type="SphereMesh" id="SphereMesh_dome"]
+material = SubResource("StandardMaterial3D_copper")
+radius = 0.34
+height = 0.35
+radial_segments = 16
+rings = 8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_neck"]
+material = SubResource("StandardMaterial3D_copper")
+top_radius = 0.04
+bottom_radius = 0.04
+height = 0.5
+radial_segments = 8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood"]
+albedo_color = Color(0.44, 0.32, 0.2, 1)
+roughness = 0.85
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_cooler"]
+material = SubResource("StandardMaterial3D_wood")
+top_radius = 0.26
+bottom_radius = 0.26
+height = 0.65
+radial_segments = 16
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glass"]
+transparency = 1
+albedo_color = Color(0.82, 0.92, 0.96, 0.55)
+roughness = 0.1
+refraction_enabled = true
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_flask"]
+material = SubResource("StandardMaterial3D_glass")
+top_radius = 0.1
+bottom_radius = 0.12
+height = 0.25
+radial_segments = 12
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_solid"]
+size = Vector3(1.5, 1.1, 1.1)
+
+[node name="Distiller" type="Area3D" node_paths=PackedStringArray("fire_light", "visual_node")]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_dist")
+has_fuel_slots = true
+fuel_slot_count = 1
+fire_light = NodePath("Visual/FireLight")
+machine_display_name = "Самогонный аппарат"
+machine_type = "distiller"
+visual_node = NodePath("Visual")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.9, 0)
+shape = SubResource("BoxShape3D_interact")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="FurnaceBase" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, 0.275, 0)
+mesh = SubResource("BoxMesh_furnace")
+
+[node name="Boiler" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, 0.85, 0)
+mesh = SubResource("CylinderMesh_boiler")
+
+[node name="Dome" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, 1.15, 0)
+mesh = SubResource("SphereMesh_dome")
+
+[node name="NeckPipe" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(0.819152, 0.573576, 0, -0.573576, 0.819152, 0, 0, 0, 1, 0.05, 1.35, 0)
+mesh = SubResource("CylinderMesh_neck")
+
+[node name="CoolerTub" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.325, 0)
+mesh = SubResource("CylinderMesh_cooler")
+
+[node name="ReceiverFlask" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.125, 0.35)
+mesh = SubResource("CylinderMesh_flask")
+
+[node name="FireLight" type="OmniLight3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, 0.2, 0.45)
+visible = false
+light_color = Color(1, 0.45, 0.15, 1)
+light_energy = 1.2
+omni_range = 3.5
+omni_attenuation = 1.6
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.55, 0)
+shape = SubResource("BoxShape3D_solid")

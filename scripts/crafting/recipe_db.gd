@@ -773,6 +773,140 @@ const RECIPES: Dictionary = {
 		"energy_cost": 1.5,
 		"min_level": 2,
 		"description": "Уваренная ягодная приправа — сладкая основа для выпечки и соусов Главы 5."
+	},
+
+	# --- Пивоварение и виноделие ---
+	"mash_beer_wort": {
+		"id": "mash_beer_wort",
+		"name": "Затирание: Сырое пивное сусло",
+		"machine": "campfire",
+		"inputs": {"wheat": 3, "clean_water": 1, "clay_pot": 1},
+		"outputs": {"beer_wort_raw": 1},
+		"duration": 25.0,
+		"energy_cost": 2.0,
+		"description": "Затирание молотой пшеницы с горячей чистой водой в горшке. Получение сладкого солодового сусла."
+	},
+	"boil_beer_wort": {
+		"id": "boil_beer_wort",
+		"name": "Варка: Охмелённое сусло",
+		"machine": "campfire",
+		"inputs": {"beer_wort_raw": 1, "herbs": 1},
+		"outputs": {"beer_wort_boiled": 1},
+		"duration": 30.0,
+		"energy_cost": 2.0,
+		"description": "Кипячение сырого сусла с душистыми пряными травами на костре. Подготовка сусла к брожению на складе."
+	},
+	"prepare_berry_must": {
+		"id": "prepare_berry_must",
+		"name": "Отжим: Ягодное сусло",
+		"machine": "workbench",
+		"inputs": {"red_berry": 5, "clean_water": 1, "clay_pot": 1},
+		"outputs": {"berry_must": 1},
+		"duration": 20.0,
+		"energy_cost": 2.0,
+		"description": "Давление спелых сочных ягод в глиняном горшке с родниковой водой для будущего вина."
+	},
+	"prepare_grain_wash": {
+		"id": "prepare_grain_wash",
+		"name": "Замес: Зерновой затор (брага)",
+		"machine": "workbench",
+		"inputs": {"wheat": 3, "clean_water": 1, "clay_pot": 1},
+		"outputs": {"grain_wash": 1},
+		"duration": 20.0,
+		"energy_cost": 2.0,
+		"description": "Подготовка зернового затора из злаков и воды. Отправляется на склад для созревания браги."
+	},
+
+	# --- Дистилляция и настойки (Дистиллятор) ---
+	"distill_moonshine": {
+		"id": "distill_moonshine",
+		"name": "Перегонка: Домашний самогон (x2)",
+		"machine": "distiller",
+		"inputs": {"fermented_wash": 1, "glass_bottle": 2},
+		"outputs": {"moonshine": 2},
+		"duration": 40.0,
+		"energy_cost": 2.0,
+		"description": "Дистилляция сброженной браги в медном кубе. Получение крепкого деревенского самогона (45°)."
+	},
+	"distill_spirit": {
+		"id": "distill_spirit",
+		"name": "Ректификация: Очищенный спирт (95°)",
+		"machine": "distiller",
+		"inputs": {"moonshine": 2, "glass_bottle": 1},
+		"outputs": {"pure_spirit": 1},
+		"duration": 50.0,
+		"energy_cost": 2.5,
+		"description": "Вторая дробная перегонка самогона с отсечением голов и хвостов. Чистейший спирт для медицины и настоек."
+	},
+	"filter_spirit": {
+		"id": "filter_spirit",
+		"name": "Угольная фильтрация: Чистый спирт",
+		"machine": "distiller",
+		"inputs": {"moonshine": 1, "coal_powder": 1, "glass_bottle": 1},
+		"outputs": {"pure_spirit": 1},
+		"duration": 35.0,
+		"energy_cost": 1.5,
+		"description": "Тонкая очистка самогона через угольную колонну до кристальной спиртовой чистоты."
+	},
+	"steep_blueberry": {
+		"id": "steep_blueberry",
+		"name": "Настаивание: Черничная настойка",
+		"machine": "distiller",
+		"inputs": {"pure_spirit": 1, "blue_berry": 4, "glass_bottle": 1},
+		"outputs": {"blueberry_tincture": 1},
+		"duration": 30.0,
+		"energy_cost": 1.5,
+		"description": "Экстракция синих ягод в чистом спирту. Тонизирующая настойка для зрения и бодрости."
+	},
+	"steep_red_berry": {
+		"id": "steep_red_berry",
+		"name": "Настаивание: Брусничная настойка",
+		"machine": "distiller",
+		"inputs": {"pure_spirit": 1, "red_berry": 4, "glass_bottle": 1},
+		"outputs": {"red_berry_tincture": 1},
+		"duration": 30.0,
+		"energy_cost": 1.5,
+		"description": "Ароматная ягодная настойка на спирту. Снимает усталость и ломоту в мышцах."
+	},
+	"steep_blackberry": {
+		"id": "steep_blackberry",
+		"name": "Настаивание: Ежевичная настойка",
+		"machine": "distiller",
+		"inputs": {"pure_spirit": 1, "blackberry": 4, "glass_bottle": 1},
+		"outputs": {"blackberry_tincture": 1},
+		"duration": 30.0,
+		"energy_cost": 1.5,
+		"description": "Глубокая терпкая настойка на лесной ежевике, богатая витаминами и силой."
+	},
+	"steep_sea_buckthorn": {
+		"id": "steep_sea_buckthorn",
+		"name": "Настаивание: Облепиховый бальзам",
+		"machine": "distiller",
+		"inputs": {"pure_spirit": 1, "sea_buckthorn": 4, "glass_bottle": 1},
+		"outputs": {"sea_buckthorn_tincture": 1},
+		"duration": 35.0,
+		"energy_cost": 1.5,
+		"description": "Концентрированный целебный бальзам на спирту и золотой облепихе (+30 к здоровью)."
+	},
+	"steep_mushroom": {
+		"id": "steep_mushroom",
+		"name": "Настаивание: Грибная настойка",
+		"machine": "distiller",
+		"inputs": {"pure_spirit": 1, "mushroom": 3, "glass_bottle": 1},
+		"outputs": {"mushroom_tincture": 1},
+		"duration": 30.0,
+		"energy_cost": 1.5,
+		"description": "Старинный настой на свежих лесных грибах. Укрепляет выносливость и согревает тело."
+	},
+	"steep_special_mushroom": {
+		"id": "steep_special_mushroom",
+		"name": "Настаивание: Особая настойка на сушёных грибах",
+		"machine": "distiller",
+		"inputs": {"pure_spirit": 1, "dried_mushroom": 3, "herbs": 1, "glass_bottle": 1},
+		"outputs": {"special_mushroom_tincture": 1},
+		"duration": 40.0,
+		"energy_cost": 2.0,
+		"description": "Мощнейший таёжный эликсир из сушёных грибов и трав (+50 энергии, +20 здоровья)."
 	}
 }
 

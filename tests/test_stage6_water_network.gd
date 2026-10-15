@@ -47,7 +47,9 @@ func _run_tests() -> void:
 	if not water_reservoir: _fail("Резервуар воды (WaterReservoir) отсутствует в сцене")
 	
 	var water_well = world.find_child("WaterWell", true, false)
-	if not water_well: _fail("Колодец (WaterWell) отсутствует в сцене")
+	if not water_well:
+		water_well = world.find_child("Lake", true, false)
+	if not water_well: _fail("Источник воды (WaterWell / Lake) отсутствует в сцене")
 	
 	var workbench = world.find_child("Workbench", true, false)
 	if not workbench: _fail("Верстак (Workbench) отсутствует в сцене")
@@ -141,8 +143,9 @@ func _run_tests() -> void:
 	if player.energy <= 50.0: _fail("Очищенная вода должна давать бонус бодрости к энергии")
 	print("✅ Питье очищенной воды: +50% жажды и +8 бодрости к энергии.")
 	
-	# 7. Розлив воды в бутылки на верстаке (цепочка: Стекло + Чистая вода)
+	# 7. Розлив воды в бутылки на верстаке (цепочка: Стекло + Бутылка + Чистая вода)
 	inv.add_item("glass", 2)
+	inv.add_item("glass_bottle", 1)
 	var bottle_recipe = RecipeDB.get_recipe("bottle_water")
 	if bottle_recipe.is_empty(): _fail("Рецепт bottle_water не найден в RecipeDB")
 	

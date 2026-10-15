@@ -69,6 +69,7 @@ func _process(_d: float) -> bool:
 	tree._on_interacted(player)
 	check(tree.current_hits == tree.max_hits, "Дерево рубится без топора")
 	player.inventory.equip_tool("axe")
+	player.inventory.tool_sharpness["axe"] = 50.0
 	var wood_before: int = player.inventory.get_item_count("wood")
 	for k in tree.max_hits:
 		tree._on_interacted(player)

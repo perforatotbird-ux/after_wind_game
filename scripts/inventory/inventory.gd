@@ -177,7 +177,23 @@ var items: Dictionary = {
 	"coal_powder": 0,
 	"glass_bottle": 0,
 	"clay_pot": 0,
-	"glassware_set": 0
+	"glassware_set": 0,
+	# --- Алкогольная продукция и заготовки ---
+	"beer_wort_raw": 0,
+	"beer_wort_boiled": 0,
+	"berry_must": 0,
+	"grain_wash": 0,
+	"fermented_wash": 0,
+	"beer": 0,
+	"berry_wine": 0,
+	"moonshine": 0,
+	"pure_spirit": 0,
+	"blueberry_tincture": 0,
+	"red_berry_tincture": 0,
+	"blackberry_tincture": 0,
+	"sea_buckthorn_tincture": 0,
+	"mushroom_tincture": 0,
+	"special_mushroom_tincture": 0
 }
 
 var _load_state: int = LoadState.NORMAL

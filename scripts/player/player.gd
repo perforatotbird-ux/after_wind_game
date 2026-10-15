@@ -865,9 +865,8 @@ func _apply_collapse_penalty() -> void:
 		)
 		notify("💀 Потеряно: %s ×%d" % [item_id, to_drop[item_id]])
 
-func drink_water(amount: float = 40.0, is_clean: bool = true, energy_bonus: float = 0.0, health_bonus: float = 0.0) -> bool:
-	# Обычное питьё при полной жажде не нужно; целебная вода пьётся ради здоровья.
-	if thirst >= max_thirst and health_bonus <= 0.0:
+func drink_water(amount: float = 40.0, is_clean: bool = true, energy_bonus: float = 0.0, health_bonus: float = 0.0, warmth_bonus: float = 0.0, hunger_bonus: float = 0.0) -> bool:
+	if thirst >= max_thirst and health_bonus <= 0.0 and energy_bonus <= 0.0 and warmth_bonus <= 0.0:
 		notify("💧 Вы пока не хотите пить (Жажда 100%).")
 		return false
 
@@ -875,16 +874,22 @@ func drink_water(amount: float = 40.0, is_clean: bool = true, energy_bonus: floa
 	thirst_changed.emit(thirst, max_thirst)
 
 	if energy_bonus > 0.0:
-		energy = min(max_energy, energy + energy_bonus)
+		energy = min(get_effective_max_energy(), energy + energy_bonus)
 		energy_changed.emit(energy, max_energy)
 
 	if health_bonus > 0.0:
 		heal(health_bonus)
 
-	if is_clean:
-		notify("💧 Вы утолили жажду чистой водой! (+%d%% жажды, текущая: %d%%)" % [int(amount), int(thirst)])
-	else:
-		notify("⚠️ Вы выпили мутную сырую воду (+%d%% жажды, текущая: %d%%). Лучше фильтровать её!" % [int(amount), int(thirst)])
+	if hunger_bonus > 0.0:
+		hunger = min(max_hunger, hunger + hunger_bonus)
+		hunger_changed.emit(hunger, max_hunger)
+
+	if warmth_bonus > 0.0 and wetness > 0.0:
+		var old_wet := wetness
+		wetness = maxf(0.0, wetness - warmth_bonus)
+		wetness_changed.emit(wetness, max_wetness)
+		notify("🔥 Напиток согрел тело изнутри (сырость снижена на %d%%)!" % int(old_wet - wetness))
+
 	AudioManager.play("drink")
 	return true
 
@@ -894,31 +899,45 @@ func drink_from_inventory(preferred_item_id: String = "") -> bool:
 	
 	var target_item: String = preferred_item_id
 	if target_item == "" or inventory.get_item_count(target_item) <= 0:
-		for it_id in ["bottled_water", "clean_water", "water"]:
+		for it_id in ["beer", "berry_wine", "moonshine", "pure_spirit", "blueberry_tincture", "red_berry_tincture", "blackberry_tincture", "sea_buckthorn_tincture", "mushroom_tincture", "special_mushroom_tincture", "bottled_water", "clean_water", "water"]:
 			if inventory.get_item_count(it_id) > 0:
 				target_item = it_id
 				break
 	
 	if target_item == "" or inventory.get_item_count(target_item) <= 0:
-		notify("ℹ️ В рюкзаке нет воды для питья!")
+		notify("ℹ️ В рюкзаке нет напитков для питья!")
 		return false
 
 	var item_data: Dictionary = ItemDB.get_item(target_item)
-	# Целебные напитки пьют и при полной жажде — ради здоровья.
-	if thirst >= max_thirst and float(item_data.get("health_bonus", 0.0)) <= 0.0:
+	var e_bon: float = float(item_data.get("energy_bonus", 0.0))
+	var hp_bon: float = float(item_data.get("health_bonus", 0.0))
+	var w_bon: float = float(item_data.get("warmth_bonus", 0.0))
+	var h_bon: float = float(item_data.get("hunger_recovery", 0.0))
+	var rec: float = float(item_data.get("thirst_recovery", 30.0))
+
+	# Напитки с бонусами к силе, здоровью или теплу пьются даже при полной жажде
+	if thirst >= max_thirst and hp_bon <= 0.0 and e_bon <= 0.0 and w_bon <= 0.0:
 		notify("💧 Вы пока не испытываете жажды (100%).")
 		return false
 
-	var rec: float = item_data.get("thirst_recovery", 30.0)
-	var e_bon: float = item_data.get("energy_bonus", 0.0)
-	var hp_bon: float = item_data.get("health_bonus", 0.0)
 	var is_clean: bool = (target_item != "water")
-
 	inventory.remove_item(target_item, 1)
-	drink_water(rec, is_clean, e_bon, hp_bon)
+	drink_water(rec, is_clean, e_bon, hp_bon, w_bon, h_bon)
+	
+	var icon: String = item_data.get("icon", "🍺")
+	var item_name: String = item_data.get("name", target_item)
+	if target_item in ["bottled_water", "clean_water", "water"]:
+		if is_clean:
+			notify("💧 Вы утолили жажду чистой водой! (+%d%% жажды, текущая: %d%%)" % [int(rec), int(thirst)])
+		else:
+			notify("⚠️ Вы выпили мутную сырую воду (+%d%% жажды, текущая: %d%%). Лучше фильтровать её!" % [int(rec), int(thirst)])
+	else:
+		notify("%s Вы выпили %s! (+%d%% жажды, +%d энергии)." % [icon, item_name, int(rec), int(e_bon)])
+	
 	if hp_bon > 0.0:
 		notify("🧪 Целебный настой затянул ссадины (+%d здоровья)." % int(hp_bon))
 	return true
+
 
 func eat_food(food_item_id: String) -> bool:
 	if not inventory:

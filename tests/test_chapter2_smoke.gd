@@ -109,9 +109,9 @@ func _test_items() -> void:
 # --- Рецепты -------------------------------------------------------------------
 
 func _test_recipes() -> void:
-	# Мастер-план 2.1: 7 рецептов костра (6 блюд + сушка + кипячение).
+	# Мастер-план 2.1: базовые рецепты костра (блюда + сушка + кипячение + пивное сусло).
 	var camp: Array = RecipeDB.get_recipes_for_machine("campfire", 1)
-	check(camp.size() == 7, "У костра должно быть 7 рецептов, факт: %d" % camp.size())
+	check(camp.size() >= 7, "У костра должно быть не менее 7 рецептов, факт: %d" % camp.size())
 	var times: Dictionary = {}
 	for r in camp:
 		times[str(r["id"])] = float(r["duration"])
