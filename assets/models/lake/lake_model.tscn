@@ -1,0 +1,210 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/sculpted_bank_00_mesh.tres" id="1_8rg2n"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/sculpted_bank_01_mesh.tres" id="2_ep3pi"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/sculpted_bank_02_mesh.tres" id="3_142ep"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/lake_basin_00_mesh.tres" id="4_ualt5"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/lake_basin_01_mesh.tres" id="5_xrku8"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/earth_strata_00_mesh.tres" id="6_isr64"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_00_mesh.tres" id="7_hx81n"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_01_mesh.tres" id="8_0yl3f"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_02_mesh.tres" id="9_myjxw"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_03_mesh.tres" id="10_kuclm"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_04_mesh.tres" id="11_7kq06"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_05_mesh.tres" id="12_tfcdb"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_06_mesh.tres" id="13_pyvoy"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_07_mesh.tres" id="14_f1jvy"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_08_mesh.tres" id="15_sm4tk"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_09_mesh.tres" id="16_sm6ag"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_10_mesh.tres" id="17_jwtrj"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_11_mesh.tres" id="18_5nlle"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_12_mesh.tres" id="19_mjljh"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_13_mesh.tres" id="20_ww63l"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_leaves_14_mesh.tres" id="21_cljxq"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/grass_tufts_00_mesh.tres" id="22_qrkjf"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/grass_tufts_01_mesh.tres" id="23_j2ys4"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/grass_tufts_02_mesh.tres" id="24_0qupp"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/grass_tufts_03_mesh.tres" id="25_86djn"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/grass_tufts_04_mesh.tres" id="26_g13fm"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/grass_tufts_05_mesh.tres" id="27_qdct1"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/grass_tufts_06_mesh.tres" id="28_1u4qt"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/grass_tufts_07_mesh.tres" id="29_44vb3"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/grass_tufts_08_mesh.tres" id="30_c8q4u"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/grass_tufts_09_mesh.tres" id="31_4j26q"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/grass_tufts_10_mesh.tres" id="32_lveeu"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shrub_branches_00_mesh.tres" id="33_nvmik"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/reed_leaves_00_mesh.tres" id="34_1e57v"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/cattail_heads_00_mesh.tres" id="35_g04uq"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shore_pebbles_00_mesh.tres" id="36_r0xj6"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shore_pebbles_01_mesh.tres" id="37_rde7s"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shore_pebbles_02_mesh.tres" id="38_mih2v"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/shore_pebbles_03_mesh.tres" id="39_3w5b4"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/water_surface_00_mesh.tres" id="40_c0vfs"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/water_surface_01_mesh.tres" id="41_amwu3"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/water_surface_02_mesh.tres" id="42_tpss8"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/water_surface_03_mesh.tres" id="43_1yxhy"]
+[ext_resource type="ArrayMesh" path="res://assets/models/lake/wet_shoreline_00_mesh.tres" id="44_v477p"]
+
+[node name="LakeModel" type="Node3D" unique_id=236030232]
+
+[node name="SculptedBank" type="Node3D" parent="." unique_id=672491881]
+
+[node name="Part00" type="MeshInstance3D" parent="SculptedBank" unique_id=956203948]
+mesh = ExtResource("1_8rg2n")
+
+[node name="Part01" type="MeshInstance3D" parent="SculptedBank" unique_id=2047278823]
+mesh = ExtResource("2_ep3pi")
+
+[node name="Part02" type="MeshInstance3D" parent="SculptedBank" unique_id=1088560833]
+mesh = ExtResource("3_142ep")
+
+[node name="LakeBasin" type="Node3D" parent="." unique_id=980073956]
+
+[node name="Part00" type="MeshInstance3D" parent="LakeBasin" unique_id=392084866]
+mesh = ExtResource("4_ualt5")
+
+[node name="Part01" type="MeshInstance3D" parent="LakeBasin" unique_id=1857646592]
+mesh = ExtResource("5_xrku8")
+
+[node name="EarthStrata" type="Node3D" parent="." unique_id=897222684]
+
+[node name="Part00" type="MeshInstance3D" parent="EarthStrata" unique_id=873106793]
+mesh = ExtResource("6_isr64")
+
+[node name="ShrubLeaves" type="Node3D" parent="." unique_id=1498342683]
+
+[node name="Part00" type="MeshInstance3D" parent="ShrubLeaves" unique_id=719482223]
+mesh = ExtResource("7_hx81n")
+
+[node name="Part01" type="MeshInstance3D" parent="ShrubLeaves" unique_id=84496190]
+mesh = ExtResource("8_0yl3f")
+
+[node name="Part02" type="MeshInstance3D" parent="ShrubLeaves" unique_id=1172376810]
+mesh = ExtResource("9_myjxw")
+
+[node name="Part03" type="MeshInstance3D" parent="ShrubLeaves" unique_id=364241884]
+mesh = ExtResource("10_kuclm")
+
+[node name="Part04" type="MeshInstance3D" parent="ShrubLeaves" unique_id=1349917960]
+mesh = ExtResource("11_7kq06")
+
+[node name="Part05" type="MeshInstance3D" parent="ShrubLeaves" unique_id=652839977]
+mesh = ExtResource("12_tfcdb")
+
+[node name="Part06" type="MeshInstance3D" parent="ShrubLeaves" unique_id=751873717]
+mesh = ExtResource("13_pyvoy")
+
+[node name="Part07" type="MeshInstance3D" parent="ShrubLeaves" unique_id=920974418]
+mesh = ExtResource("14_f1jvy")
+
+[node name="Part08" type="MeshInstance3D" parent="ShrubLeaves" unique_id=390028754]
+mesh = ExtResource("15_sm4tk")
+
+[node name="Part09" type="MeshInstance3D" parent="ShrubLeaves" unique_id=2142064431]
+mesh = ExtResource("16_sm6ag")
+
+[node name="Part10" type="MeshInstance3D" parent="ShrubLeaves" unique_id=569057792]
+mesh = ExtResource("17_jwtrj")
+
+[node name="Part11" type="MeshInstance3D" parent="ShrubLeaves" unique_id=1500133746]
+mesh = ExtResource("18_5nlle")
+
+[node name="Part12" type="MeshInstance3D" parent="ShrubLeaves" unique_id=2134051069]
+mesh = ExtResource("19_mjljh")
+
+[node name="Part13" type="MeshInstance3D" parent="ShrubLeaves" unique_id=115830575]
+mesh = ExtResource("20_ww63l")
+
+[node name="Part14" type="MeshInstance3D" parent="ShrubLeaves" unique_id=543006254]
+mesh = ExtResource("21_cljxq")
+
+[node name="GrassTufts" type="Node3D" parent="." unique_id=1666917128]
+
+[node name="Part00" type="MeshInstance3D" parent="GrassTufts" unique_id=1471348819]
+mesh = ExtResource("22_qrkjf")
+
+[node name="Part01" type="MeshInstance3D" parent="GrassTufts" unique_id=1625383741]
+mesh = ExtResource("23_j2ys4")
+
+[node name="Part02" type="MeshInstance3D" parent="GrassTufts" unique_id=1000101462]
+mesh = ExtResource("24_0qupp")
+
+[node name="Part03" type="MeshInstance3D" parent="GrassTufts" unique_id=2107062840]
+mesh = ExtResource("25_86djn")
+
+[node name="Part04" type="MeshInstance3D" parent="GrassTufts" unique_id=261111235]
+mesh = ExtResource("26_g13fm")
+
+[node name="Part05" type="MeshInstance3D" parent="GrassTufts" unique_id=20694283]
+mesh = ExtResource("27_qdct1")
+
+[node name="Part06" type="MeshInstance3D" parent="GrassTufts" unique_id=313485771]
+mesh = ExtResource("28_1u4qt")
+
+[node name="Part07" type="MeshInstance3D" parent="GrassTufts" unique_id=1088136804]
+mesh = ExtResource("29_44vb3")
+
+[node name="Part08" type="MeshInstance3D" parent="GrassTufts" unique_id=907332442]
+mesh = ExtResource("30_c8q4u")
+
+[node name="Part09" type="MeshInstance3D" parent="GrassTufts" unique_id=1233794935]
+mesh = ExtResource("31_4j26q")
+
+[node name="Part10" type="MeshInstance3D" parent="GrassTufts" unique_id=1042846089]
+mesh = ExtResource("32_lveeu")
+
+[node name="ShrubBranches" type="Node3D" parent="." unique_id=1357257288]
+
+[node name="Part00" type="MeshInstance3D" parent="ShrubBranches" unique_id=1652566357]
+mesh = ExtResource("33_nvmik")
+
+[node name="ReedLeaves" type="Node3D" parent="." unique_id=1909639775]
+
+[node name="Part00" type="MeshInstance3D" parent="ReedLeaves" unique_id=150269810]
+mesh = ExtResource("34_1e57v")
+
+[node name="CattailHeads" type="Node3D" parent="." unique_id=550179443]
+
+[node name="Part00" type="MeshInstance3D" parent="CattailHeads" unique_id=1321995053]
+mesh = ExtResource("35_g04uq")
+
+[node name="ShorePebbles" type="Node3D" parent="." unique_id=1067752706]
+
+[node name="Part00" type="MeshInstance3D" parent="ShorePebbles" unique_id=566475866]
+mesh = ExtResource("36_r0xj6")
+
+[node name="Part01" type="MeshInstance3D" parent="ShorePebbles" unique_id=2079284757]
+mesh = ExtResource("37_rde7s")
+
+[node name="Part02" type="MeshInstance3D" parent="ShorePebbles" unique_id=536984046]
+mesh = ExtResource("38_mih2v")
+
+[node name="Part03" type="MeshInstance3D" parent="ShorePebbles" unique_id=93043040]
+mesh = ExtResource("39_3w5b4")
+
+[node name="WaterSurface" type="Node3D" parent="." unique_id=1157318784]
+
+[node name="Part00" type="MeshInstance3D" parent="WaterSurface" unique_id=2024163699]
+cast_shadow = 0
+extra_cull_margin = 0.1
+mesh = ExtResource("40_c0vfs")
+
+[node name="Part01" type="MeshInstance3D" parent="WaterSurface" unique_id=722458957]
+cast_shadow = 0
+extra_cull_margin = 0.1
+mesh = ExtResource("41_amwu3")
+
+[node name="Part02" type="MeshInstance3D" parent="WaterSurface" unique_id=792363361]
+cast_shadow = 0
+extra_cull_margin = 0.1
+mesh = ExtResource("42_tpss8")
+
+[node name="Part03" type="MeshInstance3D" parent="WaterSurface" unique_id=1670232248]
+cast_shadow = 0
+extra_cull_margin = 0.1
+mesh = ExtResource("43_1yxhy")
+
+[node name="WetShoreline" type="Node3D" parent="." unique_id=1081668904]
+
+[node name="Part00" type="MeshInstance3D" parent="WetShoreline" unique_id=448064734]
+mesh = ExtResource("44_v477p")

@@ -1,0 +1,48 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/resource_node.gd" id="1_res"]
+[ext_resource type="PackedScene" path="res://assets/models/lake/lake_model.tscn" id="2_model"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_interact"]
+height = 3.0
+radius = 6.2
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_deep_water"]
+height = 2.0
+radius = 3.2
+
+[node name="Lake" type="Area3D" node_paths=PackedStringArray("visual_node", "depleted_visual_node")]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_res")
+resource_id = "water"
+resource_display_name = "Озеро"
+required_tool = "bucket"
+action_verb = "Набрать"
+max_hits = 10
+current_hits = 10
+yield_per_hit = 2.0
+bonus_depleted_yield = 0
+respawn_time = 15.0
+freezes_in_winter = true
+visual_node = NodePath("Visual")
+depleted_visual_node = NodePath("DepletedVisual")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+shape = SubResource("CylinderShape3D_interact")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="LakeModel" parent="Visual" instance=ExtResource("2_model")]
+
+[node name="DepletedVisual" type="Node3D" parent="."]
+visible = false
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="DeepWaterCollision" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("CylinderShape3D_deep_water")

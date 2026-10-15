@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://c6v2n7j5w1q8p" path="res://scenes/player/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" uid="uid://b0yqv2w6km7xr" path="res://scenes/ui/hud.tscn" id="4_hud"]
 [ext_resource type="PackedScene" uid="uid://df7s6x1y3m8qa" path="res://scenes/resources/rock_node.tscn" id="7_rock"]
-[ext_resource type="PackedScene" uid="uid://b2x7w1m8q4k3a" path="res://scenes/resources/water_node.tscn" id="10_water"]
+[ext_resource type="PackedScene" path="res://scenes/resources/lake.tscn" id="10_lake"]
 [ext_resource type="PackedScene" uid="uid://dm4k8v2y1yaqa" path="res://scenes/machines/crusher.tscn" id="11_crusher"]
 [ext_resource type="PackedScene" uid="uid://c7x2v1m4k8raa" path="res://scenes/machines/workbench.tscn" id="12_bench"]
 [ext_resource type="PackedScene" uid="uid://dnax4v1k7w2qa" path="res://scenes/buildings/dispatch_station.tscn" id="13_station"]
@@ -225,9 +225,8 @@ transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 8.5, 0, 5)
 [node name="Rock3" parent="Resources" unique_id=1350360747 instance=ExtResource("7_rock")]
 transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, 7, 0, 8.2)
 
-[node name="WaterWell" parent="Resources" unique_id=1404619995 instance=ExtResource("10_water")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0, 3.8)
-freezes_in_winter = false
+[node name="Lake" parent="Resources" instance=ExtResource("10_lake")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0, 12)
 
 [node name="Rock4" parent="Resources" instance=ExtResource("7_rock")]
 transform = Transform3D(-0.4830, 0, -0.7236, 0, 0.8700, 0, 0.7236, 0, -0.4830, 16.89, 0, 15.69)
