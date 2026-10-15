@@ -1,0 +1,36 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_trunk_mesh.tres" id="1_7lhnn"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_0_mesh.tres" id="2_1b1ah"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_1_mesh.tres" id="3_2wmo1"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_2_mesh.tres" id="4_0cpn3"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_3_mesh.tres" id="5_854up"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_4_mesh.tres" id="6_0srtr"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_5_mesh.tres" id="7_eco4d"]
+[ext_resource type="ArrayMesh" path="res://assets/models/apple/apple_canopy_6_mesh.tres" id="8_ewota"]
+
+[node name="AppleTree" type="Node3D" unique_id=1392799414]
+
+[node name="Trunk" type="MeshInstance3D" parent="." unique_id=1518518384]
+mesh = ExtResource("1_7lhnn")
+
+[node name="Canopy0" type="MeshInstance3D" parent="." unique_id=986421277]
+mesh = ExtResource("2_1b1ah")
+
+[node name="Canopy1" type="MeshInstance3D" parent="." unique_id=497461712]
+mesh = ExtResource("3_2wmo1")
+
+[node name="Canopy2" type="MeshInstance3D" parent="." unique_id=1487262564]
+mesh = ExtResource("4_0cpn3")
+
+[node name="Canopy3" type="MeshInstance3D" parent="." unique_id=1910842676]
+mesh = ExtResource("5_854up")
+
+[node name="Canopy4" type="MeshInstance3D" parent="." unique_id=1435225924]
+mesh = ExtResource("6_0srtr")
+
+[node name="Canopy5" type="MeshInstance3D" parent="." unique_id=892363609]
+mesh = ExtResource("7_eco4d")
+
+[node name="Canopy6" type="MeshInstance3D" parent="." unique_id=844797157]
+mesh = ExtResource("8_ewota")
