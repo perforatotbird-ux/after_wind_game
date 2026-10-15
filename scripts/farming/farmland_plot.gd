@@ -287,12 +287,21 @@ func till_soil(player: Node) -> bool:
 	if shovel_level >= 2:
 		energy_needed = 3.0
 	
+	var sharpness_eff: Dictionary = {"power_mult": 1.0, "energy_cost_mult": 1.0, "is_dull": false}
+	if inv and inv.has_method("get_sharpness_efficiency"):
+		sharpness_eff = inv.get_sharpness_efficiency("shovel")
+		energy_needed *= float(sharpness_eff.get("energy_cost_mult", 1.0))
+	
+	if inv and inv.has_method("consume_tool_sharpness"):
+		inv.consume_tool_sharpness("shovel", 0.6)
+	
 	if player and player.has_method("consume_energy"):
 		player.consume_energy(energy_needed)
 	
 	soil_state = SoilState.TILLED
 	plot_tilled.emit()
-	AudioManager.play("till_soil")
+	var pitch: float = 0.65 if (float(sharpness_eff.get("power_mult", 1.0)) <= 0.5) else 1.0
+	AudioManager.play("till_soil", pitch)
 	_update_visuals()
 	_play_dig_bounce()
 	if player and player.has_method("play_dig_animation"):

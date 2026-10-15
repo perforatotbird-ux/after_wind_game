@@ -85,6 +85,8 @@ const CONFIGS: Dictionary = {
 @export var current_hits: int = 8
 ## Накопленная дробная древесина (0.25 за удар, как у лесных деревьев).
 var _wood_pool: float = 0.0
+## Накопленный урон по дереву (для затупленного инструмента)
+var _damage_pool: float = 0.0
 
 var _visuals_root: Node3D = null
 var _trunk_mesh: MeshInstance3D = null
@@ -357,22 +359,41 @@ func harvest(player: Node) -> int:
 	return count
 
 func chop(player: Node) -> bool:
+	var inv = player.get("inventory") if player and "inventory" in player else null
+	var sharpness_eff: Dictionary = {"power_mult": 1.0, "energy_cost_mult": 1.0, "is_dull": false, "crit_bonus": 0.0}
+	if inv and inv.has_method("get_sharpness_efficiency"):
+		sharpness_eff = inv.get_sharpness_efficiency("axe")
+
 	var skills: Object = player.get("skills") if player and "skills" in player else null
-	var energy_cost: float = 1.5
+	var energy_cost: float = 1.5 * float(sharpness_eff.get("energy_cost_mult", 1.0))
 	if skills and skills.has_method("get_energy_discount"):
 		energy_cost *= skills.get_energy_discount("woodcutting")
 	
 	if player and player.has_method("consume_energy"):
 		player.consume_energy(energy_cost)
 
-	current_hits -= 1
-	AudioManager.play("hit_wood")
+	# Списание остроты топора
+	if inv and inv.has_method("consume_tool_sharpness"):
+		inv.consume_tool_sharpness("axe", 0.8)
+
+	var pitch: float = 0.65 if (float(sharpness_eff.get("power_mult", 1.0)) <= 0.5) else 1.0
+	AudioManager.play("hit_wood", pitch)
+
+	var raw_power: float = 1.0 * float(sharpness_eff.get("power_mult", 1.0))
+	_damage_pool += raw_power
+	var dealt: int = int(floor(_damage_pool))
+	_damage_pool -= float(dealt)
+	current_hits -= dealt
+
 	if skills and skills.has_method("add_xp"):
 		skills.add_xp("woodcutting", 3)
 
 	# Древесина капает дробно (0.25 за удар): целая выдаётся каждую 4-ю.
 	var drop_at: Vector3 = global_position + Vector3(0.0, 0.5, 0.0)
-	_wood_pool += 0.25
+	var wood_gain: float = 0.25
+	if float(sharpness_eff.get("crit_bonus", 0.0)) > 0.0 and randf() < float(sharpness_eff.get("crit_bonus", 0.0)):
+		wood_gain += 0.25
+	_wood_pool += wood_gain
 	var whole: int = int(floor(_wood_pool))
 	_wood_pool -= float(whole)
 	if whole > 0:

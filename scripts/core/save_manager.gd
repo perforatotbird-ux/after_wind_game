@@ -73,7 +73,8 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"max_slots": inv.max_slots if "max_slots" in inv else 12,
 				"max_weight": inv.max_weight if "max_weight" in inv else 50.0,
 				"credits": inv.credits if "credits" in inv else 0,
-				"slot_layout": inv.slot_layout.duplicate() if "slot_layout" in inv else []
+				"slot_layout": inv.slot_layout.duplicate() if "slot_layout" in inv else [],
+				"tool_sharpness": inv.tool_sharpness.duplicate() if "tool_sharpness" in inv else {"axe": 100.0, "pickaxe": 100.0, "shovel": 100.0}
 			}
 	
 	# 4. Суточный цикл DayNightCycle
@@ -411,6 +412,9 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			inv.credits = int(inv_data["credits"])
 			if inv.has_signal("credits_changed"):
 				inv.credits_changed.emit(inv.credits)
+		if inv_data.has("tool_sharpness") and "tool_sharpness" in inv and inv_data["tool_sharpness"] is Dictionary:
+			for key in inv_data["tool_sharpness"]:
+				inv.tool_sharpness[str(key)] = float(inv_data["tool_sharpness"][key])
 	if inv and is_instance_valid(inv):
 		# Лимиты не доверяем файлу: пересчитываем по рюкзаку на поясе.
 		if inv.has_method("recalculate_capacity"):
@@ -823,6 +827,12 @@ static func _validate_save_data(data: Dictionary) -> bool:
 			return false
 		for cell in inv["slot_layout"]:
 			if not cell is String:
+				return false
+	if inv.has("tool_sharpness"):
+		if not inv["tool_sharpness"] is Dictionary:
+			return false
+		for key in inv["tool_sharpness"]:
+			if not _is_number(inv["tool_sharpness"][key], 0.0, 100.0):
 				return false
 	var dn: Dictionary = data.get("day_night", {})
 	if dn.has("current_day") and not _is_integer(dn["current_day"], 1.0):

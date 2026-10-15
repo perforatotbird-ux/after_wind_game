@@ -313,6 +313,7 @@ func _apply_hud_layout() -> void:
 			btn.add_theme_font_size_override("font_size", 15)
 			btn.clip_text = true
 			btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_setup_hotbar_sharpness_bars()
 	if prompt_container:
 		prompt_container.offset_left = -320.0
 		prompt_container.offset_right = 320.0
@@ -492,9 +493,89 @@ func bind_player(player: Node) -> void:
 		inv.tool_changed.connect(_on_tool_changed)
 		if inv.has_signal("credits_changed"):
 			inv.credits_changed.connect(set_credits)
+		if inv.has_signal("tool_sharpness_changed"):
+			inv.tool_sharpness_changed.connect(_on_tool_sharpness_changed)
+		_setup_hotbar_sharpness_bars()
 		_highlight_slot(0)
 		_update_resource_counters()
+		update_hotbar_sharpness()
 		set_credits(inv.credits if "credits" in inv else 0)
+
+func _setup_hotbar_sharpness_bars() -> void:
+	for i in [0, 1, 2]:
+		if i >= slot_buttons.size():
+			continue
+		var btn: Button = slot_buttons[i]
+		if not btn:
+			continue
+		var old = btn.get_node_or_null("SharpnessBar")
+		if old:
+			continue
+		var bar := ProgressBar.new()
+		bar.name = "SharpnessBar"
+		bar.show_percentage = false
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		bar.offset_left = 6
+		bar.offset_right = -6
+		bar.offset_bottom = -3
+		bar.offset_top = -7
+		var bg := StyleBoxFlat.new()
+		bg.bg_color = Color(0.08, 0.1, 0.12, 0.9)
+		bg.set_corner_radius_all(2)
+		bar.add_theme_stylebox_override("background", bg)
+		btn.add_child(bar)
+
+func update_hotbar_sharpness() -> void:
+	if not _bound_player or not ("inventory" in _bound_player):
+		return
+	var inv = _bound_player.inventory
+	if not inv or not inv.has_method("get_tool_sharpness"):
+		return
+	var slot_tools: Array[String] = ["axe", "pickaxe", "shovel"]
+	for i in range(slot_tools.size()):
+		if i >= slot_buttons.size():
+			continue
+		var btn: Button = slot_buttons[i]
+		if not btn:
+			continue
+		var t_type: String = slot_tools[i]
+		var tool_id: String = t_type
+		if i < inv.tools.size():
+			tool_id = inv.tools[i]
+		var s: float = inv.get_tool_sharpness(tool_id)
+		var eff: Dictionary = inv.get_sharpness_efficiency(tool_id)
+		var t_data: Dictionary = ItemDB.get_item(tool_id)
+		var t_name: String = t_data.get("name", tool_id)
+		var t_icon: String = t_data.get("icon", "")
+		
+		var tip: String = "%d: %s %s\nЗаточка: %d%% [%s]" % [i + 1, t_icon, t_name, int(round(s)), eff.get("status_name", "")]
+		if eff.get("is_dull", false):
+			tip += "\n⚠️ Лезвие затуплено! Урон: %d%%, расход сил: +%d%%" % [
+				int(round(eff.get("power_mult", 1.0) * 100.0)),
+				int(round((eff.get("energy_cost_mult", 1.0) - 1.0) * 100.0))
+			]
+		elif eff.get("crit_bonus", 0.0) > 0.0:
+			tip += "\n✨ Бритвенная острота: +10% шанс двойной добычи, -10% расход сил!"
+		btn.tooltip_text = tip
+		
+		var bar: ProgressBar = btn.get_node_or_null("SharpnessBar") as ProgressBar
+		if bar:
+			bar.value = s
+			var col: Color = Color(0.2, 0.85, 0.3)
+			if s < 10.0:
+				col = Color(0.95, 0.2, 0.2)
+			elif s < 35.0:
+				col = Color(0.95, 0.55, 0.15)
+			elif s < 75.0:
+				col = Color(0.85, 0.85, 0.2)
+			var fill := StyleBoxFlat.new()
+			fill.bg_color = col
+			fill.set_corner_radius_all(2)
+			bar.add_theme_stylebox_override("fill", fill)
+
+func _on_tool_sharpness_changed(_tool_id: String, _curr: float) -> void:
+	update_hotbar_sharpness()
 
 func _on_slot_button_pressed(index: int) -> void:
 	if index == 4:
@@ -505,13 +586,19 @@ func _on_slot_button_pressed(index: int) -> void:
 func _on_tool_changed(tool_id: String, _tool_name: String) -> void:
 	var slot_map: Dictionary = {
 		"axe": 0,
+		"iron_axe": 0,
 		"pickaxe": 1,
+		"iron_pickaxe": 1,
 		"shovel": 2,
+		"iron_shovel": 2,
 		"bucket": 3,
-		"backpack": 4
+		"reinforced_bucket": 3,
+		"backpack": 4,
+		"large_backpack": 4
 	}
 	var idx: int = slot_map.get(tool_id, 0)
 	_highlight_slot(idx)
+	update_hotbar_sharpness()
 
 func _highlight_slot(active_index: int) -> void:
 	for i in range(slot_buttons.size()):
@@ -713,6 +800,7 @@ func update_power_display(stored: float, capacity: float, generation: float, con
 
 func _on_inventory_updated() -> void:
 	_update_resource_counters()
+	update_hotbar_sharpness()
 	if inventory_window and inventory_window.visible:
 		_refresh_inventory_window()
 	if machine_window and machine_window.visible and _current_active_machine:
@@ -950,6 +1038,8 @@ func _populate_machine_recipes(machine: Node) -> void:
 			var item_icon: String = ItemDB.get_item_icon(item_id)
 			var item_name: String = ItemDB.get_item_name(item_id)
 			out_parts.append("+%d %s %s" % [out_count, item_icon, item_name])
+		if out_parts.is_empty() and r_id.begins_with("sharpen_"):
+			out_parts.append("✨ Заточка до 100%")
 		
 		var l_details: Label = Label.new()
 		l_details.text = "Сырьё: %s  |  Выход: %s (⏱ %.0f сек)" % [

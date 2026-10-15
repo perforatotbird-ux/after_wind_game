@@ -54,6 +54,8 @@ var respawn_timer: float = 0.0
 ## Накопленная дробная добыча (< 1): целые штуки выдаются по мере накопления.
 ## В сейв не пишется и при истощении/возрождении сгорает.
 var _yield_pool: float = 0.0
+## Накопленный урон по жиле (для дробного снижения силы удара затупленным инструментом)
+var _damage_pool: float = 0.0
 ## Всего добыто с узла за его жизнь (для итога «Жила выработана»).
 var _harvest_total: int = 0
 ## Саженец посажен на пень и растёт.
@@ -275,6 +277,19 @@ func _on_interacted(player: Node) -> void:
 	if player and "character_class" in player and player.character_class == "miner" and is_mining_node:
 		bonus_yield += 1
 		final_energy_cost *= 0.80
+
+	# Острота инструмента (затупление и заточка)
+	var sharpness_eff: Dictionary = {"power_mult": 1.0, "energy_cost_mult": 1.0, "is_dull": false, "crit_bonus": 0.0}
+	if inv and inv.has_method("get_sharpness_efficiency"):
+		sharpness_eff = inv.get_sharpness_efficiency(required_tool)
+		final_energy_cost *= float(sharpness_eff.get("energy_cost_mult", 1.0))
+		if float(sharpness_eff.get("crit_bonus", 0.0)) > 0.0 and randf() < float(sharpness_eff.get("crit_bonus", 0.0)):
+			bonus_yield += 1
+
+	# Списание остроты за удар
+	if inv and inv.has_method("consume_tool_sharpness"):
+		var dull_cost: float = 0.8 if required_tool == "axe" else (1.0 if required_tool == "pickaxe" else 0.6)
+		inv.consume_tool_sharpness(required_tool, dull_cost)
 	
 	# Прокачка навыков (Learn by doing)
 	var skills: Object = player.get("skills") if player and "skills" in player else null
@@ -298,19 +313,24 @@ func _on_interacted(player: Node) -> void:
 	if player.has_method("consume_energy"):
 		player.consume_energy(final_energy_cost)
 	
-	# Звук удара (Game Feel)
+	# Звук удара (Game Feel) — при критически затупленном лезвии звук глухой
+	var pitch: float = 0.65 if (float(sharpness_eff.get("power_mult", 1.0)) <= 0.5) else 1.0
 	if required_tool == "axe" or resource_id == "wood":
-		AudioManager.play("hit_wood")
+		AudioManager.play("hit_wood", pitch)
 	elif resource_id == "metal_scrap":
-		AudioManager.play("hit_metal")
+		AudioManager.play("hit_metal", pitch)
 	else:
-		AudioManager.play("hit_stone")
+		AudioManager.play("hit_stone", pitch)
 	
 	# Визуальный отклик (shake tween)
 	_play_hit_effect()
 	
-	# Добыча
-	current_hits -= hit_power
+	# Добыча (с учетом эффективности заточки лезвия)
+	var raw_power: float = float(hit_power) * float(sharpness_eff.get("power_mult", 1.0))
+	_damage_pool += raw_power
+	var dealt: int = int(floor(_damage_pool))
+	_damage_pool -= float(dealt)
+	current_hits -= dealt
 	_yield_pool += float(yield_per_hit) + float(bonus_yield)
 	var gained: int = int(floor(_yield_pool))
 	_yield_pool -= float(gained)
@@ -375,6 +395,7 @@ func _set_depleted(depleted: bool) -> void:
 	is_depleted = depleted
 	# Недобранная дробная добыча (< 1) при истощении и возрождении сгорает.
 	_yield_pool = 0.0
+	_damage_pool = 0.0
 	if not depleted:
 		_harvest_total = 0
 	# Пень дерева остаётся интерактивным: на него сажают саженец.

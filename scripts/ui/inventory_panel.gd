@@ -178,6 +178,8 @@ func _ready() -> void:
 		inventory.inventory_updated.connect(_refresh)
 		inventory.tool_changed.connect(_on_tool_changed)
 		inventory.credits_changed.connect(_on_credits_changed)
+		if inventory.has_signal("tool_sharpness_changed"):
+			inventory.tool_sharpness_changed.connect(func(_t, _s): _refresh())
 	_refresh()
 
 func _on_tool_changed(_id: String, _name: String) -> void:
@@ -220,7 +222,39 @@ func _build_belt() -> void:
 		b.expand_icon = true
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var d: Dictionary = ItemDB.get_item(t)
-		b.tooltip_text = "[%d] %s (ур. %d)%s" % [i + 1, ItemDB.get_item_name(t), int(d.get("level", 1)), "\nСлоты: %d" % inventory.max_slots if is_pack else ("\nВ руках" if t == inventory.equipped_tool else "")]
+		var sharp_info: String = ""
+		if inventory.has_method("is_sharp_tool") and inventory.is_sharp_tool(t):
+			var s: float = inventory.get_tool_sharpness(t)
+			var eff: Dictionary = inventory.get_sharpness_efficiency(t)
+			sharp_info = "\nЗаточка: %d%% [%s]" % [int(round(s)), eff.get("status_name", "")]
+			
+			var bar := ProgressBar.new()
+			bar.show_percentage = false
+			bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+			bar.offset_left = 4
+			bar.offset_right = -4
+			bar.offset_bottom = -3
+			bar.offset_top = -8
+			bar.value = s
+			var col: Color = Color(0.2, 0.85, 0.3)
+			if s < 10.0:
+				col = Color(0.95, 0.2, 0.2)
+			elif s < 35.0:
+				col = Color(0.95, 0.55, 0.15)
+			elif s < 75.0:
+				col = Color(0.85, 0.85, 0.2)
+			bar.add_theme_stylebox_override("fill", UI.make_stylebox(col, Color(0, 0, 0, 0), 0, 2))
+			bar.add_theme_stylebox_override("background", UI.make_stylebox(Color(0.1, 0.1, 0.12, 0.85), Color(0, 0, 0, 0), 0, 2))
+			b.add_child(bar)
+			
+		b.tooltip_text = "[%d] %s (ур. %d)%s%s" % [
+			i + 1,
+			ItemDB.get_item_name(t),
+			int(d.get("level", 1)),
+			sharp_info,
+			"\nСлоты: %d" % inventory.max_slots if is_pack else ("\nВ руках" if t == inventory.equipped_tool else "")
+		]
 		if not is_pack:
 			b.pressed.connect(_on_belt_pressed.bind(t))
 		_belt.add_child(b)
@@ -262,6 +296,9 @@ func _update_details() -> void:
 			var chosen: bool = player != null and player.get("selected_seed") == _selected
 			_use_btn.text = "🌱 Выбрано для посадки" if chosen else "🌱 Сажать эти семена"
 			_use_btn.visible = true
+	elif _selected == "whetstone":
+		_use_btn.text = "🪨 Заточить оселком (+40%)"
+		_use_btn.visible = true
 	else:
 		_use_btn.visible = false
 
@@ -277,7 +314,7 @@ func _on_cell_moved(from_index: int, to_index: int) -> void:
 func _on_cell_activated(item_id: String, _count: int, _index: int) -> void:
 	_selected = item_id
 	var data: Dictionary = ItemDB.get_item(item_id)
-	if item_id in DRINK_ITEMS or str(data.get("category", "")) == "food":
+	if item_id in DRINK_ITEMS or str(data.get("category", "")) == "food" or item_id == "whetstone":
 		_on_use_pressed()
 	else:
 		_refresh()
@@ -306,6 +343,9 @@ func _on_cell_right_clicked(item_id: String, _count: int, _index: int) -> void:
 func _on_use_pressed() -> void:
 	if player == null or _selected == "":
 		return
+	if _selected == "whetstone":
+		_sharpen_with_whetstone()
+		return
 	if str(ItemDB.get_item(_selected).get("category", "")) == "seeds":
 		if ItemDB.is_fruit_sapling(_selected):
 			request_build("fruit_tree:" + _selected)
@@ -319,6 +359,33 @@ func _on_use_pressed() -> void:
 		player.drink_from_inventory(_selected)
 	else:
 		player.eat_food(_selected)
+	_refresh()
+
+func _sharpen_with_whetstone() -> void:
+	if inventory == null or inventory.get_item_count("whetstone") <= 0:
+		return
+	var target_tool: String = ""
+	if inventory.is_sharp_tool(inventory.equipped_tool) and inventory.get_tool_sharpness(inventory.equipped_tool) < 100.0:
+		target_tool = inventory.equipped_tool
+	else:
+		var lowest_s: float = 100.0
+		for t in ["axe", "pickaxe", "shovel"]:
+			var s: float = inventory.get_tool_sharpness(t)
+			if s < lowest_s:
+				lowest_s = s
+				target_tool = t
+	
+	if target_tool == "" or inventory.get_tool_sharpness(target_tool) >= 100.0:
+		if player and player.has_method("notify"):
+			player.notify("✨ Все инструменты уже идеально наточены!")
+		return
+	
+	var new_s: float = inventory.sharpen_tool(target_tool, 40.0)
+	inventory.remove_item("whetstone", 1)
+	AudioManager.play("ui_click")
+	if player and player.has_method("notify"):
+		var t_name: String = ItemDB.get_item(target_tool).get("name", target_tool)
+		player.notify("🪨 %s заточен оселком на +40%% (теперь %d%%)!" % [t_name, int(round(new_s))])
 	_refresh()
 
 func _open_drop_dialog(item_id: String) -> void:

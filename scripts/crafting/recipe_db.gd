@@ -65,6 +65,46 @@ const RECIPES: Dictionary = {
 		"energy_cost": 3.0,
 		"description": "Прессование опилок с глиной-связкой в плотные блоки топлива. Угольные брикеты выгоднее."
 	},
+	"craft_whetstone": {
+		"id": "craft_whetstone",
+		"name": "Обработка: Точильный брусок (x1)",
+		"machine": "workbench",
+		"inputs": {"stone": 2, "sand": 1},
+		"outputs": {"whetstone": 1},
+		"duration": 20.0,
+		"energy_cost": 2.0,
+		"description": "Шлифовка прочного точильного бруска для полевого обслуживания инструмента."
+	},
+	"sharpen_axe": {
+		"id": "sharpen_axe",
+		"name": "Заточка: Топор (100%)",
+		"machine": "workbench",
+		"inputs": {"water": 1},
+		"outputs": {},
+		"duration": 15.0,
+		"energy_cost": 2.0,
+		"description": "Обильное смачивание точильного круга водой и выведение идеальной режущей кромки топора."
+	},
+	"sharpen_pickaxe": {
+		"id": "sharpen_pickaxe",
+		"name": "Заточка: Кирка (100%)",
+		"machine": "workbench",
+		"inputs": {"water": 1},
+		"outputs": {},
+		"duration": 15.0,
+		"energy_cost": 2.0,
+		"description": "Заточка и правка закалённых клювов кирки на верстаке до идеального состояния."
+	},
+	"sharpen_shovel": {
+		"id": "sharpen_shovel",
+		"name": "Заточка: Мотыга (100%)",
+		"machine": "workbench",
+		"inputs": {"water": 1},
+		"outputs": {},
+		"duration": 15.0,
+		"energy_cost": 2.0,
+		"description": "Правка режущей кромки лопасти мотыги для лёгкого срезания дерна и грунта."
+	},
 	"smelt_brick": {
 		"id": "smelt_brick",
 		"name": "Обжиг: Обожжённый кирпич (x2)",

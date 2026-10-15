@@ -44,6 +44,7 @@ signal item_rejected(item_id: String, amount: int, reason: String)
 signal tool_changed(tool_id: String, tool_name: String)
 signal credits_changed(total: int)
 signal load_state_changed(state: int)
+signal tool_sharpness_changed(tool_id: String, current_sharpness: float)
 
 @export var max_slots: int = DEFAULT_SLOTS
 ## Допустимый вес самого рюкзака (без бонусов зданий).
@@ -66,6 +67,13 @@ var credits: int = 0
 ## Доступные инструменты (хотбар слоты 1-5)
 var tools: Array[String] = ["axe", "pickaxe", "shovel", "bucket", "backpack"]
 var equipped_tool: String = "axe"
+
+## Состояние остроты инструментов (%) — только для режущих инструментов
+var tool_sharpness: Dictionary = {
+	"axe": 100.0,
+	"pickaxe": 100.0,
+	"shovel": 100.0
+}
 
 ## Словарь хранения предметов { item_id: int }
 var items: Dictionary = {
@@ -163,7 +171,8 @@ var items: Dictionary = {
 	"iron_pickaxe": 0,
 	"iron_shovel": 0,
 	"reinforced_bucket": 0,
-	"large_backpack": 0
+	"large_backpack": 0,
+	"whetstone": 0
 }
 
 var _load_state: int = LoadState.NORMAL
@@ -176,6 +185,7 @@ var _weight_dirty: bool = true
 func clear() -> void:
 	for k in items:
 		items[k] = 0
+	tool_sharpness = {"axe": 100.0, "pickaxe": 100.0, "shovel": 100.0}
 	slot_layout.clear()
 	_weight_dirty = true
 	_update_load_state()
@@ -312,6 +322,127 @@ func upgrade_tool(tool_id: String) -> bool:
 	return true
 
 # ---------------------------------------------------------------------------
+# Острота и обслуживание инструментов (Заточка / Затупление)
+# ---------------------------------------------------------------------------
+
+func _resolve_sharp_tool_type(tool_id_or_type: String) -> String:
+	if tool_id_or_type in tool_sharpness:
+		return tool_id_or_type
+	var data: Dictionary = ItemDB.get_item(tool_id_or_type)
+	var t_type: String = data.get("tool_type", "")
+	if t_type in tool_sharpness:
+		return t_type
+	return ""
+
+## Проверяет, подвержен ли инструмент затуплению и заточке (топор, кирка, мотыга).
+func is_sharp_tool(tool_id_or_type: String) -> bool:
+	return not _resolve_sharp_tool_type(tool_id_or_type).is_empty()
+
+## Текущая острота инструмента (0.0..100.0%). Для нережущих инструментов возвращает 100.0%.
+func get_tool_sharpness(tool_id_or_type: String) -> float:
+	var t: String = _resolve_sharp_tool_type(tool_id_or_type)
+	if t.is_empty():
+		return 100.0
+	return float(tool_sharpness.get(t, 100.0))
+
+## Возвращает параметры эффективности инструмента в зависимости от остроты лезвия:
+## power_mult, energy_cost_mult, is_dull, status_name, sharpness, crit_bonus
+func get_sharpness_efficiency(tool_id_or_type: String) -> Dictionary:
+	var t: String = _resolve_sharp_tool_type(tool_id_or_type)
+	if t.is_empty():
+		return {
+			"power_mult": 1.0,
+			"energy_cost_mult": 1.0,
+			"is_dull": false,
+			"status_name": "Рабочая заточка",
+			"sharpness": 100.0,
+			"crit_bonus": 0.0
+		}
+	var s: float = float(tool_sharpness.get(t, 100.0))
+	if s >= 75.0:
+		return {
+			"power_mult": 1.0,
+			"energy_cost_mult": 0.9,
+			"is_dull": false,
+			"status_name": "Бритвенная острота",
+			"sharpness": s,
+			"crit_bonus": 0.10
+		}
+	elif s >= 35.0:
+		return {
+			"power_mult": 1.0,
+			"energy_cost_mult": 1.0,
+			"is_dull": false,
+			"status_name": "Рабочая заточка",
+			"sharpness": s,
+			"crit_bonus": 0.0
+		}
+	elif s >= 10.0:
+		return {
+			"power_mult": 0.75,
+			"energy_cost_mult": 1.25,
+			"is_dull": true,
+			"status_name": "Затупленное",
+			"sharpness": s,
+			"crit_bonus": 0.0
+		}
+	else:
+		return {
+			"power_mult": 0.50,
+			"energy_cost_mult": 1.50,
+			"is_dull": true,
+			"status_name": "Критически тупое",
+			"sharpness": s,
+			"crit_bonus": 0.0
+		}
+
+## Списание остроты при использовании инструмента.
+## Инструменты 2-го уровня (железные) изнашиваются на 40% медленнее.
+## Навыки персонажа снижают износ (до -15%).
+func consume_tool_sharpness(tool_id_or_type: String, amount: float = 1.0) -> float:
+	var t: String = _resolve_sharp_tool_type(tool_id_or_type)
+	if t.is_empty() or amount <= 0.0:
+		return 100.0
+	
+	if get_tool_level(t) >= 2:
+		amount *= 0.6
+	
+	var owner_body = get_parent()
+	var skills: Object = owner_body.get("skills") if owner_body and "skills" in owner_body else null
+	if skills and skills.has_method("get_level"):
+		var s_name: String = ""
+		match t:
+			"axe": s_name = "woodcutting"
+			"pickaxe": s_name = "mining"
+			"shovel": s_name = "farming"
+		if s_name != "":
+			var s_lvl: int = skills.get_level(s_name)
+			var discount: float = clampf(floorf(float(s_lvl) / 2.0) * 0.03, 0.0, 0.15)
+			amount *= (1.0 - discount)
+	
+	var prev_s: float = float(tool_sharpness.get(t, 100.0))
+	var new_s: float = clampf(prev_s - amount, 0.0, 100.0)
+	tool_sharpness[t] = new_s
+	tool_sharpness_changed.emit(t, new_s)
+	
+	if new_s < 10.0 and prev_s >= 10.0:
+		if owner_body and owner_body.has_method("notify"):
+			owner_body.notify("⚠️ Внимание: лезвие (%s) затупилось! Сила ударов снижена." % ItemDB.get_item(t).get("name", t))
+	
+	return new_s
+
+## Заточка инструмента на заданное число процентов (по умолчанию до 100.0%).
+func sharpen_tool(tool_id_or_type: String, amount: float = 100.0) -> float:
+	var t: String = _resolve_sharp_tool_type(tool_id_or_type)
+	if t.is_empty():
+		return 100.0
+	var prev_s: float = float(tool_sharpness.get(t, 100.0))
+	var new_s: float = clampf(prev_s + amount, 0.0, 100.0)
+	tool_sharpness[t] = new_s
+	tool_sharpness_changed.emit(t, new_s)
+	return new_s
+
+# ---------------------------------------------------------------------------
 # Вместимость рюкзака
 # ---------------------------------------------------------------------------
 
@@ -351,6 +482,8 @@ func get_weight_bonus_total() -> float:
 
 ## Занимает ли предмет слоты рюкзака (инструменты и снаряжение — на поясе).
 func item_uses_slots(item_id: String) -> bool:
+	if item_id == "whetstone":
+		return true
 	var cat: String = ItemDB.get_item(item_id).get("category", "")
 	return cat not in ["tool", "equipment"]
 

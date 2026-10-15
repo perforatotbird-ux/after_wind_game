@@ -487,6 +487,17 @@ func _on_interacted(player: Node) -> void:
 	if is_miner and is_ore:
 		energy *= 0.8
 	
+	# Острота инструмента (затупление и заточка)
+	var sharpness_eff: Dictionary = {"power_mult": 1.0, "energy_cost_mult": 1.0, "is_dull": false, "crit_bonus": 0.0}
+	if inv and inv.has_method("get_sharpness_efficiency"):
+		sharpness_eff = inv.get_sharpness_efficiency(tool_type)
+		energy *= float(sharpness_eff.get("energy_cost_mult", 1.0))
+
+	# Списание остроты за удар
+	if inv and inv.has_method("consume_tool_sharpness"):
+		var dull_cost: float = 1.0 if tool_type == "pickaxe" else 0.6
+		inv.consume_tool_sharpness(tool_type, dull_cost)
+
 	var skills: Object = player.get("skills") if player and "skills" in player else null
 	if skills and skills.has_method("get_energy_discount"):
 		energy *= skills.get_energy_discount("mining")
@@ -495,13 +506,21 @@ func _on_interacted(player: Node) -> void:
 	
 	if player.has_method("consume_energy"):
 		player.consume_energy(energy)
+
+	# Звук удара (глухой при затупленном лезвии)
+	var pitch: float = 0.65 if (float(sharpness_eff.get("power_mult", 1.0)) <= 0.5) else 1.0
 	if is_ore or tool_type == "pickaxe":
-		AudioManager.play("hit_stone")
+		AudioManager.play("hit_stone", pitch)
 	else:
-		AudioManager.play("dig")
-	var hits: int = int(damage.get(cell, 0)) + hit_power
-	var needed: int = hits_for(mat, tool_type)
-	yield_pool[cell] = float(yield_pool.get(cell, 0.0)) + MAT_YIELD[mat] * float(hit_power)
+		AudioManager.play("dig", pitch)
+
+	var effective_power: float = float(hit_power) * float(sharpness_eff.get("power_mult", 1.0))
+	var hits: float = float(damage.get(cell, 0.0)) + effective_power
+	var needed: float = float(hits_for(mat, tool_type))
+	var base_yield: float = MAT_YIELD[mat] * effective_power
+	if float(sharpness_eff.get("crit_bonus", 0.0)) > 0.0 and randf() < float(sharpness_eff.get("crit_bonus", 0.0)):
+		base_yield += MAT_YIELD[mat]
+	yield_pool[cell] = float(yield_pool.get(cell, 0.0)) + base_yield
 	if hits < needed:
 		damage[cell] = hits
 		_spawn_crumbs(cell, mat, 4)

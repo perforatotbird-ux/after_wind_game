@@ -720,10 +720,15 @@ func start_batch(recipe_id: String, cycles: int, player: Node) -> bool:
 	
 	if player.has_method("notify"):
 		var main_out: String = get_main_output(recipe)
-		player.notify("⚙️ Запущена партия: %s %s ×%d (≈ %.0f сек)" % [
-			ItemDB.get_item_icon(main_out), ItemDB.get_item_name(main_out),
-			cycles * get_output_per_cycle(recipe), process_duration * cycles
-		])
+		if main_out != "":
+			player.notify("⚙️ Запущена партия: %s %s ×%d (≈ %.0f сек)" % [
+				ItemDB.get_item_icon(main_out), ItemDB.get_item_name(main_out),
+				cycles * get_output_per_cycle(recipe), process_duration * cycles
+			])
+		else:
+			player.notify("⚙️ Запущен процесс: %s (≈ %.0f сек)" % [
+				recipe.get("name", recipe_id), process_duration * cycles
+			])
 	return true
 
 func _begin_cycle(recipe: Dictionary, duration: float, player: Node) -> void:
@@ -799,6 +804,13 @@ func _complete_process() -> void:
 	var bonus: int = yield_bonus_per_level * maxi(0, level_state.level - 1)
 	for item_id in outputs.keys():
 		pending_outputs[item_id] = int(pending_outputs.get(item_id, 0)) + int(outputs[item_id]) + bonus
+
+	# Заточка инструментов на верстаке (Глава 1 / Режущий инструмент)
+	if recipe_id.begins_with("sharpen_"):
+		var t_name: String = recipe_id.trim_prefix("sharpen_")
+		if user_valid and _last_user.get("inventory") and _last_user.inventory.has_method("sharpen_tool"):
+			_last_user.inventory.sharpen_tool(t_name, 100.0)
+
 	batch_cycles_done += 1
 	AudioManager.play("machine_done")
 	_on_outputs_produced(outputs)
@@ -812,10 +824,14 @@ func _complete_process() -> void:
 	_finish_run()
 	if user_valid and _last_user.has_method("notify"):
 		var main_out: String = get_main_output(ItemDB.get_item("") if false else {"outputs": outputs})
-		_last_user.notify("✅ Готово: %s %s ×%d — заберите в «%s» [E]" % [
-			ItemDB.get_item_icon(main_out), ItemDB.get_item_name(main_out),
-			int(pending_outputs.get(main_out, 0)), object_name
-		])
+		if main_out != "":
+			_last_user.notify("✅ Готово: %s %s ×%d — заберите в «%s» [E]" % [
+				ItemDB.get_item_icon(main_out), ItemDB.get_item_name(main_out),
+				int(pending_outputs.get(main_out, 0)), object_name
+			])
+		elif recipe_id.begins_with("sharpen_"):
+			var t_name: String = recipe_id.trim_prefix("sharpen_")
+			_last_user.notify("✨ Заточка завершена: %s идеально восстановлен до 100%%!" % ItemDB.get_item(t_name).get("name", t_name))
 	batch_finished.emit(recipe_id, cycles)
 
 func _finish_run() -> void:
