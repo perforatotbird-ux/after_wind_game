@@ -90,4 +90,5 @@ func _create_effects() -> void:
 		light.omni_range = 2.8
 		light.visible = false
 		add_child(light)
+		light.add_to_group("dynamic_lights")
 		window_lights.append(light)

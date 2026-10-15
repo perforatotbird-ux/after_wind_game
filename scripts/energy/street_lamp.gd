@@ -21,6 +21,8 @@ func _ready() -> void:
 	prompt_action = "Осмотреть"
 	if not lamp_light:
 		lamp_light = get_node_or_null("LampLight")
+	if lamp_light:
+		lamp_light.add_to_group("dynamic_lights")
 	if not bulb_mesh:
 		bulb_mesh = get_node_or_null("Post/Arm/Bulb")
 	

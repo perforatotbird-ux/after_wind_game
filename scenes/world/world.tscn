@@ -39,6 +39,8 @@
 [ext_resource type="PackedScene" path="res://scenes/machines/campfire.tscn" id="40_campfire"]
 [ext_resource type="PackedScene" path="res://scenes/machines/kitchen_stove.tscn" id="41_kitchen"]
 [ext_resource type="Script" path="res://scripts/world/mushroom_spawner.gd" id="42_shrooms"]
+[ext_resource type="Script" path="res://scripts/world/lighting_env_manager.gd" id="43_lightenv"]
+[ext_resource type="Script" path="res://scripts/world/light_lod_manager.gd" id="44_lightlod"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.36, 0.54, 0.75, 1)
@@ -80,6 +82,13 @@ light_color = Color(0.98, 0.94, 0.88, 1)
 light_energy = 1.2
 shadow_enabled = true
 
+[node name="MoonLight" type="DirectionalLight3D" parent="." unique_id=1176431531]
+transform = Transform3D(-0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, 0.5, -0.5, 0, 18, 0)
+visible = false
+light_color = Color(0.6, 0.7, 1, 1)
+light_energy = 0.0
+shadow_enabled = false
+
 [node name="DayNightCycle" type="Node" parent="." unique_id=674242811]
 script = ExtResource("16_cycle")
 
@@ -87,6 +96,13 @@ script = ExtResource("16_cycle")
 
 [node name="SeasonManager" type="Node" parent="."]
 script = ExtResource("40_seasons")
+
+[node name="LightingEnvManager" type="Node" parent="." node_paths=PackedStringArray("world_environment")]
+script = ExtResource("43_lightenv")
+world_environment = NodePath("../WorldEnvironment")
+
+[node name="LightLodManager" type="Node" parent="."]
+script = ExtResource("44_lightlod")
 
 [node name="PowerGrid" type="Node" parent="." unique_id=270830116 groups=["power_grid"]]
 script = ExtResource("25_grid")

@@ -9,6 +9,9 @@ uniform float preview_time = -1.0; // -1: realtime; nonnegative: deterministic c
 uniform vec3 deep_color : source_color = vec3(0.17, 0.31, 0.28);
 uniform vec3 shallow_color : source_color = vec3(0.40, 0.51, 0.38);
 uniform float water_opacity : hint_range(0.0, 1.0, 0.01) = 0.88;
+uniform vec3 sky_tint : source_color = vec3(0.36, 0.54, 0.78);
+uniform float sky_tint_strength : hint_range(0.0, 1.0, 0.01) = 0.25;
+uniform float reflection_energy : hint_range(0.0, 2.0, 0.05) = 1.0;
 varying vec2 water_position;
 varying float shore_depth;
 
@@ -50,7 +53,8 @@ void fragment() {
         1.0,
         -(0.022 * cos(a) + 0.055 * cos(b)) * wind_strength));
     NORMAL = normalize((VIEW_MATRIX * MODEL_MATRIX * vec4(local_normal, 0.0)).xyz + NORMAL * 0.7);
-    ALBEDO = mix(shallow_color, deep_color, shore_depth);
+    vec3 base_water_color = mix(shallow_color, deep_color, shore_depth);
+    ALBEDO = mix(base_water_color, base_water_color * sky_tint * reflection_energy, sky_tint_strength * (1.0 - shore_depth * 0.5));
     float breakup = 0.45 + 0.55 * pow(sin(dot(p, vec2(-1.5, 2.0)) + t * 0.785398), 2.0);
     float irregular_phase = a + smooth_noise(p * 2.3) * 3.7;
     float wavelet_mask = smoothstep(0.34, 0.69, smooth_noise(p * vec2(3.3, 1.8) + vec2(4.0, -1.0)));

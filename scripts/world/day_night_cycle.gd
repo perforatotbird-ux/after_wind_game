@@ -39,6 +39,8 @@ var _last_reported_minute: int = -1
 ## Активный сезонный оттенок: [небо, горизонт, свет, сила]. Пустой — без подкраски.
 var _season_tint: Array = []
 var _season: String = ""
+var _moon_light: DirectionalLight3D = null
+var _weather_mgr: Node = null
 
 const GROUP: String = "day_night_cycle"
 
@@ -52,16 +54,54 @@ const TIME_ADVANCE_GROUPS: Array[String] = [
 
 func _ready() -> void:
 	add_to_group(GROUP)
-	if not sun_light:
+	if not sun_light and get_parent():
 		sun_light = get_parent().get_node_or_null("DirectionalLight3D")
 	
-	if not world_environment:
+	if sun_light:
+		sun_light.shadow_enabled = true
+		sun_light.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+		sun_light.directional_shadow_split_1 = 0.1
+		sun_light.directional_shadow_split_2 = 0.2
+		sun_light.directional_shadow_split_3 = 0.5
+		sun_light.shadow_bias = 0.05
+		sun_light.shadow_normal_bias = 2.0
+	
+	_setup_moon_light()
+
+	if not world_environment and get_parent():
 		world_environment = get_parent().get_node_or_null("WorldEnvironment")
 	
 	if world_environment and world_environment.environment and world_environment.environment.sky:
 		_sky_material = world_environment.environment.sky.sky_material as ProceduralSkyMaterial
+		_setup_star_field()
 	
 	_update_lighting_and_sky(true)
+
+func _setup_moon_light() -> void:
+	if not _moon_light and get_parent():
+		_moon_light = get_parent().get_node_or_null("MoonLight")
+		if not _moon_light:
+			_moon_light = DirectionalLight3D.new()
+			_moon_light.name = "MoonLight"
+			_moon_light.light_color = Color(0.60, 0.70, 1.00)
+			_moon_light.light_energy = 0.0
+			_moon_light.shadow_enabled = false
+			_moon_light.visible = false
+			get_parent().add_child.call_deferred(_moon_light)
+
+func _setup_star_field() -> void:
+	if _sky_material and not _sky_material.sky_cover:
+		var noise := FastNoiseLite.new()
+		noise.noise_type = FastNoiseLite.TYPE_CELLULAR
+		noise.frequency = 0.12
+		noise.fractal_octaves = 2
+		var noise_tex := NoiseTexture2D.new()
+		noise_tex.width = 512
+		noise_tex.height = 512
+		noise_tex.seamless = true
+		noise_tex.noise = noise
+		_sky_material.sky_cover = noise_tex
+		_sky_material.sky_cover_modulate = Color(1.0, 1.0, 1.0, 0.0)
 
 ## Игровых часов за секунду реального времени (24 игровых часа за day_duration_seconds).
 func get_hours_per_second() -> float:
@@ -278,10 +318,32 @@ func _update_lighting_and_sky(force: bool) -> void:
 		sky_horiz = Color(0.08, 0.10, 0.18)
 		ground_horiz = Color(0.12, 0.12, 0.15)
 	
+	var weather_mult: float = 1.0
+	if not is_instance_valid(_weather_mgr) and get_parent():
+		_weather_mgr = get_parent().get_node_or_null("WeatherManager")
+	if not is_instance_valid(_weather_mgr) and get_tree():
+		_weather_mgr = get_tree().get_first_node_in_group("weather_manager")
+	if is_instance_valid(_weather_mgr):
+		if _weather_mgr.has_method("set_base_sun_energy"):
+			_weather_mgr.set_base_sun_energy(light_energy)
+		if _weather_mgr.has_method("get_weather_light_multiplier"):
+			weather_mult = _weather_mgr.get_weather_light_multiplier()
+
+	var night: bool = is_night()
 	if sun_light:
 		sun_light.rotation_degrees = Vector3(-sun_pitch_deg, sun_yaw_deg, 0.0)
-		sun_light.light_energy = light_energy
+		sun_light.light_energy = light_energy * weather_mult
 		sun_light.light_color = light_color
+		sun_light.shadow_enabled = not night
+	
+	if _moon_light:
+		_moon_light.visible = night
+		if night:
+			var moon_yaw: float = fposmod(sun_yaw_deg + 180.0, 360.0)
+			_moon_light.rotation_degrees = Vector3(-35.0, moon_yaw, 0.0)
+			_moon_light.light_energy = 0.18 * weather_mult
+			_moon_light.light_color = Color(0.60, 0.70, 1.00)
+			_moon_light.shadow_enabled = false
 	
 	# Сезонный оттенок поверх суточного расчёта: зима — белее и холоднее, лето — сочнее.
 	if _season_tint.size() >= 4:
@@ -295,3 +357,11 @@ func _update_lighting_and_sky(force: bool) -> void:
 		_sky_material.sky_top_color = sky_top
 		_sky_material.sky_horizon_color = sky_horiz
 		_sky_material.ground_horizon_color = ground_horiz
+		var star_alpha: float = 0.0
+		if night:
+			star_alpha = 1.0
+		elif current_hour >= 17.0 and current_hour < 21.0:
+			star_alpha = (current_hour - 17.0) / 4.0 * 0.4
+		elif current_hour >= 5.0 and current_hour < 7.0:
+			star_alpha = (7.0 - current_hour) / 2.0 * 0.3
+		_sky_material.sky_cover_modulate = Color(1.0, 1.0, 1.0, star_alpha)

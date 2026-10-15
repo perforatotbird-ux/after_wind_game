@@ -51,7 +51,14 @@ var _cycle_sequence: Array[WeatherType] = [
 var _cycle_index: int = 0
 var _season_mgr: Node = null
 
+var weather_light_multiplier: float = 1.0
+var _target_weather_light_multiplier: float = 1.0
+var _multiplier_lerp_speed: float = 0.5
+var _base_sun_energy: float = 1.2
+var _target_energy: float = 1.2
+
 func _ready() -> void:
+	add_to_group("weather_manager")
 	if not rain_particles:
 		rain_particles = get_node_or_null("RainParticles")
 	if not snow_particles:
@@ -66,6 +73,18 @@ func _ready() -> void:
 	set_weather(current_weather)
 
 func _process(delta: float) -> void:
+	if abs(weather_light_multiplier - _target_weather_light_multiplier) > 0.001:
+		weather_light_multiplier = move_toward(
+			weather_light_multiplier, _target_weather_light_multiplier, _multiplier_lerp_speed * delta
+		)
+	
+	# Автономный lerp для standalone тестов без DayNightCycle
+	if sun_light and is_instance_valid(sun_light) and not get_tree().get_first_node_in_group("day_night_cycle"):
+		if abs(sun_light.light_energy - _target_energy) > 0.005:
+			sun_light.light_energy = move_toward(
+				sun_light.light_energy, _target_energy, 0.4 * delta
+			)
+
 	if auto_cycle:
 		_timer += delta
 		if _timer >= weather_change_interval:
@@ -157,18 +176,36 @@ func _update_visuals() -> void:
 		snow_particles.emitting = snowing
 	
 	# Корректировка освещения при пасмурной или дождливой погоде
-	if sun_light:
-		match current_weather:
-			WeatherType.SUNNY:
-				sun_light.light_energy = 1.2
-			WeatherType.OVERCAST:
-				sun_light.light_energy = 0.8
-			WeatherType.RAIN:
-				sun_light.light_energy = 0.55
-			WeatherType.HEAVY_RAIN:
-				sun_light.light_energy = 0.35
-			WeatherType.SNOW:
-				sun_light.light_energy = 0.7
+	match current_weather:
+		WeatherType.SUNNY:
+			_target_weather_light_multiplier = 1.0
+		WeatherType.OVERCAST:
+			_target_weather_light_multiplier = 0.67
+		WeatherType.RAIN:
+			_target_weather_light_multiplier = 0.46
+		WeatherType.HEAVY_RAIN:
+			_target_weather_light_multiplier = 0.29
+		WeatherType.SNOW:
+			_target_weather_light_multiplier = 0.58
+	
+	_target_energy = _base_sun_energy * _target_weather_light_multiplier
+	if sun_light and is_instance_valid(sun_light) and not get_tree().get_first_node_in_group("day_night_cycle"):
+		sun_light.light_energy = _target_energy
+
+func get_weather_light_multiplier() -> float:
+	return weather_light_multiplier
+
+func set_base_sun_energy(energy: float) -> void:
+	_base_sun_energy = energy
+	_target_energy = _base_sun_energy * _weather_mult()
+
+func _weather_mult() -> float:
+	match current_weather:
+		WeatherType.OVERCAST:   return 0.67
+		WeatherType.RAIN:       return 0.46
+		WeatherType.HEAVY_RAIN: return 0.29
+		WeatherType.SNOW:       return 0.58
+		_: return 1.0
 
 func _apply_rainfall_to_world(intensity: float, delta: float) -> void:
 	if not get_tree():

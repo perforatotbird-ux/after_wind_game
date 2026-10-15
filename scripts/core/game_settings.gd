@@ -23,6 +23,40 @@ const UI_SCALE_MIN: float = 0.75
 const UI_SCALE_MAX: float = 1.5
 const RESOLUTIONS: Array = [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080), Vector2i(2560, 1440)]
 
+const LIGHTING_PRESET_NAMES: Array[String] = ["low", "medium", "high", "ultra"]
+const LIGHTING_PRESET_LABELS: Array[String] = [
+	"Низкое (без SSAO, тени 1K)",
+	"Среднее (SSAO, тени 2K)",
+	"Высокое (SSAO, тени 4K)",
+	"Ультра (SSAO + SDFGI, тени 4K)"
+]
+const LIGHTING_PRESETS: Dictionary = {
+	"low": {
+		"ssao": false,
+		"sdfgi": false,
+		"shadow_size": 1024,
+		"glow": false
+	},
+	"medium": {
+		"ssao": true,
+		"sdfgi": false,
+		"shadow_size": 2048,
+		"glow": true
+	},
+	"high": {
+		"ssao": true,
+		"sdfgi": false,
+		"shadow_size": 4096,
+		"glow": true
+	},
+	"ultra": {
+		"ssao": true,
+		"sdfgi": true,
+		"shadow_size": 4096,
+		"glow": true
+	},
+}
+
 ## resolution_index = -1 — не менять размер окна (как в project.godot).
 const DEFAULTS: Dictionary = {
 	"master_volume": 1.0,
@@ -34,6 +68,7 @@ const DEFAULTS: Dictionary = {
 	"mouse_sensitivity": 1.0,
 	"seconds_per_game_hour": 60.0,
 	"ui_scale": 1.0,
+	"lighting_quality": "high",
 }
 
 ## Путь можно подменить в тестах.
@@ -113,6 +148,14 @@ static func get_resolution_labels() -> Array[String]:
 		labels.append("%d × %d" % [r.x, r.y])
 	return labels
 
+static func get_lighting_labels() -> Array[String]:
+	return LIGHTING_PRESET_LABELS
+
+static func get_lighting_preset_index() -> int:
+	var q: String = str(get_value("lighting_quality"))
+	var idx: int = LIGHTING_PRESET_NAMES.find(q)
+	return idx if idx >= 0 else 2
+
 # --- Применение ---
 
 static func apply(tree: SceneTree = null) -> void:
@@ -121,6 +164,7 @@ static func apply(tree: SceneTree = null) -> void:
 	apply_ui_scale(tree)
 	apply_camera(tree)
 	apply_time(tree)
+	apply_lighting(tree)
 
 static func apply_key(key: String, tree: SceneTree = null) -> void:
 	match key:
@@ -134,6 +178,8 @@ static func apply_key(key: String, tree: SceneTree = null) -> void:
 			apply_time(tree)
 		"ui_scale":
 			apply_ui_scale(tree)
+		"lighting_quality":
+			apply_lighting(tree)
 
 ## Длительность игрового часа -> DayNightCycle (группа "day_night_cycle").
 static func apply_time(tree: SceneTree = null) -> void:
@@ -182,6 +228,23 @@ static func apply_camera(tree: SceneTree = null) -> void:
 	if cam != null and "mouse_sensitivity" in cam:
 		cam.mouse_sensitivity = get_mouse_sensitivity()
 
+## Качество графики и освещения -> LightingEnvManager и shadow atlas
+static func apply_lighting(tree: SceneTree = null) -> void:
+	var quality: String = str(get_value("lighting_quality"))
+	var preset: Dictionary = LIGHTING_PRESETS.get(quality, LIGHTING_PRESETS["high"])
+	
+	if tree != null:
+		for lem in tree.get_nodes_in_group("lighting_env_manager"):
+			if lem:
+				lem.enable_ssao = bool(preset["ssao"])
+				lem.enable_sdfgi = bool(preset["sdfgi"])
+				lem.enable_glow = bool(preset["glow"])
+				if lem.has_method("_apply_environment_settings"):
+					lem._apply_environment_settings()
+	
+	var shadow_size: int = int(preset["shadow_size"])
+	RenderingServer.directional_shadow_atlas_set_size(shadow_size, true)
+
 # --- Вспомогательное ---
 
 static func _ensure_loaded() -> void:
@@ -211,4 +274,8 @@ static func _sanitize(key: String, value: Variant) -> Variant:
 		"resolution_index":
 			if _is_number(value):
 				return clampi(int(value), -1, RESOLUTIONS.size() - 1)
+		"lighting_quality":
+			var s := str(value).to_lower()
+			if LIGHTING_PRESETS.has(s):
+				return s
 	return DEFAULTS.get(key)

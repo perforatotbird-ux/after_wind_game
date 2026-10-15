@@ -4,6 +4,7 @@
 [ext_resource type="ArrayMesh" path="res://assets/models/smelter/smelter_body_mesh.tres" id="2_body"]
 [ext_resource type="ArrayMesh" path="res://assets/models/smelter/smelter_glow_mesh.tres" id="3_glow"]
 [ext_resource type="PackedScene" path="res://scenes/machines/machine_rubble.tscn" id="4_rubble"]
+[ext_resource type="Script" path="res://scripts/crafting/furnace_light.gd" id="5_flight"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
 size = Vector3(2.8, 3.8, 2.8)
@@ -72,3 +73,7 @@ shape = SubResource("BoxShape3D_bellows")
 [node name="CrateShape" type="CollisionShape3D" parent="SolidBody"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 0.275, -1.55)
 shape = SubResource("BoxShape3D_crate")
+
+[node name="FurnaceLight" type="Node" parent="." node_paths=PackedStringArray("light_node")]
+script = ExtResource("5_flight")
+light_node = NodePath("../Visual/FireLight")

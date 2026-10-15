@@ -22,6 +22,7 @@ const UI_SCALE_PRESETS: Array = [0.75, 0.9, 1.0, 1.1, 1.25, 1.5]
 
 var _game_hour: OptionButton = null
 var _ui_scale: OptionButton = null
+var _lighting: OptionButton = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -83,6 +84,7 @@ func _ready() -> void:
 	for k in UI_SCALE_PRESETS:
 		scale_labels.append("%d%%%s" % [int(round(float(k) * 100.0)), " (по умолчанию)" if is_equal_approx(float(k), 1.0) else ""])
 	_ui_scale = _add_option(vbox, "Масштаб интерфейса", scale_labels, _on_ui_scale_selected)
+	_lighting = _add_option(vbox, "Качество графики и теней", GameSettings.get_lighting_labels(), _on_lighting_selected)
 	vbox.add_child(HSeparator.new())
 
 	vbox.add_child(UI.make_section_header("🖱 Камера"))
@@ -176,6 +178,8 @@ func _sync_from_settings() -> void:
 		if absf(float(UI_SCALE_PRESETS[i]) - cur_scale) < absf(float(UI_SCALE_PRESETS[best]) - cur_scale):
 			best = i
 	_ui_scale.select(best)
+	if _lighting:
+		_lighting.select(GameSettings.get_lighting_preset_index())
 
 func _update_value_label(key: String, value: float) -> void:
 	var label: Label = _value_labels[key]
@@ -206,6 +210,11 @@ func _on_game_hour_selected(index: int) -> void:
 func _on_ui_scale_selected(index: int) -> void:
 	AudioManager.play("ui_click")
 	GameSettings.set_value("ui_scale", float(UI_SCALE_PRESETS[index]), get_tree())
+
+func _on_lighting_selected(index: int) -> void:
+	AudioManager.play("ui_click")
+	if index >= 0 and index < GameSettings.LIGHTING_PRESET_NAMES.size():
+		GameSettings.set_value("lighting_quality", GameSettings.LIGHTING_PRESET_NAMES[index], get_tree())
 
 func _on_reset_pressed() -> void:
 	AudioManager.play("ui_click")

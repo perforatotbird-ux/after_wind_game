@@ -67,6 +67,7 @@ const UPGRADE_COSTS: Dictionary = {
 const HEAT_MACHINES: Array[String] = ["campfire", "kitchen_stove"]
 
 signal machine_opened(machine: Node)
+signal machine_running_changed(running: bool)
 signal process_started(recipe_id: String, duration: float)
 signal process_progress(progress: float)
 signal process_completed(recipe_id: String, outputs: Dictionary)
@@ -744,6 +745,7 @@ func _begin_cycle(recipe: Dictionary, duration: float, player: Node) -> void:
 		_light_next_fuel()
 	is_machine_running = true
 	set_process(true)
+	machine_running_changed.emit(true)
 	_last_user = player
 	process_started.emit(recipe.get("id", ""), process_duration)
 	AudioManager.play("machine_start")
@@ -756,6 +758,7 @@ func cancel_batch() -> bool:
 	var recipe_id: String = active_recipe.get("id", "")
 	is_machine_running = false
 	set_process(false)
+	machine_running_changed.emit(false)
 	active_recipe = {}
 	process_timer = 0.0
 	batch_cycles_total = 0
@@ -837,6 +840,7 @@ func _complete_process() -> void:
 func _finish_run() -> void:
 	is_machine_running = false
 	set_process(false)
+	machine_running_changed.emit(false)
 	process_timer = 0.0
 	active_recipe = {}
 	batch_cycles_total = 0

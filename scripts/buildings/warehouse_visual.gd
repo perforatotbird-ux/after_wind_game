@@ -18,7 +18,7 @@ func _ready() -> void:
 		for x in [-2.13,2.13]:
 			var light:=OmniLight3D.new();light.position=Vector3(x,2.03,2.04)
 			light.name='LanternLight';light.light_color=Color(1,.53,.23);light.light_energy=.5;light.omni_range=2.7
-			add_child(light);lantern_lights.append(light)
+			add_child(light);light.add_to_group("dynamic_lights");lantern_lights.append(light)
 	if storage_stage==3:
 		hoist=Hoist.new();hoist.name='HoistAnimator';add_child(hoist)
 	update_environment()

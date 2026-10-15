@@ -49,6 +49,7 @@ func _ready() -> void:
 	fire_light.position.y = 0.6; fire_light.light_color = Color(1, 0.47, 0.16)
 	fire_light.omni_range = 5.0; fire_light.omni_attenuation = 1.35
 	fire_light.light_energy = 0.0; fire_light.visible = false; add_child(fire_light)
+	fire_light.add_to_group("dynamic_lights")
 	sparks = _particles("Sparks", 18, 1.45, false)
 	smoke = _particles("Smoke", 14, 3.5, true)
 	update_fire(0.0, false, false, false, true)
