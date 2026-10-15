@@ -355,6 +355,9 @@ func _polish(win: Control) -> void:
 		UI.polish_text(win)
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Во время отдыха/сна (переход с часами) интерфейс не реагирует на ESC.
+	if _bound_player and _bound_player.get("is_resting"):
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
 			if victory_window and victory_window.visible:
@@ -1112,39 +1115,42 @@ func _refresh_repair_window() -> void:
 	var inv = _bound_player.get("inventory") if _bound_player else null
 	var cost_cr: int = next_data.get("cost_credits", 0)
 	var mats: Dictionary = next_data.get("cost_materials", {})
+	var in_building_cr: int = int(_current_active_building.get("delivered_credits")) if "delivered_credits" in _current_active_building else 0
 	
 	# Кредиты в требованиях
 	if cost_cr > 0:
 		var row_cr: HBoxContainer = HBoxContainer.new()
 		var l_cr: Label = Label.new()
 		var player_cr: int = inv.get("credits") if (inv and "credits" in inv) else 0
-		var cr_ok: bool = player_cr >= cost_cr
-		l_cr.text = "💰 Кредиты: %d / %d" % [player_cr, cost_cr]
+		var cr_ok: bool = player_cr + in_building_cr >= cost_cr
+		l_cr.text = "💰 Кредиты: %d / %d (внесено %d)" % [player_cr + in_building_cr, cost_cr, in_building_cr]
 		l_cr.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if cr_ok else Color(1.0, 0.4, 0.4))
 		l_cr.add_theme_font_size_override("font_size", 13)
 		row_cr.add_child(l_cr)
 		repair_requirements_list.add_child(row_cr)
 	
-	# Материалы в требованиях
+	# Материалы в требованиях (с учётом уже внесённых в здание)
 	for mat_id in mats.keys():
 		var needed: int = mats[mat_id]
+		var in_building: int = int(_current_active_building.delivered.get(mat_id, 0)) if "delivered" in _current_active_building else 0
 		var avail: int = inv.get_item_count(mat_id) if inv else 0
 		var mat_name: String = ItemDB.get_item_name(mat_id)
 		var mat_icon: String = ItemDB.get_item_icon(mat_id)
-		var ok: bool = avail >= needed
+		var ok: bool = avail + in_building >= needed
 		
 		var row_mat: HBoxContainer = HBoxContainer.new()
 		var l_mat: Label = Label.new()
-		l_mat.text = "%s %s: %d / %d" % [mat_icon, mat_name, avail, needed]
+		l_mat.text = "%s %s: %d / %d (внесено %d)" % [mat_icon, mat_name, avail + in_building, needed, in_building]
 		l_mat.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if ok else Color(1.0, 0.4, 0.4))
 		l_mat.add_theme_font_size_override("font_size", 13)
 		row_mat.add_child(l_mat)
 		repair_requirements_list.add_child(row_mat)
 	
-	var check: Dictionary = _current_active_building.can_upgrade(_bound_player) if _current_active_building.has_method("can_upgrade") else {}
-	var can_up: bool = check.get("can_upgrade", false)
-	repair_upgrade_button.disabled = not can_up
-	repair_upgrade_button.text = "🔨 Восстановить (Уровень %d)" % (curr_stage + 1)
+	# Внести материалы: переносит в здание всё, что есть в рюкзаке; когда
+	# комплект собран — стадия применяется автоматически.
+	repair_upgrade_button.disabled = false
+	repair_upgrade_button.text = "🔨 Внести материалы (Уровень %d)" % (curr_stage + 1)
+	repair_upgrade_button.tooltip_text = "Переносит в здание всё, что есть в рюкзаке. Когда весь комплект собран — стадия восстановления применяется."
 	_polish(repair_window)
 
 func _on_upgrade_building_pressed() -> void:
@@ -1158,8 +1164,19 @@ func _on_upgrade_building_pressed() -> void:
 func _on_building_sleep_pressed() -> void:
 	if not _current_active_building or not _bound_player:
 		return
-	if _current_active_building.has_method("sleep"):
-		_current_active_building.sleep(_bound_player)
+	# Диалог с ползунком: сколько спать. Персонаж исчезает из мира на время сна.
+	var dialog: Control = preload("res://scripts/ui/sleep_dialog.gd").new()
+	dialog.setup(_current_active_building, _bound_player)
+	dialog.confirmed.connect(_on_sleep_confirmed)
+	add_child(dialog)
+
+func _on_sleep_confirmed(hours: float) -> void:
+	var building: Node = _current_active_building
+	if building == null or not _bound_player:
+		return
+	if building.has_method("sleep"):
+		close_repair_window()
+		building.sleep(_bound_player, hours)
 
 # --- Взаимодействия и уведомления ---
 func _on_focused_interactable_changed(interactable: Node) -> void:
@@ -1231,19 +1248,23 @@ func _refresh_contract_window() -> void:
 	
 	var inv = _bound_player.get("inventory") if _bound_player else null
 	var all_contracts = ContractDB.get_all_contracts()
-	
+	var shown: int = 0
+
 	for contract in all_contracts:
 		var c_id: String = contract.get("id", "")
-		var is_done: bool = ContractDB.is_completed(c_id)
-		var can_do: bool = ContractDB.can_fulfill(contract, inv)
-		if not is_done and not ContractDB.is_unlocked(contract):
-			contracts_list.add_child(_make_locked_contract_card(contract))
+		# Выполненные заказы снимаются с доски: не занимают место и не сбивают с толку.
+		if ContractDB.is_completed(c_id):
 			continue
-		
+		if not ContractDB.is_unlocked(contract):
+			contracts_list.add_child(_make_locked_contract_card(contract))
+			shown += 1
+			continue
+
+		var can_do: bool = ContractDB.can_fulfill(contract, inv)
 		var card: PanelContainer = PanelContainer.new()
 		var card_style: StyleBoxFlat = StyleBoxFlat.new()
-		card_style.bg_color = Color(0.14, 0.17, 0.22, 0.95) if not is_done else Color(0.11, 0.13, 0.15, 0.7)
-		card_style.border_color = Color(0.3, 0.75, 0.45, 1.0) if can_do else (Color(0.28, 0.45, 0.65, 0.8) if not is_done else Color(0.3, 0.35, 0.4, 0.5))
+		card_style.bg_color = Color(0.14, 0.17, 0.22, 0.95)
+		card_style.border_color = Color(0.3, 0.75, 0.45, 1.0) if can_do else Color(0.28, 0.45, 0.65, 0.8)
 		card_style.set_border_width_all(1)
 		card_style.set_corner_radius_all(6)
 		card.add_theme_stylebox_override("panel", card_style)
@@ -1265,7 +1286,7 @@ func _refresh_contract_window() -> void:
 		lbl_title.text = contract.get("title", "Заказ")
 		lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		lbl_title.add_theme_font_size_override("font_size", 14)
-		lbl_title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45) if not is_done else Color(0.65, 0.7, 0.75))
+		lbl_title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45))
 		h_title.add_child(lbl_title)
 		
 		var lbl_reward: Label = Label.new()
@@ -1278,7 +1299,7 @@ func _refresh_contract_window() -> void:
 			reward_txt += " 🎁 " + ", ".join(gift_parts)
 		lbl_reward.text = reward_txt
 		lbl_reward.add_theme_font_size_override("font_size", 13)
-		lbl_reward.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5) if not is_done else Color(0.6, 0.7, 0.6))
+		lbl_reward.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5))
 		h_title.add_child(lbl_reward)
 		vbox.add_child(h_title)
 		
@@ -1314,10 +1335,7 @@ func _refresh_contract_window() -> void:
 		# Кнопка сдачи
 		var btn: Button = Button.new()
 		btn.custom_minimum_size = Vector2(0, 30)
-		if is_done:
-			btn.text = "Заказ выполнен ✅"
-			btn.disabled = true
-		elif can_do:
+		if can_do:
 			var gift_txt: String = " + 🎁" if not contract.get("reward_items", {}).is_empty() else ""
 			btn.text = "Сдать партию материалов (💰 +%d кр.%s)" % [contract.get("reward_credits", 0), gift_txt]
 			btn.pressed.connect(_on_fulfill_contract_pressed.bind(c_id))
@@ -1327,6 +1345,16 @@ func _refresh_contract_window() -> void:
 		vbox.add_child(btn)
 		
 		contracts_list.add_child(card)
+		shown += 1
+
+	# Все доступные заказы сданы — на доске только будущие волны.
+	if shown == 0:
+		var done_lbl: Label = Label.new()
+		done_lbl.text = "📭 Все заказы выполнены. Округа готовит новые поставки — загляните позже!"
+		done_lbl.add_theme_font_size_override("font_size", 13)
+		done_lbl.add_theme_color_override("font_color", Color(0.65, 0.7, 0.75))
+		done_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		contracts_list.add_child(done_lbl)
 	_polish(contract_window)
 
 ## Карточка заказа следующей волны: заказчик и условие открытия, без требований.

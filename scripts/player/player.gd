@@ -30,7 +30,10 @@ var hoe_grip: SkeletonModifier3D
 @export_group("Stats")
 @export var max_health: float = 100.0
 @export var max_energy: float = 100.0
-@export var energy_recovery_rate: float = 0.35
+## Базовая скорость восстановления энергии в покое (%/сек реального времени).
+## Ходьба снижает её в 4 раза, ночь — вдвое, голод/жажда — до четверти;
+## при 24+ ч без сна естественная регенерация выключена совсем.
+@export var energy_recovery_rate: float = 0.5
 @export var max_thirst: float = 100.0
 @export var thirst_decay_rate: float = 0.2
 @export var max_hunger: float = 100.0
@@ -484,11 +487,19 @@ func _handle_energy_regen(delta: float) -> void:
 			energy = move_toward(energy, eff_max, 2.0 * delta)
 			energy_changed.emit(energy, max_energy)
 		elif energy < eff_max:
-			# При бессоннице (>= 24 ч) или сильном голоде/жажде естественная регенерация полностью заблокирована
-			if hours_without_sleep >= sleep_deprivation_threshold or hunger < 20.0 or thirst < 20.0:
+			# Бессонница (>= 24 ч) блокирует естественное восстановление —
+			# силы возвращает только сон.
+			if hours_without_sleep >= sleep_deprivation_threshold:
 				return
-			
+
 			var regen: float = energy_recovery_rate
+			# Голод и жажда снижают восстановление, но не обнуляют его: раньше
+			# при сытости/жажде < 20% регенерация вставала полностью, и энергии
+			# можно было набраться, только непрерывно перекусывая.
+			if hunger < 20.0 or thirst < 20.0:
+				regen *= 0.25
+			elif hunger < 40.0 or thirst < 40.0:
+				regen *= 0.5
 			# При ходьбе восстановление сил снижается в 4 раза (25%)
 			if velocity.length_squared() > 0.5:
 				regen *= 0.25
@@ -971,32 +982,40 @@ func start_rest(hours: float, is_sleep: bool = false) -> void:
 	if DisplayServer.get_name() == "headless" or dc == null or not dc.has_method("advance_hours"):
 		if dc and dc.has_method("advance_hours"):
 			dc.advance_hours(hours)
-		_apply_rest_step(hours, hours, 0.0, is_sleep)
+		_apply_rest_step(hours, hours, hours, is_sleep)
 		_finish_rest(hours, is_sleep)
 		return
 	is_resting = true
+	# Персонаж исчезает из мира на время отдыха/сна.
+	visible = false
+	# Переход рисуется поверх HUD (CanvasLayer выше слоя интерфейса).
+	var layer := CanvasLayer.new()
+	layer.layer = 128
+	get_tree().root.add_child(layer)
 	var overlay: Node = preload("res://scripts/ui/rest_transition.gd").new()
 	overlay.setup(self, dc, hours, is_sleep)
-	get_tree().root.add_child(overlay)
+	layer.add_child(overlay)
+	overlay.tree_exited.connect(layer.queue_free)
 
 func _find_day_cycle() -> Node:
 	if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
 		_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
 	return _day_cycle
 
-## Один шаг симуляции отдыха за hours игровых часов из total (f — доля отдыха).
-## Сон: энергия и здоровье к утру выходят на максимум; организм тратит воду и еду,
+## Один шаг симуляции отдыха за hours игровых часов из total (elapsed — сколько
+## часов отдыха уже прошло, включая этот шаг). Сон: энергия и здоровье к концу
+## выходят на максимум; организм тратит воду и еду (во сне — медленнее),
 ## мокрая одежда сохнет в тепле дома.
-func _apply_rest_step(hours: float, total: float, _elapsed: float, is_sleep: bool) -> void:
+func _apply_rest_step(hours: float, total: float, elapsed: float, is_sleep: bool) -> void:
 	if hours <= 0.0:
 		return
-	var f: float = clampf(hours / maxf(0.01, total), 0.0, 1.0)
+	var frac: float = clampf(elapsed / maxf(0.01, total), 0.0, 1.0)
 	if is_sleep:
 		var eff_max: float = get_effective_max_energy()
-		energy = lerpf(energy, eff_max, f)
+		energy = lerpf(energy, eff_max, frac)
 		energy_changed.emit(energy, max_energy)
-		if hunger >= 35.0 and thirst >= 35.0:
-			health = lerpf(health, max_health, f)
+		if hunger >= 25.0 and thirst >= 25.0:
+			health = lerpf(health, max_health, frac)
 			health_changed.emit(health, max_health)
 		hours_without_sleep = 0.0
 		_last_sleep_warning_hour = 0
@@ -1004,23 +1023,37 @@ func _apply_rest_step(hours: float, total: float, _elapsed: float, is_sleep: boo
 		# Короткий отдых восстанавливает силы слабее полноценного сна.
 		energy = minf(get_effective_max_energy(), energy + 6.0 * hours)
 		energy_changed.emit(energy, max_energy)
-	thirst = maxf(0.0, thirst - thirst_decay_rate * 60.0 * hours)
+	# Расход сил переводим из игровых часов в реальные секунды по текущей
+	# скорости суток (было захардкожено 60 с/ч): при изменённой длине часа
+	# статы должны съедать столько же, сколько при обычной игре.
+	var dc: Node = _find_day_cycle()
+	var sec_per_hour: float = 60.0
+	if dc and dc.has_method("get_seconds_per_game_hour"):
+		sec_per_hour = float(dc.get_seconds_per_game_hour())
+	# Во сне метаболизм замедляется: иначе за ночь сытость и жажда падали
+	# в ноль, а после сна подпрыгивали до 35% — статус персонажа «баговал».
+	var metabolism: float = 0.35 if is_sleep else 0.6
+	thirst = maxf(0.0, thirst - thirst_decay_rate * sec_per_hour * hours * metabolism)
 	thirst_changed.emit(thirst, max_thirst)
-	hunger = maxf(0.0, hunger - hunger_decay_rate * 60.0 * hours)
+	hunger = maxf(0.0, hunger - hunger_decay_rate * sec_per_hour * hours * metabolism)
 	hunger_changed.emit(hunger, max_hunger)
-	wetness = maxf(0.0, wetness - dry_rate_sheltered * 60.0 * hours)
+	wetness = maxf(0.0, wetness - dry_rate_sheltered * sec_per_hour * hours)
 	wetness_changed.emit(wetness, max_wetness)
 
 ## Завершение отдыха: итоговое сообщение и автосохранение после сна.
 func _finish_rest(actual_hours: float, is_sleep: bool) -> void:
 	is_resting = false
+	# Персонаж возвращается в мир.
+	visible = true
 	var hours_int: int = maxi(1, int(round(actual_hours)))
 	if is_sleep:
-		if thirst < 35.0:
-			thirst = 35.0
+		# Просыпаться полностью обессиленным нельзя: нижняя граница сытости
+		# и жажды после сна — 20% (без прежнего прыжка «в ноль и сразу 35%»).
+		if thirst < 20.0:
+			thirst = 20.0
 			thirst_changed.emit(thirst, max_thirst)
-		if hunger < 35.0:
-			hunger = 35.0
+		if hunger < 20.0:
+			hunger = 20.0
 			hunger_changed.emit(hunger, max_hunger)
 		var new_day: int = 0
 		var dc: Node = _find_day_cycle()

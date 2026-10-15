@@ -116,9 +116,17 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	var house = world.find_child("RepairableHouse", true, false)
 	if house and is_instance_valid(house):
 		buildings_data["house_stage"] = house.current_stage if "current_stage" in house else 0
+		# Накопленные внутри дома материалы достройки (стадия применяется,
+		# только когда комплект собран — промежуточные взносы не теряются).
+		if "delivered" in house:
+			buildings_data["house_delivered"] = (house.delivered as Dictionary).duplicate(true)
+			buildings_data["house_delivered_credits"] = int(house.delivered_credits) if "delivered_credits" in house else 0
 	var storage = world.find_child("RepairableStorage", true, false)
 	if storage and is_instance_valid(storage):
 		buildings_data["storage_stage"] = storage.current_stage if "current_stage" in storage else 0
+		if "delivered" in storage:
+			buildings_data["storage_delivered"] = (storage.delivered as Dictionary).duplicate(true)
+			buildings_data["storage_delivered_credits"] = int(storage.delivered_credits) if "delivered_credits" in storage else 0
 	if storage and "storage_inventory" in storage:
 		buildings_data["storage_inventory"] = storage.storage_inventory.export_state()
 	save_data["buildings"] = buildings_data
@@ -188,7 +196,11 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"wear": float(node.wear.condition) if node.wear else 100.0,
 				"fuel_slots": node.fuel_slots.duplicate(true) if node.has_fuel_slots else [],
 				"fuel_burn_left": maxf(0.0, float(node.fuel_burn_left)),
-				"rebuilt": bool(node.rebuilt) if "rebuilt" in node else true
+				"rebuilt": bool(node.rebuilt) if "rebuilt" in node else true,
+				# Компоненты, накопленные внутри станка для текущей работы
+				# (восстановление/ремонт/улучшение идут порциями).
+				"job_stash": node.job_stash.duplicate(true) if "job_stash" in node else {},
+				"job_credits": node.job_credits.duplicate(true) if "job_credits" in node else {}
 			}
 			if node is CampfireScript:
 				machine_data["fire_has_burned"] = node.has_burned
@@ -462,6 +474,9 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			_restore_building_stage(house, int(b_data["house_stage"]))
 		if storage and is_instance_valid(storage) and b_data.has("storage_stage"):
 			_restore_building_stage(storage, int(b_data["storage_stage"]))
+		# Накопленные внутри зданий материалы достройки (если сохранены).
+		_restore_building_delivery(house, b_data, "house")
+		_restore_building_delivery(storage, b_data, "storage")
 	# Старые сейвы не содержат склада: очищаем его, а не дублируем текущие вещи.
 	if storage and "storage_inventory" in storage:
 		storage.storage_inventory.restore_state(save_data.get("buildings", {}).get("storage_inventory", {}))
@@ -597,6 +612,23 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		# старые сохранения не знали о разрушенных станках.
 		if state.has("rebuilt"):
 			machine.set_rebuilt(bool(state["rebuilt"]))
+		# Компоненты, накопленные внутри станка для текущей работы (порционная
+		# достройка): { kind: { item_id: количество } } + кредиты по работам.
+		var saved_stash: Dictionary = state.get("job_stash", {})
+		if saved_stash is Dictionary:
+			for kind in machine.job_stash.keys():
+				var kind_stash: Dictionary = saved_stash.get(str(kind), {})
+				var clean: Dictionary = {}
+				if kind_stash is Dictionary:
+					for item_id in kind_stash.keys():
+						var n: int = int(kind_stash[item_id])
+						if n > 0:
+							clean[str(item_id)] = n
+				machine.job_stash[str(kind)] = clean
+			var saved_credits: Dictionary = state.get("job_credits", {})
+			if saved_credits is Dictionary:
+				for kind in machine.job_credits.keys():
+					machine.job_credits[str(kind)] = maxi(0, int(saved_credits.get(str(kind), 0)))
 		if machine is CampfireScript:
 			machine.has_burned = bool(state.get("fire_has_burned", false)) or machine.is_lit()
 			machine.refresh_fire_visuals(true)
@@ -708,6 +740,21 @@ static func _restore_building_stage(building: Node, stage: int) -> void:
 	if building.has_method("_update_prompt_text"):
 		building._update_prompt_text()
 
+## Накопленные внутри здания материалы/кредиты следующей стадии (достройка
+## за несколько подходов). Ключ префикса: "house" / "storage".
+static func _restore_building_delivery(building: Node, b_data: Dictionary, key: String) -> void:
+	if building == null or not is_instance_valid(building) or not ("delivered" in building):
+		return
+	building.delivered.clear()
+	building.delivered_credits = 0
+	var saved: Dictionary = b_data.get(key + "_delivered", {})
+	if saved is Dictionary:
+		for item_id in saved.keys():
+			var n: int = maxi(0, int(saved[item_id]))
+			if n > 0:
+				building.delivered[str(item_id)] = n
+	building.delivered_credits = maxi(0, int(b_data.get(key + "_delivered_credits", 0)))
+
 static func has_save(file_path: String = SAVE_FILE_NAME) -> bool:
 	return FileAccess.file_exists(file_path)
 
@@ -797,6 +844,16 @@ static func _validate_save_data(data: Dictionary) -> bool:
 	for key in ["house_stage", "storage_stage"]:
 		if buildings.has(key) and not _is_integer(buildings[key], 0.0, 3.0):
 			return false
+	for key in ["house_delivered_credits", "storage_delivered_credits"]:
+		if buildings.has(key) and not _is_integer(buildings[key]):
+			return false
+	for key in ["house_delivered", "storage_delivered"]:
+		if buildings.has(key):
+			if not buildings[key] is Dictionary:
+				return false
+			for item_id in buildings[key]:
+				if ItemDB.get_item(str(item_id)).is_empty() or not _is_integer(buildings[key][item_id]):
+					return false
 	if buildings.has("storage_inventory") and not WarehouseInventory.is_valid_state(buildings["storage_inventory"]):
 		return false
 	var energy: Dictionary = data.get("energy", {})
@@ -879,6 +936,23 @@ static func _validate_save_data(data: Dictionary) -> bool:
 				return false
 			if state.has("rebuilt") and not state["rebuilt"] is bool:
 				return false
+			# Компоненты, накопленные внутри станка для текущей работы.
+			if state.has("job_stash"):
+				if not state["job_stash"] is Dictionary:
+					return false
+				for kind in state["job_stash"]:
+					var kind_stash: Variant = state["job_stash"][kind]
+					if not kind_stash is Dictionary:
+						return false
+					for item_id in kind_stash:
+						if ItemDB.get_item(str(item_id)).is_empty() or not _is_integer(kind_stash[item_id]):
+							return false
+			if state.has("job_credits"):
+				if not state["job_credits"] is Dictionary:
+					return false
+				for kind in state["job_credits"]:
+					if not _is_integer(state["job_credits"][kind]):
+						return false
 	for path in data.get("traders", {}):
 		if not _is_relative_path(path) or not data["traders"][path] is bool:
 			return false

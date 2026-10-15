@@ -179,10 +179,19 @@ func _run_tests() -> void:
 	# 7. Проверка обновления карточек в HUD
 	hud._refresh_contract_window()
 	var cards_count = hud.contracts_list.get_child_count()
-	if cards_count != all_contracts.size():
-		_fail("Число карточек заказов в HUD (%d) не совпадает с числом контрактов (%d)" % [cards_count, all_contracts.size()])
+	# Выполненные заказы снимаются с доски: остаются только актуальные
+	# (невыполненные, включая закрытые волны следующих заказчиков).
+	var expected_cards: int = 0
+	for c in all_contracts:
+		if not ContractDB.is_completed(str(c.get("id", ""))):
+			expected_cards += 1
+	if cards_count != expected_cards:
+		_fail("Число карточек заказов в HUD (%d) не совпадает с числом невыполненных (%d)" % [cards_count, expected_cards])
 		return
-	print("✅ Интерфейс карточек заказов в HUD полностью отображает статусы и награды.")
+	if cards_count >= all_contracts.size():
+		_fail("Выполненные заказы не удаляются из списка доски (%d из %d)" % [cards_count, all_contracts.size()])
+		return
+	print("✅ Выполненные заказы сняты с доски: остались только актуальные (%d из %d)." % [cards_count, all_contracts.size()])
 	
 	hud.close_contract_window()
 	print("========================================")

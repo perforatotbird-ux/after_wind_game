@@ -115,10 +115,17 @@ func _init_materials() -> void:
 	_mat_tilled_wet.roughness = 0.55
 
 func _process(delta: float) -> void:
+	_advance_time(delta)
+
+## Общая симуляция грядки за seconds реальных секунд: высыхание почвы и
+## развитие культуры (обычная игра вызывает её каждый кадр).
+func _advance_time(seconds: float) -> void:
+	if seconds <= 0.0:
+		return
 	# Высыхание почвы
 	if moisture > 0.0:
 		var was_wet: bool = (moisture > 10.0)
-		moisture = max(0.0, moisture - moisture_decay_rate * delta)
+		moisture = max(0.0, moisture - moisture_decay_rate * seconds)
 		if (moisture > 10.0) != was_wet:
 			_update_soil_material()
 
@@ -137,7 +144,7 @@ func _process(delta: float) -> void:
 		if _cached_player and "character_class" in _cached_player and _cached_player.character_class == "farmer":
 			speed_mult *= 1.35
 		
-		var step: float = (100.0 / maxf(0.1, get_growth_time())) * speed_mult * delta
+		var step: float = (100.0 / maxf(0.1, get_growth_time())) * speed_mult * seconds
 		growth_progress = min(100.0, growth_progress + step)
 		
 		if growth_progress >= 100.0:
@@ -147,15 +154,30 @@ func _process(delta: float) -> void:
 		
 		_update_crop_visuals()
 
+## Продвигает рост культур на hours игровых часов (перемотка времени во время
+## отдыха/сна): грядка живёт по тому же реальному времени, что и обычно.
+func advance_hours(hours: float) -> void:
+	if hours <= 0.0:
+		return
+	var sec_per_hour: float = 60.0
+	var tree := get_tree()
+	if tree:
+		var dc: Node = tree.get_first_node_in_group("day_night_cycle")
+		if dc and dc.has_method("get_seconds_per_game_hour"):
+			sec_per_hour = float(dc.get_seconds_per_game_hour())
+	_advance_time(hours * sec_per_hour)
+
 func get_prompt() -> String:
 	if soil_state == SoilState.UNTILLED:
 		return "[E] Вскопать грядку (Нужна мотыга)"
 	
 	if crop_type == "":
+		var seed_id: String = get_active_seed()
+		var seed_txt: String = ": %s" % ItemDB.get_item_name(seed_id) if seed_id != "" else ""
 		if moisture > 10.0:
-			return "[E] Засеять семена (Влажность: %d%%)" % int(moisture)
+			return "[E] Засеять семена%s (Влажность: %d%%)" % [seed_txt, int(moisture)]
 		else:
-			return "[E] Засеять семена / Полить (Сухая земля)"
+			return "[E] Засеять семена%s / Полить (Сухая земля)" % seed_txt
 	
 	var c_name: String = ItemDB.get_item_name(crop_type)
 	if is_ripe:
@@ -176,12 +198,17 @@ func _on_interacted(player: Node) -> void:
 		if not inv:
 			return
 		
-		# Ищем семена в инвентаре
+		# Ищем семена в инвентаре: выбранные игроком (R у делянки или кнопка
+		# в рюкзаке) имеют приоритет, иначе — первые имеющиеся по списку.
 		var seed_to_plant: String = ""
-		for s_id in ["seeds_carrot", "seeds_potato", "seeds_wheat"]:
-			if inv.get_item_count(s_id) > 0:
-				seed_to_plant = s_id
-				break
+		var selected: String = str(player.get("selected_seed")) if player and player.get("selected_seed") != null else ""
+		if selected != "" and inv.get_item_count(selected) > 0 and ItemDB.get_crop_type(selected) in PLOT_CROPS:
+			seed_to_plant = selected
+		if seed_to_plant == "":
+			for s_id in ["seeds_carrot", "seeds_potato", "seeds_wheat"]:
+				if inv.get_item_count(s_id) > 0:
+					seed_to_plant = s_id
+					break
 		
 		if seed_to_plant != "":
 			plant_crop(seed_to_plant, player)
@@ -217,6 +244,27 @@ func _on_interacted(player: Node) -> void:
 	if player.has_method("notify"):
 		var moist_status: String = "земля влажная" if moisture > 15.0 else "требуется полив!"
 		player.notify("🌱 %s растет (%d%%). Почва: %d%% (%s)." % [c_name, int(growth_progress), int(moisture), moist_status])
+
+## Семена, которые встанут на грядку: выбранные игроком (R у делянки или
+## кнопка «Сажать эти семена» в рюкзаке), иначе первые имеющиеся подходящие.
+func get_active_seed() -> String:
+	var p: Node = _cached_player
+	if p == null or not is_instance_valid(p):
+		if get_tree() and get_tree().root:
+			p = get_tree().root.find_child("Player", true, false)
+		if p == null:
+			return ""
+	var inv = p.get("inventory") if "inventory" in p else null
+	if inv == null:
+		return ""
+	var selected: String = str(p.get("selected_seed")) if p.get("selected_seed") != null else ""
+	if selected != "" and inv.get_item_count(selected) > 0 and ItemDB.get_crop_type(selected) in PLOT_CROPS:
+		return selected
+	for crop_id in PLOT_CROPS:
+		var s_id: String = "seeds_" + crop_id
+		if inv.get_item_count(s_id) > 0:
+			return s_id
+	return ""
 
 func till_soil(player: Node) -> bool:
 	var inv = player.get("inventory") if player else null

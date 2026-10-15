@@ -66,8 +66,10 @@ func _ready() -> void:
 	_time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(_time_label)
 
-	var hint := RestTransitionStyle.make_label("Время идёт быстрее…", 14, RestTransitionStyle.COLOR_MUTED)
+	var hint := RestTransitionStyle.make_label("Пока вы отдыхаете, время бежит: урожай растёт, станки работают…", 14, RestTransitionStyle.COLOR_MUTED)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.custom_minimum_size = Vector2(320, 0)
 	box.add_child(hint)
 
 	# Начальный шаг, чтобы статы и время тронулись сразу, а не через 0.2 с.
@@ -89,7 +91,7 @@ func _process(delta: float) -> void:
 			player._apply_rest_step(hours_step, total_hours, float(_steps_done) * hours_step, is_sleep)
 	_clock.queue_redraw()
 	if day_cycle and day_cycle.has_method("get_time_string"):
-		_time_label.text = str(day_cycle.get_time_string())
+		_time_label.text = "⏳ %d ч · %s" % [int(round(total_hours)), str(day_cycle.get_time_string())]
 	if _elapsed >= DURATION:
 		_finish()
 
@@ -103,16 +105,28 @@ func _finish() -> void:
 
 ## Часы со стрелками: часовая — по игровому времени (12-часовой циферблат),
 ## минутная — по минутам; за переход стрелки успевают намотать все отдых-часы.
+## Внешнее кольцо — прогресс отдыха: простая иллюстрация бега времени.
 func _draw_clock() -> void:
 	var c: Control = _clock
 	var center: Vector2 = c.size * 0.5
-	var radius: float = minf(c.size.x, c.size.y) * 0.5 - 4.0
+	var radius: float = minf(c.size.x, c.size.y) * 0.5 - 12.0
 	c.draw_circle(center, radius, Color(0.10, 0.11, 0.14))
 	c.draw_arc(center, radius, 0.0, TAU, 48, RestTransitionStyle.COLOR_ACCENT, 2.0, true)
 	for i in 12:
 		var ang: float = TAU * float(i) / 12.0 - TAU * 0.25
 		var dir: Vector2 = Vector2(cos(ang), sin(ang))
-		c.draw_line(center + dir * radius * 0.82, center + dir * radius * 0.94, RestTransitionStyle.COLOR_MUTED, 2.0)
+		var major: bool = i % 3 == 0
+		c.draw_line(
+			center + dir * radius * (0.80 if major else 0.86),
+			center + dir * radius * 0.94,
+			RestTransitionStyle.COLOR_MUTED if major else RestTransitionStyle.COLOR_DIM,
+			2.5 if major else 1.5
+		)
+	# Прогресс отдыха: дуга заполняется по мере бега времени.
+	var progress: float = clampf(_elapsed / DURATION, 0.0, 1.0)
+	if progress > 0.0:
+		var ring: float = radius + 5.0
+		c.draw_arc(center, ring, -TAU * 0.25, -TAU * 0.25 + TAU * progress, 48, RestTransitionStyle.COLOR_OK, 3.0, true)
 	var hour: float = 0.0
 	if day_cycle and "current_hour" in day_cycle:
 		hour = float(day_cycle.current_hour)

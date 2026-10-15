@@ -68,7 +68,16 @@ func is_zoom_event(mb: InputEventMouseButton) -> bool:
 		return false
 	return not zoom_requires_ctrl or mb.ctrl_pressed or mb.meta_pressed
 
+var _player_ref: Node = null
+
 func _unhandled_input(event: InputEvent) -> void:
+	# Во время отдыха/сна камера не orbiting и не зумится.
+	if get_tree().paused:
+		return
+	if not is_instance_valid(_player_ref) and get_tree() and get_tree().root:
+		_player_ref = get_tree().root.find_child("Player", true, false)
+	if _player_ref and _player_ref.get("is_resting"):
+		return
 	if event is InputEventMouseButton:
 		var mb: InputEventMouseButton = event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_RIGHT:

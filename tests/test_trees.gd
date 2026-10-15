@@ -29,6 +29,10 @@ func _initialize() -> void:
 		var stump := t.get_node_or_null("DepletedVisual") as Node3D
 		check(stump != null and not stump.visible, "%s: пенёк должен быть скрыт до рубки" % p)
 		check(t.required_tool == "axe" and t.resource_id == "wood", "%s: дерево должно рубиться топором и давать древесину" % p)
+		# Маленькое дерево даёт 2 единицы древесины, большой дуб — 3.
+		var expected_wood: int = 3 if p.ends_with("tree_oak.tscn") else 2
+		var total_wood: float = float(t.max_hits) * float(t.yield_per_hit) + float(t.bonus_depleted_yield)
+		check(absf(total_wood - float(expected_wood)) < 0.01, "%s: должно быть %d древесины, есть %.2f" % [p, expected_wood, total_wood])
 		check(t.get_node_or_null("SolidBody/SolidShape") is CollisionShape3D, "%s: нет твёрдой коллизии ствола" % p)
 		check(t.is_in_group("trees"), "%s: не в группе trees" % p)
 		t.free()
@@ -69,7 +73,9 @@ func _process(_d: float) -> bool:
 	for k in tree.max_hits:
 		tree._on_interacted(player)
 	check(tree.is_depleted, "Дерево не срублено после %d ударов топором" % tree.max_hits)
-	check(player.inventory.get_item_count("wood") == wood_before + 2, "С дерева должно быть 2 древесины (8×0.25), есть %d" % (player.inventory.get_item_count("wood") - wood_before))
+	# Маленькое дерево — 2 древесины (8×0.25), большой дуб — 3 (бонус за полную вырубку).
+	var expect_wood: float = float(tree.max_hits) * float(tree.yield_per_hit) + float(tree.bonus_depleted_yield)
+	check(player.inventory.get_item_count("wood") == wood_before + int(expect_wood), "С дерева должно быть %d древесины, есть %d" % [int(expect_wood), player.inventory.get_item_count("wood") - wood_before])
 	check(tree.get_node("DepletedVisual").visible, "Пенёк не появился")
 	return false
 

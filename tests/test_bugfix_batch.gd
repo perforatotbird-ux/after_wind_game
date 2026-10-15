@@ -326,7 +326,8 @@ func _run_tests() -> void:
 	check(not crusher.start_batch("crush_stone", 1, player), "Неисправный станок (0%%) не запускается")
 	var bolt_before: int = inv.get_item_count("bolt")
 	check(not crusher.repair_machine(player), "Ремонт без ресурсов отклонён")
-	check(inv.get_item_count("bolt") == bolt_before, "Ресурсы при неудачном ремонте не списались")
+	# Детали не потерялись: они копятся внутри станка между подходами.
+	check(inv.get_item_count("bolt") + int(crusher.job_stash["repair"].get("bolt", 0)) == bolt_before, "Ресурсы при неудачном ремонте не потерялись")
 	inv.add_item("bolt", 2)
 	inv.add_item("wooden_handle", 1)
 	check(crusher.repair_machine(player), "Ремонт с ресурсами выполнен")
@@ -386,7 +387,9 @@ func _run_tests() -> void:
 	check(player.energy >= 99.9, "Сон восстановил энергию (20 -> %.0f)" % player.energy)
 	check(player.health >= 99.9, "Сон восстановил здоровье (50 -> %.0f)" % player.health)
 	check(player.wetness <= 0.01, "За сон мокрая одежда высохла (80 -> %.0f)" % player.wetness)
-	check(player.thirst >= 35.0 and player.thirst < 40.0, "Жажда после сна не ниже 35 %% (сброс)")
+	# Сон замедляет метаболизм: за 7 ч жажда падает примерно на 29%, а не в ноль.
+	check(player.thirst >= 65.0 and player.thirst < 75.0, "Жажда после 7 ч сна в пределах 70%% (сейчас %.0f)" % player.thirst)
+	check(player.hunger >= 72.0 and player.hunger < 83.0, "Сытость после 7 ч сна в пределах 78%% (сейчас %.0f)" % player.hunger)
 	check(notifications.any(func(t): return "отдыхали 7 ч" in t), "Итог: «Вы отдыхали 7 ч»")
 	check(not player.is_resting, "Флаг отдыха снят")
 	# Короткий отдых слабее сна

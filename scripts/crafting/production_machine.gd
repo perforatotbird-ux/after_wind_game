@@ -118,6 +118,13 @@ var is_machine_running: bool = false
 var is_machine: bool = true
 ## Станок восстановлен/построен. Стартовое значение — requires_rebuild.
 var rebuilt: bool = true
+## Накопленные внутри станка компоненты текущей работы (восстановление,
+## ремонт, качественный ремонт, улучшение): { kind: { item_id: количество } }.
+## Детали переносятся из рюкзака порциями — работу можно вести за несколько
+## подходов, ничего не теряется между ними.
+var job_stash: Dictionary = {"rebuild": {}, "repair": {}, "repair_q": {}, "upgrade": {}}
+## Накопленные кредиты по видам работ (нужны только восстановлению).
+var job_credits: Dictionary = {"rebuild": 0, "repair": 0, "repair_q": 0, "upgrade": 0}
 var active_recipe: Dictionary = {}
 var process_timer: float = 0.0
 ## Длительность одного цикла (с учётом бонусов).
@@ -152,6 +159,8 @@ func _ready() -> void:
 	super._ready()
 	object_name = machine_display_name
 	prompt_action = "Открыть"
+	# Перемотка времени (отдых, сон) должна двигать и производство.
+	add_to_group("production_machines")
 	# Станок без потребления (костёр) не встаёт в сеть — иначе он «просит»
 	# энергию, которой у ручного станка быть не может.
 	if power_draw > 0.0:
@@ -182,6 +191,37 @@ func _ready() -> void:
 ## Станок готов к работе (или ещё нет).
 func is_operational() -> bool:
 	return rebuilt
+
+## Продвигает работу станка на hours игровых часов (перемотка времени во время
+## отдыха/сна): циклы идут, топливо сгорает, продукция копится в станке.
+## Остановленный станок не запускается сам собой.
+func advance_hours(hours: float) -> void:
+	if hours <= 0.0 or not is_machine_running:
+		return
+	var seconds_left: float = hours * _get_seconds_per_game_hour()
+	var step: float = 0.5
+	while seconds_left > 0.0 and is_machine_running and not is_queued_for_deletion():
+		var dt: float = minf(step, seconds_left)
+		seconds_left -= dt
+		if not power_ok:
+			continue
+		if has_fuel_slots and fuel_burn_left <= 0.0 and not _light_next_fuel():
+			# Топливо кончилось: цикл на паузе, сырьё и прогресс не теряются.
+			break
+		if has_fuel_slots:
+			fuel_burn_left = maxf(0.0, fuel_burn_left - dt / level_state.get_fuel_efficiency())
+		process_timer += dt
+		if process_timer >= process_duration:
+			_complete_process()
+
+## Сколько реальных секунд длится один игровой час (из DayNightCycle).
+func _get_seconds_per_game_hour() -> float:
+	var tree := get_tree()
+	if tree:
+		var dc: Node = tree.get_first_node_in_group("day_night_cycle")
+		if dc and dc.has_method("get_seconds_per_game_hour"):
+			return maxf(1.0, float(dc.get_seconds_per_game_hour()))
+	return 60.0
 
 ## Текст состояния: «Работает» / «Разрушена» / «Не построена».
 func get_rebuild_state_name() -> String:
@@ -218,29 +258,173 @@ func can_rebuild(player: Node) -> Dictionary:
 		result["reason"] = "Не хватает ресурсов или кредитов."
 	return result
 
-## Восстанавливает (или строит) станок: списывает ресурсы и кредиты только при
-## успехе. Возвращает true, если станок теперь готов к работе.
+## Что нужно для работы kind ("rebuild" / "repair" / "repair_q" / "upgrade"):
+## {"materials": {...}, "credits": int}.
+func get_job_requirements(kind: String) -> Dictionary:
+	match kind:
+		"rebuild":
+			return {"materials": rebuild_cost.duplicate(), "credits": maxi(0, rebuild_credits)}
+		"repair":
+			return {"materials": repair_cost.duplicate(), "credits": 0}
+		"repair_q":
+			return {"materials": QUALITY_REPAIR_COST.duplicate(), "credits": 0}
+		"upgrade":
+			var costs: Dictionary = UPGRADE_COSTS.get(machine_type, {})
+			var next: Dictionary = costs.get(level_state.level + 1, {}) if level_state else {}
+			return {"materials": next.duplicate(), "credits": 0}
+	return {"materials": {}, "credits": 0}
+
+## Прогресс работы kind с учётом накопленного в станке:
+## {"ready": bool, "materials": {id: [внесено, нужно]}, "credits": [внесено, нужно],
+##   "delivered": int, "need": int} — последние два для компактной кнопки.
+func get_job_progress(kind: String) -> Dictionary:
+	var req: Dictionary = get_job_requirements(kind)
+	var stash: Dictionary = job_stash.get(kind, {})
+	var mats: Dictionary = req.get("materials", {})
+	var out: Dictionary = {
+		"ready": false, "materials": {}, "credits": [0, 0], "delivered": 0, "need": 0
+	}
+	var done: bool = true
+	var need_cr: int = int(req.get("credits", 0))
+	var have_cr: int = int(job_credits.get(kind, 0))
+	out["credits"] = [have_cr, need_cr]
+	out["delivered"] += mini(have_cr, need_cr)
+	out["need"] += need_cr
+	if have_cr < need_cr:
+		done = false
+	for item_id in mats.keys():
+		var need: int = int(mats[item_id])
+		var have: int = int(stash.get(item_id, 0))
+		out["materials"][item_id] = [have, need]
+		out["delivered"] += mini(have, need)
+		out["need"] += need
+		if have < need:
+			done = false
+	out["ready"] = done
+	return out
+
+## Доступна ли работа kind прямо сейчас (без переноса ресурсов).
+func is_job_available(kind: String) -> bool:
+	match kind:
+		"rebuild":
+			return not rebuilt
+		"repair", "repair_q":
+			return wear != null and wear.get_ratio() < 1.0
+		"upgrade":
+			return can_upgrade()
+	return false
+
+## Переносит в станок всё, что есть в рюкзаке (не больше нужного), и, когда
+## комплект собран, выполняет работу. Возвращает true, если работа выполнена
+## этим вызовом.
+func contribute_to_job(player: Node, kind: String) -> bool:
+	if not is_instance_valid(player):
+		return false
+	if not is_job_available(kind):
+		_notify_job_unavailable(player, kind)
+		return false
+	var req: Dictionary = get_job_requirements(kind)
+	var inv = player.get("inventory") if "inventory" in player else null
+	if inv == null:
+		if player.has_method("notify"):
+			player.notify("❌ Инвентарь игрока недоступен.")
+		return false
+
+	if not job_stash.has(kind):
+		job_stash[kind] = {}
+	var stash: Dictionary = job_stash[kind]
+	var need_cr: int = int(req.get("credits", 0))
+	var player_cr: int = int(inv.get("credits")) if "credits" in inv else 0
+	var cr_take: int = clampi(need_cr - int(job_credits.get(kind, 0)), 0, maxi(0, player_cr))
+	if cr_take > 0:
+		inv.spend_credits(cr_take)
+		job_credits[kind] = int(job_credits.get(kind, 0)) + cr_take
+
+	var brought: Array[String] = []
+	var mats: Dictionary = req.get("materials", {})
+	for item_id in mats.keys():
+		var need: int = int(mats[item_id]) - int(stash.get(item_id, 0))
+		if need <= 0:
+			continue
+		var take: int = mini(need, inv.get_item_count(str(item_id)))
+		if take > 0 and inv.remove_item(str(item_id), take):
+			stash[item_id] = int(stash.get(item_id, 0)) + take
+			brought.append("%s ×%d" % [ItemDB.get_item_name(str(item_id)), take])
+
+	var progress: Dictionary = get_job_progress(kind)
+	if not bool(progress.get("ready", false)):
+		if player.has_method("notify"):
+			var msg: String = "📦 Внесено в «%s»:" % object_name
+			if not brought.is_empty():
+				msg += " " + ", ".join(brought)
+			var still: PackedStringArray = []
+			var cr_pair: Array = progress["credits"]
+			if int(cr_pair[0]) < int(cr_pair[1]):
+				still.append("💰 кредиты %d/%d" % [int(cr_pair[0]), int(cr_pair[1])])
+			for item_id in progress["materials"].keys():
+				var pair: Array = progress["materials"][item_id]
+				if int(pair[0]) < int(pair[1]):
+					still.append("%s %s %d/%d" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), int(pair[0]), int(pair[1])])
+			if not still.is_empty():
+				msg += ". Осталось: " + ", ".join(still)
+			player.notify(msg)
+		return false
+
+	# Комплект собран — выполняем работу (внесено ровно по нужному количеству).
+	_apply_job(kind)
+	job_stash[kind] = {}
+	job_credits[kind] = 0
+	return true
+
+func _notify_job_unavailable(player: Node, kind: String) -> void:
+	if not player.has_method("notify"):
+		return
+	match kind:
+		"rebuild":
+			player.notify("✅ «%s» уже готов к работе." % object_name)
+		"repair", "repair_q":
+			player.notify("✅ «%s» полностью исправна — ремонт не нужен." % object_name)
+		"upgrade":
+			player.notify("⬆ «%s» уже максимального уровня (Lv.%d)." % [object_name, level_state.level])
+
+func _apply_job(kind: String) -> void:
+	match kind:
+		"rebuild":
+			set_rebuilt(true)
+			AudioManager.play("build")
+			var title: String = str(rebuild_info.get("title", "готов к работе"))
+			if _last_user and is_instance_valid(_last_user) and _last_user.has_method("notify"):
+				_last_user.notify("🎉 %s восстановлен: %s" % [object_name, title])
+			machine_rebuilt.emit()
+		"repair", "repair_q":
+			var restore: float = QUALITY_REPAIR_RESTORE if kind == "repair_q" else REPAIR_RESTORE
+			wear.repair(wear.max_condition * restore / 100.0)
+			AudioManager.play("build")
+			if _last_user and is_instance_valid(_last_user) and _last_user.has_method("notify"):
+				_last_user.notify("🔧 «%s» отремонтирована (%s): %s" % [
+					object_name, "качественно" if kind == "repair_q" else "обычно", wear.get_status_text()])
+		"upgrade":
+			var ratio: float = wear.get_ratio() if wear else 1.0
+			var next_level: int = level_state.level + 1
+			level_state.set_level(next_level)
+			if wear:
+				wear.max_condition = level_state.get_max_condition()
+				wear.set_condition(ratio * wear.max_condition)
+			AudioManager.play("build")
+			if _last_user and is_instance_valid(_last_user) and _last_user.has_method("notify"):
+				_last_user.notify("⬆ «%s» улучшена до Lv.%d (%s): циклы ×%.2f, ресурс %d, питание ×%.1f." % [
+					object_name, next_level, level_state.get_level_name(), level_state.get_speed_mult(),
+					int(level_state.get_max_condition()), level_state.get_power_mult()])
+			machine_upgraded.emit(next_level)
+
+## Восстанавливает (или строит) станок: компоненты переносятся внутрь станка
+## порциями, станок встаёт в ready, когда комплект собран.
 func rebuild(player: Node) -> bool:
 	if rebuilt:
 		if player and player.has_method("notify"):
 			player.notify("✅ «%s» уже готов к работе." % object_name)
 		return false
-	var check: Dictionary = can_rebuild(player)
-	if not check.get("can_rebuild", false):
-		if player and player.has_method("notify"):
-			player.notify("❌ %s: %s" % [str(rebuild_info.get("title", "Восстановление")), check.get("reason", "")])
-		return false
-	var inv = player.get("inventory")
-	if maxi(0, rebuild_credits) > 0:
-		inv.spend_credits(rebuild_credits)
-	for item_id in rebuild_cost.keys():
-		inv.remove_item(str(item_id), int(rebuild_cost[item_id]))
-	set_rebuilt(true)
-	AudioManager.play("build")
-	if player and player.has_method("notify"):
-		player.notify("🎉 %s восстановлен: %s" % [object_name, str(rebuild_info.get("title", "готов к работе"))])
-	machine_rebuilt.emit()
-	return true
+	return contribute_to_job(player, "rebuild")
 
 ## Ставит станок в готовое состояние (или возвращает в разрушенное).
 func set_rebuilt(value: bool) -> void:
@@ -252,12 +436,16 @@ func set_rebuilt(value: bool) -> void:
 		# Неготовый станок не может быть занятым или повреждённым.
 		cancel_batch()
 		pending_outputs.clear()
+		job_stash["rebuild"] = {}
+		job_credits["rebuild"] = 0
 		if wear:
 			wear.set_condition(wear.max_condition)
 	_update_rebuild_visuals()
 
 ## Тестовый и отладочный ход: минует стоимость и сразу включает станок.
 func force_rebuilt() -> void:
+	job_stash["rebuild"] = {}
+	job_credits["rebuild"] = 0
 	set_rebuilt(true)
 
 func _update_rebuild_visuals() -> void:
@@ -698,10 +886,10 @@ func get_batch_remaining_time() -> float:
 # Износ и ремонт
 # ---------------------------------------------------------------------------
 
-## Ремонт станка: проверяет состояние и наличие ресурсов, списывает их только
-## при успехе и восстанавливает состояние. Обычный ремонт — repair_cost (+50 %),
+## Ремонт станка: детали переносятся внутрь станка порциями, ремонт
+## выполняется, когда комплект собран. Обычный ремонт — repair_cost (+50 %),
 ## качественный (quality = true) — QUALITY_REPAIR_COST (+70 %, стальная пластина).
-## Возвращает true, если ремонт выполнен.
+## Возвращает true, если ремонт выполнен этим вызовом.
 func repair_machine(player: Node, quality: bool = false) -> bool:
 	if wear == null:
 		return false
@@ -709,24 +897,7 @@ func repair_machine(player: Node, quality: bool = false) -> bool:
 		if player and player.has_method("notify"):
 			player.notify("✅ «%s» полностью исправна — ремонт не нужен." % object_name)
 		return false
-	var inv = player.get("inventory") if player and "inventory" in player else null
-	if inv == null:
-		return false
-	var cost: Dictionary = QUALITY_REPAIR_COST if quality else repair_cost
-	var restore: float = QUALITY_REPAIR_RESTORE if quality else REPAIR_RESTORE
-	for item_id in cost.keys():
-		if int(inv.get_item_count(str(item_id))) < int(cost[item_id]):
-			if player.has_method("notify"):
-				player.notify("❌ Для ремонта нужно: %s" % _repair_cost_text(cost))
-			return false
-	for item_id in cost.keys():
-		inv.remove_item(str(item_id), int(cost[item_id]))
-	wear.repair(wear.max_condition * restore / 100.0)
-	AudioManager.play("build")
-	if player.has_method("notify"):
-		player.notify("🔧 «%s» отремонтирована (%s): %s" % [
-			object_name, "качественно" if quality else "обычно", wear.get_status_text()])
-	return true
+	return contribute_to_job(player, "repair_q" if quality else "repair")
 
 func _repair_cost_text(cost: Dictionary = {}) -> String:
 	var use: Dictionary = cost if not cost.is_empty() else repair_cost
@@ -756,9 +927,9 @@ func get_upgrade_cost() -> Dictionary:
 		return {}
 	return UPGRADE_COSTS[machine_type][level_state.level + 1]
 
-## Улучшает станок на месте: списывает детали только при успехе, поднимает
-## уровень (быстрее, долговечнее, мощнее), ресурс износа растёт с сохранением
-## доли состояния. Возвращает true при успешном улучшении.
+## Улучшает станок на месте: детали переносятся внутрь станка порциями,
+## уровень растёт, когда комплект собран (ресурс износа — с сохранением доли
+## состояния). Возвращает true при успешном улучшении этим вызовом.
 func upgrade_machine(player: Node) -> bool:
 	if level_state == null:
 		return false
@@ -770,30 +941,7 @@ func upgrade_machine(player: Node) -> bool:
 		if player and player.has_method("notify"):
 			player.notify("⬆ «%s» уже максимального уровня (Lv.%d)." % [object_name, level_state.level])
 		return false
-	var inv = player.get("inventory") if player and "inventory" in player else null
-	if inv == null:
-		return false
-	var cost: Dictionary = get_upgrade_cost()
-	for item_id in cost.keys():
-		if int(inv.get_item_count(str(item_id))) < int(cost[item_id]):
-			if player.has_method("notify"):
-				player.notify("❌ Для улучшения нужно: %s" % _upgrade_cost_text(cost))
-			return false
-	for item_id in cost.keys():
-		inv.remove_item(str(item_id), int(cost[item_id]))
-	var ratio: float = wear.get_ratio() if wear else 1.0
-	var next_level: int = level_state.level + 1
-	level_state.set_level(next_level)
-	if wear:
-		wear.max_condition = level_state.get_max_condition()
-		wear.set_condition(ratio * wear.max_condition)
-	AudioManager.play("build")
-	if player.has_method("notify"):
-		player.notify("⬆ «%s» улучшена до Lv.%d (%s): циклы ×%.2f, ресурс %d, питание ×%.1f." % [
-			object_name, next_level, level_state.get_level_name(), level_state.get_speed_mult(),
-			int(level_state.get_max_condition()), level_state.get_power_mult()])
-	machine_upgraded.emit(next_level)
-	return true
+	return contribute_to_job(player, "upgrade")
 
 func _upgrade_cost_text(cost: Dictionary) -> String:
 	var parts: PackedStringArray = []

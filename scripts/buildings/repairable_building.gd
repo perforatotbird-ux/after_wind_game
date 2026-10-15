@@ -23,6 +23,13 @@ signal stage_upgraded(building: Node, new_stage: int)
 ## Конфигурация уровней (если пуста, загружаются значения по умолчанию)
 var stages_config: Array[Dictionary] = []
 
+## Накопленные внутри здания материалы следующей стадии: { item_id: количество }.
+## Компоненты переносятся из рюкзака порциями — достройку ведут за несколько
+## подходов, при прерывании ничего не теряется.
+var delivered: Dictionary = {}
+## Накопленные внутри здания кредиты следующей стадии.
+var delivered_credits: int = 0
+
 func _ready() -> void:
 	super._ready()
 	object_name = building_title
@@ -237,41 +244,98 @@ func can_upgrade(player: Node) -> Dictionary:
 	
 	return result
 
-func upgrade(player: Node) -> bool:
-	var check: Dictionary = can_upgrade(player)
-	if not check.get("can_upgrade", false):
-		if player and player.has_method("notify"):
-			player.notify("❌ Невозможно улучшить: " + check.get("reason", ""))
-		return false
-	
+## Прогресс следующей стадии с учётом накопленного внутри здания:
+## {"ready": bool, "credits": [внесено, нужно], "materials": {id: [внесено, нужно]}}.
+func get_delivery_progress() -> Dictionary:
+	var out: Dictionary = {"ready": false, "credits": [0, 0], "materials": {}}
+	if current_stage >= max_stage:
+		return out
 	var next_stage: Dictionary = get_next_stage_data()
-	var inv = player.get("inventory")
-	
-	# Списание кредитов
-	var cost_cr: int = next_stage.get("cost_credits", 0)
-	if cost_cr > 0:
-		inv.spend_credits(cost_cr)
-	
-	# Списание материалов
+	var need_cr: int = int(next_stage.get("cost_credits", 0))
+	out["credits"] = [delivered_credits, need_cr]
 	var mats: Dictionary = next_stage.get("cost_materials", {})
+	var done: bool = delivered_credits >= need_cr
 	for mat_id in mats.keys():
-		var count: int = mats[mat_id]
-		inv.remove_item(mat_id, count)
-	
-	# Повышение стадии
+		var need: int = int(mats[mat_id])
+		var have: int = int(delivered.get(mat_id, 0))
+		out["materials"][mat_id] = [have, need]
+		if have < need:
+			done = false
+	out["ready"] = done
+	return out
+
+## Переносит в здание всё, что есть в рюкзаке (не больше нужного), и, когда
+## комплект собран, применяет стадию. Возвращает true, если стадия применена
+## этим вызовом.
+func contribute(player: Node) -> bool:
+	if current_stage >= max_stage:
+		if player and player.has_method("notify"):
+			player.notify("✅ %s уже полностью восстановлено." % building_title)
+		return false
+	var next_stage: Dictionary = get_next_stage_data()
+	if next_stage.is_empty():
+		return false
+	var inv = player.get("inventory") if player else null
+	if inv == null:
+		if player and player.has_method("notify"):
+			player.notify("❌ Инвентарь игрока недоступен.")
+		return false
+
+	var cost_cr: int = int(next_stage.get("cost_credits", 0))
+	var player_cr: int = int(inv.get("credits")) if "credits" in inv else 0
+	var cr_take: int = clampi(cost_cr - delivered_credits, 0, maxi(0, player_cr))
+	if cr_take > 0:
+		inv.spend_credits(cr_take)
+		delivered_credits += cr_take
+
+	var mats: Dictionary = next_stage.get("cost_materials", {})
+	var brought: Array[String] = []
+	for mat_id in mats.keys():
+		var need: int = int(mats[mat_id]) - int(delivered.get(mat_id, 0))
+		if need <= 0:
+			continue
+		var take: int = mini(need, inv.get_item_count(mat_id))
+		if take > 0 and inv.remove_item(mat_id, take):
+			delivered[mat_id] = int(delivered.get(mat_id, 0)) + take
+			brought.append("%s ×%d" % [ItemDB.get_item_name(mat_id), take])
+
+	var progress: Dictionary = get_delivery_progress()
+	if not bool(progress.get("ready", false)):
+		if player and player.has_method("notify"):
+			var msg: String = "📦 Внесено в «%s»:" % building_title
+			if not brought.is_empty():
+				msg += " " + ", ".join(brought)
+			var still: PackedStringArray = []
+			if int(progress["credits"][0]) < int(progress["credits"][1]):
+				still.append("💰 кредиты %d/%d" % [int(progress["credits"][0]), int(progress["credits"][1])])
+			for mat_id in progress["materials"].keys():
+				var pair: Array = progress["materials"][mat_id]
+				if int(pair[0]) < int(pair[1]):
+					still.append("%s %s %d/%d" % [ItemDB.get_item_icon(mat_id), ItemDB.get_item_name(mat_id), int(pair[0]), int(pair[1])])
+			if not still.is_empty():
+				msg += ". Осталось: " + ", ".join(still)
+			player.notify(msg)
+		return false
+
+	# Комплект собран — применяем стадию (внесено ровно по нужному количеству).
+	delivered.clear()
+	delivered_credits = 0
 	current_stage += 1
 	_apply_stage_perks(player, next_stage)
 	_update_visuals()
 	_update_prompt_text()
 	_play_upgrade_effect()
-	
+
 	stage_upgraded.emit(self, current_stage)
-	
+
 	if player and player.has_method("notify"):
 		var stage_name: String = next_stage.get("name", "Уровень %d" % current_stage)
 		player.notify("🎉 %s восстановлен до стадии: %s!" % [building_title, stage_name])
-	
+
 	return true
+
+func upgrade(player: Node) -> bool:
+	return contribute(player)
 
 func _apply_stage_perks(player: Node, _stage_data: Dictionary) -> void:
 	apply_capacity_bonus(player)
@@ -320,21 +384,25 @@ func _play_upgrade_effect() -> void:
 func can_sleep() -> bool:
 	return building_id == "house" and current_stage >= 1
 
-func sleep(player: Node) -> void:
+func sleep(player: Node, hours: float = -1.0) -> void:
 	if not can_sleep():
 		if player and player.has_method("notify"):
 			player.notify("⚠️ Дом еще недостаточно отремонтирован для сна!")
 		return
 
-	# Сон до 6:00 следующего дня через переход отдыха (часы, ускорение времени).
-	# В headless-режиме и без UI start_rest применяет результат мгновенно.
-	if player and player.has_method("start_rest"):
-		var hours: float = 8.0
+	# hours <= 0 — сон до 6:00 утра следующего дня (поведение по умолчанию);
+	# иначе — выбранная ползунком длительность в диалоге сна.
+	if hours <= 0.0:
+		hours = 8.0
 		var dc: Node = get_tree().root.find_child("DayNightCycle", true, false)
 		if dc and "current_hour" in dc:
 			# Часов до 6:00 утра следующего дня (например, 23:00 -> 7 ч, 07:00 -> 23 ч).
 			hours = (24.0 - float(dc.current_hour)) + 6.0
-		player.start_rest(hours, true)
+	# Сон через переход отдыха (часы, ускорение времени, рост и производство
+	# догоняют перемотку). В headless-режиме и без UI start_rest применяет
+	# результат мгновенно.
+	if player and player.has_method("start_rest"):
+		player.start_rest(maxf(0.5, hours), true)
 		return
 
 	var day_cycle: Node = get_tree().root.find_child("DayNightCycle", true, false)

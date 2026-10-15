@@ -748,7 +748,7 @@ text = "🔨 Восстановить объект"
 visible = false
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-text = "🛏️ Отдохнуть и восстановить силы (100% Энергии)"
+text = "🛏️ Сон — выбрать длительность"
 
 [node name="FooterLabel" type="Label" parent="RepairWindow/Margin/VBox"]
 layout_mode = 2

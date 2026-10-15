@@ -42,6 +42,14 @@ var _season: String = ""
 
 const GROUP: String = "day_night_cycle"
 
+## Группы, чьи процессы живут по игровым часам: рост на делянках, в саду,
+## кустах и грибах, саженцы на пнях и работа станков. При прыжках времени
+## (отдых, сон) они догоняют перемотку — иначе рост стоял бы на месте,
+## пока часы убегают вперёд.
+const TIME_ADVANCE_GROUPS: Array[String] = [
+	"farm_fields", "fruit_trees", "berry_bushes", "mushrooms", "trees", "production_machines", "farmland_plots"
+]
+
 func _ready() -> void:
 	add_to_group(GROUP)
 	if not sun_light:
@@ -154,6 +162,7 @@ func set_time_manually(target_hour: float) -> void:
 	set_time(current_day, target_hour)
 
 func skip_to_morning(target_hour: float = 6.0) -> void:
+	var skipped: float = (24.0 - current_hour) + target_hour
 	current_day += 1
 	current_hour = target_hour
 	_last_reported_minute = -1
@@ -163,6 +172,7 @@ func skip_to_morning(target_hour: float = 6.0) -> void:
 	var hour_int: int = int(current_hour)
 	var minute_int: int = int((current_hour - hour_int) * 60.0)
 	time_changed.emit(current_day, hour_int, minute_int, get_time_string(), current_phase)
+	_notify_time_advance(skipped)
 
 ## Продвигает время на hours игровых часов (переход отдыха, сон).
 ## Сигналы day_passed/time_changed излучаются как при обычном течении времени.
@@ -181,6 +191,28 @@ func advance_hours(hours: float) -> void:
 	var hour_int: int = int(current_hour)
 	var minute_int: int = int((current_hour - hour_int) * 60.0)
 	time_changed.emit(current_day, hour_int, minute_int, get_time_string(), current_phase)
+	# Перемотка должна двигать все часовые процессы мира, а не только часы.
+	_notify_time_advance(hours)
+
+## Догоняет рост и производство на hours игровых часов после прыжка времени.
+## Каждый слушатель сам решает, применимо ли время к нему (саженец растёт,
+## ягоды отрастают в сезон, станок работает только если запущен).
+func _notify_time_advance(hours: float) -> void:
+	if hours <= 0.0 or not is_inside_tree():
+		return
+	var scene := get_tree()
+	if scene == null:
+		return
+	for group_name in TIME_ADVANCE_GROUPS:
+		for node in scene.get_nodes_in_group(group_name):
+			if not is_instance_valid(node) or node == self:
+				continue
+			if node.has_method("advance_hours"):
+				node.advance_hours(hours)
+			elif node.has_method("advance_regrow"):
+				node.advance_regrow(hours)
+			elif node.has_method("advance_growth"):
+				node.advance_growth(hours)
 
 func _update_lighting_and_sky(force: bool) -> void:
 	if not sun_light and not _sky_material and not force:

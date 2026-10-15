@@ -59,7 +59,9 @@ func _run_tests() -> void:
 	check(crusher.can_upgrade(), "Есть следующий уровень и стоимость")
 	var stone_before: int = inv.get_item_count("stone")
 	check(not crusher.upgrade_machine(player), "Без деталей улучшение отклонено")
-	check(inv.get_item_count("stone") == stone_before, "Детали при отказе не списались")
+	# Детали не потерялись: часть могла быть внесена в станок (ремонт/улучшение
+	# идут порциями), но ни одна единица не исчезает.
+	check(inv.get_item_count("stone") + int(crusher.job_stash["upgrade"].get("stone", 0)) == stone_before, "Детали при отказе не потерялись")
 
 	# ---------- 2. Апгрейд до Lv.2 и эффекты ----------
 	inv.add_item("stone", 6)

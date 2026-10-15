@@ -428,12 +428,27 @@ func _refresh_wear() -> void:
 	_wear_label.text = machine.wear.get_status_text()
 	_repair_btn.visible = true
 	_repair_btn.disabled = machine.wear.get_ratio() >= 1.0
-	_repair_btn.tooltip_text = "Восстанавливает +50%% состояния. Ресурсы: %s" % machine._repair_cost_text()
+	_repair_btn.tooltip_text = "Восстанавливает +50%% состояния. Ресурсы: %s. Детали переносятся в станок порциями." % machine._repair_cost_text()
 	# Качественный ремонт: та же кнопка «на месте», но со стальной пластиной.
 	_repair_q_btn.visible = true
 	_repair_q_btn.disabled = machine.wear.get_ratio() >= 1.0
 	_repair_q_btn.tooltip_text = "Стальные детали служат дольше: +70%% состояния. Ресурсы: %s" % machine._repair_cost_text(machine.QUALITY_REPAIR_COST)
+	_refresh_job_button(_repair_btn, "repair", "🔧 Ремонт (+50%)", machine)
+	_refresh_job_button(_repair_q_btn, "repair_q", "✨ Качественный ремонт (+70%)", machine)
 	_refresh_upgrade()
+
+## Кнопка переноса компонентов: показывает, сколько деталей уже внесено
+## в станок (work идёт порциями, применяется по завершении комплекта).
+func _refresh_job_button(btn: Button, kind: String, base_text: String, machine: Node) -> void:
+	if btn == null or machine == null or not machine.has_method("get_job_progress"):
+		return
+	var progress: Dictionary = machine.get_job_progress(kind)
+	var delivered: int = int(progress.get("delivered", 0))
+	var need: int = int(progress.get("need", 0))
+	if delivered > 0:
+		btn.text = "%s (%d/%d)" % [base_text, delivered, need]
+	else:
+		btn.text = base_text
 
 ## Блок улучшения: доступен, пока станок не занят и есть следующий уровень.
 func _refresh_upgrade() -> void:
@@ -443,19 +458,20 @@ func _refresh_upgrade() -> void:
 	if not can:
 		return
 	var next_level: int = machine.get_level() + 1
-	_upgrade_btn.text = "⬆ Улучшить до Lv.%d" % next_level
 	var cost: Dictionary = machine.get_upgrade_cost()
-	var enough: bool = true
 	var parts: PackedStringArray = []
+	var progress: Dictionary = machine.get_job_progress("upgrade")
+	var in_stash: Dictionary = progress.get("materials", {})
 	for item_id in cost.keys():
 		var need: int = int(cost[item_id])
 		var have: int = inventory.get_item_count(str(item_id)) if inventory else 0
-		enough = enough and have >= need
-		parts.append("%s %s %d/%d" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), have, need])
-	_upgrade_btn.disabled = not enough or machine.is_machine_running
+		var inside: int = int(in_stash.get(item_id, [0, need])[0]) if in_stash.has(item_id) else 0
+		parts.append("%s %s %d/%d (в станке %d)" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), have + inside, need, inside])
+	_upgrade_btn.disabled = machine.is_machine_running
+	_upgrade_btn.text = "⬆ Внести детали (Lv.%d) %d/%d" % [next_level, int(progress.get("delivered", 0)), int(progress.get("need", 0))]
 	_upgrade_cost_label.text = "  ·  ".join(parts)
-	_upgrade_btn.tooltip_text = "Улучшенный станок: циклы ×%.2f быстрее, износ меньше, ресурс больше, питание ×%.1f." % [
-		machine.level_state.LEVEL_STATS[next_level]["speed"], machine.level_state.LEVEL_STATS[next_level]["power"]]
+	_upgrade_btn.tooltip_text = "Переносит детали в станок порциями. Когда комплект собран — станок улучшится до Lv.%d: циклы ×%.2f быстрее, износ меньше, ресурс больше, питание ×%.1f." % [
+		next_level, machine.level_state.LEVEL_STATS[next_level]["speed"], machine.level_state.LEVEL_STATS[next_level]["power"]]
 
 func _refresh_fuel() -> void:
 	if _fuel_box == null or machine == null:
@@ -601,21 +617,23 @@ func _refresh_rebuild() -> bool:
 	_rebuild_title.text = "🔨 %s — %s" % [str(machine.object_name), str(info.get("title", "Разрушена"))]
 	_rebuild_desc.text = str(info.get("description", "Станок вышел из строя после бури. Его нужно восстановить, чтобы вернуться к работе."))
 	_rebuild_perks.text = str(info.get("perks", "После восстановления: %s" % str(machine.machine_display_name)))
-	var check: Dictionary = machine.can_rebuild(player)
-	var parts: PackedStringArray = []
 	var req: Dictionary = machine.get_rebuild_requirements()
+	var progress: Dictionary = machine.get_job_progress("rebuild")
+	var parts: PackedStringArray = []
 	if int(req.get("credits", 0)) > 0:
 		var have_cr: int = int(inventory.get("credits")) if "credits" in inventory else 0
 		parts.append("💰 %d/%d кр." % [have_cr, int(req["credits"])])
 	var mats: Dictionary = req.get("materials", {})
+	var in_stash: Dictionary = progress.get("materials", {})
 	for item_id in mats.keys():
 		var need: int = int(mats[item_id])
 		var have: int = inventory.get_item_count(str(item_id)) if inventory else 0
-		parts.append("%s %s %d/%d" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), have, need])
+		var inside: int = int(in_stash.get(item_id, [0, need])[0]) if in_stash.has(item_id) else 0
+		parts.append("%s %s %d/%d (в станке %d)" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), have + inside, need, inside])
 	_rebuild_cost.text = "Нужно: " + ("  ·  ".join(parts) if not parts.is_empty() else "ничего")
-	_rebuild_btn.text = "🔨 %s" % str(info.get("action", "Восстановить"))
-	_rebuild_btn.disabled = not bool(check.get("can_rebuild", false))
-	_rebuild_btn.tooltip_text = str(check.get("reason", ""))
+	_rebuild_btn.text = "🔨 Внести компоненты (%d/%d)" % [int(progress.get("delivered", 0)), int(progress.get("need", 0))]
+	_rebuild_btn.disabled = machine.is_operational()
+	_rebuild_btn.tooltip_text = "Переносит в станок всё, что есть в рюкзаке. Когда комплект собран — станок автоматически восстановится."
 	return false
 
 func _on_rebuild_pressed() -> void:
