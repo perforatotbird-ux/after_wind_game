@@ -67,8 +67,10 @@ const CONFIGS: Dictionary = {
 @export var fruit_regrow_hours: float = 24.0
 @export var regrow_progress: float = 0.0
 @export var growth_progress: float = 0.0
-@export var max_hits: int = 3
-@export var current_hits: int = 3
+@export var max_hits: int = 8
+@export var current_hits: int = 8
+## Накопленная дробная древесина (0.25 за удар, как у лесных деревьев).
+var _wood_pool: float = 0.0
 
 var _visuals_root: Node3D = null
 var _trunk_mesh: MeshInstance3D = null
@@ -329,16 +331,20 @@ func harvest(player: Node) -> int:
 	return count
 
 func chop(player: Node) -> bool:
-	# Энергия тратится как у обычных деревьев (player.consume_energy -> void).
+	# Энергия рубки вдвое меньше базовой (1.5), как у обычных деревьев.
 	if player and player.has_method("consume_energy"):
-		player.consume_energy(3.0)
+		player.consume_energy(1.5)
 
 	current_hits -= 1
 	AudioManager.play("hit_wood")
 
-	# За каждый удар выпадает древесина
+	# Древесина капает дробно (0.25 за удар): целая выдаётся каждую 4-ю.
 	var drop_at: Vector3 = global_position + Vector3(0.0, 0.5, 0.0)
-	DroppedItemScript.give_or_drop(player, "wood", 1, drop_at, get_parent())
+	_wood_pool += 0.25
+	var whole: int = int(floor(_wood_pool))
+	_wood_pool -= float(whole)
+	if whole > 0:
+		DroppedItemScript.give_or_drop(player, "wood", whole, drop_at, get_parent())
 
 	if current_hits <= 0:
 		# Дерево срублено! Возвращаем древесину и саженец
