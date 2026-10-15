@@ -2,7 +2,7 @@
 
 [![Engine: Godot 4.7.2](https://img.shields.io/badge/Engine-Godot%204.7.2-blue.svg)](https://godotengine.org)
 [![Status: Chapter 1](https://img.shields.io/badge/Status-Chapter%201%20%7C%20Base%20Restored-brightgreen.svg)]()
-[![Tests: 52](https://img.shields.io/badge/Godot_tests-52-blue.svg)](tests/)
+[![Tests: 53](https://img.shields.io/badge/Godot_tests-53-blue.svg)](tests/)
 
 > Изометрический 3D-симулятор выживания, добычи, переработки, фермерства, электрогенерации и восстановления разрушенного поселения после катаклизма.
 
@@ -28,6 +28,7 @@ Linux / macOS: `python3 tools/run_tests.py --godot godot`.
 - [Меню и настройки](docs/DOCUMENTATION.md#меню-и-настройки) — стартовое меню, пауза, звук, экран, чувствительность
 - [Инвентарь и грузоподъёмность](docs/DOCUMENTATION.md#инвентарь-и-грузоподъёмность) — клеточный рюкзак с иконками, вес, выброс и подбор предметов
 - [Производство и база](docs/DOCUMENTATION.md#производство-и-база) — окно станка, партии «произвести N единиц»
+- [Модели яблони и абрикоса](docs/DOCUMENTATION.md#модели-яблони-и-абрикоса) — четыре версии с плодами и без, GLB и сцены Godot
 - [Модель вишни](docs/DOCUMENTATION.md#модель-вишни) — дерево с плодами и без, сбор урожая и отрастание
 - [Модель склада](docs/DOCUMENTATION.md#модель-склада) — два состояния по референсам, фонари, подъёмник и 20 ячеек
 - [Модель дома](docs/DOCUMENTATION.md#модель-дома) — разрушенный и восстановленный коттедж, тент и эффекты

@@ -66,7 +66,7 @@ func checks() -> void:
  tree.apply_save_state(data)
  check(not tree._fruits_node.visible and tree._visuals_root.get_child_count()==1,'Saved empty cherry rebuilt correctly')
  tree.apply_save_state({'type':'apple_tree','stage':2,'has_fruit':true})
- check(tree._canopy_mesh is MeshInstance3D and tree._fruits_node.visible,'Apple unchanged when loading another type')
+ check(tree._canopy_mesh==null and tree._fruits_node.visible and tree._fruits_node.has_node('Apples'),'Apple model selected when loading another type')
  tree.apply_save_state({'type':'cherry_tree','stage':2,'has_fruit':true})
  check(tree._canopy_mesh==null and tree._fruits_node.visible,'Loading legacy cherry uses new mesh')
  Seasons.current_season=''
