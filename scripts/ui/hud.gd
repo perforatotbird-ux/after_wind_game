@@ -149,6 +149,7 @@ var _current_active_npc: Node = null
 var _cached_weather_mgr: Node = null
 var _cached_day_cycle: Node = null
 var _cached_season_mgr: Node = null
+var _cached_wind_sys: Node = null
 var _cached_world: Node = null
 
 var style_slot_active: StyleBoxFlat = null
@@ -168,6 +169,12 @@ func _get_season_manager() -> Node:
 	if not is_instance_valid(_cached_season_mgr) and get_tree() and get_tree().root:
 		_cached_season_mgr = get_tree().root.find_child("SeasonManager", true, false)
 	return _cached_season_mgr
+
+## Система ветра (сила ветра для ветряка) — по группе, чтобы HUD не зависел от пути узла.
+func _get_wind_system() -> Node:
+	if not is_instance_valid(_cached_wind_sys) and get_tree():
+		_cached_wind_sys = get_tree().get_first_node_in_group("wind_system")
+	return _cached_wind_sys
 
 func _get_world() -> Node:
 	if not is_instance_valid(_cached_world):
@@ -801,6 +808,12 @@ func update_power_display(stored: float, capacity: float, generation: float, con
 	else:
 		power_label.text = "⚡ Сеть%s: %d%% (%.1f кВт)" % [mode_str, pct, net]
 		power_label.add_theme_color_override("font_color", Color(0.95, 0.8, 0.3))
+
+	# Сила ветра рядом с состоянием сети: от неё напрямую зависит выработка ветряка,
+	# а по ней игрок решает, переключать ли питание на батарею.
+	var wind_sys: Node = _get_wind_system()
+	if wind_sys and wind_sys.has_method("get_wind_speed"):
+		power_label.text += " · 💨 %.1f м/с (%s)" % [wind_sys.get_wind_speed(), wind_sys.get_wind_name().to_lower()]
 
 func _on_inventory_updated() -> void:
 	_update_resource_counters()

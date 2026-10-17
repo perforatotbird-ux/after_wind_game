@@ -15,6 +15,9 @@ extends "res://scripts/interaction/interactable.gd"
 
 const CropDB = preload("res://scripts/farming/crop_db.gd")
 const Meshes = preload("res://scripts/farming/farm_field_meshes.gd")
+## Модели грядки по стадиям: вскопанная земля и посаженная (с холмиками под культуры).
+const BedTilledScene: PackedScene = preload("res://assets/models/farm_plot/farm_plot_tilled.glb")
+const BedMoundedScene: PackedScene = preload("res://assets/models/farm_plot/farm_plot_mounded.glb")
 const Seasons = preload("res://scripts/core/seasons.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 const MeadowDecor = preload("res://scripts/world/meadow_decor.gd")
@@ -72,6 +75,10 @@ var _pile: MeshInstance3D
 var _sign: MeshInstance3D
 var _label: Label3D
 var _soil_mmi: MultiMeshInstance3D
+## Второй слой грядок: модель посаженной земли (клетки с культурой).
+var _soil_mmi_planted: MultiMeshInstance3D
+## Габариты, масштаб и материалы моделей грядки (считается один раз на класс).
+var _bed: Dictionary = {}
 var _crop_mmis: Dictionary = {}
 var _highlight: MeshInstance3D
 
@@ -836,18 +843,103 @@ func _build_nodes() -> void:
 	_label.modulate = Color(1.0, 0.96, 0.85)
 	_label.position = Vector3(0.0, 0.72, 0.06)
 	_sign.add_child(_label)
-	_soil_mmi = MultiMeshInstance3D.new()
-	_soil_mmi.name = "SoilBeds"
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.mesh = Meshes.soil_cell()
-	_soil_mmi.multimesh = mm
-	_soil_mmi.material_override = mat
-	add_child(_soil_mmi)
+	_bed = _bed_data()
+	_soil_mmi = _bed_layer("SoilBeds", _bed["tilled"])
+	_soil_mmi_planted = _bed_layer("SoilBedsPlanted", _bed["planted"])
 	_highlight = _mesh_node("Highlight", Meshes.highlight(1), Meshes.material(false, 0.5))
 	_highlight.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_highlight.visible = false
+
+## Слой грядок: одна модель на клетку, цвет инстанса — влага и удобрение.
+func _bed_layer(layer_name: String, bed: Dictionary) -> MultiMeshInstance3D:
+	var mmi := MultiMeshInstance3D.new()
+	mmi.name = layer_name
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = bed["mesh"]
+	mmi.multimesh = mm
+	mmi.material_override = bed["material"]
+	add_child(mmi)
+	return mmi
+
+## Модель грядки: масштаб под клетку 1×1 м, верх земли — на высоте BED_HEIGHT,
+## туда же садятся культуры.
+static var _bed_cache: Dictionary = {}
+
+static func _bed_data() -> Dictionary:
+	if _bed_cache.is_empty():
+		var tilled: Dictionary = _extract_bed(BedTilledScene)
+		var planted: Dictionary = _extract_bed(BedMoundedScene)
+		var aabb: AABB = tilled["aabb"]
+		var sx: float = 1.0 / aabb.size.x
+		var sz: float = 1.0 / aabb.size.z
+		var sy: float = (sx + sz) * 0.5
+		_bed_cache = {
+			"tilled": tilled,
+			"planted": planted,
+			"scale": Vector3(sx, sy, sz),
+			"y": Meshes.BED_HEIGHT - sy * (aabb.position.y + aabb.size.y),
+			"center": Vector2(
+				-(aabb.position.x + aabb.size.x * 0.5) * sx,
+				-(aabb.position.z + aabb.size.z * 0.5) * sz
+			),
+		}
+	return _bed_cache
+
+static func _extract_bed(scene: PackedScene) -> Dictionary:
+	var root: Node3D = scene.instantiate()
+	var aabb: AABB = _mesh_aabb(root)
+	var mesh: Mesh = null
+	var mat: Material = null
+	var mi: MeshInstance3D = _first_mesh(root)
+	if mi != null:
+		mesh = mi.mesh
+		mat = mesh.surface_get_material(0)
+		if mat != null:
+			mat = mat.duplicate()
+			if mat is StandardMaterial3D:
+				# Цвет инстанса (влага, удобрение) красит текстуру земли.
+				mat.vertex_color_use_as_albedo = true
+	root.free()
+	return {"mesh": mesh, "material": mat, "aabb": aabb}
+
+static func _first_mesh(node: Node) -> MeshInstance3D:
+	if node is MeshInstance3D and node.mesh != null:
+		return node
+	for c in node.get_children():
+		var found: MeshInstance3D = _first_mesh(c)
+		if found != null:
+			return found
+	return null
+
+static func _mesh_aabb(root: Node) -> AABB:
+	var boxes: Array[AABB] = []
+	_collect_boxes(root, Transform3D.IDENTITY, boxes)
+	var total := AABB()
+	for i in boxes.size():
+		total = boxes[i] if i == 0 else total.merge(boxes[i])
+	return total
+
+static func _collect_boxes(node: Node, xf: Transform3D, out: Array[AABB]) -> void:
+	if node is MeshInstance3D and node.mesh != null:
+		out.append((xf * node.get_transform()) * node.mesh.get_aabb())
+	for c in node.get_children():
+		_collect_boxes(c, xf * node.get_transform(), out)
+
+## Место модели грядки в клетке c.
+func _bed_transform(c: Vector2i) -> Transform3D:
+	var scale: Vector3 = _bed["scale"]
+	var origin := Vector3(
+		c.x + 0.5 + _bed["center"].x,
+		_bed["y"],
+		c.y + 0.5 + _bed["center"].y
+	)
+	return Transform3D(Basis.from_scale(scale), origin)
+
+## Тот же сдвиг, но модель сжата в точку: так клетка скрыта в слое.
+static func _bed_hidden(xf: Transform3D) -> Transform3D:
+	return Transform3D(Basis.from_scale(Vector3(0.0001, 0.0001, 0.0001)), xf.origin)
 
 func _mesh_node(n: String, mesh: Mesh, mat: Material) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
@@ -914,7 +1006,7 @@ func _soil_key(i: int) -> int:
 	return int(float(cells[i]["moisture"]) / 10.0) + (100 if cells[i]["fertilized"] else 0)
 
 func _refresh_all_visuals() -> void:
-	if _soil_mmi == null:
+	if _soil_mmi == null or _soil_mmi_planted == null:
 		return
 	_prompt_dirty = true
 	var blueprint: bool = state == State.BLUEPRINT
@@ -935,9 +1027,12 @@ func _refresh_all_visuals() -> void:
 			_label.text = "Делянка %d×%d\nстройка %d%%" % [size.x, size.y, int(build_progress / BUILD_HOURS * 100.0)]
 		_:
 			_label.text = "Делянка %d×%d" % [size.x, size.y]
-	# Грядки: цвет по влаге (сухая — светлая, мокрая — тёмная), удобренная — чуть теплее.
+	# Грядки: вскопанная модель — пустые клетки, посаженная — с культурой.
+	# Цвет по влаге (сухая — светлая, мокрая — тёмная), удобренная — чуть теплее.
 	var mm := _soil_mmi.multimesh
+	var mmp := _soil_mmi_planted.multimesh
 	mm.instance_count = shown
+	mmp.instance_count = shown
 	_visual_keys.resize(cells.size())
 	_soil_keys.resize(cells.size())
 	var lists: Dictionary = {}
@@ -948,12 +1043,15 @@ func _refresh_all_visuals() -> void:
 		var col := Color(1.0, 1.0, 1.0).lerp(Color(0.55, 0.5, 0.48), wet)
 		if d["fertilized"]:
 			col = col * Color(1.0, 0.92, 0.85)
-		var xf := Transform3D(Basis(Vector3.UP, PI * 0.5 * ((c.x * 7 + c.y * 3) % 2) * 0.0), Vector3(c.x + 0.5, 0.0, c.y + 0.5))
-		mm.set_instance_transform(i, xf)
+		var bed := _bed_transform(c)
+		var planted: bool = state == State.READY and d["crop"] != ""
+		mm.set_instance_transform(i, _bed_hidden(bed) if planted else bed)
 		mm.set_instance_color(i, col)
+		mmp.set_instance_transform(i, bed if planted else _bed_hidden(bed))
+		mmp.set_instance_color(i, col)
 		_soil_keys[i] = _soil_key(i)
 		_visual_keys[i] = _cell_key(i) if state == State.READY else ""
-		if state != State.READY or d["crop"] == "":
+		if not planted:
 			continue
 		var stage: int = _stage_of(i)
 		var key: String = "%s|%d|%s" % [d["crop"], stage, d["withered"]]

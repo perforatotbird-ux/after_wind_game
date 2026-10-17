@@ -102,6 +102,19 @@ func _process(_d: float) -> bool:
 	field.advance_hours(12.5)
 	check(field.state == FarmField.State.READY, "За игровой день делянка не построилась")
 	check(field.get_node("SoilBeds").multimesh.instance_count == 12, "Не все грядки видны")
+	# --- Модельные грядки: вскопанная земля и посаженная (с холмиками) ---
+	var planted_mmi: MultiMeshInstance3D = field.get_node_or_null("SoilBedsPlanted")
+	check(planted_mmi != null, "Нет слоя посаженной грядки SoilBedsPlanted")
+	check(planted_mmi != null and planted_mmi.multimesh.instance_count == 12, "Не все посаженные грядки видны")
+	var tilled_mesh: Mesh = field.get_node("SoilBeds").multimesh.mesh
+	check(tilled_mesh != null and tilled_mesh.resource_path.contains("farm_plot_tilled"), "Слой SoilBeds без модели вскопанной земли")
+	check(planted_mmi != null and planted_mmi.multimesh.mesh != null and planted_mmi.multimesh.mesh.resource_path.contains("farm_plot_mounded"), "Слой SoilBedsPlanted без модели посаженной земли")
+	var bed_xf: Transform3D = field._bed_transform(Vector2i(0, 0))
+	var bed_box: AABB = bed_xf * tilled_mesh.get_aabb()
+	check(absf(bed_box.size.x - 1.0) < 0.001 and absf(bed_box.size.z - 1.0) < 0.001, "Модель грядки не вписана в клетку 1×1: %s" % bed_box.size)
+	check(absf(bed_box.end.y - Meshes.BED_HEIGHT) < 0.001, "Верх земли не на высоте грядки: %.4f" % bed_box.end.y)
+	check(bed_box.get_center().x > 0.0 and bed_box.get_center().x < 1.0 and bed_box.get_center().z > 0.0 and bed_box.get_center().z < 1.0, "Модель грядки не отцентрована в клетке 0,0: %s" % bed_box.get_center())
+	check(field._bed_hidden(bed_xf).basis.get_scale().length() < 0.01, "Скрытая клетка не сжата в точку")
 	# --- Посадка: каждая клетка своими семенами ---
 	inv.add_item("seeds_carrot", 5)
 	inv.add_item("seeds_potato", 5)

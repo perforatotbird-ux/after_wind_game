@@ -145,6 +145,13 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			"stored_energy": battery.stored_energy if "stored_energy" in battery else 35.0,
 			"source_mode": int(energy_grid.get("source_mode")) if energy_grid and "source_mode" in energy_grid else 0
 		}
+		# Ветер и износ ветряка: сила ветра определяет выработку, состояние — ремонт.
+		var wind_sys = world.find_child("WindSystem", true, false)
+		if wind_sys and wind_sys.has_method("get_save_state"):
+			save_data["energy"]["wind"] = wind_sys.get_save_state()
+		var turbine_save = world.find_child("WindTurbine", true, false)
+		if turbine_save and turbine_save.has_method("get_save_state"):
+			save_data["energy"]["turbine"] = turbine_save.get_save_state()
 	
 	# 8. Водоснабжение: WaterReservoir удалён из игры (октябрь 2026).
 	# Вода производится игроком: озеро → фильтр/костёр. Секция "water"
@@ -519,6 +526,13 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		var battery = world.find_child("BatteryBank", true, false)
 		if battery and is_instance_valid(battery):
 			battery.stored_energy = stored_val
+		# Ветер и состояние ветряка (в старых сейвах секций нет — остаются текущие).
+		var wind_sys = world.find_child("WindSystem", true, false)
+		if wind_sys and wind_sys.has_method("apply_save_state") and en_data.has("wind"):
+			wind_sys.apply_save_state(en_data["wind"])
+		var turbine_save = world.find_child("WindTurbine", true, false)
+		if turbine_save and turbine_save.has_method("apply_save_state") and en_data.has("turbine"):
+			turbine_save.apply_save_state(en_data["turbine"])
 	
 	# 6. Резервуар воды: удалён из игры. Старые сейвы с секцией "water"
 	# загружаются как есть — секция игнорируется.

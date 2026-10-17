@@ -41,6 +41,7 @@
 [ext_resource type="Script" uid="uid://6hlnruuesgyy" path="res://scripts/world/lighting_env_manager.gd" id="43_lightenv"]
 [ext_resource type="Script" uid="uid://b0lq4gl0t2a4g" path="res://scripts/world/light_lod_manager.gd" id="44_lightlod"]
 [ext_resource type="PackedScene" uid="uid://b2d8s7m4laq1a" path="res://scenes/machines/distiller.tscn" id="45_distiller"]
+[ext_resource type="Script" path="res://scripts/world/wind_system.gd" id="46_wind"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.36, 0.54, 0.75, 1)
@@ -99,6 +100,9 @@ script = ExtResource("40_seasons")
 [node name="LightingEnvManager" type="Node" parent="." unique_id=991936769 node_paths=PackedStringArray("world_environment")]
 script = ExtResource("43_lightenv")
 world_environment = NodePath("../WorldEnvironment")
+
+[node name="WindSystem" type="Node" parent="." unique_id=2026174011 groups=["wind_system"]]
+script = ExtResource("46_wind")
 
 [node name="LightLodManager" type="Node" parent="." unique_id=1085506593]
 script = ExtResource("44_lightlod")

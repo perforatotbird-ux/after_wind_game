@@ -162,42 +162,73 @@ func _run_tests() -> void:
 	# -------------------------------------------------------------
 	# 4. Проверка Ветрогенератора WindTurbine
 	# -------------------------------------------------------------
-	print("\n--- Проверка 4: Ветрогенератор и зависимость генерации от погоды ---")
+	print("\n--- Проверка 4: Ветрогенератор и кривая мощности от силы ветра ---")
+	var wind = world.get_node_or_null("WindSystem")
+	if not wind:
+		_fail("WindSystem отсутствует в мире")
+		return
+	# База ветра берётся из погоды: у ясной погоды ветра мало (затишье).
 	weather_mgr.set_weather(WeatherManager.WeatherType.SUNNY)
-	var out_sunny: float = turbine.get_current_output()
-	if out_sunny != 1.0:
-		_fail("Выработка в солнечную погоду должна быть 1.0 кВт (факт: %f)" % out_sunny)
+	wind.clear_override()
+	if wind.get_weather_base_wind() != 2.0:
+		_fail("База ветра в ясную погоду должна быть 2.0 м/с (факт: %f)" % wind.get_weather_base_wind())
 		return
-	
-	weather_mgr.set_weather(WeatherManager.WeatherType.OVERCAST)
-	var out_overcast: float = turbine.get_current_output()
-	if out_overcast != 2.0:
-		_fail("Выработка в пасмурную погоду должна быть 2.0 кВт (факт: %f)" % out_overcast)
-		return
-	
-	weather_mgr.set_weather(WeatherManager.WeatherType.RAIN)
-	var out_rain: float = turbine.get_current_output()
-	if out_rain != 3.5:
-		_fail("Выработка в дождь должна быть 3.5 кВт (факт: %f)" % out_rain)
-		return
-	
 	weather_mgr.set_weather(WeatherManager.WeatherType.HEAVY_RAIN)
-	var out_heavy: float = turbine.get_current_output()
-	if out_heavy != 5.5:
-		_fail("Выработка в сильный ливень должна быть 5.5 кВт (факт: %f)" % out_heavy)
+	if wind.get_weather_base_wind() != 15.0:
+		_fail("База ветра в ливень должна быть 15.0 м/с (факт: %f)" % wind.get_weather_base_wind())
 		return
-	
+
+	# Затишье: ниже cut-in (3 м/с) ротор стоит и выработки нет.
+	wind.set_wind_speed(2.0)
+	if turbine.get_current_output() != 0.0:
+		_fail("В затишье (2 м/с) выработка должна быть 0 (факт: %f)" % turbine.get_current_output())
+		return
+	if wind.get_wind_name() != "Лёгкий":
+		_fail("Ветер 2 м/с должен называться «Лёгкий» (факт: %s)" % wind.get_wind_name())
+		return
+
+	# Кубический рост: 5 м/с < 9 м/с < 13 м/с (номинал).
+	wind.set_wind_speed(5.0)
+	var out_low: float = turbine.get_current_output()
+	wind.set_wind_speed(9.0)
+	var out_mid: float = turbine.get_current_output()
+	wind.set_wind_speed(13.0)
+	var out_rated: float = turbine.get_current_output()
+	if not (out_low > 0.0 and out_low < out_mid and out_mid < out_rated):
+		_fail("Выработка должна расти с ветром (5→%f, 9→%f, 13→%f)" % [out_low, out_mid, out_rated])
+		return
+	if absf(out_rated - 5.5) > 0.01:
+		_fail("На номинале (13 м/с) выработка должна быть 5.5 кВт (факт: %f)" % out_rated)
+		return
+
+	# Выше cut-out (24 м/с) — аварийная защита: ротор стоит, выработки нет.
+	wind.set_wind_speed(26.0)
+	if turbine.get_current_output() != 0.0:
+		_fail("Выше cut-out (26 м/с) выработка должна быть 0 (защита), факт: %f" % turbine.get_current_output())
+		return
+	if turbine.get_state_text() != "Защита: штормовой ветер":
+		_fail("Состояние при штормовом ветре: «Защита» (факт: %s)" % turbine.get_state_text())
+		return
+
+	# Ротор: крутится при рабочем ветре, стоит в затишье.
+	wind.set_wind_speed(9.0)
 	if turbine.rotor_node:
-		var rot_before: float = turbine.rotor_node.rotation.z
+		var rot_before: Basis = turbine.rotor_node.global_transform.basis
 		turbine._process(0.5)
-		var rot_after: float = turbine.rotor_node.rotation.z
-		if rot_before == rot_after:
+		var rot_after: Basis = turbine.rotor_node.global_transform.basis
+		if rot_before.is_equal_approx(rot_after):
 			_fail("Ротор ветрогенератора должен вращаться во время работы")
 			return
 		print("  • Вращение ротора ветряка функционирует динамически.")
-	
+	wind.set_wind_speed(2.0)
+	var rot_calm_after: Basis = turbine.rotor_node.global_transform.basis
+	turbine._process(0.5)
+	if not rot_calm_after.is_equal_approx(turbine.rotor_node.global_transform.basis):
+		_fail("В затишье ротор должен стоять")
+		return
+
 	turbine.interact(player)
-	print("✅ Ветрогенератор масштабирует мощность от ветра (1.0 -> 2.0 -> 3.5 -> 5.5 кВт).")
+	print("✅ Ветрогенератор считает выработку по силе ветра (0 → кубический рост → 5.5 → 0 в защите).")
 
 	# -------------------------------------------------------------
 	# 5. Проверка Аккумуляторного накопителя BatteryBank
@@ -271,13 +302,14 @@ func _run_tests() -> void:
 	print("\n--- Проверка 7: Энергосеть PowerGrid и статус в HUD ---")
 	power_grid._scan_grid_devices()
 	
-	# Устанавливаем солнечную погоду и ночное время
-	weather_mgr.set_weather(WeatherManager.WeatherType.SUNNY) # генерация 1.0 кВт
+	# Устанавливаем рабочий ветер и ночное время
+	weather_mgr.set_weather(WeatherManager.WeatherType.SUNNY)
+	wind.set_wind_speed(9.0) # ≈1.2 кВт от ветряка
 	day_cycle.current_hour = 23.0 # оба фонаря активны: 0.4 + 0.4 = 0.8 кВт
 
 	power_grid._update_grid(1.0)
 	if power_grid.current_generation < 0.9:
-		_fail("Генерация сети должна учитывать ветряк (~1.0 кВт, факт: %f)" % power_grid.current_generation)
+		_fail("Генерация сети должна учитывать ветряк (~1.2 кВт, факт: %f)" % power_grid.current_generation)
 		return
 	if power_grid.current_consumption < 0.7:
 		_fail("Потребление сети должно учитывать 2 активных фонаря (~0.8 кВт, факт: %f)" % power_grid.current_consumption)

@@ -56,16 +56,25 @@ func _run_tests() -> void:
 	player.energy = 100.0
 	var notes: Array[String] = []
 	player.notification_received.connect(func(t: String): notes.append(t))
-	weather.set_weather(WeatherManagerScript.WeatherType.SUNNY) # генерация 1.0 кВт
+	weather.set_weather(WeatherManagerScript.WeatherType.SUNNY)
+	# Ветер — источник выработки ветряка: форсируем слабый рабочий ветер
+	# (9 м/с ≈ 1.2 кВт — ниже потребления дробилки 3.0 кВт).
+	var wind = world.get_node_or_null("WindSystem")
+	if not wind:
+		_fail("В мире нет WindSystem")
+		return
+	wind.set_wind_speed(9.0)
+	var gen_low: float = turbine.get_current_output()
+	check(gen_low > 0.0 and gen_low < 3.0, "Слабый ветер (9 м/с) даёт мало тока: %.2f кВт" % gen_low)
 	notes.clear() # уведомление о погоде не в счёт
 
 	# ---------- 1. Заряд идёт по КПД 1/3 ----------
 	print("\n--- 1. Заряд идёт по КПД 1/3 ---")
 	grid.source_mode = PowerGridScript.SourceMode.BOTH
 	grid.current_stored = 50.0
-	grid._update_grid(1.0) # генерация 1.0, потребление 0 (день, фонари выключены)
-	check(absf(grid.current_stored - (50.0 + 1.0 / 3.0)) < 0.01,
-		"Заряд за 1 с излишка 1 кВт: +%.2f вместо +1.0 (КПД 1/3)" % (grid.current_stored - 50.0))
+	grid._update_grid(1.0) # потребление 0 (день, фонари выключены)
+	check(absf(grid.current_stored - (50.0 + gen_low / 3.0)) < 0.01,
+		"Заряд за 1 с излишка %.2f кВт: +%.3f вместо +%.3f (КПД 1/3)" % [gen_low, grid.current_stored - 50.0, gen_low / 3.0])
 
 	# ---------- 2. Режим «Ветряк»: слабая генерация не тянет дробилку ----------
 	print("\n--- 2. Источник «Ветряк» ---")
@@ -73,23 +82,24 @@ func _run_tests() -> void:
 	inv.add_item("stone", 20)
 	player.energy = 100.0
 	check(crusher.start_batch("crush_stone", 5, player), "Партия дробилки запущена")
-	grid._update_grid(0.1) # генерация 1.0 < потребление 3.0
-	check(not grid.has_power, "Ветряк (1.0 кВт) не тянет дробилку (3.0 кВт) — сеть обесточена")
+	grid._update_grid(0.1) # генерация ниже потребления 3.0
+	check(not grid.has_power, "Ветряк (%.1f кВт) не тянет дробилку (3.0 кВт) — сеть обесточена" % gen_low)
 	var saw_alert: bool = false
 	var saw_numbers: bool = false
 	for t in notes:
 		if "Не хватает мощности" in t:
 			saw_alert = true
-		if "3.0 кВт" in t and "1.0 кВт" in t:
+		if "3.0 кВт" in t and ("%.1f кВт" % gen_low) in t:
 			saw_numbers = true
 	check(saw_alert, "Алерт «Не хватает мощности» показан игроку")
 	check(saw_numbers, "Алерт содержит цифры дефицита (нужно/генерация)")
 	check(not crusher.power_ok, "Дробилка приостановлена")
 	check(not animator.is_running(), "Анимация дробилки остановлена (маховики не крутятся)")
-	# Шторм: генерации хватает — производство продолжается
-	weather.set_weather(WeatherManagerScript.WeatherType.HEAVY_RAIN) # 5.5 кВт
+	# Номинальный ветер (15 м/с, ливень): генерации хватает — производство продолжается
+	weather.set_weather(WeatherManagerScript.WeatherType.HEAVY_RAIN)
+	wind.set_wind_speed(15.0) # номинал 5.5 кВт
 	grid._update_grid(0.1)
-	check(grid.has_power and crusher.power_ok, "В шторм (5.5 кВт) дробилка работает от ветряка")
+	check(grid.has_power and crusher.power_ok, "При номинальном ветре (5.5 кВт) дробилка работает от ветряка")
 	check(animator.is_running(), "Анимация дробилки снова крутится")
 
 	# ---------- 3. Режим «Батарея»: нагрузка на ёмкость, пауза снимает спрос ----------
@@ -107,6 +117,7 @@ func _run_tests() -> void:
 	check(absf(crusher.get_power_demand()) < 0.001, "Обесточенная дробилка в режиме «Батарея» не держит спрос")
 	# Ветряк вернулся: батарея заряжается с КПД 1/3, при 15 % питание возвращается
 	turbine.is_operational = true
+	wind.set_wind_speed(15.0) # вместе с ветряком вернулся и номинальный ветер
 	var frames: int = 0
 	while not grid.has_power and frames < 60:
 		grid._update_grid(1.0)
