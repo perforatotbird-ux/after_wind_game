@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Каталог предметов, продуктов и материалов — After The Storm</title>
+  <style>
+    :root {
+      --bg-dark: #0b0f17;
+      --bg-card: #131924;
+      --bg-card-hover: #1a2232;
+      --bg-input: #1b2333;
+      --border-color: #263248;
+      --border-focus: #3b82f6;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-amber: #f59e0b;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      --accent-purple: #a855f7;
+      --shadow-sm: 0 2px 6px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 14px rgba(0,0,0,0.4);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding-bottom: 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(180deg, #161e2e 0%, var(--bg-dark) 100%);
+      border-bottom: 1px solid var(--border-color);
+      padding: 36px 0 28px 0;
+      margin-bottom: 24px;
+    }
+
+    .header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .main-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .main-title .badge-game {
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      padding: 3px 10px;
+      border-radius: 9999px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+      max-width: 800px;
+    }
+
+    /* Progress Tracker Card */
+    .tracker-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .tracker-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .tracker-stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tracker-stat-num {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .tracker-stat-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .progress-bar-container {
+      width: 240px;
+      height: 10px;
+      background: #1e293b;
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+      width: 0%;
+      border-radius: 9999px;
+      transition: width 0.3s ease;
+    }
+
+    .btn-batch {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-batch:hover {
+      background: #1d4ed8;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4);
+    }
+
+    /* Control Toolbar */
+    .toolbar {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .toolbar-top {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 260px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 11px 16px 11px 40px;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 16px;
+    }
+
+    .filter-select {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 11px 16px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .view-toggle {
+      display: flex;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .view-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 9px 14px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .view-btn.active {
+      background: #334155;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Category Filter Pills */
+    .category-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .cat-pill {
+      background: #1a2333;
+      border: 1px solid #28354c;
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .cat-pill:hover {
+      background: #25334a;
+      color: #fff;
+    }
+
+    .cat-pill.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+    }
+
+    .cat-pill .count {
+      background: rgba(0,0,0,0.25);
+      padding: 1px 7px;
+      border-radius: 9999px;
+      font-size: 11px;
+    }
+
+    /* Cards Grid */
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+
+    /* Item Card */
+    .item-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      position: relative;
+    }
+
+    .item-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: #3b4e6b;
+    }
+
+    .item-card.is-done {
+      border-color: rgba(16, 185, 129, 0.5);
+      background: #0f1c19;
+    }
+
+    .card-header {
+      padding: 16px 18px 12px 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .item-icon-box {
+      width: 54px;
+      height: 54px;
+      min-width: 54px;
+      background: #1c2637;
+      border: 1px solid #334460;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .item-title-col {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .item-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.3;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .id-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .item-id-badge {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11.5px;
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #334155;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .item-id-badge:hover {
+      background: #334155;
+      color: #38bdf8;
+    }
+
+    .cat-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* Checkbox ready */
+    .ready-check {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .ready-check input {
+      width: 17px;
+      height: 17px;
+      accent-color: #10b981;
+      cursor: pointer;
+    }
+
+    /* Card Body */
+    .card-body {
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: #182232;
+      border: 1px solid #25334a;
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    .stat-lbl {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .item-desc {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    /* Crafting / Usage pills */
+    .craft-meta {
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .craft-line {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      color: var(--text-dim);
+    }
+
+    .craft-line strong {
+      color: var(--text-muted);
+      min-width: 90px;
+    }
+
+    .craft-pill {
+      display: inline-block;
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin: 1px 2px;
+    }
+
+    /* Visual prompt block */
+    .prompt-block {
+      background: #111722;
+      border: 1px solid #232d3f;
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .prompt-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .prompt-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #f59e0b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .prompt-text {
+      font-size: 12px;
+      font-style: italic;
+      color: #94a3b8;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .prompt-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .btn-copy-prompt {
+      flex: 1;
+      background: #1e293b;
+      color: #f1f5f9;
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .btn-copy-prompt:hover {
+      background: #2563eb;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .btn-copy-id {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-copy-id:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    /* Table View */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow-x: auto;
+      box-shadow: var(--shadow-sm);
+      display: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    th {
+      background: #182232;
+      color: var(--text-muted);
+      font-weight: 700;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    tr.is-done td {
+      background: rgba(16, 185, 129, 0.04);
+    }
+
+    .table-icon {
+      font-size: 22px;
+      text-align: center;
+      width: 40px;
+    }
+
+    .table-prompt-cell {
+      max-width: 380px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: #10b981;
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      z-index: 1000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: #161e2e;
+      border: 1px solid #334460;
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 760px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 24px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: #fff;
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .modal-textarea {
+      width: 100%;
+      height: 240px;
+      background: #0f141d;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: #e2e8f0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      padding: 12px;
+      resize: vertical;
+      outline: none;
+    }
+
+    .modal-btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+      background: #334155;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: #475569;
+    }
+
+    /* Empty state */
+    .empty-state {
+      grid-column: 1 / -1;
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .items-grid {
+        grid-template-columns: 1fr;
+      }
+      .toolbar-top {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .tracker-card {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .progress-bar-container {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container header-content">
+      <div class="title-row">
+        <div>
+          <h1 class="main-title">
+            <span>📦 Каталог предметов, ресурсов и материалов</span>
+            <span class="badge-game">After The Storm</span>
+          </h1>
+          <p class="subtitle">
+            Интерактивный реестр всех 118 игровых предметов для каталогизации и генерации визуальных 3D-иконок в Midjourney, Flux, Stable Diffusion и DALL-E.
+          </p>
+        </div>
+      </div>
+
+      <!-- Tracker & Progress Bar -->
+      <div class="tracker-card">
+        <div class="tracker-info">
+          <div class="tracker-stat">
+            <span class="tracker-stat-num" id="stat-total">118</span>
+            <span class="tracker-stat-label">Всего предметов</span>
+          </div>
+          <div class="tracker-stat">
+            <span class="tracker-stat-num" style="color: #10b981;" id="stat-ready">0</span>
+            <span class="tracker-stat-label">Иконок готово</span>
+          </div>
+          <div class="tracker-stat">
+            <span class="tracker-stat-num" style="color: #f59e0b;" id="stat-pending">118</span>
+            <span class="tracker-stat-label">Осталось создать</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+            <span style="font-size: 11px; color: var(--text-dim); text-align: right;" id="progress-text">0% выполнено</span>
+          </div>
+        </div>
+
+        <button class="btn-batch" onclick="openBatchModal()">
+          <span>⚡ Пакетные промпты и экспорт</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-top">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" class="search-input" placeholder="Поиск по названию, ID, станку, описанию..." oninput="handleSearch()">
+        </div>
+
+        <select id="status-filter" class="filter-select" onchange="handleFilterChange()">
+          <option value="all">Все предметы</option>
+          <option value="pending">⏳ Только не созданные</option>
+          <option value="ready">✅ Только готовые</option>
+        </select>
+
+        <select id="sort-select" class="filter-select" onchange="handleSortChange()">
+          <option value="default">Сортировка: По категориям</option>
+          <option value="name_asc">По имени (А → Я)</option>
+          <option value="name_desc">По имени (Я → А)</option>
+          <option value="id_asc">По ID (A → Z)</option>
+          <option value="weight_asc">По весу (легче → тяжелее)</option>
+          <option value="weight_desc">По весу (тяжелее → легче)</option>
+          <option value="price_desc">По цене (дороже → дешевле)</option>
+        </select>
+
+        <div class="view-toggle">
+          <button class="view-btn active" id="btn-view-cards" onclick="setViewMode('cards')">
+            <span>🔲 Карточки</span>
+          </button>
+          <button class="view-btn" id="btn-view-table" onclick="setViewMode('table')">
+            <span>📋 Таблица</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="category-pills" id="category-pills">
+        <button class="cat-pill active" onclick="selectCategory('all', this)">
+          <span>Все категории</span>
+          <span class="count" id="pill-count-all">118</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Cards Container -->
+    <div class="items-grid" id="items-grid"></div>
+
+    <!-- Table Container -->
+    <div class="table-container" id="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px; text-align: center;">Статус</th>
+            <th style="width: 50px; text-align: center;">Иконка</th>
+            <th>ID предмета</th>
+            <th>Название</th>
+            <th>Категория</th>
+            <th>Вес</th>
+            <th>Стак</th>
+            <th>Цена</th>
+            <th>Производство</th>
+            <th>Промпт для генерации</th>
+            <th style="width: 90px; text-align: center;">Копировать</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Batch Modal -->
+  <div class="modal-backdrop" id="batch-modal" onclick="closeModalOnBackdrop(event)">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">⚡ Пакетный экспорт и генерация иконок</h3>
+        <button class="modal-close" onclick="closeBatchModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div class="modal-section-title">Промпты для пакетной генерации (Midjourney / Flux / SDXL / DALL-E)</div>
+          <div class="modal-btn-row" style="margin-bottom: 12px;">
+            <button class="btn-secondary" onclick="generateBatchPrompts('all')">Все 118 предметов</button>
+            <button class="btn-secondary" onclick="generateBatchPrompts('pending')">Только ещё не созданные</button>
+            <button class="btn-secondary" onclick="generateBatchPrompts('active_filter')">По текущему фильтру</button>
+          </div>
+          <textarea id="modal-prompts-area" class="modal-textarea" readonly placeholder="Выберите режим для формирования списка промптов..."></textarea>
+          <div class="modal-btn-row" style="margin-top: 8px;">
+            <button class="btn-batch" onclick="copyModalPrompts()">📋 Скопировать весь текст</button>
+            <button class="btn-secondary" onclick="exportData('json')">📥 Скачать JSON</button>
+            <button class="btn-secondary" onclick="exportData('csv')">📥 Скачать CSV</button>
+            <button class="btn-secondary" style="margin-left: auto; color: #f87171;" onclick="resetAllProgress()">Сбросить отметки</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <span id="toast-icon">✓</span>
+    <span id="toast-msg">Скопировано!</span>
+  </div>
+
+  <script>
+    // Embedded Data
+    const RAW_ITEMS = [{"id": "axe", "name": "Старый топор", "icon": "🪓", "texture": "res://assets/tools/axe_icon.png", "category": "tool", "group_id": "tools", "group_name": "Инструменты и уход", "group_color": "#f97316", "group_icon": "🪓", "section": "Базовые инструменты", "weight": 1.5, "max_stack": 1, "sell_price": 0, "description": "Базовый инструмент для рубки деревьев и заготовки древесины.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Weathered hand axe with worn ash wood handle, forged dark steel head with subtle nicks and dark patina, wrapped with rawhide leather strap", "full_prompt": "Isometric game item icon of Weathered hand axe with worn ash wood handle, forged dark steel head with subtle nicks and dark patina, wrapped with rawhide leather strap, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "pickaxe", "name": "Самодельная кирка", "icon": "⛏", "texture": "res://assets/tools/pickaxe_icon.png", "category": "tool", "group_id": "tools", "group_name": "Инструменты и уход", "group_color": "#f97316", "group_icon": "🪓", "section": "Базовые инструменты", "weight": 2.0, "max_stack": 1, "sell_price": 0, "description": "Базовый инструмент для добычи камня и минералов.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Crude improvised miner pickaxe with salvaged metal head, chipped wooden haft, wrapped with wire reinforcement, post-apocalyptic survival tool", "full_prompt": "Isometric game item icon of Crude improvised miner pickaxe with salvaged metal head, chipped wooden haft, wrapped with wire reinforcement, post-apocalyptic survival tool, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "shovel", "name": "Мотыга", "icon": "⛏", "texture": "res://assets/tools/hoe_icon.tres", "category": "tool", "group_id": "tools", "group_name": "Инструменты и уход", "group_color": "#f97316", "group_icon": "🪓", "section": "Базовые инструменты", "weight": 1.8, "max_stack": 1, "sell_price": 0, "description": "Инструмент для сбора глины, песка и работы с грунтом.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Rustic hand hoe and spade tool with angled iron blade, smoothed birch handle, subtle traces of damp dark earth on blade", "full_prompt": "Isometric game item icon of Rustic hand hoe and spade tool with angled iron blade, smoothed birch handle, subtle traces of damp dark earth on blade, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "bucket", "name": "Ведро", "icon": "💧", "texture": "res://assets/tools/bucket_icon.png", "category": "tool", "group_id": "tools", "group_name": "Инструменты и уход", "group_color": "#f97316", "group_icon": "🪓", "section": "Базовые инструменты", "weight": 1.0, "max_stack": 1, "sell_price": 0, "description": "Используется для набора и переноски чистой воды. Не расходуется.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Galvanized dented tin bucket with wire bail handle and wooden grip, half filled with clear sloshing fresh water", "full_prompt": "Isometric game item icon of Galvanized dented tin bucket with wire bail handle and wooden grip, half filled with clear sloshing fresh water, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "backpack", "name": "Рюкзак", "icon": "🎒", "texture": null, "category": "equipment", "group_id": "tools", "group_name": "Инструменты и уход", "group_color": "#f97316", "group_icon": "🪓", "section": "Базовые инструменты", "weight": 0.5, "max_stack": 1, "sell_price": 0, "description": "Походный рюкзак 1-го уровня (вместимость: 12 слотов).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Rugged canvas rolltop survivor backpack with leather buckle straps, brass eyelets, olive drab and tan fabric, side tool loops", "full_prompt": "Isometric game item icon of Rugged canvas rolltop survivor backpack with leather buckle straps, brass eyelets, olive drab and tan fabric, side tool loops, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "whetstone", "name": "Точильный брусок", "icon": "🪨", "texture": null, "category": "tool", "group_id": "tools", "group_name": "Инструменты и уход", "group_color": "#f97316", "group_icon": "🪓", "section": "Базовые инструменты", "weight": 0.5, "max_stack": 10, "sell_price": 18, "description": "Мелкозернистый кремниевый оселок для правки затупившихся лезвий топора, кирки и мотыги в полевых условиях (+40% заточки).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Rectangular fine-grained gray silicon sharpening stone (whetstone) with smooth beveled edges, subtle water sheen and honing groove", "full_prompt": "Isometric game item icon of Rectangular fine-grained gray silicon sharpening stone (whetstone) with smooth beveled edges, subtle water sheen and honing groove, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "wood", "name": "Древесина", "icon": "🌲", "texture": null, "category": "resource", "group_id": "resources", "group_name": "Базовые ресурсы и ископаемые", "group_color": "#d97706", "group_icon": "⛏️", "section": "Базовые ресурсы (Этап 1, разделы 16, 17)", "weight": 1.0, "max_stack": 50, "sell_price": 0, "description": "Брёвна и ветки, поваленные бурей. Нужны для топлива и опилок.", "style_hint": "Форма: log; Базовый цвет: Color(0.55, 0.36, 0.2), Акцент: Color(0.86, 0.7, 0.46)", "made_in": [], "used_in": [], "prompt_subject": "Two cut wooden logs with rough textured tree bark, annual growth rings visible on clean cross section, rough-hewn timber", "full_prompt": "Isometric game item icon of Two cut wooden logs with rough textured tree bark, annual growth rings visible on clean cross section, rough-hewn timber, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "stone", "name": "Камень", "icon": "⛰", "texture": null, "category": "resource", "group_id": "resources", "group_name": "Базовые ресурсы и ископаемые", "group_color": "#d97706", "group_icon": "⛏️", "section": "Базовые ресурсы (Этап 1, разделы 16, 17)", "weight": 0.25, "max_stack": 50, "sell_price": 0, "description": "Крепкая каменная порода. Измельчается в пыль для кирпичей.", "style_hint": "Форма: rock; Базовый цвет: Color(0.55, 0.56, 0.58), Акцент: Color(0.78, 0.8, 0.82)", "made_in": [], "used_in": [], "prompt_subject": "Chunk of rough gray granite stone with sharp fractured facets, natural mineral textures and subtle quartz specks", "full_prompt": "Isometric game item icon of Chunk of rough gray granite stone with sharp fractured facets, natural mineral textures and subtle quartz specks, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "clay", "name": "Глина", "icon": "🧱", "texture": null, "category": "resource", "group_id": "resources", "group_name": "Базовые ресурсы и ископаемые", "group_color": "#d97706", "group_icon": "⛏️", "section": "Базовые ресурсы (Этап 1, разделы 16, 17)", "weight": 1.2, "max_stack": 50, "sell_price": 0, "description": "Сырая вязкая глина. Основной компонент для обжига кирпичей.", "style_hint": "Форма: clay; Базовый цвет: Color(0.72, 0.42, 0.28), Акцент: Color(0.88, 0.6, 0.45)", "made_in": [], "used_in": [], "prompt_subject": "Lump of moist reddish-brown terracotta sculpting clay with soft finger impressions and smooth earthy plasticity", "full_prompt": "Isometric game item icon of Lump of moist reddish-brown terracotta sculpting clay with soft finger impressions and smooth earthy plasticity, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "sand", "name": "Песок", "icon": "⏳", "texture": null, "category": "resource", "group_id": "resources", "group_name": "Базовые ресурсы и ископаемые", "group_color": "#d97706", "group_icon": "⛏️", "section": "Базовые ресурсы (Этап 1, разделы 16, 17)", "weight": 1.0, "max_stack": 50, "sell_price": 0, "description": "Мелкий речной песок. Необходим для растворов и восстановления построек.", "style_hint": "Форма: pile; Базовый цвет: Color(0.9, 0.8, 0.52), Акцент: Color(1.0, 0.93, 0.7)", "made_in": [], "used_in": [], "prompt_subject": "Neat small mound of golden river sand with fine textured grains, tiny pebble specks and soft dune ripples", "full_prompt": "Isometric game item icon of Neat small mound of golden river sand with fine textured grains, tiny pebble specks and soft dune ripples, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "soil", "name": "Земля", "icon": "🟫", "texture": null, "category": "resource", "group_id": "resources", "group_name": "Базовые ресурсы и ископаемые", "group_color": "#d97706", "group_icon": "⛏️", "section": "Базовые ресурсы (Этап 1, разделы 16, 17)", "weight": 1.0, "max_stack": 50, "sell_price": 0, "description": "Рыхлая земля из жилы. Пока ни во что не перерабатывается.", "style_hint": "Форма: pile; Базовый цвет: Color(0.37, 0.27, 0.18), Акцент: Color(0.55, 0.42, 0.3)", "made_in": [], "used_in": [], "prompt_subject": "Loose mound of dark rich fertile loam soil with small organic flecks and earthy crumble, garden earth", "full_prompt": "Isometric game item icon of Loose mound of dark rich fertile loam soil with small organic flecks and earthy crumble, garden earth, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "coal", "name": "Уголь", "icon": "⚫", "texture": null, "category": "resource", "group_id": "resources", "group_name": "Базовые ресурсы и ископаемые", "group_color": "#d97706", "group_icon": "⛏️", "section": "Базовые ресурсы (Этап 1, разделы 16, 17)", "weight": 0.8, "max_stack": 50, "sell_price": 3, "description": "Каменный уголь из жилы. Топливо для печи: плавка руды и прессование брикетов.", "style_hint": "Форма: coal; Базовый цвет: Color(0.16, 0.15, 0.16), Акцент: Color(0.55, 0.56, 0.62)", "made_in": [], "used_in": [], "prompt_subject": "Several glossy black anthracite coal chunks with crystalline jagged cleavage planes, deep obsidian reflections", "full_prompt": "Isometric game item icon of Several glossy black anthracite coal chunks with crystalline jagged cleavage planes, deep obsidian reflections, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "iron_ore", "name": "Железная руда", "icon": "🟤", "texture": null, "category": "resource", "group_id": "resources", "group_name": "Базовые ресурсы и ископаемые", "group_color": "#d97706", "group_icon": "⛏️", "section": "Базовые ресурсы (Этап 1, разделы 16, 17)", "weight": 1.8, "max_stack": 30, "sell_price": 4, "description": "Порода с рыжими прожилками железа. В печи с углём переплавляется в слиток.", "style_hint": "Форма: ore; Базовый цвет: Color(0.5, 0.48, 0.46), Акцент: Color(0.78, 0.45, 0.24)", "made_in": [], "used_in": [], "prompt_subject": "Rough rocky mineral chunk embedded with reddish-brown oxidized iron veins and metallic hematite luster", "full_prompt": "Isometric game item icon of Rough rocky mineral chunk embedded with reddish-brown oxidized iron veins and metallic hematite luster, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "water", "name": "Сырая вода", "icon": "💧", "texture": null, "category": "resource", "group_id": "resources", "group_name": "Базовые ресурсы и ископаемые", "group_color": "#d97706", "group_icon": "⛏️", "section": "Базовые ресурсы (Этап 1, разделы 16, 17)", "weight": 0.8, "max_stack": 20, "sell_price": 1, "description": "Сырая грунтовая вода. Утоляет немного жажды (+25%), но для пользы её лучше отфильтровать.", "style_hint": "Форма: drop; Базовый цвет: Color(0.25, 0.55, 0.9), Акцент: Color(0.7, 0.88, 1.0)", "made_in": [], "used_in": [], "prompt_subject": "Small splash and droplet of natural fresh groundwater with delicate ripple reflections, clean transparency", "full_prompt": "Isometric game item icon of Small splash and droplet of natural fresh groundwater with delicate ripple reflections, clean transparency, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "stone_dust", "name": "Каменная пыль", "icon": "⚪", "texture": null, "category": "material", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Промежуточные материалы (Этап 3, разделы 18, 19)", "weight": 0.6, "max_stack": 50, "sell_price": 2, "description": "Измельчённый камень из дробилки. Необходима для создания кирпичей.", "style_hint": "Форма: pile; Базовый цвет: Color(0.7, 0.7, 0.72), Акцент: Color(0.92, 0.92, 0.94)", "made_in": [], "used_in": [], "prompt_subject": "Neat conical pile of pale fine gray powdered mineral stone dust, subtle powdery chalk texture", "full_prompt": "Isometric game item icon of Neat conical pile of pale fine gray powdered mineral stone dust, subtle powdery chalk texture, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "sawdust", "name": "Опилки", "icon": "🍂", "texture": null, "category": "material", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Промежуточные материалы (Этап 3, разделы 18, 19)", "weight": 0.3, "max_stack": 50, "sell_price": 1, "description": "Древесные опилки из дробилки. Сырьё для топливных брикетов.", "style_hint": "Форма: pile; Базовый цвет: Color(0.82, 0.66, 0.42), Акцент: Color(0.95, 0.85, 0.62)", "made_in": [], "used_in": [], "prompt_subject": "Loose fluffy pile of light golden-yellow pine wood sawdust and curly wood shavings", "full_prompt": "Isometric game item icon of Loose fluffy pile of light golden-yellow pine wood sawdust and curly wood shavings, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "coal_powder", "name": "Угольный порошок", "icon": "⚫", "texture": null, "category": "material", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Промежуточные материалы (Этап 3, разделы 18, 19)", "weight": 0.4, "max_stack": 50, "sell_price": 7, "description": "Мелкодисперсный угольный порошок из дробилки. Топливная основа и компонент фильтрации.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Fine powdered black charcoal dust in a small neat heap, matte deep carbon texture", "full_prompt": "Isometric game item icon of Fine powdered black charcoal dust in a small neat heap, matte deep carbon texture, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "mortar", "name": "Строительный раствор", "icon": "🪣", "texture": null, "category": "material", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 1.2, "max_stack": 30, "sell_price": 3, "description": "Раствор из каменной пыли, песка и воды. Скрепляет кирпичную кладку при ремонте зданий.", "style_hint": "Форма: sack; Базовый цвет: Color(0.62, 0.6, 0.56), Акцент: Color(0.85, 0.83, 0.78)", "made_in": [], "used_in": [], "prompt_subject": "Open small burlap sack filled with dry light-gray construction mortar and powdered cement", "full_prompt": "Isometric game item icon of Open small burlap sack filled with dry light-gray construction mortar and powdered cement, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "poor_brick", "name": "Говённый кирпич", "icon": "🧱", "texture": null, "category": "product", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 2.0, "max_stack": 50, "sell_price": 8, "description": "Кустарный кирпич раннего этапа. Дешёвый, но активно скупается станцией отправки.", "style_hint": "Форма: brick; Базовый цвет: Color(0.6, 0.4, 0.32), Акцент: Color(0.42, 0.3, 0.25)", "made_in": [], "used_in": [], "prompt_subject": "Unfired rustic sun-dried adobe clay brick with rough porous surface, straw fiber flecks and pale terracotta hue", "full_prompt": "Isometric game item icon of Unfired rustic sun-dried adobe clay brick with rough porous surface, straw fiber flecks and pale terracotta hue, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "fuel_briquette", "name": "Топливный брикет", "icon": "📦", "texture": null, "category": "product", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 1.5, "max_stack": 50, "sell_price": 10, "description": "Прессованный топливный блок из опилок и воды. Высокая теплоотдача и спрос.", "style_hint": "Форма: block; Базовый цвет: Color(0.25, 0.22, 0.2), Акцент: Color(0.5, 0.36, 0.24)", "made_in": [], "used_in": [], "prompt_subject": "Dense cylindrical extruded fuel briquette made of compressed sawdust and charcoal, dark brown-black with central bore hole", "full_prompt": "Isometric game item icon of Dense cylindrical extruded fuel briquette made of compressed sawdust and charcoal, dark brown-black with central bore hole, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "metal_scrap", "name": "Металлолом", "icon": "🔩", "texture": null, "category": "resource", "group_id": "resources", "group_name": "Базовые ресурсы и ископаемые", "group_color": "#d97706", "group_icon": "⛏️", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 2.0, "max_stack": 50, "sell_price": 5, "description": "Ржавые куски арматуры и деталей, разбросанные бурей по двору.", "style_hint": "Форма: scrap; Базовый цвет: Color(0.5, 0.45, 0.42), Акцент: Color(0.78, 0.55, 0.35)", "made_in": [], "used_in": [], "prompt_subject": "Cluster of twisted rusty metal scrap pieces, bent sheet metal with chipped paint, machine bolts and sheared edges", "full_prompt": "Isometric game item icon of Cluster of twisted rusty metal scrap pieces, bent sheet metal with chipped paint, machine bolts and sheared edges, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "fired_brick", "name": "Обожжённый кирпич", "icon": "🧱", "texture": null, "category": "product", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 1.8, "max_stack": 50, "sell_price": 18, "description": "Высокопрочный термостойкий кирпич, закаленный в плавильной печи.", "style_hint": "Форма: brick; Базовый цвет: Color(0.75, 0.3, 0.2), Акцент: Color(0.52, 0.24, 0.18)", "made_in": [], "used_in": [], "prompt_subject": "Solid kiln-fired red clay building brick with sharp edges, uniform terracotta color and rough ceramic texture", "full_prompt": "Isometric game item icon of Solid kiln-fired red clay building brick with sharp edges, uniform terracotta color and rough ceramic texture, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "glass", "name": "Листовое стекло", "icon": "🪟", "texture": null, "category": "product", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 1.2, "max_stack": 40, "sell_price": 22, "description": "Прозрачное закалённое стекло из выплавленного кварцевого песка.", "style_hint": "Форма: pane; Базовый цвет: Color(0.6, 0.85, 0.95), Акцент: Color(1.0, 1.0, 1.0)", "made_in": [], "used_in": [], "prompt_subject": "Clean sheet pane of slightly greenish architectural glass with crisp beveled edges and glossy light reflections", "full_prompt": "Isometric game item icon of Clean sheet pane of slightly greenish architectural glass with crisp beveled edges and glossy light reflections, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "glass_bottle", "name": "Стеклянная бутылка", "icon": "🍾", "texture": null, "category": "material", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 0.3, "max_stack": 40, "sell_price": 16, "description": "Прочная выдувная стеклянная бутылка. Тара для чистой воды, настоев и компотов.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Стеклянная бутылка, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Стеклянная бутылка, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "clay_pot", "name": "Глиняный горшок", "icon": "🏺", "texture": null, "category": "product", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 1.0, "max_stack": 30, "sell_price": 26, "description": "Обожжённый прочный керамический горшок. Используется для хранения и кулинарии.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Глиняный горшок, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Глиняный горшок, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "glassware_set", "name": "Комплект стеклянной посуды", "icon": "🥂", "texture": null, "category": "product", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 1.4, "max_stack": 20, "sell_price": 68, "description": "Изящный комплект граненой стеклянной посуды: графин, стаканы и пиалы.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Комплект стеклянной посуды, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Комплект стеклянной посуды, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "steel_plate", "name": "Стальная пластина", "icon": "🔩", "texture": null, "category": "component", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 1.0, "max_stack": 25, "sell_price": 45, "description": "Закалённая сталь клейма «База»: держит удар и жар. Деталь качественного ремонта и передовых станков.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Стальная пластина, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Стальная пластина, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "precision_gear", "name": "Точная шестерня", "icon": "⚙️", "texture": null, "category": "component", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 0.6, "max_stack": 25, "sell_price": 70, "description": "Шестерня с обкатанными зубьями: не дребезжит и не съедает мощность. Сердце передовой техники.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Точная шестерня, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Точная шестерня, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "steel_ingot", "name": "Стальной слиток", "icon": "⛓️", "texture": null, "category": "product", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 1.6, "max_stack": 20, "sell_price": 78, "description": "Дважды переплавленное железо с присадкой угля. Из него выходят стальные пластины и точные шестерни.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "High-grade refined steel metal ingot with bright silver machined surface, chamfered edges and crisp industrial stamp", "full_prompt": "Isometric game item icon of High-grade refined steel metal ingot with bright silver machined surface, chamfered edges and crisp industrial stamp, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "healing_water", "name": "Целебная вода", "icon": "🧪", "texture": null, "category": "product", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 0.9, "max_stack": 20, "sell_price": 85, "description": "Минерализованный настой на очищенной воде. Утоляет жажду, бодрит и затягивает ссадины (+15 здоровья).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Vintage dark apothecary medicine glass bottle with cork stopper, glowing soft cyan mineral water inside, paper label", "full_prompt": "Isometric game item icon of Vintage dark apothecary medicine glass bottle with cork stopper, glowing soft cyan mineral water inside, paper label, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "iron_ingot", "name": "Железный слиток", "icon": "🪙", "texture": null, "category": "product", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 2.5, "max_stack": 40, "sell_price": 35, "description": "Очищенный железный слиток, выплавленный из металлолома в печи.", "style_hint": "Форма: ingot; Базовый цвет: Color(0.6, 0.63, 0.68), Акцент: Color(0.86, 0.89, 0.93)", "made_in": [], "used_in": [], "prompt_subject": "Classic trapezoidal cast iron metal bar ingot with beveled sides, dark slate-gray metallic sheen and stamped serial code", "full_prompt": "Isometric game item icon of Classic trapezoidal cast iron metal bar ingot with beveled sides, dark slate-gray metallic sheen and stamped serial code, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "clean_water", "name": "Очищенная вода", "icon": "💧", "texture": null, "category": "product", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 0.8, "max_stack": 30, "sell_price": 15, "description": "Кристально чистая фильтрованная вода. Восстанавливает +50% жажды и бодрит (+8 энергии).", "style_hint": "Форма: drop; Базовый цвет: Color(0.35, 0.75, 1.0), Акцент: Color(0.88, 0.97, 1.0)", "made_in": [], "used_in": [], "prompt_subject": "Crystal clear pure drinking water in a clean glass tumbler with light caustics and fresh clarity", "full_prompt": "Isometric game item icon of Crystal clear pure drinking water in a clean glass tumbler with light caustics and fresh clarity, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "bottled_water", "name": "Бутилированная вода", "icon": "🧴", "texture": null, "category": "product", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Готовая продукция (Этап 3, разделы 20, 21, 22; Этап 4, 6)", "weight": 1.1, "max_stack": 30, "sell_price": 52, "description": "Премиальная родниковая вода в герметичной стеклянной бутылке (+85% жажды, +15 энергии, высокая цена сбыта).", "style_hint": "Форма: bottle; Базовый цвет: Color(0.45, 0.75, 0.95), Акцент: Color(0.95, 0.95, 1.0)", "made_in": [], "used_in": [], "prompt_subject": "Reusable military-style green canteen flask filled with clean filtered drinking water, brass cap", "full_prompt": "Isometric game item icon of Reusable military-style green canteen flask filled with clean filtered drinking water, brass cap, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_carrot", "name": "Семена моркови", "icon": "🥕", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.1, "max_stack": 30, "sell_price": 5, "description": "Пакет сортовых семян сочной моркови для посева во влажные борозды.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.85, 0.55, 0.25), Акцент: Color(1.0, 0.8, 0.5)", "made_in": [], "used_in": [], "prompt_subject": "Small paper packet with handwritten carrot illustration, containing tiny oval brown carrot seeds", "full_prompt": "Isometric game item icon of Small paper packet with handwritten carrot illustration, containing tiny oval brown carrot seeds, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_potato", "name": "Семенной картофель", "icon": "🥔", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.2, "max_stack": 30, "sell_price": 6, "description": "Пророщенные клубни картофеля для посадки во взрыхлённую землю.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.65, 0.5, 0.35), Акцент: Color(0.86, 0.73, 0.56)", "made_in": [], "used_in": [], "prompt_subject": "Sprouting seed potato tuber with small purple eyes and young green shoots ready for planting", "full_prompt": "Isometric game item icon of Sprouting seed potato tuber with small purple eyes and young green shoots ready for planting, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_wheat", "name": "Семена пшеницы", "icon": "🌾", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.1, "max_stack": 30, "sell_price": 4, "description": "Отборные яровые зерна пшеницы для засева пахотной грядки.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.88, 0.75, 0.4), Акцент: Color(1.0, 0.93, 0.62)", "made_in": [], "used_in": [], "prompt_subject": "Bundle of golden wheat grains in a small open linen pouch, tied with rustic string", "full_prompt": "Isometric game item icon of Bundle of golden wheat grains in a small open linen pouch, tied with rustic string, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "sapling", "name": "Саженец", "icon": "🌱", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.5, "max_stack": 20, "sell_price": 2, "description": "Молодое деревце с комом земли. Срубленные деревья сами не отрастают: посадите саженец на пень, и через несколько игровых часов там вырастет новое дерево.", "style_hint": "Форма: sapling; Базовый цвет: Color(0.35, 0.7, 0.3), Акцент: Color(0.5, 0.34, 0.2)", "made_in": [], "used_in": [], "prompt_subject": "Wild young deciduous forest sapling sprout with tender green leaves and exposed damp roots", "full_prompt": "Isometric game item icon of Wild young deciduous forest sapling sprout with tender green leaves and exposed damp roots, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_sunflower", "name": "Семена подсолнуха", "icon": "🌻", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.1, "max_stack": 30, "sell_price": 6, "description": "Отборные семена подсолнуха для посева. Любит солнце и устойчив к засухе.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.9, 0.75, 0.2), Акцент: Color(0.3, 0.2, 0.1)", "made_in": [], "used_in": [], "prompt_subject": "Striped black and white sunflower seeds overflowing from a rustic wooden scoop", "full_prompt": "Isometric game item icon of Striped black and white sunflower seeds overflowing from a rustic wooden scoop, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_onion", "name": "Семена лука", "icon": "🧅", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.1, "max_stack": 30, "sell_price": 4, "description": "Чернушка — мелкие семена репчатого лука для посадки ранней весной.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.2, 0.2, 0.2), Акцент: Color(0.5, 0.5, 0.5)", "made_in": [], "used_in": [], "prompt_subject": "Tiny black angular onion seeds next to a small parchment seed packet", "full_prompt": "Isometric game item icon of Tiny black angular onion seeds next to a small parchment seed packet, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_cabbage", "name": "Семена капусты", "icon": "🥬", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.1, "max_stack": 30, "sell_price": 5, "description": "Сортовые семена белокочанной капусты. Требует обильного полива.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.4, 0.6, 0.3), Акцент: Color(0.7, 0.85, 0.5)", "made_in": [], "used_in": [], "prompt_subject": "Small round dark seeds in a neatly tied paper craft envelope", "full_prompt": "Isometric game item icon of Small round dark seeds in a neatly tied paper craft envelope, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_tomato", "name": "Семена томата", "icon": "🍅", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.1, "max_stack": 30, "sell_price": 5, "description": "Семена сочных грунтовых помидоров. Быстро откликаются на летнее тепло.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.85, 0.65, 0.35), Акцент: Color(0.95, 0.85, 0.6)", "made_in": [], "used_in": [], "prompt_subject": "Flat pale yellowish tomato seeds scattered on a piece of craft paper", "full_prompt": "Isometric game item icon of Flat pale yellowish tomato seeds scattered on a piece of craft paper, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_pepper", "name": "Семена перца", "icon": "🫑", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.1, "max_stack": 30, "sell_price": 6, "description": "Семена сладкого болгарского перца. Теплолюбивая культура.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.9, 0.8, 0.4), Акцент: Color(1.0, 0.95, 0.7)", "made_in": [], "used_in": [], "prompt_subject": "Disc-shaped beige bell pepper seeds in a small glass seed vial with cork stopper", "full_prompt": "Isometric game item icon of Disc-shaped beige bell pepper seeds in a small glass seed vial with cork stopper, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_bean", "name": "Семена фасоли", "icon": "🫘", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.15, "max_stack": 30, "sell_price": 4, "description": "Сухие бобы для посадки. Обогащают почву азотом и быстро всходят.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.6, 0.35, 0.2), Акцент: Color(0.85, 0.6, 0.4)", "made_in": [], "used_in": [], "prompt_subject": "Smooth oval mottled pinto beans with glossy colorful seed coats in a small wooden bowl", "full_prompt": "Isometric game item icon of Smooth oval mottled pinto beans with glossy colorful seed coats in a small wooden bowl, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_herbs", "name": "Семена пряных трав", "icon": "🌿", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.1, "max_stack": 30, "sell_price": 3, "description": "Смесь семян укропа, петрушки и базилика. Скороспелая и неприхотливая культура.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.45, 0.7, 0.35), Акцент: Color(0.7, 0.9, 0.6)", "made_in": [], "used_in": [], "prompt_subject": "Fragrant dried herbal flower heads and tiny aromatic herb seeds in a miniature cloth sack", "full_prompt": "Isometric game item icon of Fragrant dried herbal flower heads and tiny aromatic herb seeds in a miniature cloth sack, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_corn", "name": "Семена кукурузы", "icon": "🌽", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.15, "max_stack": 30, "sell_price": 5, "description": "Золотистые зерна сахарной кукурузы. Вырастает в высокие пышные стебли.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.95, 0.8, 0.25), Акцент: Color(1.0, 0.92, 0.5)", "made_in": [], "used_in": [], "prompt_subject": "Hard golden dried maize corn kernels piled on a weathered wooden surface", "full_prompt": "Isometric game item icon of Hard golden dried maize corn kernels piled on a weathered wooden surface, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "seeds_pumpkin", "name": "Семена тыквы", "icon": "🎃", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.2, "max_stack": 30, "sell_price": 7, "description": "Крупные белые семена тыквы. Дают могучие плети и тяжелые плоды.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.92, 0.9, 0.8), Акцент: Color(0.8, 0.6, 0.3)", "made_in": [], "used_in": [], "prompt_subject": "Large flat ivory-white pumpkin seeds with raised rim edges", "full_prompt": "Isometric game item icon of Large flat ivory-white pumpkin seeds with raised rim edges, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "apple_sapling", "name": "Саженец яблони", "icon": "🌱🍎", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.8, "max_stack": 10, "sell_price": 25, "description": "Молодое деревце яблони с крепким корнем. Посадите в саду, чтобы собирать сочные яблоки.", "style_hint": "Форма: sapling; Базовый цвет: Color(0.35, 0.7, 0.3), Акцент: Color(0.85, 0.15, 0.15)", "made_in": [], "used_in": [], "prompt_subject": "Young green apple tree seedling with slender brown stem, root ball wrapped in burlap twine, fresh green leaves", "full_prompt": "Isometric game item icon of Young green apple tree seedling with slender brown stem, root ball wrapped in burlap twine, fresh green leaves, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "pear_sapling", "name": "Саженец груши", "icon": "🌱🍐", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.8, "max_stack": 10, "sell_price": 25, "description": "Привитый саженец медовой груши для сада. Плодоносит крупными сладкими фруктами.", "style_hint": "Форма: sapling; Базовый цвет: Color(0.35, 0.7, 0.3), Акцент: Color(0.82, 0.75, 0.2)", "made_in": [], "used_in": [], "prompt_subject": "Slender young pear tree sapling in a biodegradable peat pot with budding serrated leaves", "full_prompt": "Isometric game item icon of Slender young pear tree sapling in a biodegradable peat pot with budding serrated leaves, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "cherry_sapling", "name": "Саженец вишни", "icon": "🌱🍒", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.8, "max_stack": 10, "sell_price": 30, "description": "Саженец вишнёвого дерева. Весной пышно цветет белым цветом, а летом осыпается ягодами.", "style_hint": "Форма: sapling; Базовый цвет: Color(0.35, 0.7, 0.3), Акцент: Color(0.68, 0.05, 0.15)", "made_in": [], "used_in": [], "prompt_subject": "Young cherry tree whip sapling with reddish bark, delicate tender green foliage and burlap root wrap", "full_prompt": "Isometric game item icon of Young cherry tree whip sapling with reddish bark, delicate tender green foliage and burlap root wrap, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "apricot_sapling", "name": "Саженец абрикоса", "icon": "🌱🍑", "texture": null, "category": "seeds", "group_id": "seeds", "group_name": "Семена и саженцы", "group_color": "#10b981", "group_icon": "🌱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.8, "max_stack": 10, "sell_price": 30, "description": "Привитый саженец абрикосового дерева. Любит летнее солнце и приносит сочные золотистые плоды.", "style_hint": "Форма: sapling; Базовый цвет: Color(0.35, 0.7, 0.3), Акцент: Color(0.96, 0.60, 0.15)", "made_in": [], "used_in": [], "prompt_subject": "Hardy young apricot fruit tree sapling with warm brown bark and vibrant heart-shaped leaves", "full_prompt": "Isometric game item icon of Hardy young apricot fruit tree sapling with warm brown bark and vibrant heart-shaped leaves, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "carrot", "name": "Свежая морковь", "icon": "🥕", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.3, "max_stack": 30, "sell_price": 14, "description": "Хрустящая сладкая морковь прямо с грядки (+28% сытости, +12% жажды, +10 энергии).", "style_hint": "Форма: carrot; Базовый цвет: Color(0.95, 0.5, 0.15), Акцент: Color(0.35, 0.7, 0.25)", "made_in": [], "used_in": [], "prompt_subject": "Freshly harvested bright orange carrot with green feathery top foliage, tiny root hairs", "full_prompt": "Isometric game item icon of Freshly harvested bright orange carrot with green feathery top foliage, tiny root hairs, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "red_berry", "name": "Красная Ягода", "icon": "🍒", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.05, "max_stack": 40, "sell_price": 4, "description": "Кисло-сладкая ягода с куста, растёт весной и летом (+6% сытости, +8% жажды, +4 силы; здоровье не лечит).", "style_hint": "Форма: berries; Базовый цвет: Color(0.78, 0.08, 0.1), Акцент: Color(0.3, 0.6, 0.2)", "made_in": [], "used_in": [], "prompt_subject": "Cluster of wild glossy scarlet-red forest berries on a small twig with green leaves", "full_prompt": "Isometric game item icon of Cluster of wild glossy scarlet-red forest berries on a small twig with green leaves, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "blue_berry", "name": "Синяя Ягода", "icon": "🫐", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.05, "max_stack": 40, "sell_price": 5, "description": "Терпкая морозная ягода, вызревает зимой (+4% сытости, +3% жажды, +9 силы; здоровье не лечит).", "style_hint": "Форма: berries; Базовый цвет: Color(0.18, 0.25, 0.75), Акцент: Color(0.3, 0.6, 0.2)", "made_in": [], "used_in": [], "prompt_subject": "Cluster of wild indigo-blue bilberries / blueberries with characteristic frosty whitish bloom", "full_prompt": "Isometric game item icon of Cluster of wild indigo-blue bilberries / blueberries with characteristic frosty whitish bloom, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "potato", "name": "Картофель", "icon": "🥔", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.4, "max_stack": 30, "sell_price": 18, "description": "Питательные плотные клубни картофеля (+42% сытости, +15 энергии).", "style_hint": "Форма: potato; Базовый цвет: Color(0.75, 0.6, 0.38), Акцент: Color(0.9, 0.8, 0.6)", "made_in": [], "used_in": [], "prompt_subject": "Earthy brown potato tuber with natural eyes and subtle dusting of rich soil", "full_prompt": "Isometric game item icon of Earthy brown potato tuber with natural eyes and subtle dusting of rich soil, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "wheat", "name": "Сноп пшеницы", "icon": "🌾", "texture": null, "category": "crop", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.5, "max_stack": 40, "sell_price": 12, "description": "Золотистые созревшие колосья пшеницы. Сырье для помола муки и выпечки.", "style_hint": "Форма: wheat; Базовый цвет: Color(0.92, 0.78, 0.35), Акцент: Color(0.7, 0.55, 0.2)", "made_in": [], "used_in": [], "prompt_subject": "Sheaf of ripe golden-yellow wheat stalks tied with twine, heavy wheat ears drooping slightly", "full_prompt": "Isometric game item icon of Sheaf of ripe golden-yellow wheat stalks tied with twine, heavy wheat ears drooping slightly, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "bread", "name": "Свежий хлеб", "icon": "🍞", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.5, "max_stack": 20, "sell_price": 48, "description": "Ароматный домашний хлеб из печи (+65% сытости, +25 энергии).", "style_hint": "Форма: bread; Базовый цвет: Color(0.72, 0.45, 0.2), Акцент: Color(0.88, 0.65, 0.35)", "made_in": [], "used_in": [], "prompt_subject": "Golden-crusted rustic round sourdough bread loaf with flour dusting and artisan slash score across top", "full_prompt": "Isometric game item icon of Golden-crusted rustic round sourdough bread loaf with flour dusting and artisan slash score across top, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "sunflower_seeds", "name": "Семечки подсолнуха", "icon": "🌻", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.2, "max_stack": 40, "sell_price": 15, "description": "Питательные масличные семечки подсолнуха (+16% сытости, +14 энергии). Можно употреблять в пищу или пустить на семена.", "style_hint": "Форма: seeds; Базовый цвет: Color(0.22, 0.2, 0.18), Акцент: Color(0.9, 0.75, 0.2)", "made_in": [], "used_in": [], "prompt_subject": "Large ripe sunflower head full of mature black and white seeds, yellow ray petals around rim", "full_prompt": "Isometric game item icon of Large ripe sunflower head full of mature black and white seeds, yellow ray petals around rim, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "onion", "name": "Репчатый лук", "icon": "🧅", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.2, "max_stack": 30, "sell_price": 12, "description": "Острый репчатый лук. Укрепляет иммунитет и служит ценной приправой (+14% сытости, +5 здоровья).", "style_hint": "Форма: onion; Базовый цвет: Color(0.82, 0.58, 0.35), Акцент: Color(0.45, 0.75, 0.3)", "made_in": [], "used_in": [], "prompt_subject": "Glossy copper-skinned round yellow onion with dried papery outer layers and root tuft", "full_prompt": "Isometric game item icon of Glossy copper-skinned round yellow onion with dried papery outer layers and root tuft, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "cabbage", "name": "Кочан капусты", "icon": "🥬", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.6, "max_stack": 20, "sell_price": 22, "description": "Сочный хрустящий кочан капусты (+32% сытости, +18% жажды, +10 энергии).", "style_hint": "Форма: cabbage; Базовый цвет: Color(0.42, 0.72, 0.35), Акцент: Color(0.7, 0.88, 0.55)", "made_in": [], "used_in": [], "prompt_subject": "Dense round head of leafy green savoy cabbage with textured crinkled leaves and morning dew", "full_prompt": "Isometric game item icon of Dense round head of leafy green savoy cabbage with textured crinkled leaves and morning dew, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "tomato", "name": "Спелый томат", "icon": "🍅", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.25, "max_stack": 30, "sell_price": 16, "description": "Спелый мясистый помидор прямо с куста (+20% сытости, +22% жажды).", "style_hint": "Форма: tomato; Базовый цвет: Color(0.88, 0.22, 0.15), Акцент: Color(0.35, 0.7, 0.25)", "made_in": [], "used_in": [], "prompt_subject": "Plump vine-ripened bright red tomato with green calyx and five-pointed star stem", "full_prompt": "Isometric game item icon of Plump vine-ripened bright red tomato with green calyx and five-pointed star stem, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "pepper", "name": "Сладкий перец", "icon": "🫑", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.25, "max_stack": 30, "sell_price": 18, "description": "Хрустящий сладкий перец, богатый витаминами (+22% сытости, +15% жажды, +12 энергии).", "style_hint": "Форма: pepper; Базовый цвет: Color(0.85, 0.18, 0.12), Акцент: Color(0.35, 0.7, 0.25)", "made_in": [], "used_in": [], "prompt_subject": "Vibrant glossy red bell pepper with smooth curving sides and thick green stalk", "full_prompt": "Isometric game item icon of Vibrant glossy red bell pepper with smooth curving sides and thick green stalk, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "bean", "name": "Стручковая фасоль", "icon": "🫘", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.15, "max_stack": 40, "sell_price": 10, "description": "Нежные стручки фасоли, превосходный источник белка (+18% сытости, +15 энергии).", "style_hint": "Форма: bean; Базовый цвет: Color(0.38, 0.68, 0.28), Акцент: Color(0.6, 0.85, 0.4)", "made_in": [], "used_in": [], "prompt_subject": "Fresh crisp green bean pods snapped open revealing tender young beans inside", "full_prompt": "Isometric game item icon of Fresh crisp green bean pods snapped open revealing tender young beans inside, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "herbs", "name": "Пряные травы", "icon": "🌿", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.1, "max_stack": 40, "sell_price": 14, "description": "Ароматный сбор лечебных и кулинарных трав (+8% сытости, +8 здоровья, +12 энергии).", "style_hint": "Форма: herbs; Базовый цвет: Color(0.3, 0.68, 0.3), Акцент: Color(0.55, 0.85, 0.45)", "made_in": [], "used_in": [], "prompt_subject": "Freshly tied culinary bouquet of green thyme, rosemary and parsley with garden twine", "full_prompt": "Isometric game item icon of Freshly tied culinary bouquet of green thyme, rosemary and parsley with garden twine, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "corn", "name": "Початок кукурузы", "icon": "🌽", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.35, "max_stack": 30, "sell_price": 20, "description": "Сладкий налитой початок кукурузы (+36% сытости, +18 энергии).", "style_hint": "Форма: corn; Базовый цвет: Color(0.95, 0.82, 0.2), Акцент: Color(0.4, 0.72, 0.3)", "made_in": [], "used_in": [], "prompt_subject": "Ripe ear of sweet yellow corn with partially peeled pale husk revealing rows of golden kernels", "full_prompt": "Isometric game item icon of Ripe ear of sweet yellow corn with partially peeled pale husk revealing rows of golden kernels, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "pumpkin", "name": "Спелая тыква", "icon": "🎃", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 1.5, "max_stack": 15, "sell_price": 35, "description": "Большая спелая тыква с золотистой мякотью (+55% сытости, +15% жажды, +20 энергии).", "style_hint": "Форма: pumpkin; Базовый цвет: Color(0.92, 0.52, 0.12), Акцент: Color(0.4, 0.65, 0.25)", "made_in": [], "used_in": [], "prompt_subject": "Plump ribbed orange harvest pumpkin with sturdy curved green-brown stem", "full_prompt": "Isometric game item icon of Plump ribbed orange harvest pumpkin with sturdy curved green-brown stem, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "apple", "name": "Спелое яблоко", "icon": "🍎", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.2, "max_stack": 30, "sell_price": 15, "description": "Сочное хрустящее яблоко из сада (+18% сытости, +16% жажды, +10 энергии).", "style_hint": "Форма: apple; Базовый цвет: Color(0.88, 0.18, 0.15), Акцент: Color(0.35, 0.68, 0.25)", "made_in": [], "used_in": [], "prompt_subject": "Crisp juicy red dessert apple with bright red blush, pale yellow speckles and short brown stem with leaf", "full_prompt": "Isometric game item icon of Crisp juicy red dessert apple with bright red blush, pale yellow speckles and short brown stem with leaf, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "pear", "name": "Сочная груша", "icon": "🍐", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.25, "max_stack": 30, "sell_price": 16, "description": "Сладкая медовая груша (+19% сытости, +18% жажды, +10 энергии).", "style_hint": "Форма: pear; Базовый цвет: Color(0.82, 0.74, 0.22), Акцент: Color(0.45, 0.35, 0.2)", "made_in": [], "used_in": [], "prompt_subject": "Graceful bell-shaped golden-green pear with subtle russeting and slender brown stem", "full_prompt": "Isometric game item icon of Graceful bell-shaped golden-green pear with subtle russeting and slender brown stem, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "cherry", "name": "Спелая вишня", "icon": "🍒", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.05, "max_stack": 50, "sell_price": 8, "description": "Горсть кисло-сладкой садовой вишни (+8% сытости, +10% жажды, +6 энергии).", "style_hint": "Форма: cherry; Базовый цвет: Color(0.72, 0.08, 0.14), Акцент: Color(0.4, 0.65, 0.25)", "made_in": [], "used_in": [], "prompt_subject": "Pair of deep ruby-red ripe sweet cherries hanging together from joined green stems with single leaf", "full_prompt": "Isometric game item icon of Pair of deep ruby-red ripe sweet cherries hanging together from joined green stems with single leaf, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "apricot", "name": "Спелый абрикос", "icon": "🍑", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.1, "max_stack": 40, "sell_price": 12, "description": "Сладкий бархатистый абрикос из сада (+14% сытости, +12% жажды, +8 энергии).", "style_hint": "Форма: apricot; Базовый цвет: Color(0.96, 0.60, 0.15), Акцент: Color(0.35, 0.65, 0.25)", "made_in": [], "used_in": [], "prompt_subject": "Velvety golden-orange ripe apricot with rosy blush on sunny side and central cleft", "full_prompt": "Isometric game item icon of Velvety golden-orange ripe apricot with rosy blush on sunny side and central cleft, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "blackberry", "name": "Ежевика", "icon": "🫐", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.05, "max_stack": 50, "sell_price": 12, "description": "Крупная сочная ежевика с лесной опушки (+12% сытости, +6% жажды, +8 энергии).", "style_hint": "Форма: berries; Базовый цвет: Color(0.12, 0.05, 0.16), Акцент: Color(0.35, 0.62, 0.25)", "made_in": [], "used_in": [], "prompt_subject": "Ripe plump glistening blackberry cluster of dark purple-black drupelets on a bramble stem", "full_prompt": "Isometric game item icon of Ripe plump glistening blackberry cluster of dark purple-black drupelets on a bramble stem, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "sea_buckthorn", "name": "Облепиха", "icon": "🟠", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.05, "max_stack": 50, "sell_price": 18, "description": "Янтарная лечебная ягода (+6% сытости, +6% жажды, +10 здоровья). Единственная ягода, которая лечит.", "style_hint": "Форма: berries; Базовый цвет: Color(0.95, 0.48, 0.06), Акцент: Color(0.4, 0.66, 0.25)", "made_in": [], "used_in": [], "prompt_subject": "Dense cluster of bright vivid orange sea buckthorn berries along a thorny twig with silvery leaves", "full_prompt": "Isometric game item icon of Dense cluster of bright vivid orange sea buckthorn berries along a thorny twig with silvery leaves, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "fertilizer", "name": "Био-удобрение", "icon": "🧪", "texture": null, "category": "farming", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Сельское хозяйство и ферма (Этап 8, разделы 17, 31, 33)", "weight": 0.5, "max_stack": 30, "sell_price": 16, "description": "Смесь компоста, глины и золы. Ускоряет созревание культур на грядке в 2 раза.", "style_hint": "Форма: sack; Базовый цвет: Color(0.55, 0.45, 0.3), Акцент: Color(0.4, 0.66, 0.3)", "made_in": [], "used_in": [], "prompt_subject": "Sturdy burlap sack filled with nutrient-rich dark organic garden compost fertilizer, leaf emblem", "full_prompt": "Isometric game item icon of Sturdy burlap sack filled with nutrient-rich dark organic garden compost fertilizer, leaf emblem, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "mushroom", "name": "Лесной гриб", "icon": "🍄", "texture": null, "category": "food", "group_id": "harvest", "group_name": "Урожай, фрукты и дикоросы", "group_color": "#a855f7", "group_icon": "🍎", "section": "Глава 2 «Первый дым»: грибы и блюда костра", "weight": 0.1, "max_stack": 40, "sell_price": 9, "description": "Собирают в тени у деревьев и камней, летом и осенью. Съедобен сырым (+12% сытости, +5 энергии), но слаб — первый ингредиент кухни.", "style_hint": "Форма: mushroom; Базовый цвет: Color(0.78, 0.62, 0.42), Акцент: Color(0.9, 0.86, 0.76)", "made_in": [], "used_in": [], "prompt_subject": "Wild forest porcini / boletus mushroom with plump white stalk and smooth warm brown cap, woodland moss base", "full_prompt": "Isometric game item icon of Wild forest porcini / boletus mushroom with plump white stalk and smooth warm brown cap, woodland moss base, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "baked_potato", "name": "Печёный картофель", "icon": "🥔", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2 «Первый дым»: грибы и блюда костра", "weight": 0.35, "max_stack": 30, "sell_price": 34, "description": "Картофель в золе на костре (+55% сытости, +20 энергии).", "style_hint": "Форма: baked_potato; Базовый цвет: Color(0.82, 0.62, 0.32), Акцент: Color(0.95, 0.82, 0.55)", "made_in": [], "used_in": [], "prompt_subject": "Steaming baked jacket potato split open with fluffy white interior, crispy browned skin and melting butter pat", "full_prompt": "Isometric game item icon of Steaming baked jacket potato split open with fluffy white interior, crispy browned skin and melting butter pat, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "fried_carrot", "name": "Жареная морковь", "icon": "🥕", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2 «Первый дым»: грибы и блюда костра", "weight": 0.25, "max_stack": 30, "sell_price": 26, "description": "Кусочки моркови, подрумяненные на костре (+35% сытости, +18% жажды, +12 энергии).", "style_hint": "Форма: fried; Базовый цвет: Color(0.95, 0.55, 0.18), Акцент: Color(0.98, 0.76, 0.35)", "made_in": [], "used_in": [], "prompt_subject": "Skillet of caramelized sliced carrot coins sautéed in butter with browned edges and fresh parsley", "full_prompt": "Isometric game item icon of Skillet of caramelized sliced carrot coins sautéed in butter with browned edges and fresh parsley, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "vegetable_soup", "name": "Овощной суп", "icon": "🍲", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2 «Первый дым»: грибы и блюда костра", "weight": 0.4, "max_stack": 20, "sell_price": 32, "description": "Горячая похлёбка из моркови и картофеля (+50% сытости, +30% жажды, +15 энергии).", "style_hint": "Форма: soup; Базовый цвет: Color(0.72, 0.66, 0.58), Акцент: Color(0.9, 0.66, 0.35)", "made_in": [], "used_in": [], "prompt_subject": "Steaming earthenware ceramic bowl of hearty rustic vegetable soup with diced carrots, potatoes and greens in clear broth", "full_prompt": "Isometric game item icon of Steaming earthenware ceramic bowl of hearty rustic vegetable soup with diced carrots, potatoes and greens in clear broth, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "berry_brew", "name": "Ягодный отвар", "icon": "🍵", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2 «Первый дым»: грибы и блюда костра", "weight": 0.3, "max_stack": 20, "sell_price": 30, "description": "Горячий настой красной ягоды (+20% жажды, +15 энергии, +5 здоровья).", "style_hint": "Форма: drink; Базовый цвет: Color(0.62, 0.4, 0.45), Акцент: Color(0.82, 0.26, 0.32)", "made_in": [], "used_in": [], "prompt_subject": "Carved wooden kuksa cup steaming with rich hot forest berry infusion drink, deep crimson color", "full_prompt": "Isometric game item icon of Carved wooden kuksa cup steaming with rich hot forest berry infusion drink, deep crimson color, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "mushroom_stew", "name": "Грибная похлёбка", "icon": "🍜", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2 «Первый дым»: грибы и блюда костра", "weight": 0.4, "max_stack": 20, "sell_price": 36, "description": "Наваристый суп из лесных грибов (+40% сытости, +25% жажды, +10 энергии).", "style_hint": "Форма: soup; Базовый цвет: Color(0.66, 0.56, 0.44), Акцент: Color(0.85, 0.75, 0.55)", "made_in": [], "used_in": [], "prompt_subject": "Cast iron pot filled with thick rich brown wild mushroom stew with tender mushroom slices and herbs", "full_prompt": "Isometric game item icon of Cast iron pot filled with thick rich brown wild mushroom stew with tender mushroom slices and herbs, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "dried_mushroom", "name": "Сушёные грибы", "icon": "🥡", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2 «Первый дым»: грибы и блюда костра", "weight": 0.08, "max_stack": 60, "sell_price": 22, "description": "Лёгкие и не портятся — запас в рюкзак на дальнюю вылазку (+25% сытости, +8 энергии).", "style_hint": "Форма: dried; Базовый цвет: Color(0.78, 0.66, 0.46), Акцент: Color(0.6, 0.5, 0.34)", "made_in": [], "used_in": [], "prompt_subject": "String of dehydrated sliced wild forest mushrooms tied with natural twine, shriveled leathery texture", "full_prompt": "Isometric game item icon of String of dehydrated sliced wild forest mushrooms tied with natural twine, shriveled leathery texture, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "potato_mushroom_dish", "name": "Картошка с грибами", "icon": "🥘", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2: блюда печи-кухни (качество на уровень выше костра)", "weight": 0.45, "max_stack": 20, "sell_price": 62, "description": "Горячее блюдо печи-кухни из картофеля и грибов (+65% сытости, +25 энергии).", "style_hint": "Форма: plate; Базовый цвет: Color(0.8, 0.66, 0.4), Акцент: Color(0.6, 0.46, 0.3)", "made_in": [], "used_in": [], "prompt_subject": "White enamel deep plate with roasted golden potatoes and sauteed forest mushrooms, garnished with dill", "full_prompt": "Isometric game item icon of White enamel deep plate with roasted golden potatoes and sauteed forest mushrooms, garnished with dill, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "mushroom_soup", "name": "Грибной суп", "icon": "🍲", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2: блюда печи-кухни (качество на уровень выше костра)", "weight": 0.45, "max_stack": 20, "sell_price": 60, "description": "Наваренный в печи суп с морковью (+55% сытости, +35% жажды, +18 энергии).", "style_hint": "Форма: soup; Базовый цвет: Color(0.6, 0.5, 0.4), Акцент: Color(0.88, 0.78, 0.58)", "made_in": [], "used_in": [], "prompt_subject": "Creamy velvety cream-of-mushroom soup in a stoneware bowl with cream swirl and sauteed mushroom garnish", "full_prompt": "Isometric game item icon of Creamy velvety cream-of-mushroom soup in a stoneware bowl with cream swirl and sauteed mushroom garnish, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "glazed_carrot", "name": "Глазурованная морковь", "icon": "🥕", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2: блюда печи-кухни (качество на уровень выше костра)", "weight": 0.3, "max_stack": 30, "sell_price": 48, "description": "Морковь в ягодной глазури (+45% сытости, +25% жажды, +16 энергии).", "style_hint": "Форма: fried; Базовый цвет: Color(0.95, 0.6, 0.2), Акцент: Color(0.85, 0.25, 0.3)", "made_in": [], "used_in": [], "prompt_subject": "Tender young baby carrots roasted in honey and butter glaze with thyme sprigs and golden sheen", "full_prompt": "Isometric game item icon of Tender young baby carrots roasted in honey and butter glaze with thyme sprigs and golden sheen, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "potato_pie", "name": "Картофельный пирог", "icon": "🥧", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2: блюда печи-кухни (качество на уровень выше костра)", "weight": 0.5, "max_stack": 20, "sell_price": 88, "description": "Выпечка печи-кухни с тестом из пшеницы (+75% сытости, +30 энергии).", "style_hint": "Форма: bread; Базовый цвет: Color(0.88, 0.68, 0.34), Акцент: Color(0.66, 0.44, 0.22)", "made_in": [], "used_in": [], "prompt_subject": "Golden brown double-crust rustic potato pie in ceramic dish with braided pastry rim and crimped top", "full_prompt": "Isometric game item icon of Golden brown double-crust rustic potato pie in ceramic dish with braided pastry rim and crimped top, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "berry_compote", "name": "Ягодный компот", "icon": "🫗", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2: блюда печи-кухни (качество на уровень выше костра)", "weight": 0.35, "max_stack": 20, "sell_price": 52, "description": "Ягоды, проваренные в чистой воде (+45% жажды, +12 энергии, +6 здоровья).", "style_hint": "Форма: drink; Базовый цвет: Color(0.7, 0.32, 0.38), Акцент: Color(0.9, 0.55, 0.5)", "made_in": [], "used_in": [], "prompt_subject": "Tall faceted glass filled with sparkling chilled berry compote drink, floating whole berries and mint leaf", "full_prompt": "Isometric game item icon of Tall faceted glass filled with sparkling chilled berry compote drink, floating whole berries and mint leaf, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "dried_apricot", "name": "Курага", "icon": "🫓", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2: блюда печи-кухни (качество на уровень выше костра)", "weight": 0.05, "max_stack": 40, "sell_price": 24, "description": "Сушёные на огне абрикосы без косточек: лёгкий, сытный и долговечный сухофрукт (+22% сытости, +16 энергии).", "style_hint": "Форма: dried; Базовый цвет: Color(0.85, 0.45, 0.12), Акцент: Color(0.65, 0.35, 0.10)", "made_in": [], "used_in": [], "prompt_subject": "Handful of bright sun-dried orange apricots (kuraga) with chewy wrinkled texture and concentrated sweetness", "full_prompt": "Isometric game item icon of Handful of bright sun-dried orange apricots (kuraga) with chewy wrinkled texture and concentrated sweetness, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "apricot_compote", "name": "Абрикосовый компот", "icon": "🫗", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2: блюда печи-кухни (качество на уровень выше костра)", "weight": 0.35, "max_stack": 20, "sell_price": 48, "description": "Ароматный компот из спелых абрикосов (+40% жажды, +12% сытости, +14 энергии).", "style_hint": "Форма: drink; Базовый цвет: Color(0.92, 0.62, 0.22), Акцент: Color(0.96, 0.78, 0.40)", "made_in": [], "used_in": [], "prompt_subject": "Refreshing chilled golden-orange apricot compote beverage in a clear tumbler with whole fruit slices", "full_prompt": "Isometric game item icon of Refreshing chilled golden-orange apricot compote beverage in a clear tumbler with whole fruit slices, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "apricot_pie", "name": "Абрикосовый пирог", "icon": "🥧", "texture": null, "category": "food", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2: блюда печи-кухни (качество на уровень выше костра)", "weight": 0.5, "max_stack": 20, "sell_price": 70, "description": "Румяный пирог с сочной абрикосовой начинкой из печи (+65% сытости, +10% жажды, +24 энергии).", "style_hint": "Форма: bread; Базовый цвет: Color(0.92, 0.70, 0.32), Акцент: Color(0.85, 0.50, 0.15)", "made_in": [], "used_in": [], "prompt_subject": "Golden baked open-face fruit tart / pie lined with concentric rows of caramelized apricot halves", "full_prompt": "Isometric game item icon of Golden baked open-face fruit tart / pie lined with concentric rows of caramelized apricot halves, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "mushroom_sauce", "name": "Грибной соус", "icon": "🫙", "texture": null, "category": "component", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2: блюда печи-кухни (качество на уровень выше костра)", "weight": 0.2, "max_stack": 20, "sell_price": 45, "description": "Соус-приправа из протёртых грибов. Ингредиент для блюд кухни Главы 5.", "style_hint": "Форма: sack; Базовый цвет: Color(0.56, 0.44, 0.32), Акцент: Color(0.78, 0.66, 0.48)", "made_in": [], "used_in": [], "prompt_subject": "Ceramic gravy boat filled with silky rich mushroom veloute sauce with minced wild mushrooms", "full_prompt": "Isometric game item icon of Ceramic gravy boat filled with silky rich mushroom veloute sauce with minced wild mushrooms, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "berry_sauce", "name": "Ягодный соус", "icon": "🫗", "texture": null, "category": "component", "group_id": "food", "group_name": "Кулинария и готовые напитки", "group_color": "#f59e0b", "group_icon": "🍲", "section": "Глава 2: блюда печи-кухни (качество на уровень выше костра)", "weight": 0.2, "max_stack": 20, "sell_price": 42, "description": "Кисло-сладкая ягодная приправа. Ингредиент для блюд кухни Главы 5.", "style_hint": "Форма: sack; Базовый цвет: Color(0.62, 0.26, 0.32), Акцент: Color(0.85, 0.45, 0.45)", "made_in": [], "used_in": [], "prompt_subject": "Glass sauce ramekin of thick glossy deep-crimson forest berry reduction sauce, sweet-tart fruit coulis", "full_prompt": "Isometric game item icon of Glass sauce ramekin of thick glossy deep-crimson forest berry reduction sauce, sweet-tart fruit coulis, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "copper_wire", "name": "Медный провод", "icon": "🔌", "texture": null, "category": "component", "group_id": "tech", "group_name": "Механизмы и электрокомпоненты", "group_color": "#06b6d4", "group_icon": "⚙️", "section": "Электрогенерация и освещение (Этап 10, разделы 54, 57, 84)", "weight": 0.1, "max_stack": 40, "sell_price": 18, "description": "Изолированная витая медная жила для прокладки линий электропередач и проводки.", "style_hint": "Форма: coil; Базовый цвет: Color(0.8, 0.45, 0.2), Акцент: Color(0.96, 0.72, 0.46)", "made_in": [], "used_in": [], "prompt_subject": "Neat spool coil of shiny reddish-orange pure copper electrical wire wrapped with black electrical tape", "full_prompt": "Isometric game item icon of Neat spool coil of shiny reddish-orange pure copper electrical wire wrapped with black electrical tape, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "iron_plate", "name": "Металлическая пластина", "icon": "🛡️", "texture": null, "category": "component", "group_id": "tech", "group_name": "Механизмы и электрокомпоненты", "group_color": "#06b6d4", "group_icon": "⚙️", "section": "Электрогенерация и освещение (Этап 10, разделы 54, 57, 84)", "weight": 0.8, "max_stack": 25, "sell_price": 28, "description": "Прочный прокатанный лист железа для корпусов приборов и каркасов лопастей.", "style_hint": "Форма: plate; Базовый цвет: Color(0.58, 0.6, 0.64), Акцент: Color(0.38, 0.4, 0.44)", "made_in": [], "used_in": [], "prompt_subject": "Rectangular heavy structural steel plate with drilled corner rivet holes and dark anti-corrosion primer", "full_prompt": "Isometric game item icon of Rectangular heavy structural steel plate with drilled corner rivet holes and dark anti-corrosion primer, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "gear", "name": "Механическая шестерня", "icon": "⚙️", "texture": null, "category": "component", "group_id": "tech", "group_name": "Механизмы и электрокомпоненты", "group_color": "#06b6d4", "group_icon": "⚙️", "section": "Электрогенерация и освещение (Этап 10, разделы 54, 57, 84)", "weight": 0.5, "max_stack": 30, "sell_price": 34, "description": "Точно выточенное зубчатое колесо редуктора для передачи вращения ротора ветряка.", "style_hint": "Форма: gear; Базовый цвет: Color(0.62, 0.62, 0.6), Акцент: Color(0.88, 0.88, 0.85)", "made_in": [], "used_in": [], "prompt_subject": "Toothed spur gear wheel machined from solid steel with central keyed shaft hole and beveled teeth", "full_prompt": "Isometric game item icon of Toothed spur gear wheel machined from solid steel with central keyed shaft hole and beveled teeth, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "battery_cell", "name": "Аккумуляторный элемент", "icon": "🔋", "texture": null, "category": "component", "group_id": "tech", "group_name": "Механизмы и электрокомпоненты", "group_color": "#06b6d4", "group_icon": "⚙️", "section": "Электрогенерация и освещение (Этап 10, разделы 54, 57, 84)", "weight": 1.2, "max_stack": 15, "sell_price": 55, "description": "Электрохимическая ячейка высокой емкости для накопления избыточной энергии ветрогенератора.", "style_hint": "Форма: battery; Базовый цвет: Color(0.25, 0.6, 0.35), Акцент: Color(0.85, 0.85, 0.85)", "made_in": [], "used_in": [], "prompt_subject": "Heavy-duty industrial rechargeable battery cell with brass terminal lugs, dark green casing and level indicator", "full_prompt": "Isometric game item icon of Heavy-duty industrial rechargeable battery cell with brass terminal lugs, dark green casing and level indicator, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "street_lamp_item", "name": "Комплект уличного фонаря", "icon": "🏮", "texture": null, "category": "building", "group_id": "tech", "group_name": "Механизмы и электрокомпоненты", "group_color": "#06b6d4", "group_icon": "⚙️", "section": "Электрогенерация и освещение (Этап 10, разделы 54, 57, 84)", "weight": 3.5, "max_stack": 5, "sell_price": 85, "description": "Готовый к установке уличный фонарный столб с плафоном, патроном и проводкой.", "style_hint": "Форма: lamp; Базовый цвет: Color(0.35, 0.35, 0.38), Акцент: Color(1.0, 0.85, 0.35)", "made_in": [], "used_in": [], "prompt_subject": "Vintage industrial cast iron street lamp fixture with glass protective cage and warm filament bulb", "full_prompt": "Isometric game item icon of Vintage industrial cast iron street lamp fixture with glass protective cage and warm filament bulb, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "wooden_handle", "name": "Деревянная ручка", "icon": "🪵", "texture": null, "category": "component", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Оснастка и инструменты Lv.2 (Этап 11, разделы 54, 55)", "weight": 0.2, "max_stack": 30, "sell_price": 8, "description": "Обструганное и отшлифованное деревянное топорище для монтажа ручного инструмента.", "style_hint": "Форма: handle; Базовый цвет: Color(0.62, 0.42, 0.24), Акцент: Color(0.84, 0.64, 0.42)", "made_in": [], "used_in": [], "prompt_subject": "Smoothly turned ergonomic wooden tool handle made of seasoned ash wood with slotted tenon end", "full_prompt": "Isometric game item icon of Smoothly turned ergonomic wooden tool handle made of seasoned ash wood with slotted tenon end, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "bolt", "name": "Металлический болт", "icon": "🔩", "texture": null, "category": "component", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Оснастка и инструменты Lv.2 (Этап 11, разделы 54, 55)", "weight": 0.05, "max_stack": 50, "sell_price": 12, "description": "Прочный крепежный болт с гайкой из переплавленного металлолома для сборки узлов и инструментов.", "style_hint": "Форма: bolt; Базовый цвет: Color(0.6, 0.62, 0.66), Акцент: Color(0.4, 0.42, 0.45)", "made_in": [], "used_in": [], "prompt_subject": "Heavy hex-head steel machine bolt paired with threaded hex nut and split lock washer, galvanized finish", "full_prompt": "Isometric game item icon of Heavy hex-head steel machine bolt paired with threaded hex nut and split lock washer, galvanized finish, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "fabric", "name": "Плотная ткань", "icon": "🧵", "texture": null, "category": "component", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Оснастка и инструменты Lv.2 (Этап 11, разделы 54, 55)", "weight": 0.3, "max_stack": 30, "sell_price": 22, "description": "Сотканное парусиновое полотно из растительных волокон для защитной экипировки и рюкзаков.", "style_hint": "Форма: fabric; Базовый цвет: Color(0.55, 0.6, 0.75), Акцент: Color(0.76, 0.8, 0.92)", "made_in": [], "used_in": [], "prompt_subject": "Folded bolt of coarse woven canvas textile in neutral khaki-tan color with stitched selvedge edge", "full_prompt": "Isometric game item icon of Folded bolt of coarse woven canvas textile in neutral khaki-tan color with stitched selvedge edge, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "leather_strap", "name": "Усиленный ремень", "icon": "🎗️", "texture": null, "category": "component", "group_id": "materials", "group_name": "Материалы и строительное сырьё", "group_color": "#64748b", "group_icon": "🧱", "section": "Оснастка и инструменты Lv.2 (Этап 11, разделы 54, 55)", "weight": 0.2, "max_stack": 25, "sell_price": 18, "description": "Прочная плетеная крепежная стропа для ремней рюкзака и подвески снаряжения.", "style_hint": "Форма: strap; Базовый цвет: Color(0.5, 0.3, 0.18), Акцент: Color(0.78, 0.72, 0.6)", "made_in": [], "used_in": [], "prompt_subject": "Supple oiled brown leather strap with punched buckle holes and brass roller buckle", "full_prompt": "Isometric game item icon of Supple oiled brown leather strap with punched buckle holes and brass roller buckle, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "iron_axe", "name": "Железный топор", "icon": "🪓", "texture": "res://assets/tools/axe_icon.png", "category": "tool", "group_id": "tools", "group_name": "Инструменты и уход", "group_color": "#f97316", "group_icon": "🪓", "section": "Оснастка и инструменты Lv.2 (Этап 11, разделы 54, 55)", "weight": 1.5, "max_stack": 1, "sell_price": 95, "description": "Кованый топор с лезвием из закалённого железа. Рубит деревья вдвое быстрее, снижает усталость и даёт +1 древесину.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Heavy blacksmith-forged iron woodsman axe, polished sharp cutting edge, reinforced oak handle with iron rivets and dark leather grip", "full_prompt": "Isometric game item icon of Heavy blacksmith-forged iron woodsman axe, polished sharp cutting edge, reinforced oak handle with iron rivets and dark leather grip, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "iron_pickaxe", "name": "Железная кирка", "icon": "⛏️", "texture": "res://assets/tools/pickaxe_icon.png", "category": "tool", "group_id": "tools", "group_name": "Инструменты и уход", "group_color": "#f97316", "group_icon": "🪓", "section": "Оснастка и инструменты Lv.2 (Этап 11, разделы 54, 55)", "weight": 1.8, "max_stack": 1, "sell_price": 95, "description": "Закалённая металлическая кирка. Раскалывает камни за 2 удара вместо 3, снижает трату энергии и даёт +1 ресурс.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Hardened forged steel mining pickaxe with pointed pick and wide chisel tip, sturdy treated ash wood shaft, polished metallic sheen", "full_prompt": "Isometric game item icon of Hardened forged steel mining pickaxe with pointed pick and wide chisel tip, sturdy treated ash wood shaft, polished metallic sheen, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "iron_shovel", "name": "Железная мотыга", "icon": "🪚", "texture": "res://assets/tools/hoe_icon.tres", "category": "tool", "group_id": "tools", "group_name": "Инструменты и уход", "group_color": "#f97316", "group_icon": "🪓", "section": "Оснастка и инструменты Lv.2 (Этап 11, разделы 54, 55)", "weight": 1.2, "max_stack": 1, "sell_price": 95, "description": "Кованое стальное полотно мотыги. Вскапывает грядки вдвое легче (-50% энергии) и ускоряет сбор глины и песка.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Heavy-duty reinforced iron digging spade with triangular D-handle, stamped steel curved blade, sharp cutting tip", "full_prompt": "Isometric game item icon of Heavy-duty reinforced iron digging spade with triangular D-handle, stamped steel curved blade, sharp cutting tip, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "reinforced_bucket", "name": "Усиленное ведро", "icon": "🪣", "texture": "res://assets/tools/bucket_icon.png", "category": "tool", "group_id": "tools", "group_name": "Инструменты и уход", "group_color": "#f97316", "group_icon": "🪓", "section": "Оснастка и инструменты Lv.2 (Этап 11, разделы 54, 55)", "weight": 1.2, "max_stack": 1, "sell_price": 110, "description": "Окованное герметичное ведро со стальными обручами. Черпает сразу двойную порцию чистой воды.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Усиленное ведро, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Усиленное ведро, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "large_backpack", "name": "Большой рюкзак", "icon": "🎒", "texture": null, "category": "equipment", "group_id": "tools", "group_name": "Инструменты и уход", "group_color": "#f97316", "group_icon": "🪓", "section": "Оснастка и инструменты Lv.2 (Этап 11, разделы 54, 55)", "weight": 0.8, "max_stack": 1, "sell_price": 140, "description": "Экспедиционный рюкзак с боковыми карманами (20 слотов) и усиленными лямками (грузоподъемность: 75 кг).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Большой рюкзак, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Большой рюкзак, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "beer_wort_raw", "name": "Сырое пивное сусло", "icon": "🥣", "texture": null, "category": "material", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 1.0, "max_stack": 20, "sell_price": 15, "description": "Затёртое на костре зерновое сусло из пшеницы и чистой воды. Требует кипячения с пряными травами.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Copper brewing vessel / pot containing unfermented cloudy sweet malted barley wort with hop cone floating", "full_prompt": "Isometric game item icon of Copper brewing vessel / pot containing unfermented cloudy sweet malted barley wort with hop cone floating, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "beer_wort_boiled", "name": "Сваренное пивное сусло", "icon": "🫕", "texture": null, "category": "material", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 1.0, "max_stack": 20, "sell_price": 25, "description": "Охмелённое и проваренное сусло. Готово к переносу на склад для брожения в бочках.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Copper kettle filled with dark aromatic boiled beer wort, deep amber liquid with steamy hop fragrance", "full_prompt": "Isometric game item icon of Copper kettle filled with dark aromatic boiled beer wort, deep amber liquid with steamy hop fragrance, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "berry_must", "name": "Ягодное сусло", "icon": "🍇", "texture": null, "category": "material", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 0.8, "max_stack": 20, "sell_price": 22, "description": "Свежевыжатый сок лесных ягод с чистой водой. Готов к брожению в бочках склада.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Ceramic crock / tub filled with crushed mashed wild forest berries and pulpy ruby-red fruit must", "full_prompt": "Isometric game item icon of Ceramic crock / tub filled with crushed mashed wild forest berries and pulpy ruby-red fruit must, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "grain_wash", "name": "Зерновой затор", "icon": "🌾", "texture": null, "category": "material", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 1.2, "max_stack": 20, "sell_price": 20, "description": "Затор из измельчённых злаков и воды. Основа для сбраживания крепкой браги.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Wooden mashing tub filled with warm cracked wheat and cereal grain mash slurry with malt bubbles", "full_prompt": "Isometric game item icon of Wooden mashing tub filled with warm cracked wheat and cereal grain mash slurry with malt bubbles, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "fermented_wash", "name": "Сброженная брага", "icon": "🪣", "texture": null, "category": "material", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 1.2, "max_stack": 20, "sell_price": 40, "description": "Перебродившая созревшая брага из бочек склада. Готова к перегонке в дистилляторе.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Glass carboy with fermentation airlock bubbler containing frothy bubbling fermented distiller's wash", "full_prompt": "Isometric game item icon of Glass carboy with fermentation airlock bubbler containing frothy bubbling fermented distiller's wash, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "beer", "name": "Домашнее пиво", "icon": "🍺", "texture": null, "category": "drink", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 0.5, "max_stack": 20, "sell_price": 45, "description": "Пенный освежающий эль из пшеницы и душистых трав (+35% жажды, +15 энергии, +10% сытости, лёгкое согревание).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Домашнее пиво, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Домашнее пиво, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "berry_wine", "name": "Ягодное вино", "icon": "🍷", "texture": null, "category": "drink", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 0.5, "max_stack": 20, "sell_price": 65, "description": "Благородное выдержанное домашнее вино из спелых ягод (+30% жажды, +25 энергии, +8 здоровья, согревает кровь).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Ягодное вино, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Ягодное вино, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "moonshine", "name": "Домашний самогон", "icon": "🍶", "texture": null, "category": "drink", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 0.5, "max_stack": 20, "sell_price": 85, "description": "Крепкий дистиллят первой перегонки (45°). Мгновенный прилив сил (+35 энергии), прогоняет холод и сырость (-25% влаги).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Домашний самогон, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Домашний самогон, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "pure_spirit", "name": "Очищенный спирт", "icon": "🧪", "texture": null, "category": "drink", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 0.4, "max_stack": 20, "sell_price": 110, "description": "Высокоочищенный спирт двойной перегонки (95°). Мощное согревание (+45 энергии, -35% сырости), основа для целебных настоек.", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Amber pharmaceutical reagent bottle filled with 96% high-purity medical ethanol, bold red cross label, glass dropper", "full_prompt": "Isometric game item icon of Amber pharmaceutical reagent bottle filled with 96% high-purity medical ethanol, bold red cross label, glass dropper, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "blueberry_tincture", "name": "Черничная настойка", "icon": "🫐", "texture": null, "category": "drink", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 0.4, "max_stack": 20, "sell_price": 95, "description": "Ароматная настойка на синих ягодах и чистом спирту (+30 энергии, +12 здоровья, проясняет зрение).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Черничная настойка, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Черничная настойка, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "red_berry_tincture", "name": "Брусничная настойка", "icon": "🍒", "texture": null, "category": "drink", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 0.4, "max_stack": 20, "sell_price": 90, "description": "Тонизирующий кисло-сладкий настой на красных ягодах (+28 энергии, +10 здоровья, снимает ломоту).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Брусничная настойка, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Брусничная настойка, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "blackberry_tincture", "name": "Ежевичная настойка", "icon": "🍇", "texture": null, "category": "drink", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 0.4, "max_stack": 20, "sell_price": 105, "description": "Глубокая терпкая настойка на лесной ежевике (+32 энергии, +15 здоровья, восстанавливает силы).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Ежевичная настойка, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Ежевичная настойка, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "sea_buckthorn_tincture", "name": "Облепиховый бальзам", "icon": "🟠", "texture": null, "category": "drink", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 0.4, "max_stack": 20, "sell_price": 130, "description": "Мощный целебный бальзам на спирту и золотой облепихе (+25 энергии, +30 здоровья — затягивает тяжёлые раны).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Облепиховый бальзам, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Облепиховый бальзам, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "mushroom_tincture", "name": "Грибная настойка", "icon": "🍄", "texture": null, "category": "drink", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 0.4, "max_stack": 20, "sell_price": 100, "description": "Старинный лесной настой на грибах и спирту (+40 энергии, +15 здоровья, защита от переохлаждения).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Грибная настойка, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Грибная настойка, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}, {"id": "special_mushroom_tincture", "name": "Особая настойка на сушёных грибах", "icon": "🏺", "texture": null, "category": "drink", "group_id": "alcohol", "group_name": "Алкоголь и брожение", "group_color": "#e11d48", "group_icon": "🍷", "section": "Домашнее виноделие, пивоварение и дистилляция", "weight": 0.4, "max_stack": 20, "sell_price": 145, "description": "Концентрированный эликсир из сушёных грибов и пряных трав (+50 энергии, +20 здоровья, мощный стимулятор).", "style_hint": "", "made_in": [], "used_in": [], "prompt_subject": "Item icon of Особая настойка на сушёных грибах, game inventory asset, post-apocalyptic survival item", "full_prompt": "Isometric game item icon of Item icon of Особая настойка на сушёных грибах, game inventory asset, post-apocalyptic survival item, 3d stylized video game asset, post-apocalyptic cozy survival aesthetic, clean dark background, studio soft lighting, rim light, ambient occlusion, high resolution, centered composition, no text, no frame"}];
+    const CATEGORIES = [{"name": "Инструменты и уход", "id": "tools", "color": "#f97316", "icon": "🪓", "count": 11}, {"name": "Базовые ресурсы и ископаемые", "id": "resources", "color": "#d97706", "icon": "⛏️", "count": 9}, {"name": "Материалы и строительное сырьё", "id": "materials", "color": "#64748b", "icon": "🧱", "count": 20}, {"name": "Кулинария и готовые напитки", "id": "food", "color": "#f59e0b", "icon": "🍲", "count": 20}, {"name": "Семена и саженцы", "id": "seeds", "color": "#10b981", "icon": "🌱", "count": 17}, {"name": "Урожай, фрукты и дикоросы", "id": "harvest", "color": "#a855f7", "icon": "🍎", "count": 21}, {"name": "Механизмы и электрокомпоненты", "id": "tech", "color": "#06b6d4", "icon": "⚙️", "count": 5}, {"name": "Алкоголь и брожение", "id": "alcohol", "color": "#e11d48", "icon": "🍷", "count": 15}];
+
+    let currentCategory = 'all';
+    let currentStatus = 'all';
+    let currentSort = 'default';
+    let currentSearch = '';
+    let currentView = 'cards';
+
+    // State of completed items in localStorage
+    const STORAGE_KEY = 'after_wind_catalog_ready_ids';
+    let readyIds = new Set();
+
+    function loadReadyState() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          readyIds = new Set(JSON.parse(stored));
+        }
+      } catch (e) {
+        console.warn('localStorage read error', e);
+      }
+    }
+
+    function saveReadyState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...readyIds]));
+      } catch (e) {
+        console.warn('localStorage write error', e);
+      }
+      updateTracker();
+    }
+
+    function toggleReady(id, isChecked) {
+      if (isChecked) {
+        readyIds.add(id);
+      } else {
+        readyIds.delete(id);
+      }
+      saveReadyState();
+      
+      // Update DOM
+      const card = document.getElementById(`card-${id}`);
+      if (card) {
+        if (isChecked) card.classList.add('is-done');
+        else card.classList.remove('is-done');
+      }
+
+      const row = document.getElementById(`row-${id}`);
+      if (row) {
+        if (isChecked) row.classList.add('is-done');
+        else row.classList.remove('is-done');
+      }
+
+      // If filtering by status, re-filter
+      if (currentStatus !== 'all') {
+        renderItems();
+      }
+    }
+
+    function updateTracker() {
+      const total = RAW_ITEMS.length;
+      const ready = readyIds.size;
+      const pending = total - ready;
+      const pct = total > 0 ? Math.round((ready / total) * 100) : 0;
+
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-ready').textContent = ready;
+      document.getElementById('stat-pending').textContent = pending;
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('progress-text').textContent = pct + '% выполнено';
+    }
+
+    // Filter & Sort
+    function getFilteredItems() {
+      return RAW_ITEMS.filter(it => {
+        // Category
+        if (currentCategory !== 'all' && it.group_id !== currentCategory) {
+          return false;
+        }
+
+        // Status
+        const isReady = readyIds.has(it.id);
+        if (currentStatus === 'ready' && !isReady) return false;
+        if (currentStatus === 'pending' && isReady) return false;
+
+        // Search
+        if (currentSearch) {
+          const q = currentSearch.toLowerCase();
+          const matchName = it.name.toLowerCase().includes(q);
+          const matchId = it.id.toLowerCase().includes(q);
+          const matchDesc = it.description.toLowerCase().includes(q);
+          const matchPrompt = it.full_prompt.toLowerCase().includes(q);
+          const matchMadeIn = it.made_in.some(m => m.machine.toLowerCase().includes(q) || m.recipe.toLowerCase().includes(q));
+          if (!matchName && !matchId && !matchDesc && !matchPrompt && !matchMadeIn) {
+            return false;
+          }
+        }
+
+        return true;
+      }).sort((a, b) => {
+        if (currentSort === 'name_asc') return a.name.localeCompare(b.name, 'ru');
+        if (currentSort === 'name_desc') return b.name.localeCompare(a.name, 'ru');
+        if (currentSort === 'id_asc') return a.id.localeCompare(b.id);
+        if (currentSort === 'weight_asc') return a.weight - b.weight;
+        if (currentSort === 'weight_desc') return b.weight - a.weight;
+        if (currentSort === 'price_desc') return b.sell_price - a.sell_price;
+        return 0; // default order
+      });
+    }
+
+    function renderItems() {
+      const items = getFilteredItems();
+      const grid = document.getElementById('items-grid');
+      const tableBody = document.getElementById('table-body');
+
+      if (items.length === 0) {
+        grid.innerHTML = '<div class="empty-state">Ничего не найдено по заданным фильтрам.</div>';
+        tableBody.innerHTML = '<tr><td colspan="11" class="empty-state">Ничего не найдено</td></tr>';
+        return;
+      }
+
+      // 1. Render Cards
+      grid.innerHTML = items.map(it => {
+        const isDone = readyIds.has(it.id);
+        const cardClass = isDone ? 'item-card is-done' : 'item-card';
+
+        // Made in text
+        let madeInHtml = '';
+        if (it.made_in && it.made_in.length > 0) {
+          const pills = it.made_in.map(m => `<span class="craft-pill">${escapeHtml(m.machine)}: ${escapeHtml(m.recipe)}</span>`).join(' ');
+          madeInHtml = `<div class="craft-line"><strong>Создаётся:</strong> <div>${pills}</div></div>`;
+        }
+
+        // Used in text
+        let usedInHtml = '';
+        if (it.used_in && it.used_in.length > 0) {
+          const firstThree = it.used_in.slice(0, 3);
+          const pills = firstThree.map(u => `<span class="craft-pill">${escapeHtml(u.recipe)}</span>`).join(' ');
+          const extra = it.used_in.length > 3 ? `<span style="font-size: 10px; color: var(--text-dim);">+ещё ${it.used_in.length - 3}</span>` : '';
+          usedInHtml = `<div class="craft-line"><strong>Применяется:</strong> <div>${pills} ${extra}</div></div>`;
+        }
+
+        return `
+          <div class="${cardClass}" id="card-${it.id}">
+            <div class="card-header">
+              <div class="item-icon-box" title="${escapeHtml(it.style_hint || '')}">
+                ${it.icon}
+              </div>
+              <div class="item-title-col">
+                <div class="item-name">${escapeHtml(it.name)}</div>
+                <div class="id-row">
+                  <span class="item-id-badge" onclick="copyText('${it.id}', 'ID предмета скопирован!')" title="Нажмите, чтобы скопировать ID">${it.id}</span>
+                  <span class="cat-badge" style="background: ${it.group_color}22; color: ${it.group_color}; border: 1px solid ${it.group_color}44;">
+                    ${it.group_name}
+                  </span>
+                </div>
+              </div>
+              <label class="ready-check" title="Отметить, если иконка уже создана">
+                <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleReady('${it.id}', this.checked)">
+                <span>Готово</span>
+              </label>
+            </div>
+
+            <div class="card-body">
+              <div class="stats-row">
+                <div class="stat-item">
+                  <span class="stat-val">${it.weight} кг</span>
+                  <span class="stat-lbl">Вес</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-val">${it.max_stack}</span>
+                  <span class="stat-lbl">Стак</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-val">${it.sell_price > 0 ? it.sell_price + ' кр.' : '—'}</span>
+                  <span class="stat-lbl">Цена</span>
+                </div>
+              </div>
+
+              <div class="item-desc">${escapeHtml(it.description)}</div>
+
+              <div class="craft-meta">
+                ${madeInHtml}
+                ${usedInHtml}
+              </div>
+
+              <div class="prompt-block">
+                <div class="prompt-header">
+                  <span class="prompt-label">✨ Промпт для генератора</span>
+                </div>
+                <div class="prompt-text" title="${escapeHtml(it.full_prompt)}">
+                  ${escapeHtml(it.full_prompt)}
+                </div>
+                <div class="prompt-actions">
+                  <button class="btn-copy-prompt" onclick="copyPrompt('${it.id}')">
+                    <span>📋 Скопировать промпт</span>
+                  </button>
+                  <button class="btn-copy-id" onclick="copyText('${it.id}', 'ID скопирован!')" title="Копировать ID">
+                    ID
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 2. Render Table
+      tableBody.innerHTML = items.map(it => {
+        const isDone = readyIds.has(it.id);
+        const rowClass = isDone ? 'is-done' : '';
+        const craftTxt = it.made_in && it.made_in.length > 0 ? it.made_in.map(m => m.recipe).join(', ') : 'Сбор / добыча';
+
+        return `
+          <tr class="${rowClass}" id="row-${it.id}">
+            <td style="text-align: center;">
+              <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleReady('${it.id}', this.checked)">
+            </td>
+            <td class="table-icon">${it.icon}</td>
+            <td><code>${it.id}</code></td>
+            <td><strong>${escapeHtml(it.name)}</strong></td>
+            <td>
+              <span class="cat-badge" style="background: ${it.group_color}22; color: ${it.group_color};">
+                ${it.group_name}
+              </span>
+            </td>
+            <td>${it.weight} кг</td>
+            <td>${it.max_stack}</td>
+            <td>${it.sell_price > 0 ? it.sell_price : '—'}</td>
+            <td style="font-size: 12px; color: var(--text-muted);">${escapeHtml(craftTxt)}</td>
+            <td class="table-prompt-cell">${escapeHtml(it.prompt_subject)}</td>
+            <td style="text-align: center;">
+              <button class="btn-copy-prompt" style="padding: 4px 8px; font-size: 11px;" onclick="copyPrompt('${it.id}')">
+                Промпт
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Category Pill Rendering
+    function renderCategoryPills() {
+      const container = document.getElementById('category-pills');
+      const allCount = RAW_ITEMS.length;
+      document.getElementById('pill-count-all').textContent = allCount;
+
+      CATEGORIES.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'cat-pill';
+        btn.id = `cat-btn-${cat.id}`;
+        btn.onclick = () => selectCategory(cat.id, btn);
+        btn.innerHTML = `
+          <span>${cat.icon} ${cat.name}</span>
+          <span class="count">${cat.count}</span>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function selectCategory(catId, btnEl) {
+      currentCategory = catId;
+      document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+      btnEl.classList.add('active');
+      renderItems();
+    }
+
+    function handleSearch() {
+      currentSearch = document.getElementById('search-input').value.trim();
+      renderItems();
+    }
+
+    function handleFilterChange() {
+      currentStatus = document.getElementById('status-filter').value;
+      renderItems();
+    }
+
+    function handleSortChange() {
+      currentSort = document.getElementById('sort-select').value;
+      renderItems();
+    }
+
+    function setViewMode(mode) {
+      currentView = mode;
+      const grid = document.getElementById('items-grid');
+      const table = document.getElementById('table-container');
+      const btnCards = document.getElementById('btn-view-cards');
+      const btnTable = document.getElementById('btn-view-table');
+
+      if (mode === 'cards') {
+        grid.style.display = 'grid';
+        table.style.display = 'none';
+        btnCards.classList.add('active');
+        btnTable.classList.remove('active');
+      } else {
+        grid.style.display = 'none';
+        table.style.display = 'block';
+        btnCards.classList.remove('active');
+        btnTable.classList.add('active');
+      }
+    }
+
+    // Copying helpers
+    function copyPrompt(itemId) {
+      const it = RAW_ITEMS.find(x => x.id === itemId);
+      if (it) {
+        copyText(it.full_prompt, `Промпт для «${it.name}» скопирован!`);
+      }
+    }
+
+    function copyText(text, successMsg) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(successMsg || 'Скопировано в буфер обмена!');
+      }).catch(err => {
+        console.error('Copy failed', err);
+        // Fallback for older browsers
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast(successMsg || 'Скопировано!');
+      });
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        t.classList.remove('show');
+      }, 2600);
+    }
+
+    // Batch Modal functions
+    function openBatchModal() {
+      document.getElementById('batch-modal').style.display = 'flex';
+      generateBatchPrompts('all');
+    }
+
+    function closeBatchModal() {
+      document.getElementById('batch-modal').style.display = 'none';
+    }
+
+    function closeModalOnBackdrop(e) {
+      if (e.target.id === 'batch-modal') closeBatchModal();
+    }
+
+    function generateBatchPrompts(mode) {
+      let list = RAW_ITEMS;
+      if (mode === 'pending') {
+        list = RAW_ITEMS.filter(it => !readyIds.has(it.id));
+      } else if (mode === 'active_filter') {
+        list = getFilteredItems();
+      }
+
+      const lines = list.map(it => {
+        return `// Item: ${it.name} (${it.id}) | Категория: ${it.group_name}
+${it.full_prompt}
+`;
+      });
+
+      document.getElementById('modal-prompts-area').value = lines.join('\n');
+    }
+
+    function copyModalPrompts() {
+      const val = document.getElementById('modal-prompts-area').value;
+      if (!val) return;
+      copyText(val, 'Все сформированные промпты скопированы в буфер!');
+    }
+
+    function resetAllProgress() {
+      if (confirm('Сбросить все отметки готовности иконок?')) {
+        readyIds.clear();
+        saveReadyState();
+        renderItems();
+        showToast('Отметки сброшены');
+      }
+    }
+
+    function exportData(format) {
+      if (format === 'json') {
+        const blob = new Blob([JSON.stringify(RAW_ITEMS, null, 2)], { type: 'application/json' });
+        downloadBlob(blob, 'after_the_storm_items.json');
+      } else if (format === 'csv') {
+        const headers = ['id', 'name', 'group', 'category', 'weight', 'max_stack', 'sell_price', 'description', 'prompt'];
+        const rows = RAW_ITEMS.map(it => [
+          it.id,
+          `"${it.name.replace(/"/g, '""')}"`,
+          `"${it.group_name}"`,
+          it.category,
+          it.weight,
+          it.max_stack,
+          it.sell_price,
+          `"${it.description.replace(/"/g, '""')}"`,
+          `"${it.full_prompt.replace(/"/g, '""')}"`
+        ].join(','));
+        const csvContent = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        downloadBlob(blob, 'after_the_storm_items.csv');
+      }
+    }
+
+    function downloadBlob(blob, filename) {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+      loadReadyState();
+      renderCategoryPills();
+      updateTracker();
+      renderItems();
+    });
+  </script>
+</body>
+</html>

@@ -278,37 +278,45 @@ func _run_tests() -> void:
 	print("✅ Железная мотыга сокращает затраты сил на вскопку вдвое (с 6 до 3).")
 
 	# -------------------------------------------------------------
-	# 6. Резервуар воды: набор усиленным ведром Lv.2
+	# 6. Озеро: набор воды усиленным ведром Lv.2
 	# -------------------------------------------------------------
-	print("\n--- Проверка 6: Набор чистой воды усиленным ведром Lv.2 ---")
-	var reservoir = world.find_child("WaterReservoir", true, false)
-	if not reservoir:
-		_fail("WaterReservoir не найден в сцене World")
+	print("\n--- Проверка 6: Набор воды из озера усиленным ведром Lv.2 ---")
+	var lake = world.find_child("Lake", true, false)
+	if not lake:
+		_fail("Озеро (Lake) не найдено в сцене World")
 		return
 	
-	reservoir.current_water = 10
-	player.thirst = 100.0 # Игрок сыт водой, поэтому набирает в ведро
-	inv.items["clean_water"] = 0
+	player.thirst = 100.0
+	player.energy = 100.0
+	inv.items["water"] = 0
 
 	# Набор базовым ведром Lv.1
 	inv.tools = ["axe", "pickaxe", "shovel", "bucket", "backpack"] as Array[String]
 	inv.equipped_tool = "bucket"
-	reservoir._on_interacted(player)
-	var water_drawn_lv1 = inv.get_item_count("clean_water")
-	print("  • Зачерпывание ведром Lv.1: набрано = %d л (остаток в баке: %d л)" % [water_drawn_lv1, reservoir.current_water])
-	if water_drawn_lv1 != 1:
-		_fail("Базовое ведро должно набирать 1 л, факт: %d" % water_drawn_lv1)
+	lake._on_interacted(player)
+	var water_drawn_lv1 = inv.get_item_count("water")
+	print("  • Зачерпывание ведром Lv.1: набрано = %d л (прочность источника: %d/%d)" % [water_drawn_lv1, lake.current_hits, lake.max_hits])
+	if water_drawn_lv1 != int(lake.yield_per_hit):
+		_fail("Базовое ведро должно набирать %d л сырой воды, факт: %d" % [int(lake.yield_per_hit), water_drawn_lv1])
 		return
 
-	# Набор усиленным ведром Lv.2
+	# Набор усиленным ведром Lv.2: бонусная порция и двойная сила удара
 	inv.upgrade_tool("reinforced_bucket")
-	reservoir._on_interacted(player)
-	var water_drawn_lv2 = inv.get_item_count("clean_water") - water_drawn_lv1
-	print("  • Зачерпывание ведром Lv.2: набрано = %d л (остаток в баке: %d л)" % [water_drawn_lv2, reservoir.current_water])
-	if water_drawn_lv2 != 2:
-		_fail("Усиленное ведро Lv.2 должно набирать 2 л, факт: %d" % water_drawn_lv2)
+	if inv.get_tool_level("bucket") < 2:
+		_fail("Ведро Lv.2 не активировалось после upgrade_tool")
 		return
-	print("✅ Усиленное ведро черпает двойную порцию чистой воды (2 л за раз).")
+	var hits_before = lake.current_hits
+	player.energy = 100.0
+	lake._on_interacted(player)
+	var water_drawn_lv2 = inv.get_item_count("water") - water_drawn_lv1
+	print("  • Зачерпывание ведром Lv.2: набрано = %d л (прочность источника: %d → %d)" % [water_drawn_lv2, hits_before, lake.current_hits])
+	if water_drawn_lv2 != int(lake.yield_per_hit) + 1:
+		_fail("Усиленное ведро Lv.2 должно набирать %d л (порция + бонус уровня), факт: %d" % [int(lake.yield_per_hit) + 1, water_drawn_lv2])
+		return
+	if hits_before - lake.current_hits != 2:
+		_fail("Усиленное ведро Lv.2 должно снимать 2 прочности источника за удар, факт: %d" % (hits_before - lake.current_hits))
+		return
+	print("✅ Усиленное ведро Lv.2 черпает бонусную порцию и бьёт по водоёму вдвое сильнее.")
 
 	# -------------------------------------------------------------
 	# 7. Контракт: Оснащение экспедиции рудокопов (450 кредитов)

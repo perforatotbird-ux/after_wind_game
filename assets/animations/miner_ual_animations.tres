@@ -1,4 +1,4 @@
-[gd_resource type="AnimationLibrary" format=3]
+[gd_resource type="AnimationLibrary" format=3 uid="uid://dce7ypxks2s7a"]
 
 [sub_resource type="Animation" id="Animation_sx3ol"]
 length = 0.001
@@ -710,7 +710,7 @@ metadata/play_speed = 1.0
 metadata/ground_speed = 0.3468469619750976
 
 [sub_resource type="Animation" id="Animation_nonp8"]
-length = 0.9666666666666667
+length = 0.9666666666666668
 tracks/0/type = "rotation_3d"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -3544,7 +3544,7 @@ tracks/49/keys = PackedFloat32Array(0, 1, 0.0654354, 1.5400786, -0.06006974, 0.6
 metadata/play_speed = 1.0
 
 [sub_resource type="Animation" id="Animation_t00l3"]
-length = 0.9333333333333333
+length = 0.9333333333333332
 loop_mode = 1
 tracks/0/type = "rotation_3d"
 tracks/0/imported = false

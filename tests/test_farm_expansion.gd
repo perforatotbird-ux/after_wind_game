@@ -64,18 +64,18 @@ func _process(_d: float) -> bool:
 	_finish()
 	return true
 
-# --- 1. Культуры в crop_db (числа из разделов 3.3/8.1 мастер-плана) ---
+# --- 1. Культуры в crop_db (лестница роста 6–28 ч, октябрь 2026) ---
 func _test_crops_db() -> void:
 	var expected: Dictionary = {
-		"sunflower": {"growth": 20.0, "yield": [2, 4], "seasons": ["summer"], "product": "sunflower_seeds"},
-		"onion": {"growth": 14.0, "yield": [3, 5], "seasons": ["spring", "summer", "autumn"], "product": "onion"},
-		"cabbage": {"growth": 26.0, "yield": [1, 2], "seasons": ["summer", "autumn"], "product": "cabbage"},
-		"tomato": {"growth": 18.0, "yield": [3, 6], "seasons": ["summer"], "product": "tomato"},
-		"pepper": {"growth": 22.0, "yield": [2, 4], "seasons": ["summer"], "product": "pepper"},
-		"bean": {"growth": 12.0, "yield": [4, 8], "seasons": ["spring", "summer"], "product": "bean"},
-		"herbs": {"growth": 8.0, "yield": [3, 6], "seasons": ["spring", "summer", "autumn"], "product": "herbs"},
-		"corn": {"growth": 24.0, "yield": [2, 4], "seasons": ["summer"], "product": "corn"},
-		"pumpkin": {"growth": 30.0, "yield": [1, 2], "seasons": ["summer", "autumn"], "product": "pumpkin"},
+		"sunflower": {"growth": 18.0, "yield": [2, 4], "seasons": ["summer"], "product": "sunflower_seeds"},
+		"onion": {"growth": 12.0, "yield": [3, 5], "seasons": ["spring", "summer", "autumn"], "product": "onion"},
+		"cabbage": {"growth": 24.0, "yield": [1, 2], "seasons": ["summer", "autumn"], "product": "cabbage"},
+		"tomato": {"growth": 16.0, "yield": [3, 6], "seasons": ["summer"], "product": "tomato"},
+		"pepper": {"growth": 20.0, "yield": [2, 4], "seasons": ["summer"], "product": "pepper"},
+		"bean": {"growth": 10.0, "yield": [4, 8], "seasons": ["spring", "summer"], "product": "bean"},
+		"herbs": {"growth": 6.0, "yield": [3, 6], "seasons": ["spring", "summer", "autumn"], "product": "herbs"},
+		"corn": {"growth": 22.0, "yield": [2, 4], "seasons": ["summer"], "product": "corn"},
+		"pumpkin": {"growth": 28.0, "yield": [1, 2], "seasons": ["summer", "autumn"], "product": "pumpkin"},
 	}
 	for crop in expected:
 		check(CropDB.has_crop(crop), "Нет культуры %s в CropDB" % crop)

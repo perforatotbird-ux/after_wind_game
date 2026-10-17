@@ -378,6 +378,7 @@ func chop(player: Node) -> bool:
 
 	var pitch: float = 0.65 if (float(sharpness_eff.get("power_mult", 1.0)) <= 0.5) else 1.0
 	AudioManager.play("hit_wood", pitch)
+	_spawn_chop_crumbs()
 
 	var raw_power: float = 1.0 * float(sharpness_eff.get("power_mult", 1.0))
 	_damage_pool += raw_power
@@ -416,6 +417,33 @@ func chop(player: Node) -> bool:
 	if player and player.has_method("notify"):
 		player.notify("🪓 Удар по дереву! Осталось ударов: %d" % current_hits)
 	return false
+
+## Щепа при ударе топором — как крошка у обычных деревьев и жил.
+func _spawn_chop_crumbs() -> void:
+	if DisplayServer.get_name() == "headless" or not is_inside_tree():
+		return
+	var p := CPUParticles3D.new()
+	p.one_shot = true
+	p.amount = 10
+	p.lifetime = 0.6
+	p.explosiveness = 0.9
+	p.direction = Vector3.UP
+	p.spread = 55.0
+	p.initial_velocity_min = 1.5
+	p.initial_velocity_max = 3.0
+	p.gravity = Vector3(0, -9.8, 0)
+	p.scale_amount_min = 0.6
+	p.scale_amount_max = 1.1
+	var bm := BoxMesh.new()
+	bm.size = Vector3.ONE * 0.06
+	var mat_res := StandardMaterial3D.new()
+	mat_res.albedo_color = Color(0.5, 0.33, 0.16)
+	bm.material = mat_res
+	p.mesh = bm
+	add_child(p)
+	p.position = Vector3(0, 1.2, 0)
+	p.emitting = true
+	get_tree().create_timer(1.0).timeout.connect(p.queue_free)
 
 func get_save_state() -> Dictionary:
 	return {

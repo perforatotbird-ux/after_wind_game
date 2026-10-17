@@ -4,10 +4,12 @@ extends "res://scripts/interaction/interactable.gd"
 ## Ветроэлектрогенератор базы (Разделы 54, 57, 84 дизайн-документа)
 ## Преобразует энергию ветра в электричество для освещения и зарядки аккумуляторов.
 
-@export var base_output: float = 2.0
+@export var base_output: float = 1.0
 @export var is_operational: bool = true
 
-@onready var rotor_node: Node3D = $Rotor
+## Узла Rotor больше нет (процедурный ветряк заменён статичной GLB-моделью):
+## null ротора корректно обрабатывается ниже и в тестах (проверка вращения пропускается).
+@onready var rotor_node: Node3D = get_node_or_null("Rotor")
 @onready var status_light: OmniLight3D = $StatusLight
 
 var _current_rotation_speed: float = 3.0
@@ -64,10 +66,10 @@ func get_current_output() -> float:
 		weather_type = weather_mgr.current_weather
 	
 	match weather_type:
-		0: return 2.0 # Ясно (слабый бриз)
-		1: return 3.5 # Пасмурно (умеренный ветер)
-		2: return 5.5 # Дождь (свежий шквалистый ветер)
-		3: return 8.5 # Ливень (штормовой ветер)
+		0: return 1.0 # Ясно (слабый бриз)
+		1: return 2.0 # Пасмурно (умеренный ветер)
+		2: return 3.5 # Дождь (свежий шквалистый ветер)
+		3: return 5.5 # Ливень (штормовой ветер)
 		_: return base_output
 
 func _on_interacted(player: Node) -> void:

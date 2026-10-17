@@ -50,15 +50,11 @@ func _run_tests() -> void:
 		return
 	
 	var plot1 = world.find_child("FarmlandPlot1", true, false)
-	var reservoir = world.find_child("WaterReservoir", true, false)
 	var house = world.find_child("RepairableHouse", true, false)
 	var smelter = world.find_child("Smelter", true, false)
 	
 	if not plot1:
 		_fail("FarmlandPlot1 не найден")
-		return
-	if not reservoir:
-		_fail("WaterReservoir не найден")
 		return
 	if not house:
 		_fail("RepairableHouse не найден")
@@ -67,7 +63,7 @@ func _run_tests() -> void:
 		_fail("Smelter не найден")
 		return
 	
-	print("✅ Все ключевые узлы мира найдены (WeatherManager, Player, HUD, FarmlandPlot, Reservoir, House, Smelter).")
+	print("✅ Все ключевые узлы мира найдены (WeatherManager, Player, HUD, FarmlandPlot, House, Smelter).")
 
 	# -------------------------------------------------------------
 	# 1. Проверка состояний погоды и параметров
@@ -286,21 +282,27 @@ func _run_tests() -> void:
 	print("  • Дождь успешно увлажнил почву грядки (влажность выросла с 10%% до %.1f%%)." % plot1.moisture)
 
 	# -------------------------------------------------------------
-	# 6. Наполнение резервуара для воды дождевыми осадками
+	# 6. Интенсивность осадков масштабирует полив: ливень вдвое сильнее дождя
 	# -------------------------------------------------------------
-	print("\n--- Проверка 6: Наполнение резервуара осадками ---")
+	print("\n--- Проверка 6: Ливень увлажняет грядку вдвое быстрее дождя ---")
 	
-	reservoir.current_water = 5
+	plot1.moisture = 10.0
+	weather_mgr.set_weather(WeatherManager.WeatherType.RAIN) # интенсивность 1.0
+	weather_mgr._apply_rainfall_to_world(weather_mgr.get_rain_intensity(), 1.0)
+	var rain_gain: float = plot1.moisture - 10.0
+	
+	plot1.moisture = 10.0
 	weather_mgr.set_weather(WeatherManager.WeatherType.HEAVY_RAIN) # интенсивность 2.0
-	weather_mgr._reservoir_accumulator = 0.0
+	weather_mgr._apply_rainfall_to_world(weather_mgr.get_rain_intensity(), 1.0)
+	var heavy_gain: float = plot1.moisture - 10.0
 	
-	# Симулируем 6 секунд сильного ливня (интенсивность 2.0 * 6.0 = 12.0 накопителя >= threshold 10.0)
-	weather_mgr._apply_rainfall_to_world(weather_mgr.get_rain_intensity(), 6.0)
-	
-	if reservoir.current_water != 6:
-		_fail("Резервуар должен был набрать +1 воды от сильного дождя (ожидалось 6, факт: %d)" % reservoir.current_water)
+	if rain_gain <= 0.0:
+		_fail("Дождь должен увлажнять грядку, факт прироста: %.2f" % rain_gain)
 		return
-	print("  • Резервуар успешно наполнился дождевой водой (с 5 до 6 ед).")
+	if absf(heavy_gain - rain_gain * 2.0) > 0.01:
+		_fail("Ливень (интенсивность 2.0) должен давать вдвое больше влаги: дождь +%.2f, ливень +%.2f" % [rain_gain, heavy_gain])
+		return
+	print("  • Интенсивность осадков: дождь +%.2f ед. влаги/с, ливень +%.2f ед. влаги/с." % [rain_gain, heavy_gain])
 
 	# -------------------------------------------------------------
 	# 7. Цикл смены погоды

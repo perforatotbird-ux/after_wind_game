@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://bcby5robtnevg"
-path="res://.godot/imported/VERSTAK_edited.glb-dd016f938809ba698842fab601b02ed7.scn"
+path="res://.godot/imported/VERSTAK_edited.glb-132cfb2119bdac2421f813a0da505bdd.scn"
 
 [deps]
 
-source_file="res://VERSTAK_edited.glb"
-dest_files=["res://.godot/imported/VERSTAK_edited.glb-dd016f938809ba698842fab601b02ed7.scn"]
+source_file="res://assets/models/workbench/VERSTAK_edited.glb"
+dest_files=["res://.godot/imported/VERSTAK_edited.glb-132cfb2119bdac2421f813a0da505bdd.scn"]
 
 [params]
 

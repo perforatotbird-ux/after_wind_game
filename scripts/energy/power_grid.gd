@@ -17,6 +17,9 @@ enum SourceMode { BOTH, TURBINE, BATTERY }
 ## КПД заряда батареи: базовый ветряк наполняет её втрое медленнее,
 ## чтобы заряд был заметным процессом, а не мгновенным скачком до 100 %.
 const CHARGE_EFFICIENCY: float = 1.0 / 3.0
+## Темп разряда батареи: вдвое медленнее номинала — тяжёлые станки
+## (печь, дробилка) не должны осушать накопитель за полминуты.
+const DISCHARGE_RATE: float = 0.5
 
 @export var max_capacity: float = 100.0
 @export var current_stored: float = 30.0 # Начальный заряд 30 кВт·ч
@@ -127,15 +130,16 @@ func _update_grid(delta: float) -> void:
 					current_stored = min(max_capacity, current_stored + net * delta * CHARGE_EFFICIENCY)
 			SourceMode.BATTERY:
 				# Вся нагрузка идёт из батареи, генерация подзаряжает её (с КПД).
+				# Разряд идёт вполовину медленнее номинала (DISCHARGE_RATE).
 				current_stored = clampf(
-					current_stored + (current_generation * CHARGE_EFFICIENCY - current_consumption) * delta,
+					current_stored + (current_generation * CHARGE_EFFICIENCY - current_consumption * DISCHARGE_RATE) * delta,
 					0.0, max_capacity)
 			_:
 				# Сеть (авто): генерация питает потребителей, излишек — в батарею.
 				if net > 0.0:
 					current_stored = min(max_capacity, current_stored + net * delta * CHARGE_EFFICIENCY)
 				elif net < 0.0:
-					current_stored = max(0.0, current_stored + net * delta)
+					current_stored = max(0.0, current_stored + net * delta * DISCHARGE_RATE)
 
 	# Питание потребителей — по выбранному источнику. Гистерезис: когда питание
 	# уже пропало, сеть вернёт его только на уверенном запасе, иначе потребители
@@ -153,12 +157,19 @@ func _update_grid(delta: float) -> void:
 			else:
 				has_power = (net >= 0.0) or (current_stored > max_capacity * 0.15)
 
-	# 5. Уведомление потребителей (только при изменении статуса питания)
+	# 5. Уведомление потребителей (только при изменении статуса питания).
+	# Алерт один и центральный — со списком вставших станков и цифрами дефицита,
+	# иначе сообщение терялось бы среди уведомлений добычи.
 	if _last_consumer_has_power != has_power:
 		_last_consumer_has_power = has_power
 		for con in _consumers:
 			if is_instance_valid(con) and con.has_method("set_powered"):
 				con.set_powered(has_power)
+		if has_power:
+			_notify_player("⚡ Мощности хватило — станки продолжают работу.")
+		else:
+			_notify_player("⚡ Не хватает мощности! Остановлены: %s (нужно %.1f кВт, генерация %.1f кВт, батарея %d%%)." % [
+				_stopped_names(), current_consumption, current_generation, _stored_pct()])
 	
 	# 6. Уведомление батарей
 	for bat in _batteries:
@@ -179,6 +190,30 @@ func _update_grid(delta: float) -> void:
 
 func get_power_status_text() -> String:
 	var net: float = current_generation - current_consumption
-	var pct: int = int((current_stored / max_capacity) * 100.0) if max_capacity > 0.001 else 0
+	var pct: int = _stored_pct()
 	var sign_str: String = "+" if net >= 0 else ""
 	return "⚡ %d%% (%s%.1f кВт) · Источник: %s" % [pct, sign_str, net, get_source_mode_name()]
+
+func _stored_pct() -> int:
+	return int((current_stored / max_capacity) * 100.0) if max_capacity > 0.001 else 0
+
+## Имена работающих потребителей, вставших без питания.
+func _stopped_names() -> String:
+	var names: PackedStringArray = []
+	for con in _consumers:
+		if is_instance_valid(con) and con.has_method("get_power_demand"):
+			if float(con.get_power_demand()) > 0.0:
+				var nm: String = str(con.get("object_name")) if con.get("object_name") != null else con.name
+				if not names.has(nm):
+					names.append(nm)
+	return ", ".join(names) if not names.is_empty() else "потребители"
+
+func _notify_player(text: String) -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
+	var player = tree.get_first_node_in_group("player")
+	if player == null and get_parent():
+		player = get_parent().find_child("Player", true, false)
+	if player and is_instance_valid(player) and player.has_method("notify"):
+		player.notify(text)

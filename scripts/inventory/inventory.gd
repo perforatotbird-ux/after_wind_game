@@ -45,6 +45,7 @@ signal tool_changed(tool_id: String, tool_name: String)
 signal credits_changed(total: int)
 signal load_state_changed(state: int)
 signal tool_sharpness_changed(tool_id: String, current_sharpness: float)
+signal whetstone_uses_changed(uses_left: int, max_uses: int)
 
 @export var max_slots: int = DEFAULT_SLOTS
 ## Допустимый вес самого рюкзака (без бонусов зданий).
@@ -74,6 +75,12 @@ var tool_sharpness: Dictionary = {
 	"pickaxe": 100.0,
 	"shovel": 100.0
 }
+
+## Оселок: один брусок = 5 заточек. Остаток текущего бруска на поясе.
+## При получении оселка пояс пополняется, при трате последнего использования
+## списывается 1 шт. из рюкзака и заряды обновляются.
+const WHETSTONE_MAX_USES: int = 5
+var whetstone_uses_left: int = 0
 
 ## Словарь хранения предметов { item_id: int }
 var items: Dictionary = {
@@ -207,6 +214,7 @@ func clear() -> void:
 	for k in items:
 		items[k] = 0
 	tool_sharpness = {"axe": 100.0, "pickaxe": 100.0, "shovel": 100.0}
+	whetstone_uses_left = 0
 	slot_layout.clear()
 	_weight_dirty = true
 	_update_load_state()
@@ -247,11 +255,14 @@ func equip_slot(slot_index: int) -> void:
 		equip_tool(tools[slot_index])
 
 ## Инструменты пояса, между которыми листает колесо мыши. Рюкзак пропускается:
-## его не берут в руки, слот 5 открывает окно инвентаря.
+## его не берут в руки, слот 5 открывает окно инвентаря. Оселок — снаряжение
+## пояса, а не ручной инструмент: колесом не листается.
 func get_cyclable_tools() -> Array[String]:
 	var result: Array[String] = []
 	for t in tools:
 		if t == "backpack" or ItemDB.get_item(t).get("tool_type", "") == "backpack":
+			continue
+		if t == "whetstone":
 			continue
 		result.append(t)
 	return result
@@ -464,6 +475,46 @@ func sharpen_tool(tool_id_or_type: String, amount: float = 100.0) -> float:
 	return new_s
 
 # ---------------------------------------------------------------------------
+# Оселок на поясе: 1 брусок = 5 заточек
+# ---------------------------------------------------------------------------
+
+## Класть ли оселок на пояс (доп. слот снаряжения, не занимает слоты рюкзака).
+func ensure_belt_whetstone() -> void:
+	if int(items.get("whetstone", 0)) > 0 and not tools.has("whetstone"):
+		tools.append("whetstone")
+		inventory_updated.emit()
+
+## Остаток использований текущего бруска (0 — бруска на поясе нет).
+func get_whetstone_uses() -> int:
+	if int(items.get("whetstone", 0)) <= 0:
+		return 0
+	return maxi(0, whetstone_uses_left)
+
+## Тратит 1 использование оселка. Когда брусок стёрт — списывает 1 шт.,
+## следующий брусок встаёт на пояс с полным зарядом. Возвращает false, если точить нечем.
+func consume_whetstone_use() -> bool:
+	if int(items.get("whetstone", 0)) <= 0:
+		whetstone_uses_left = 0
+		return false
+	if whetstone_uses_left <= 0:
+		whetstone_uses_left = WHETSTONE_MAX_USES
+	whetstone_uses_left -= 1
+	if whetstone_uses_left <= 0:
+		items["whetstone"] = int(items["whetstone"]) - 1
+		if int(items["whetstone"]) > 0:
+			whetstone_uses_left = WHETSTONE_MAX_USES
+		else:
+			whetstone_uses_left = 0
+			tools.erase("whetstone")
+			if equipped_tool == "whetstone":
+				equipped_tool = "axe"
+				_notify_tool_changed()
+		_update_load_state()
+	whetstone_uses_changed.emit(whetstone_uses_left, WHETSTONE_MAX_USES)
+	inventory_updated.emit()
+	return true
+
+# ---------------------------------------------------------------------------
 # Вместимость рюкзака
 # ---------------------------------------------------------------------------
 
@@ -502,9 +553,8 @@ func get_weight_bonus_total() -> float:
 	return total
 
 ## Занимает ли предмет слоты рюкзака (инструменты и снаряжение — на поясе).
+## Оселок — снаряжение пояса: отдельный слот, слоты рюкзака не занимает.
 func item_uses_slots(item_id: String) -> bool:
-	if item_id == "whetstone":
-		return true
 	var cat: String = ItemDB.get_item(item_id).get("category", "")
 	return cat not in ["tool", "equipment"]
 
@@ -777,6 +827,13 @@ func add_item(item_id: String, amount: int) -> bool:
 	var current: int = items.get(item_id, 0)
 	var new_amount: int = current + amount
 	items[item_id] = new_amount
+
+	# Оселок встаёт на пояс с полным зарядом, если пояс пуст.
+	if item_id == "whetstone":
+		if whetstone_uses_left <= 0:
+			whetstone_uses_left = WHETSTONE_MAX_USES
+			whetstone_uses_changed.emit(whetstone_uses_left, WHETSTONE_MAX_USES)
+		ensure_belt_whetstone()
 	
 	# Если получен инструмент или снаряжение — автоматически активируем оснастку/улучшение
 	var cat: String = item_data.get("category", "")
@@ -797,6 +854,13 @@ func remove_item(item_id: String, amount: int) -> bool:
 		return false
 	
 	items[item_id] = current - amount
+	if item_id == "whetstone" and int(items[item_id]) <= 0:
+		whetstone_uses_left = 0
+		tools.erase("whetstone")
+		if equipped_tool == "whetstone":
+			equipped_tool = "axe"
+			_notify_tool_changed()
+		whetstone_uses_changed.emit(0, WHETSTONE_MAX_USES)
 	_update_load_state()
 	inventory_updated.emit()
 	return true

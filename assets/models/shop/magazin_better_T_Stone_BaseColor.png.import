@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dqt7bwt4ubxd5"
-path="res://.godot/imported/VERSTAK_edited_texture_pbr_v128.png-f281e196859c986e42fe6892ded379c7.ctex"
+uid="uid://brc5r8llvrn1g"
+path="res://.godot/imported/magazin_better_T_Stone_BaseColor.png-c2258070f4d8ba71083ab9004337bcc1.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "6a4e22380c58d75a8e5492db6dd200f7"
+"md5": "eb5b91d98eb8a61f8b6e85ced0671d49"
 }
 
 [deps]
 
-source_file="res://VERSTAK_edited_texture_pbr_v128.png"
-dest_files=["res://.godot/imported/VERSTAK_edited_texture_pbr_v128.png-f281e196859c986e42fe6892ded379c7.ctex"]
+source_file="res://assets/models/shop/magazin_better_T_Stone_BaseColor.png"
+dest_files=["res://.godot/imported/magazin_better_T_Stone_BaseColor.png-c2258070f4d8ba71083ab9004337bcc1.ctex"]
 
 [params]
 

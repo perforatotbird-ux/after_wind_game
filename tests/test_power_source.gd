@@ -1,8 +1,9 @@
 extends SceneTree
 
-## Тест энергосети: замедленный заряд батареи (КПД 1/3), источники питания
-## Сеть/Ветряк/Батарея, остановка анимации дробилки при обесточивании,
-## причина обесточивания в HUD, переключение рубильником батареи, сейв режима.
+## Тест энергосети: замедленный заряд батареи (КПД 1/3), разряд вполовину
+## медленнее, источники питания Сеть/Ветряк/Батарея, центральный алерт
+## «Не хватает мощности» с цифрами дефицита, остановка анимации дробилки
+## при обесточивании, причина обесточивания в HUD, рубильник, сейв режима.
 
 const WorldScene = preload("res://scenes/world/world.tscn")
 const WeatherManagerScript = preload("res://scripts/world/weather_manager.gd")
@@ -53,15 +54,18 @@ func _run_tests() -> void:
 	# Глава 2: дробилка стартует разрушенной — для проверки сети включаем её.
 	crusher.force_rebuilt()
 	player.energy = 100.0
-	weather.set_weather(WeatherManagerScript.WeatherType.SUNNY) # генерация 2.0 кВт
+	var notes: Array[String] = []
+	player.notification_received.connect(func(t: String): notes.append(t))
+	weather.set_weather(WeatherManagerScript.WeatherType.SUNNY) # генерация 1.0 кВт
+	notes.clear() # уведомление о погоде не в счёт
 
-	# ---------- 1. Заряд батареи втрое медленнее ----------
-	print("\n--- 1. КПД заряда ×1/3 ---")
+	# ---------- 1. Заряд идёт по КПД 1/3 ----------
+	print("\n--- 1. Заряд идёт по КПД 1/3 ---")
 	grid.source_mode = PowerGridScript.SourceMode.BOTH
 	grid.current_stored = 50.0
-	grid._update_grid(1.0) # генерация 2.0, потребление 0 (день, фонари выключены)
-	check(absf(grid.current_stored - (50.0 + 2.0 / 3.0)) < 0.01,
-		"Заряд за 1 с излишка 2 кВт: +%.2f вместо +2.0 (КПД 1/3)" % (grid.current_stored - 50.0))
+	grid._update_grid(1.0) # генерация 1.0, потребление 0 (день, фонари выключены)
+	check(absf(grid.current_stored - (50.0 + 1.0 / 3.0)) < 0.01,
+		"Заряд за 1 с излишка 1 кВт: +%.2f вместо +1.0 (КПД 1/3)" % (grid.current_stored - 50.0))
 
 	# ---------- 2. Режим «Ветряк»: слабая генерация не тянет дробилку ----------
 	print("\n--- 2. Источник «Ветряк» ---")
@@ -69,14 +73,23 @@ func _run_tests() -> void:
 	inv.add_item("stone", 20)
 	player.energy = 100.0
 	check(crusher.start_batch("crush_stone", 5, player), "Партия дробилки запущена")
-	grid._update_grid(0.1) # генерация 2.0 < потребление 3.0
-	check(not grid.has_power, "Ветряк (2.0 кВт) не тянет дробилку (3.0 кВт) — сеть обесточена")
+	grid._update_grid(0.1) # генерация 1.0 < потребление 3.0
+	check(not grid.has_power, "Ветряк (1.0 кВт) не тянет дробилку (3.0 кВт) — сеть обесточена")
+	var saw_alert: bool = false
+	var saw_numbers: bool = false
+	for t in notes:
+		if "Не хватает мощности" in t:
+			saw_alert = true
+		if "3.0 кВт" in t and "1.0 кВт" in t:
+			saw_numbers = true
+	check(saw_alert, "Алерт «Не хватает мощности» показан игроку")
+	check(saw_numbers, "Алерт содержит цифры дефицита (нужно/генерация)")
 	check(not crusher.power_ok, "Дробилка приостановлена")
 	check(not animator.is_running(), "Анимация дробилки остановлена (маховики не крутятся)")
 	# Шторм: генерации хватает — производство продолжается
-	weather.set_weather(WeatherManagerScript.WeatherType.HEAVY_RAIN) # 8.5 кВт
+	weather.set_weather(WeatherManagerScript.WeatherType.HEAVY_RAIN) # 5.5 кВт
 	grid._update_grid(0.1)
-	check(grid.has_power and crusher.power_ok, "В шторм (8.5 кВт) дробилка работает от ветряка")
+	check(grid.has_power and crusher.power_ok, "В шторм (5.5 кВт) дробилка работает от ветряка")
 	check(animator.is_running(), "Анимация дробилки снова крутится")
 
 	# ---------- 3. Режим «Батарея»: нагрузка на ёмкость, пауза снимает спрос ----------
@@ -87,7 +100,7 @@ func _run_tests() -> void:
 	grid.current_stored = 20.0
 	grid._update_grid(1.0)
 	check(grid.has_power, "Батарея питает дробилку, пока есть заряд")
-	check(absf(grid.current_stored - (20.0 - 3.0)) < 0.05, "Батарея тратится на всю нагрузку (20 → %.1f)" % grid.current_stored)
+	check(absf(grid.current_stored - (20.0 - 1.5)) < 0.05, "Батарея тратится вполовину медленнее (20 → %.1f)" % grid.current_stored)
 	grid.current_stored = 0.01
 	grid._update_grid(0.1)
 	check(not grid.has_power and not crusher.power_ok, "Пустая батарея — сеть обесточена")

@@ -35,8 +35,8 @@ const FUEL_SLOTS: int = 4
 ## Вместимость одного топливного слота.
 const FUEL_SLOT_STACK: int = 9
 ## Виды топлива и время горения одной единицы, сек реального времени.
-## Дерево — слабое аварийное топливо (1 шт = 10 с); уголь и брикеты — основные.
-const FUEL_BURN_TIME: Dictionary = {"coal": 240.0, "wood": 10.0, "fuel_briquette": 360.0}
+## Дерево — слабое аварийное топливо (1 шт = 20 с); уголь и брикеты — основные.
+const FUEL_BURN_TIME: Dictionary = {"coal": 240.0, "wood": 20.0, "fuel_briquette": 360.0}
 const FUEL_ITEMS: Array[String] = ["coal", "wood", "fuel_briquette"]
 ## Стоимость улучшения станка: { тип станка: { уровень: { item_id: количество } } }.
 ## Все детали делаются станками: Lv.2 — из компонентов Lv.1, Lv.3 — из стали
@@ -134,6 +134,11 @@ var process_duration: float = 1.0
 var completed_runs: int = 0
 ## Готовая продукция, ожидающая в станке: { item_id: количество }.
 var pending_outputs: Dictionary = {}
+## Склад станка: игрок может складывать сюда продукцию и забирать обратно
+## (до 8 стеков). Не участвует в рецептах — только хранение у станка.
+const MACHINE_STORAGE_MAX_STACKS: int = 8
+var storage: Dictionary = {}
+signal storage_changed()
 ## Текущая партия: всего циклов / завершено циклов.
 var batch_cycles_total: int = 0
 var batch_cycles_done: int = 0
@@ -548,16 +553,12 @@ func _get_power_grid() -> Node:
 
 ## PowerGrid сообщает о доступности питания. Без питания цикл приостанавливается:
 ## партия и сырьё не теряются, при восстановлении питания производство продолжается.
+## Алерт игроку шлёт сама сеть (PowerGrid, один на всех с цифрами дефицита) —
+## здесь тихо, чтобы не плодить дубли на каждый станок.
 func set_powered(has_power: bool) -> void:
 	if power_ok == has_power:
 		return
 	power_ok = has_power
-	if not is_machine_running or not (_last_user and is_instance_valid(_last_user)):
-		return
-	if not has_power:
-		_last_user.notify("⚡ В «%s» нет питания — производство приостановлено." % object_name)
-	else:
-		_last_user.notify("⚡ Питание восстановлено: «%s» продолжает работу." % object_name)
 
 # ---------------------------------------------------------------------------
 # Расчёт партии
@@ -918,6 +919,92 @@ func _deliver_pending(player: Node) -> void:
 		player.notify("⚠️ Не хватает места в рюкзаке — часть продукции осталась в машине.")
 	if changed:
 		outputs_changed.emit()
+
+# ---------------------------------------------------------------------------
+# Склад станка (хранение продукции у машины)
+# ---------------------------------------------------------------------------
+
+## Раскладка склада стеками для ItemGrid: [{item_id, count}].
+func get_storage_stacks() -> Array:
+	var stacks: Array = []
+	for item_id in storage.keys():
+		var left: int = int(storage.get(item_id, 0))
+		if left <= 0:
+			continue
+		var stack: int = maxi(1, int(ItemDB.get_item(str(item_id)).get("max_stack", 99)))
+		while left > 0:
+			var n: int = mini(left, stack)
+			stacks.append({"item_id": str(item_id), "count": n})
+			left -= n
+	return stacks
+
+func get_storage_stack_count() -> int:
+	return get_storage_stacks().size()
+
+## Положить продукцию из рюкзака на склад станка. Возвращает число принятых единиц.
+func store_from_player(item_id: String, player: Node, amount: int = -1) -> int:
+	if not is_instance_valid(player) or item_id == "":
+		return 0
+	var inv = player.get("inventory") if "inventory" in player else null
+	if inv == null or not inv.has_method("get_item_count"):
+		return 0
+	var have: int = int(inv.get_item_count(item_id))
+	if have <= 0:
+		return 0
+	var want: int = have if amount <= 0 else mini(have, amount)
+	# Считаем, сколько стеков займёт склад после приёма.
+	var probe: Dictionary = storage.duplicate(true)
+	probe[item_id] = int(probe.get(item_id, 0)) + want
+	var stacks: int = 0
+	for sid in probe.keys():
+		var left: int = int(probe.get(sid, 0))
+		if left <= 0:
+			continue
+		var st: int = maxi(1, int(ItemDB.get_item(str(sid)).get("max_stack", 99)))
+		stacks += int(ceil(float(left) / float(st)))
+	if stacks > MACHINE_STORAGE_MAX_STACKS:
+		# Принимаем частично — сколько влезет в лимит стеков.
+		want = 0
+		var cur_stacks: int = get_storage_stack_count()
+		var st: int = maxi(1, int(ItemDB.get_item(item_id).get("max_stack", 99)))
+		var cur_left: int = int(storage.get(item_id, 0)) % st
+		var room: int = (MACHINE_STORAGE_MAX_STACKS - cur_stacks) * st
+		if int(storage.get(item_id, 0)) > 0 and cur_left > 0:
+			room += st - cur_left
+		want = clampi(mini(have, room), 0, have)
+		if want <= 0:
+			if player.has_method("notify"):
+				player.notify("⚠️ Склад станка полон (до %d стеков)." % MACHINE_STORAGE_MAX_STACKS)
+			return 0
+	if not inv.remove_item(item_id, want):
+		return 0
+	storage[item_id] = int(storage.get(item_id, 0)) + want
+	storage_changed.emit()
+	return want
+
+## Забрать продукцию со склада станка в рюкзак. Возвращает число выданных единиц.
+func take_stored(item_id: String, player: Node, amount: int = -1) -> int:
+	if not is_instance_valid(player) or item_id == "":
+		return 0
+	var avail: int = int(storage.get(item_id, 0))
+	if avail <= 0:
+		return 0
+	var inv = player.get("inventory") if "inventory" in player else null
+	if inv == null:
+		return 0
+	var want: int = avail if amount <= 0 else mini(avail, amount)
+	var fit: int = want
+	if inv.has_method("get_max_addable"):
+		fit = int(inv.get_max_addable(item_id, want))
+	if fit <= 0 or not inv.add_item(item_id, fit):
+		if player.has_method("notify"):
+			player.notify("⚠️ В рюкзаке нет места для %s" % ItemDB.get_item_name(item_id))
+		return 0
+	storage[item_id] = avail - fit
+	if int(storage[item_id]) <= 0:
+		storage.erase(item_id)
+	storage_changed.emit()
+	return fit
 
 func get_progress() -> float:
 	if not is_machine_running:

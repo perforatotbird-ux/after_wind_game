@@ -3,7 +3,8 @@ extends Node
 
 ## Система погоды и атмосферных явлений (Разделы 11, 13, 72 дизайн-документа)
 ## Управляет 5 типами погоды: Солнечно, Пасмурно, Дождь, Сильный ливень, Снег.
-## Координирует выпадение осадков, авто-полив грядок, наполнение резервуаров и мокроту игрока.
+## Координирует выпадение осадков, авто-полив грядок, мокроту игрока.
+## Вода производится игроком (озеро → фильтр/костёр), резервуар удалён.
 ## Сезон (Seasons) задаёт частоту дождей, а погодные события (SeasonManager —
 ## гроза, засуха, метель, ураган) могут навязать погоду принудительно.
 
@@ -22,8 +23,8 @@ signal rain_tick(intensity: float, delta: float)
 
 ## Насколько снег увлажняет почву по сравнению с дождём той же силы.
 const SNOW_HYDRATION: float = 0.25
-## Снег не наполняет цистерны: тает он позже, весной.
-const SNOW_RESERVOIR_FACTOR: float = 0.0
+## Снег увлажняет почву слабее дождя; открытых накопителей воды в игре нет.
+const SNOW_RESERVOIR_FACTOR: float = 0.0 # DEPRECATED: резервуар удалён, оставлено для совместимости.
 
 @export_group("Weather Settings")
 @export var current_weather: WeatherType = WeatherType.SUNNY
@@ -38,6 +39,7 @@ const SNOW_RESERVOIR_FACTOR: float = 0.0
 @export var world_environment: WorldEnvironment
 
 var _timer: float = 0.0
+## DEPRECATED: резервуар удалён, аккумулятор больше не накапливает воду.
 var _reservoir_accumulator: float = 0.0
 var _cycle_sequence: Array[WeatherType] = [
 	WeatherType.SUNNY,
@@ -153,7 +155,7 @@ func set_weather(new_type: WeatherType, notify_player: bool = true) -> void:
 				WeatherType.OVERCAST:
 					hud.show_notification("☁️ Небо затянуло плотными серыми тучами.")
 				WeatherType.RAIN:
-					hud.show_notification("🌧️ Начался моросящий дождь! Вода наполняет грядки и цистерны.")
+					hud.show_notification("🌧️ Начался моросящий дождь! Вода наполняет грядки и делянки.")
 				WeatherType.HEAVY_RAIN:
 					hud.show_notification("⛈️ Начался сильный ливень! Найдите укрытие от холодной воды.")
 				WeatherType.SNOW:
@@ -229,20 +231,9 @@ func _apply_rainfall_to_world(intensity: float, delta: float) -> void:
 		if is_instance_valid(field) and field.has_method("apply_rain"):
 			field.apply_rain(hydration_rate * delta)
 	
-	# 2. Наполнение водного резервуара дождевой водой
-	_reservoir_accumulator += delta * intensity * (SNOW_RESERVOIR_FACTOR if snowing else 1.0)
-	var threshold: float = 10.0 # каждые 10 сек в обычный дождь, 5 сек в ливень
-	if _reservoir_accumulator >= threshold:
-		_reservoir_accumulator = 0.0
-		var reservoirs = get_tree().get_nodes_in_group("water_reservoirs")
-		if reservoirs.is_empty() and get_parent():
-			reservoirs = get_parent().find_children("*", "Area3D", true, false)
-		for reservoir in reservoirs:
-			if is_instance_valid(reservoir) and "current_water" in reservoir and "max_capacity" in reservoir:
-				if reservoir.current_water < reservoir.max_capacity:
-					reservoir.current_water = min(reservoir.max_capacity, reservoir.current_water + 1)
-					if reservoir.has_signal("water_level_changed"):
-						reservoir.water_level_changed.emit(reservoir.current_water, reservoir.max_capacity)
+	# 2. Резервуар удалён из игры: дождь поливает только грядки/делянки.
+	# Аккумулятор очищен, чтобы не копить бесконечный таймер.
+	_reservoir_accumulator = 0.0
 
 func is_raining() -> bool:
 	return _is_rainy(current_weather)

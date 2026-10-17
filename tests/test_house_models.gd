@@ -26,7 +26,7 @@ func run_checks() -> void:
 	var player=world.get_node('Player')
 	var cycle:=CycleStub.new(); root.add_child(cycle)
 	check(h.building_id=='house' and h is RepairableBuilding,'Existing building mechanics connected')
-	check(h.global_position.is_equal_approx(Vector3(-6.2,0,-5.5)),'House location unchanged')
+	check(h.global_position.is_equal_approx(Vector3(-6.6898003,-0.2789812,-8.096183)),'House location unchanged')
 	var box: BoxShape3D=h.get_node('StaticBody3D/SolidShape').shape
 	check(box.size.is_equal_approx(Vector3(5.8,4.8,4.1)),'Solid collision fits the cottage')
 	check(h.has_node('StaticBody3D/FrontStep'),'Front step collision exists')

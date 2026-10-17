@@ -94,8 +94,10 @@ func _run_tests() -> void:
 		root.add_child(inv_ui)
 		check(is_instance_valid(inv_ui._whetstone_header_btn), "Кнопка крафта оселка в шапке рюкзака не найдена")
 
-		# Крафтим оселок
+		# Крафтим оселок (теперь это задача на 6 секунд с прогресс-баром)
 		inv_ui._craft_whetstone_in_backpack()
+		check(inv_ui._task_kind == "craft_whetstone", "Крафт оселка должен запускать 6-секундную задачу")
+		inv_ui._process(6.1)
 		check(inv.get_item_count("whetstone") == 1, "Оселок не добавился в инвентарь (кол-во: %d)" % inv.get_item_count("whetstone"))
 		check(inv.get_item_count("stone") == 3, "Камень не списался корректно (осталось: %d, ожидалось 3)" % inv.get_item_count("stone"))
 		check(inv.get_item_count("sand") == 2, "Песок не списался корректно (осталось: %d, ожидалось 2)" % inv.get_item_count("sand"))

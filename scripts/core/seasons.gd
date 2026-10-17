@@ -190,13 +190,11 @@ static func get_season_caption(season: String = "") -> String:
 		return ""
 	return "%s %s" % [get_season_icon(key), get_season_name(key)]
 
-## Подпись календаря для HUD: «🌱 весна · день 3/7».
+## Подпись календаря для HUD: только сезон («🌱 весна»), без дня — октябрь 2026.
 static func get_calendar_caption() -> String:
 	if not is_enabled():
 		return ""
-	return "%s %s · день %d/%d" % [
-		get_season_icon(), get_season_name(), day_in_season, DAYS_PER_SEASON
-	]
+	return "%s %s" % [get_season_icon(), get_season_name()]
 
 static func get_summary(season: String = "") -> String:
 	var key: String = season if season != "" else current_season

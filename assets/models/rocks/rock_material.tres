@@ -1,4 +1,4 @@
-[gd_resource type="StandardMaterial3D" format=4]
+[gd_resource type="StandardMaterial3D" format=4 uid="uid://b8qpk61pxkdrm"]
 
 [sub_resource type="PortableCompressedTexture2D" id="PortableCompressedTexture2D_nxbin"]
 resource_name = "RockCracks"

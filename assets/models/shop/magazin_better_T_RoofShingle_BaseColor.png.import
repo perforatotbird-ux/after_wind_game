@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bxuru4nkxrp0f"
-path="res://.godot/imported/VERSTAK_edited_texture_pbr_v128_metallic-texture_pbr_v128_roughness.png-bcc7e88aa1a52adc76599051088e8d5d.ctex"
+uid="uid://cy0jdpq83b6n2"
+path="res://.godot/imported/magazin_better_T_RoofShingle_BaseColor.png-a6be07d64892ffebbbf9a5128ebdd131.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "c36a295826195af3b8cda1f9b3720c20"
+"md5": "dfa0ffd3e3559b01bd84252c9ed2a96e"
 }
 
 [deps]
 
-source_file="res://VERSTAK_edited_texture_pbr_v128_metallic-texture_pbr_v128_roughness.png"
-dest_files=["res://.godot/imported/VERSTAK_edited_texture_pbr_v128_metallic-texture_pbr_v128_roughness.png-bcc7e88aa1a52adc76599051088e8d5d.ctex"]
+source_file="res://assets/models/shop/magazin_better_T_RoofShingle_BaseColor.png"
+dest_files=["res://.godot/imported/magazin_better_T_RoofShingle_BaseColor.png-a6be07d64892ffebbbf9a5128ebdd131.ctex"]
 
 [params]
 

@@ -199,6 +199,7 @@ var _house: Node = null
 var _smelter: Node = null
 
 func _ready() -> void:
+	add_to_group("player")
 	if not inventory:
 		# На случай если нода не добавлена в сцену явно
 		inventory = InventoryScript.new()

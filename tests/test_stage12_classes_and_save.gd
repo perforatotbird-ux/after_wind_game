@@ -229,10 +229,6 @@ func _run_tests() -> void:
 	if battery:
 		battery.stored_energy = 84.0
 	
-	var reservoir = world.find_child("WaterReservoir", true, false)
-	if reservoir:
-		reservoir.current_water = 15
-	
 	var plot1 = world.find_child("FarmlandPlot1", true, false)
 	if plot1:
 		plot1.soil_state = 1 # TILLED
@@ -268,8 +264,6 @@ func _run_tests() -> void:
 		day_cycle.current_hour = 8.0
 	if battery:
 		battery.stored_energy = 0.0
-	if reservoir:
-		reservoir.current_water = 2
 	if plot1:
 		plot1.soil_state = 0
 		plot1.crop_type = ""
@@ -316,16 +310,13 @@ func _run_tests() -> void:
 	if battery and abs(battery.stored_energy - 84.0) > 0.1:
 		_fail("Заряд батарей не восстановился: %.1f" % battery.stored_energy)
 		return
-	if reservoir and reservoir.current_water != 15:
-		_fail("Уровень воды в резервуаре не восстановился: %d" % reservoir.current_water)
-		return
 	if plot1 and (plot1.crop_type != "carrot" or abs(plot1.growth_progress - 48.0) > 0.1 or not plot1.is_fertilized):
 		_fail("Состояние грядки не восстановилось корректно")
 		return
 	if not ContractDB.is_completed("contract_fortify"):
 		_fail("Статус выполненных контрактов не восстановился")
 		return
-	print("✅ Все подсистемы мира (игрок, класс, инвентарь, день, погода, батареи, вода, грядки, контракты) 100% восстановлены.")
+	print("✅ Все подсистемы мира (игрок, класс, инвентарь, день, погода, батареи, грядки, контракты) 100% восстановлены.")
 
 	# Удаляем тестовый файл
 	SaveManager.delete_save(TEST_SAVE_PATH)

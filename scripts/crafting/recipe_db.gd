@@ -613,7 +613,7 @@ const RECIPES: Dictionary = {
 		"outputs": {"reinforced_bucket": 1},
 		"duration": 70.0,
 		"energy_cost": 3.0,
-		"description": "Сборка герметичного ведра со стальными обручами: черпает сразу удвоенную порцию чистой воды из резервуара."
+		"description": "Сборка герметичного ведра со стальными обручами: черпает сразу удвоенную порцию воды из озера."
 	},
 	"upgrade_large_backpack": {
 		"id": "upgrade_large_backpack",

@@ -1,8 +1,8 @@
-[gd_resource type="ArrayMesh" format=4]
+[gd_resource type="ArrayMesh" format=4 uid="uid://nqcuya1olfwd"]
 
-[ext_resource type="Texture2D" path="res://assets/models/tools/pickaxe_inhand_T_Trim_Props_BaseColor.png" id="1_6ac8n"]
-[ext_resource type="Texture2D" path="res://assets/models/tools/pickaxe_inhand_T_Trim_Props_ORM.png" id="2_jhpr0"]
-[ext_resource type="Texture2D" path="res://assets/models/tools/pickaxe_inhand_T_Trim_Props_Normal.png" id="3_o6i60"]
+[ext_resource type="Texture2D" uid="uid://c5deijtbyytpk" path="res://assets/models/tools/pickaxe_inhand_T_Trim_Props_BaseColor.png" id="1_6ac8n"]
+[ext_resource type="Texture2D" uid="uid://buc8p1heong7" path="res://assets/models/tools/pickaxe_inhand_T_Trim_Props_ORM.png" id="2_jhpr0"]
+[ext_resource type="Texture2D" uid="uid://c7l7n2m5sgmjj" path="res://assets/models/tools/pickaxe_inhand_T_Trim_Props_Normal.png" id="3_o6i60"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hf1q2"]
 resource_name = "MI_Trim_Props_Vertex"

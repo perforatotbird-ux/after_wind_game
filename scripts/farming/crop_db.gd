@@ -37,6 +37,10 @@ const FERTILIZER_BONUS: float = 35.0
 const FALLOW_RECOVERY: float = 0.5
 
 const CROPS: Dictionary = {
+	# Лестница роста (игровые часы, 1 ч = 60 с реала): скороспелые дают
+	# быстрый, но скромный урожай; поздние — долгий, но сытный и ценный.
+	# 6–10 ч: зелень и бобовые → 12–18 ч: корнеплоды и летние овощи →
+	# 20–24 ч: зерно и капуста → 28 ч: тыква-тяжеловес.
 	"carrot": {
 		"name": "Морковь",
 		"seed": "seeds_carrot",
@@ -55,7 +59,7 @@ const CROPS: Dictionary = {
 	"potato": {
 		"name": "Картофель",
 		"seed": "seeds_potato",
-		"growth_hours": 16.0,
+		"growth_hours": 14.0,
 		"water_use": 3.5,
 		"moist_min": 30.0,
 		"moist_max": 70.0,
@@ -70,7 +74,7 @@ const CROPS: Dictionary = {
 	"wheat": {
 		"name": "Пшеница",
 		"seed": "seeds_wheat",
-		"growth_hours": 22.0,
+		"growth_hours": 20.0,
 		"water_use": 2.5,
 		"moist_min": 20.0,
 		"moist_max": 80.0,
@@ -80,13 +84,13 @@ const CROPS: Dictionary = {
 		"yield": [3, 5],
 		"seeds_back": [1, 3],
 		"soil_drain": 8.0,
-		"tip": "засухоустойчива, растёт дольше всех, бережёт почву",
+		"tip": "засухоустойчива, требует терпения, бережёт почву",
 	},
 	"sunflower": {
 		"name": "Подсолнух",
 		"seed": "seeds_sunflower",
 		"product": "sunflower_seeds",
-		"growth_hours": 20.0,
+		"growth_hours": 18.0,
 		"water_use": 3.0,
 		"moist_min": 25.0,
 		"moist_max": 65.0,
@@ -102,7 +106,7 @@ const CROPS: Dictionary = {
 		"name": "Лук",
 		"seed": "seeds_onion",
 		"product": "onion",
-		"growth_hours": 14.0,
+		"growth_hours": 12.0,
 		"water_use": 4.0,
 		"moist_min": 35.0,
 		"moist_max": 75.0,
@@ -118,7 +122,7 @@ const CROPS: Dictionary = {
 		"name": "Капуста",
 		"seed": "seeds_cabbage",
 		"product": "cabbage",
-		"growth_hours": 26.0,
+		"growth_hours": 24.0,
 		"water_use": 5.5,
 		"moist_min": 40.0,
 		"moist_max": 85.0,
@@ -134,7 +138,7 @@ const CROPS: Dictionary = {
 		"name": "Помидор",
 		"seed": "seeds_tomato",
 		"product": "tomato",
-		"growth_hours": 18.0,
+		"growth_hours": 16.0,
 		"water_use": 4.5,
 		"moist_min": 50.0,
 		"moist_max": 90.0,
@@ -150,7 +154,7 @@ const CROPS: Dictionary = {
 		"name": "Сладкий перец",
 		"seed": "seeds_pepper",
 		"product": "pepper",
-		"growth_hours": 22.0,
+		"growth_hours": 20.0,
 		"water_use": 3.5,
 		"moist_min": 35.0,
 		"moist_max": 70.0,
@@ -166,7 +170,7 @@ const CROPS: Dictionary = {
 		"name": "Фасоль",
 		"seed": "seeds_bean",
 		"product": "bean",
-		"growth_hours": 12.0,
+		"growth_hours": 10.0,
 		"water_use": 3.0,
 		"moist_min": 30.0,
 		"moist_max": 65.0,
@@ -182,7 +186,7 @@ const CROPS: Dictionary = {
 		"name": "Пряные травы",
 		"seed": "seeds_herbs",
 		"product": "herbs",
-		"growth_hours": 8.0,
+		"growth_hours": 6.0,
 		"water_use": 2.5,
 		"moist_min": 30.0,
 		"moist_max": 70.0,
@@ -198,7 +202,7 @@ const CROPS: Dictionary = {
 		"name": "Кукуруза",
 		"seed": "seeds_corn",
 		"product": "corn",
-		"growth_hours": 24.0,
+		"growth_hours": 22.0,
 		"water_use": 3.8,
 		"moist_min": 35.0,
 		"moist_max": 75.0,
@@ -214,7 +218,7 @@ const CROPS: Dictionary = {
 		"name": "Тыква",
 		"seed": "seeds_pumpkin",
 		"product": "pumpkin",
-		"growth_hours": 30.0,
+		"growth_hours": 28.0,
 		"water_use": 4.0,
 		"moist_min": 40.0,
 		"moist_max": 80.0,

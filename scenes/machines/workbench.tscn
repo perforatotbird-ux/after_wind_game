@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://c7x2v1m4k8q9a"]
 
 [ext_resource type="Script" path="res://scripts/crafting/production_machine.gd" id="1_mach"]
-[ext_resource type="PackedScene" uid="uid://bcby5robtnevg" path="res://VERSTAK_edited.glb" id="2_model"]
+[ext_resource type="PackedScene" uid="uid://bcby5robtnevg" path="res://assets/models/workbench/VERSTAK_edited.glb" id="2_model"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
 size = Vector3(2.5, 2.2, 2.0)

@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cqypphw8o7ko7"
-path="res://.godot/imported/VERSTAK_edited_texture_pbr_v128_normal.png-ba01a9c0e2ec6475424d7953544b580c.ctex"
+uid="uid://e2hh84ru44kj"
+path="res://.godot/imported/magazin_better_T_Wood_BaseColor.png-a51f3abd0feba8a6143aac0f2d4e9a86.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "1ff9dae4738ae97c5fe04e2610c309f6"
+"md5": "8072b24883ce7030855055a406f0a809"
 }
 
 [deps]
 
-source_file="res://VERSTAK_edited_texture_pbr_v128_normal.png"
-dest_files=["res://.godot/imported/VERSTAK_edited_texture_pbr_v128_normal.png-ba01a9c0e2ec6475424d7953544b580c.ctex"]
+source_file="res://assets/models/shop/magazin_better_T_Wood_BaseColor.png"
+dest_files=["res://.godot/imported/magazin_better_T_Wood_BaseColor.png-a51f3abd0feba8a6143aac0f2d4e9a86.ctex"]
 
 [params]
 

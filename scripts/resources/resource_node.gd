@@ -390,6 +390,49 @@ func _play_hit_effect() -> void:
 	tw.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(visual_node, "scale", _original_scale * Vector3(1.15, 0.85, 1.15), 0.08)
 	tw.tween_property(visual_node, "scale", _original_scale, 0.12)
+	_spawn_hit_crumbs()
+
+## Взрыв крошки в цвет ресурса при ударе: рубка (щепа), камень (осколки),
+## руда/металлолом (искры окалины), вода (брызги). Как у воксельных жил.
+func _spawn_hit_crumbs() -> void:
+	if DisplayServer.get_name() == "headless" or not is_inside_tree():
+		return
+	var tint: Color = Color(0.55, 0.42, 0.28)
+	match resource_id:
+		"wood":
+			tint = Color(0.5, 0.33, 0.16)
+		"stone":
+			tint = Color(0.62, 0.62, 0.65)
+		"metal_scrap", "iron_ore", "coal":
+			tint = Color(0.75, 0.45, 0.2)
+		"clay":
+			tint = Color(0.7, 0.42, 0.26)
+		"sand":
+			tint = Color(0.85, 0.75, 0.5)
+		"water", "dirty_water", "clean_water":
+			tint = Color(0.4, 0.68, 0.95)
+	var p := CPUParticles3D.new()
+	p.one_shot = true
+	p.amount = 10
+	p.lifetime = 0.6
+	p.explosiveness = 0.9
+	p.direction = Vector3.UP
+	p.spread = 55.0
+	p.initial_velocity_min = 1.5
+	p.initial_velocity_max = 3.0
+	p.gravity = Vector3(0, -9.8, 0)
+	p.scale_amount_min = 0.6
+	p.scale_amount_max = 1.1
+	var bm := BoxMesh.new()
+	bm.size = Vector3.ONE * 0.06
+	var mat_res := StandardMaterial3D.new()
+	mat_res.albedo_color = tint
+	bm.material = mat_res
+	p.mesh = bm
+	add_child(p)
+	p.position = Vector3(0, 1.0, 0)
+	p.emitting = true
+	get_tree().create_timer(1.0).timeout.connect(p.queue_free)
 
 func _set_depleted(depleted: bool) -> void:
 	is_depleted = depleted

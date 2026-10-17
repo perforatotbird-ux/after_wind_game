@@ -56,6 +56,8 @@ var _progress: ProgressBar
 var _cancel_btn: Button
 var _out_grid: ItemGrid
 var _collect_btn: Button
+var _store_grid: ItemGrid
+var _store_hint: Label
 var _modal: Control
 var _closing: bool = false
 var _syncing: bool = false
@@ -198,6 +200,7 @@ func _ready() -> void:
 	_grid = ItemGrid.new()
 	_grid.columns = 6
 	_grid.cell_size = Vector2(56, 56)
+	_grid.cell_pressed.connect(_on_backpack_cell_pressed)
 	inv_scroll.add_child(_grid)
 
 	# 3. Нижняя строка: состояние, топливо, продукция
@@ -277,6 +280,18 @@ func _ready() -> void:
 	_collect_btn.pressed.connect(_on_collect)
 	col_out.add_child(_collect_btn)
 
+	var col_store := VBoxContainer.new()
+	bottom.add_child(col_store)
+	col_store.add_child(UI.make_section_header("🗄 Склад станка (до 8 стеков)"))
+	_store_hint = UI.make_label("Клик по рюкзаку — положить, клик по складу — забрать", 12, UI.COLOR_MUTED)
+	_store_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col_store.add_child(_store_hint)
+	_store_grid = ItemGrid.new()
+	_store_grid.columns = 5
+	_store_grid.cell_size = Vector2(56, 56)
+	_store_grid.cell_pressed.connect(_on_store_cell_pressed)
+	col_store.add_child(_store_grid)
+
 	var footer := UI.make_label("Количество кратно выходу одного цикла · сырьё и энергия на всю партию списываются при старте · отмена не возвращает сырьё · ESC — закрыть", 13, UI.COLOR_DIM)
 	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	root.add_child(footer)
@@ -284,7 +299,7 @@ func _ready() -> void:
 	if inventory:
 		inventory.inventory_updated.connect(_refresh)
 	if machine:
-		for sig in ["outputs_changed", "batch_finished", "batch_cancelled", "process_started", "machine_rebuilt"]:
+		for sig in ["outputs_changed", "batch_finished", "batch_cancelled", "process_started", "machine_rebuilt", "storage_changed"]:
 			if machine.has_signal(sig):
 				machine.connect(sig, _on_machine_signal)
 		if machine.has_signal("machine_upgraded"):
@@ -329,7 +344,7 @@ func _build_recipe_grid() -> void:
 		var ins: PackedStringArray = []
 		var inputs: Dictionary = r.get("inputs", {})
 		for item_id in inputs.keys():
-			ins.append("%s×%d" % [ItemDB.get_item_icon(item_id), int(inputs[item_id])])
+			ins.append("%d %s" % [int(inputs[item_id]), ItemDB.get_item_name(item_id)])
 		var max_c: int = PM.get_max_cycles(r, inventory)
 		var selected: bool = str(r.get("id", "")) == str(_selected_recipe.get("id", ""))
 		var b := UI.make_button("", RECIPE_CELL, selected)
@@ -363,7 +378,7 @@ func _build_recipe_grid() -> void:
 		name_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		top.add_child(name_l)
 		cell.add_child(top)
-		var bottom_l := UI.make_label("%s → %s×%d · %.0f с" % ["+".join(ins), ItemDB.get_item_icon(main_out), PM.get_output_per_cycle(r), float(r.get("duration", 6.0))], 12, UI.COLOR_MUTED if not selected else UI.COLOR_BG)
+		var bottom_l := UI.make_label("%s → %s×%d · %.0f с" % [", ".join(ins), ItemDB.get_item_icon(main_out), PM.get_output_per_cycle(r), float(r.get("duration", 6.0))], 12, UI.COLOR_MUTED if not selected else UI.COLOR_BG)
 		bottom_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		bottom_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		cell.add_child(bottom_l)
@@ -413,6 +428,8 @@ func _refresh() -> void:
 				stacks.append({"item_id": item_id, "count": n})
 	_out_grid.set_stacks(stacks, maxi(5, stacks.size()))
 	_collect_btn.disabled = stacks.is_empty()
+	if _store_grid and machine and machine.has_method("get_storage_stacks"):
+		_store_grid.set_stacks(machine.get_storage_stacks(), PM.MACHINE_STORAGE_MAX_STACKS)
 	_refresh_wear()
 	_refresh_fuel()
 	_refresh_order()
@@ -428,14 +445,35 @@ func _refresh_wear() -> void:
 	_wear_label.text = machine.wear.get_status_text()
 	_repair_btn.visible = true
 	_repair_btn.disabled = machine.wear.get_ratio() >= 1.0
-	_repair_btn.tooltip_text = "Восстанавливает +50%% состояния. Ресурсы: %s. Детали переносятся в станок порциями." % machine._repair_cost_text()
+	_repair_btn.tooltip_text = "Восстанавливает +50%% состояния. %s. Детали переносятся в станок порциями." % _job_mats_text(machine, "repair")
 	# Качественный ремонт: та же кнопка «на месте», но со стальной пластиной.
 	_repair_q_btn.visible = true
 	_repair_q_btn.disabled = machine.wear.get_ratio() >= 1.0
-	_repair_q_btn.tooltip_text = "Стальные детали служат дольше: +70%% состояния. Ресурсы: %s" % machine._repair_cost_text(machine.QUALITY_REPAIR_COST)
+	_repair_q_btn.tooltip_text = "Стальные детали служат дольше: +70%% состояния. %s" % _job_mats_text(machine, "repair_q")
 	_refresh_job_button(_repair_btn, "repair", "🔧 Ремонт (+50%)", machine)
 	_refresh_job_button(_repair_q_btn, "repair_q", "✨ Качественный ремонт (+70%)", machine)
 	_refresh_upgrade()
+
+## Строка взноса компонента: «Камень: нужно 16» → «Камень: 8/16» → «Камень: 16/16 ✓».
+func _contrib_line(item_id: String, need: int, inside: int) -> String:
+	var head: String = "%s %s" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id))]
+	if inside <= 0:
+		return "%s: нужно %d" % [head, need]
+	if inside >= need:
+		return "%s: %d/%d ✓" % [head, need, need]
+	return "%s: %d/%d" % [head, inside, need]
+
+## Краткая сводка взносов работы kind для подсказок: те же строки «нужно N → d/n → n/n ✓».
+func _job_mats_text(machine: Node, kind: String) -> String:
+	if machine == null or not machine.has_method("get_job_progress"):
+		return ""
+	var progress: Dictionary = machine.get_job_progress(kind)
+	var mats: Dictionary = progress.get("materials", {})
+	var parts: PackedStringArray = []
+	for item_id in mats.keys():
+		var pair: Array = mats[item_id]
+		parts.append(_contrib_line(str(item_id), int(pair[1]), int(pair[0])))
+	return "; ".join(parts) if not parts.is_empty() else "ничего"
 
 ## Кнопка переноса компонентов: показывает, сколько деталей уже внесено
 ## в станок (work идёт порциями, применяется по завершении комплекта).
@@ -464,9 +502,8 @@ func _refresh_upgrade() -> void:
 	var in_stash: Dictionary = progress.get("materials", {})
 	for item_id in cost.keys():
 		var need: int = int(cost[item_id])
-		var have: int = inventory.get_item_count(str(item_id)) if inventory else 0
 		var inside: int = int(in_stash.get(item_id, [0, need])[0]) if in_stash.has(item_id) else 0
-		parts.append("%s %s %d/%d (в станке %d)" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), have + inside, need, inside])
+		parts.append(_contrib_line(str(item_id), need, inside))
 	_upgrade_btn.disabled = machine.is_machine_running
 	_upgrade_btn.text = "⬆ Внести детали (Lv.%d) %d/%d" % [next_level, int(progress.get("delivered", 0)), int(progress.get("need", 0))]
 	_upgrade_cost_label.text = "  ·  ".join(parts)
@@ -627,9 +664,8 @@ func _refresh_rebuild() -> bool:
 	var in_stash: Dictionary = progress.get("materials", {})
 	for item_id in mats.keys():
 		var need: int = int(mats[item_id])
-		var have: int = inventory.get_item_count(str(item_id)) if inventory else 0
 		var inside: int = int(in_stash.get(item_id, [0, need])[0]) if in_stash.has(item_id) else 0
-		parts.append("%s %s %d/%d (в станке %d)" % [ItemDB.get_item_icon(str(item_id)), ItemDB.get_item_name(str(item_id)), have + inside, need, inside])
+		parts.append(_contrib_line(str(item_id), need, inside))
 	_rebuild_cost.text = "Нужно: " + ("  ·  ".join(parts) if not parts.is_empty() else "ничего")
 	_rebuild_btn.text = "🔨 Внести компоненты (%d/%d)" % [int(progress.get("delivered", 0)), int(progress.get("need", 0))]
 	_rebuild_btn.disabled = machine.is_operational()
@@ -712,6 +748,31 @@ func _on_out_cell_pressed(item_id: String, _count: int, _index: int) -> void:
 func _on_collect() -> void:
 	if machine and player:
 		machine.collect_outputs(player)
+		AudioManager.play("ui_click")
+	_refresh()
+
+## Клик по клетке рюкзака — положить стек на склад станка.
+func _on_backpack_cell_pressed(item_id: String, count: int, _index: int) -> void:
+	if machine == null or player == null or item_id == "":
+		return
+	if not machine.has_method("store_from_player"):
+		return
+	var n: int = maxi(1, count)
+	var got: int = machine.store_from_player(item_id, player, n)
+	if got > 0:
+		AudioManager.play("ui_click")
+		if player.has_method("notify"):
+			player.notify("🗄 На склад станка: %s %s +%d" % [ItemDB.get_item_icon(item_id), ItemDB.get_item_name(item_id), got])
+	_refresh()
+
+## Клик по клетке склада — забрать стек в рюкзак.
+func _on_store_cell_pressed(item_id: String, count: int, _index: int) -> void:
+	if machine == null or player == null or item_id == "":
+		return
+	if not machine.has_method("take_stored"):
+		return
+	var got: int = machine.take_stored(item_id, player, maxi(1, count))
+	if got > 0:
 		AudioManager.play("ui_click")
 	_refresh()
 

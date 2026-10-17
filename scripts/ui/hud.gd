@@ -485,6 +485,8 @@ func bind_player(player: Node) -> void:
 		var p_skills = player.skills
 		if p_skills.has_signal("skills_updated"):
 			p_skills.skills_updated.connect(_update_skills_button)
+		if p_skills.has_signal("skill_leveled_up"):
+			p_skills.skill_leveled_up.connect(_on_skill_leveled_up)
 		_update_skills_button()
 	
 	if "inventory" in player and player.inventory:
@@ -746,7 +748,7 @@ func _get_season_temperature_offset() -> int:
 		return int(sm.get_temperature_offset())
 	return Seasons.get_temperature_offset()
 
-## Строка календаря: «🌱 Весна · день 3/7» + активное погодное событие.
+## Строка календаря: «🌱 Весна» + активное погодное событие.
 func update_season_display() -> void:
 	if not season_label:
 		season_label = get_node_or_null("TopRightUI/Panel/Margin/VBox/SeasonLabel")
@@ -1344,6 +1346,19 @@ func show_notification(text: String, duration: float = 3.5) -> void:
 func _on_notification_timeout() -> void:
 	notification_container.visible = false
 
+## Вспышка молнии на весь экран (гроза): белый флэш на 0.18 с. Вызывает
+## SeasonManager при каждой молнии — гроза видна, даже если ударила в поле.
+func flash_lightning() -> void:
+	var flash := ColorRect.new()
+	flash.name = "LightningFlash"
+	flash.color = Color(0.95, 0.97, 1.0, 0.55)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(flash)
+	var tw: Tween = create_tween()
+	tw.tween_property(flash, "modulate:a", 0.0, 0.35)
+	tw.tween_callback(flash.queue_free)
+
 func set_credits(amount: int) -> void:
 	if money_label:
 		money_label.text = "💰 Кредиты: %d" % amount
@@ -1623,6 +1638,19 @@ func _update_skills_button() -> void:
 		if _bound_player.skills.has_method("get_overall_level"):
 			overall_lvl = _bound_player.skills.get_overall_level()
 	skills_button.text = "⭐ [K] Навыки (Ур. %d)" % overall_lvl
+
+## Заметный баннер повышения навыка: отдельный долгоживущий (6 с), чтобы его
+## не затирали сообщения добычи (кирка по руде, сбор урожая). Дублирует и
+## усиливает notify из PlayerSkills.add_xp.
+func _on_skill_leveled_up(skill_id: String, new_level: int, perk_description: String) -> void:
+	var meta: Dictionary = SkillDB.get_skill_data(skill_id)
+	var s_name: String = str(meta.get("name", skill_id))
+	var s_icon: String = str(meta.get("icon", "⭐"))
+	var first_perk: String = perk_description.split("\n")[0] if perk_description != "" else ""
+	var text: String = "🎉 Навык повышен! %s %s — уровень %d. %s [K — навыки]" % [s_icon, s_name, new_level, first_perk]
+	show_notification(text, 6.0)
+	AudioManager.play("ui_click")
+	_update_skills_button()
 
 func toggle_skills_window() -> void:
 	if not skills_window:

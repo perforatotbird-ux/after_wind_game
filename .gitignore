@@ -51,3 +51,6 @@ water_filter_build/
 
 # Blender-сборка костра по референсу
 campfire_build/
+
+# Сырые исходники моделей (локальные, дубликаты уже в assets/models/)
+modeli/

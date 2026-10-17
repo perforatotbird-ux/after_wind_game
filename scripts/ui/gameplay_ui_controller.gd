@@ -11,6 +11,13 @@ const InventoryPanel = preload("res://scripts/ui/inventory_panel.gd")
 const MachinePanel = preload("res://scripts/ui/machine_panel.gd")
 const FarmFieldPlacer = preload("res://scripts/farming/farm_field_placer.gd")
 const FruitTreePlacer = preload("res://scripts/farming/fruit_tree_placer.gd")
+const FarmlandPlotScene = preload("res://scenes/farming/farmland_plot.tscn")
+const ItemDB = preload("res://scripts/inventory/item_db.gd")
+const AudioManager = preload("res://scripts/audio/audio_manager.gd")
+
+## Классическая грядка (farmland_plot: mounded → tilled): материалы и размер пятна.
+const FARMLAND_PLOT_COST: Dictionary = {"wood": 4, "stone": 2}
+const FARMLAND_PLOT_SIZE: Vector2 = Vector2(2.6, 1.6)
 
 const SLOT5_PATH: String = "HotbarUI/Panel/Margin/HBox/Slot5"
 
@@ -112,6 +119,9 @@ func start_placement(kind: String = "farm_field") -> Node:
 		_placer.setup(world, player)
 		world.add_child(_placer)
 		return _placer
+	elif kind == "farmland_plot":
+		_place_farmland_plot()
+		return null
 	elif kind.begins_with("fruit_tree"):
 		var sapling_id: String = "apple_sapling"
 		if kind.begins_with("fruit_tree:"):
@@ -122,6 +132,60 @@ func start_placement(kind: String = "farm_field") -> Node:
 		world.add_child(_placer)
 		return _placer
 	return null
+
+## Классическая грядка из моделей farm_plot_mounded/tilled: ставится перед
+## игроком за дерево и камень. Проверка места — та же, что у делянок.
+func _place_farmland_plot() -> void:
+	if world == null or player == null:
+		return
+	var inv = player.get("inventory") if "inventory" in player else null
+	if inv == null:
+		return
+	for rid in FARMLAND_PLOT_COST.keys():
+		var need: int = int(FARMLAND_PLOT_COST[rid])
+		var have: int = int(inv.get_item_count(str(rid))) if inv.has_method("get_item_count") else 0
+		if have < need:
+			AudioManager.play("ui_error")
+			if player.has_method("notify"):
+				player.notify("❌ Для грядки нужно: %s (не хватает %s)" % [_farmland_cost_text(), ItemDB.get_item_name(str(rid))])
+			return
+	var fwd: Vector3 = -player.global_transform.basis.z
+	fwd.y = 0.0
+	if fwd.length_squared() < 0.01:
+		fwd = Vector3(1, 0, 0)
+	fwd = fwd.normalized()
+	var center := Vector2(player.global_position.x, player.global_position.z) + Vector2(fwd.x, fwd.z) * 2.5
+	var rect := Rect2(center - FARMLAND_PLOT_SIZE * 0.5, FARMLAND_PLOT_SIZE)
+	var err: String = FarmFieldPlacer.check_rect(world, rect)
+	if err != "":
+		AudioManager.play("ui_error")
+		if player.has_method("notify"):
+			player.notify("❌ Грядку не поставить: %s" % err)
+		return
+	for rid in FARMLAND_PLOT_COST.keys():
+		inv.remove_item(str(rid), int(FARMLAND_PLOT_COST[rid]))
+	var plot = FarmlandPlotScene.instantiate()
+	plot.name = _next_farmland_name()
+	var parent = world.get_node_or_null("Props")
+	if parent == null:
+		parent = world
+	parent.add_child(plot)
+	plot.global_position = Vector3(center.x, player.global_position.y, center.y)
+	AudioManager.play("ui_click")
+	if player.has_method("notify"):
+		player.notify("🌱 Грядка готова! Вскопайте её мотыгой [E].")
+
+func _farmland_cost_text() -> String:
+	var parts: PackedStringArray = []
+	for rid in FARMLAND_PLOT_COST.keys():
+		parts.append("%d %s" % [int(FARMLAND_PLOT_COST[rid]), ItemDB.get_item_name(str(rid))])
+	return ", ".join(parts)
+
+func _next_farmland_name() -> String:
+	var n: int = 3
+	while world.find_child("FarmlandPlot%d" % n, true, false) != null:
+		n += 1
+	return "FarmlandPlot%d" % n
 
 func is_placing() -> bool:
 	return is_instance_valid(_placer) and not _placer.is_queued_for_deletion()

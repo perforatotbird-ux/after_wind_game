@@ -165,26 +165,26 @@ func _run_tests() -> void:
 	print("\n--- Проверка 4: Ветрогенератор и зависимость генерации от погоды ---")
 	weather_mgr.set_weather(WeatherManager.WeatherType.SUNNY)
 	var out_sunny: float = turbine.get_current_output()
-	if out_sunny != 2.0:
-		_fail("Выработка в солнечную погоду должна быть 2.0 кВт (факт: %f)" % out_sunny)
+	if out_sunny != 1.0:
+		_fail("Выработка в солнечную погоду должна быть 1.0 кВт (факт: %f)" % out_sunny)
 		return
 	
 	weather_mgr.set_weather(WeatherManager.WeatherType.OVERCAST)
 	var out_overcast: float = turbine.get_current_output()
-	if out_overcast != 3.5:
-		_fail("Выработка в пасмурную погоду должна быть 3.5 кВт (факт: %f)" % out_overcast)
+	if out_overcast != 2.0:
+		_fail("Выработка в пасмурную погоду должна быть 2.0 кВт (факт: %f)" % out_overcast)
 		return
 	
 	weather_mgr.set_weather(WeatherManager.WeatherType.RAIN)
 	var out_rain: float = turbine.get_current_output()
-	if out_rain != 5.5:
-		_fail("Выработка в дождь должна быть 5.5 кВт (факт: %f)" % out_rain)
+	if out_rain != 3.5:
+		_fail("Выработка в дождь должна быть 3.5 кВт (факт: %f)" % out_rain)
 		return
 	
 	weather_mgr.set_weather(WeatherManager.WeatherType.HEAVY_RAIN)
 	var out_heavy: float = turbine.get_current_output()
-	if out_heavy != 8.5:
-		_fail("Выработка в сильный ливень должна быть 8.5 кВт (факт: %f)" % out_heavy)
+	if out_heavy != 5.5:
+		_fail("Выработка в сильный ливень должна быть 5.5 кВт (факт: %f)" % out_heavy)
 		return
 	
 	if turbine.rotor_node:
@@ -197,7 +197,7 @@ func _run_tests() -> void:
 		print("  • Вращение ротора ветряка функционирует динамически.")
 	
 	turbine.interact(player)
-	print("✅ Ветрогенератор масштабирует мощность от ветра (2.0 -> 3.5 -> 5.5 -> 8.5 кВт).")
+	print("✅ Ветрогенератор масштабирует мощность от ветра (1.0 -> 2.0 -> 3.5 -> 5.5 кВт).")
 
 	# -------------------------------------------------------------
 	# 5. Проверка Аккумуляторного накопителя BatteryBank
@@ -272,12 +272,12 @@ func _run_tests() -> void:
 	power_grid._scan_grid_devices()
 	
 	# Устанавливаем солнечную погоду и ночное время
-	weather_mgr.set_weather(WeatherManager.WeatherType.SUNNY) # генерация 2.0 кВт
+	weather_mgr.set_weather(WeatherManager.WeatherType.SUNNY) # генерация 1.0 кВт
 	day_cycle.current_hour = 23.0 # оба фонаря активны: 0.4 + 0.4 = 0.8 кВт
-	
+
 	power_grid._update_grid(1.0)
-	if power_grid.current_generation < 1.9:
-		_fail("Генерация сети должна учитывать ветряк (~2.0 кВт, факт: %f)" % power_grid.current_generation)
+	if power_grid.current_generation < 0.9:
+		_fail("Генерация сети должна учитывать ветряк (~1.0 кВт, факт: %f)" % power_grid.current_generation)
 		return
 	if power_grid.current_consumption < 0.7:
 		_fail("Потребление сети должно учитывать 2 активных фонаря (~0.8 кВт, факт: %f)" % power_grid.current_consumption)

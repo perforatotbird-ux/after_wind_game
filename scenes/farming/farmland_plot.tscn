@@ -1,6 +1,8 @@
-[gd_scene load_steps=22 format=3 uid="uid://cx82mflk5780a"]
+[gd_scene load_steps=20 format=3 uid="uid://cx82mflk5780a"]
 
 [ext_resource type="Script" path="res://scripts/farming/farmland_plot.gd" id="1_plot"]
+[ext_resource type="PackedScene" uid="uid://c73u2fq5fh3gx" path="res://assets/models/farm_plot/farm_plot_mounded.glb" id="2_mounded"]
+[ext_resource type="PackedScene" uid="uid://cox5ihgls5j6l" path="res://assets/models/farm_plot/farm_plot_tilled.glb" id="3_tilled"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_collision"]
 size = Vector3(2.6, 1.2, 1.6)
@@ -23,14 +25,6 @@ top_radius = 0.08
 bottom_radius = 0.08
 height = 0.35
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_untilled"]
-albedo_color = Color(0.42, 0.36, 0.28, 1)
-roughness = 0.95
-
-[sub_resource type="BoxMesh" id="BoxMesh_untilled"]
-material = SubResource("StandardMaterial3D_untilled")
-size = Vector3(2.2, 0.16, 1.2)
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_weed"]
 albedo_color = Color(0.32, 0.38, 0.22, 1)
 roughness = 0.9
@@ -38,14 +32,6 @@ roughness = 0.9
 [sub_resource type="PrismMesh" id="PrismMesh_weed"]
 material = SubResource("StandardMaterial3D_weed")
 size = Vector3(0.18, 0.22, 0.18)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tilled"]
-albedo_color = Color(0.48, 0.33, 0.2, 1)
-roughness = 0.9
-
-[sub_resource type="BoxMesh" id="BoxMesh_tilled"]
-material = SubResource("StandardMaterial3D_tilled")
-size = Vector3(2.2, 0.18, 1.2)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sprout"]
 albedo_color = Color(0.35, 0.72, 0.25, 1)
@@ -130,26 +116,24 @@ mesh = SubResource("CylinderMesh_post")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.15, 0.17, 0.65)
 mesh = SubResource("CylinderMesh_post")
 
-[node name="UntilledBed" type="MeshInstance3D" parent="Visuals"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
-mesh = SubResource("BoxMesh_untilled")
+[node name="UntilledBed" parent="Visuals" instance=ExtResource("2_mounded")]
+transform = Transform3D(1.1, 0, 0, 0, 1, 0, 0, 0, 0.6, 0, -0.04, 0)
 
 [node name="Weed1" type="MeshInstance3D" parent="Visuals/UntilledBed"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0.12, -0.25)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4545, 0.24, -0.4167)
 mesh = SubResource("PrismMesh_weed")
 
 [node name="Weed2" type="MeshInstance3D" parent="Visuals/UntilledBed"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.12, 0.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3636, 0.24, 0.3333)
 mesh = SubResource("PrismMesh_weed")
 
 [node name="Weed3" type="MeshInstance3D" parent="Visuals/UntilledBed"]
-transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, -0.1, 0.12, 0.1)
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, -0.0909, 0.24, 0.1667)
 mesh = SubResource("PrismMesh_weed")
 
-[node name="TilledBed" type="MeshInstance3D" parent="Visuals"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09, 0)
+[node name="TilledBed" parent="Visuals" instance=ExtResource("3_tilled")]
+transform = Transform3D(1.1, 0, 0, 0, 1, 0, 0, 0, 0.6, 0, 0.07, 0)
 visible = false
-mesh = SubResource("BoxMesh_tilled")
 
 [node name="Crops" type="Node3D" parent="Visuals"]
 

@@ -163,7 +163,8 @@ func get_time_string() -> String:
 	var hour_int: int = int(current_hour)
 	var minute_int: int = int((current_hour - hour_int) * 60.0)
 	var icon: String = get_phase_icon()
-	return "%s День %d | %02d:%02d (%s)" % [icon, current_day, hour_int, minute_int, get_current_phase()]
+	var phase: String = get_current_phase()
+	return "%s %s %d | %02d:%02d (%s)" % [icon, phase, current_day, hour_int, minute_int, phase]
 
 func get_ambient_temperature() -> int:
 	# Температура в зависимости от времени суток и сезона

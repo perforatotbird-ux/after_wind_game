@@ -74,7 +74,8 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"max_weight": inv.max_weight if "max_weight" in inv else 50.0,
 				"credits": inv.credits if "credits" in inv else 0,
 				"slot_layout": inv.slot_layout.duplicate() if "slot_layout" in inv else [],
-				"tool_sharpness": inv.tool_sharpness.duplicate() if "tool_sharpness" in inv else {"axe": 100.0, "pickaxe": 100.0, "shovel": 100.0}
+				"tool_sharpness": inv.tool_sharpness.duplicate() if "tool_sharpness" in inv else {"axe": 100.0, "pickaxe": 100.0, "shovel": 100.0},
+				"whetstone_uses_left": int(inv.whetstone_uses_left) if "whetstone_uses_left" in inv else 0
 			}
 	
 	# 4. Суточный цикл DayNightCycle
@@ -145,12 +146,9 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			"source_mode": int(energy_grid.get("source_mode")) if energy_grid and "source_mode" in energy_grid else 0
 		}
 	
-	# 8. Водоснабжение (WaterReservoir)
-	var reservoir = world.find_child("WaterReservoir", true, false)
-	if reservoir and is_instance_valid(reservoir):
-		save_data["water"] = {
-			"current_water": reservoir.current_water if "current_water" in reservoir else 6
-		}
+	# 8. Водоснабжение: WaterReservoir удалён из игры (октябрь 2026).
+	# Вода производится игроком: озеро → фильтр/костёр. Секция "water"
+	# в старых сейвах игнорируется при загрузке.
 	
 	# 9. Грядки (FarmlandPlots)
 	var plots_array: Array = []
@@ -194,6 +192,7 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 				"duration": node.process_duration,
 				"completed_runs": node.completed_runs,
 				"pending_outputs": node.pending_outputs.duplicate(true),
+				"storage": node.storage.duplicate(true) if "storage" in node else {},
 				"batch_total": node.batch_cycles_total,
 				"batch_done": node.batch_cycles_done,
 				"batch_to_buffer": node.batch_to_buffer,
@@ -418,6 +417,15 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		if inv_data.has("tool_sharpness") and "tool_sharpness" in inv and inv_data["tool_sharpness"] is Dictionary:
 			for key in inv_data["tool_sharpness"]:
 				inv.tool_sharpness[str(key)] = float(inv_data["tool_sharpness"][key])
+		if inv_data.has("whetstone_uses_left") and "whetstone_uses_left" in inv:
+			inv.whetstone_uses_left = maxi(0, int(inv_data["whetstone_uses_left"]))
+			if int(inv.items.get("whetstone", 0)) > 0:
+				if inv.whetstone_uses_left <= 0:
+					inv.whetstone_uses_left = 5
+				if inv.has_method("ensure_belt_whetstone"):
+					inv.ensure_belt_whetstone()
+			else:
+				inv.whetstone_uses_left = 0
 	if inv and is_instance_valid(inv):
 		# Лимиты не доверяем файлу: пересчитываем по рюкзаку на поясе.
 		if inv.has_method("recalculate_capacity"):
@@ -512,14 +520,10 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		if battery and is_instance_valid(battery):
 			battery.stored_energy = stored_val
 	
-	# 6. Резервуар воды
+	# 6. Резервуар воды: удалён из игры. Старые сейвы с секцией "water"
+	# загружаются как есть — секция игнорируется.
 	if save_data.has("water"):
-		var wt_data: Dictionary = save_data["water"]
-		var reservoir = world.find_child("WaterReservoir", true, false)
-		if reservoir and is_instance_valid(reservoir) and wt_data.has("current_water"):
-			reservoir.current_water = int(wt_data["current_water"])
-			if reservoir.has_signal("water_level_changed"):
-				reservoir.water_level_changed.emit(reservoir.current_water, reservoir.max_capacity)
+		pass
 	
 	# 7. Грядки
 	if save_data.has("farmland"):
@@ -621,6 +625,17 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 			if int(saved_pending[item_id]) > 0:
 				pending[item_id] = int(saved_pending[item_id])
 		machine.pending_outputs = pending
+		# Склад станка (необязательная секция: старые сохранения — пустой склад).
+		var saved_storage: Dictionary = state.get("storage", {})
+		var clean_storage: Dictionary = {}
+		if saved_storage is Dictionary:
+			for item_id in saved_storage:
+				if ItemDB.get_item(str(item_id)).is_empty():
+					continue
+				var n: int = int(saved_storage[item_id])
+				if n > 0:
+					clean_storage[str(item_id)] = n
+		machine.storage = clean_storage
 		# Восстановление станка (Глава 2): без поля считаем станок готовым —
 		# старые сохранения не знали о разрушенных станках.
 		if state.has("rebuilt"):
@@ -927,6 +942,12 @@ static func _validate_save_data(data: Dictionary) -> bool:
 					return false
 				for item_id in state["pending_outputs"]:
 					if ItemDB.get_item(item_id).is_empty() or not _is_integer(state["pending_outputs"][item_id]):
+						return false
+			if state.has("storage"):
+				if not state["storage"] is Dictionary:
+					return false
+				for item_id in state["storage"]:
+					if ItemDB.get_item(item_id).is_empty() or not _is_integer(state["storage"][item_id]):
 						return false
 			if state.has("batch_total") and not _is_integer(state["batch_total"], 0.0, float(ProductionMachine.MAX_BATCH_CYCLES)):
 				return false

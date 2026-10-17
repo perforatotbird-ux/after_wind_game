@@ -16,7 +16,6 @@ extends SceneTree
 const WorldScene = preload("res://scenes/world/world.tscn")
 const ResourceNodeScript = preload("res://scripts/resources/resource_node.gd")
 const FarmlandPlotScript = preload("res://scripts/farming/farmland_plot.gd")
-const WaterReservoirScript = preload("res://scripts/buildings/water_reservoir.gd")
 const TraderNPCScript = preload("res://scripts/npc/trader_npc.gd")
 const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 const InventoryPanelScript = preload("res://scripts/ui/inventory_panel.gd")
@@ -109,20 +108,16 @@ func _run_tests() -> void:
 	check(plot.crop_type == "" and not plot.is_ripe, "Грядка после сбора сброшена (урожай не задвоен)")
 	plot.queue_free()
 
-	# A3. Резервуар: вода не списывается, если ей некуда деться
-	var reservoir = WaterReservoirScript.new()
-	root.add_child(reservoir)
-	reservoir.current_water = 6
-	player.thirst = player.max_thirst
-	var water_before: int = inv.get_item_count("clean_water")
-	reservoir.interact(player)
-	check(reservoir.current_water == 6, "Резервуар не опустел при полном рюкзаке")
-	check(inv.get_item_count("clean_water") == water_before, "Вода не исчезла и не появилась из ниоткуда")
+	# A3. Резервуар удалён: воду игрок производит сам (озеро → фильтр/костёр).
+	# Проверяем, что в мире нет WaterReservoir, а источники самопроизводства на месте.
+	var no_reservoir = world.find_child("WaterReservoir", true, false)
+	check(no_reservoir == null, "WaterReservoir отсутствует в мире (удалён)")
+	check(not ResourceLoader.exists("res://scripts/buildings/water_reservoir.gd"), "Скрипт WaterReservoir удалён")
+	var lake = world.find_child("Lake", true, false)
+	check(lake != null, "Озеро на месте — источник сырой воды")
+	var wfilter = world.find_child("WaterFilter", true, false)
+	check(wfilter != null, "Фильтр на месте — производство чистой воды")
 	inv.remove_item("stone", inv.get_max_stack("stone")) # освобождаем слот
-	reservoir.interact(player)
-	check(reservoir.current_water == 5, "После освобождения слота вода набрана (6 -> 5)")
-	check(inv.get_item_count("clean_water") == water_before + 1, "Чистая вода попала в рюкзак")
-	reservoir.queue_free()
 
 	# A4. Семена Степана при полном рюкзаке — кучка у NPC, флаг выдачи стоит
 	_fill_backpack(inv)

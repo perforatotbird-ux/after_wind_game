@@ -2,13 +2,10 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://4m85uy4hj732"
+uid="uid://dwbsx84frkk0h"
 path="res://.godot/imported/lake_model_lake_leaf_veins.png-bb17294af430a5ae58edaa96f632f026.ctex"
 metadata={
 "vram_texture": false
-}
-generator_parameters={
-"md5": "6967d6b258abea5dd5f7e824cdd0300d"
 }
 
 [deps]
@@ -26,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

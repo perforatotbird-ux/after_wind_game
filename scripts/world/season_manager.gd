@@ -77,6 +77,11 @@ const HURRICANE_SPEED: float = 0.9
 const HURRICANE_SCATTER: float = 0.15
 ## Вероятность, что молния подожжёт одно дерево за грозу.
 const LIGHTNING_CHANCE: float = 0.35
+## Вспышки молний посреди грозы: интервал в игровых часах (0.12–0.3 ч —
+## каждые ~7–18 реальных секунд). Каждая вспышка видна (HUD), каждая третья
+## в среднем бьёт по дереву — гроза ощущается, а не только числится.
+const STORM_FLASH_MIN_HOURS: float = 0.12
+const STORM_FLASH_MAX_HOURS: float = 0.3
 
 @export_group("Calendar")
 ## Сезоны включены с начала игры (Глава 3 мастер-плана).
@@ -94,6 +99,9 @@ var total_day: int = 1
 var active_event: String = ""
 ## Сколько игровых часов осталось активному событию.
 var event_hours_left: float = 0.0
+## Сколько вспышек молний уже было за текущую грозу (телеметрия/тесты).
+var storm_flashes: int = 0
+var _storm_next_flash: float = 0.0
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _day_cycle: Node = null
@@ -118,7 +126,13 @@ func _bind_nodes() -> void:
 func _process(delta: float) -> void:
 	if active_event == "":
 		return
-	event_hours_left -= delta * get_hours_per_second()
+	var hours: float = delta * get_hours_per_second()
+	event_hours_left -= hours
+	if active_event == "storm":
+		_storm_next_flash -= hours
+		if _storm_next_flash <= 0.0:
+			_storm_next_flash = _rng.randf_range(STORM_FLASH_MIN_HOURS, STORM_FLASH_MAX_HOURS)
+			_storm_flash()
 	if event_hours_left <= 0.0:
 		_finish_event()
 
@@ -214,6 +228,9 @@ func start_event(event_id: String, duration_hours: float = -1.0) -> bool:
 		_finish_event(true)
 	active_event = event_id
 	event_hours_left = duration_hours if duration_hours > 0.0 else _roll_duration(data)
+	if event_id == "storm":
+		storm_flashes = 0
+		_storm_next_flash = 0.05 # первая молния почти сразу — гроза видна с начала
 	var message: String = str(data.get("message", ""))
 	if message != "":
 		_notify("%s (%s)" % [message, get_event_time_left_text()])
@@ -340,11 +357,20 @@ func apply_event_effects(event_id: String) -> void:
 			_damage_roof()
 			_scatter_resources()
 
+## Вспышка молнии посреди грозы: видна всегда (вспышка экрана), бьёт по
+## дереву с обычным шансом. Гроза ощущается, даже если молния ушла в поле.
+func _storm_flash() -> void:
+	storm_flashes += 1
+	var hud: Node = get_parent().get_node_or_null("HUD") if get_parent() else null
+	if hud and hud.has_method("flash_lightning"):
+		hud.flash_lightning()
+	_lightning_strike()
+
 ## Молния поджигает одно дерево рядом с базой.
 func _lightning_strike() -> void:
 	if _rng.randf() >= LIGHTNING_CHANCE:
 		return
-	var trees: Array = get_tree().get_nodes_in_group("trees") if get_tree() else []
+	var trees: Array = get_tree().get_nodes_in_group("trees") if is_inside_tree() else []
 	var targets: Array = []
 	for t in trees:
 		if is_instance_valid(t) and t.has_method("respawn") and "is_depleted" in t and not t.is_depleted:

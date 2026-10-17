@@ -67,7 +67,7 @@ func _test_calendar() -> void:
 	Seasons.set_calendar(20)
 	check(Seasons.get_current_season() == Seasons.AUTUMN, "20-й день должен быть осенью")
 	check(Seasons.get_day_in_season() == 6, "20-й день: неверный день в сезоне")
-	check(Seasons.get_calendar_caption() == "🍂 осень · день 6/7", "неверная подпись календаря: %s" % Seasons.get_calendar_caption())
+	check(Seasons.get_calendar_caption() == "🍂 осень", "неверная подпись календаря: %s" % Seasons.get_calendar_caption())
 	check(Seasons.get_days_until_next_season() == 1, "до конца осени не 1 день")
 	check(is_equal_approx(Seasons.get_season_progress(), 5.0 / 7.0), "неверный прогресс сезона")
 	Seasons.activate(Seasons.WINTER, 3)
@@ -176,6 +176,16 @@ func _test_events() -> void:
 	check(sm.get_active_event() == "", "событие не закончилось по таймеру")
 	check(sm.get_event_time_left() == 0.0, "после события остался таймер")
 
+	# Гроза даёт видимые молнии по ходу шторма, а не только стартовый бросок.
+	sm.clear_event()
+	Seasons.activate(Seasons.SPRING, 1)
+	sm.start_event("storm", 10.0)
+	check(sm.storm_flashes == 0, "счётчик вспышек не сброшен на старте грозы")
+	for i in 20:
+		sm._process(3.0) # 20 шагов по 0.05 игрового часа = 1 ч без DayNightCycle
+	check(sm.get_active_event() == "storm", "гроза на 10 ч кончилась за 1 ч")
+	check(sm.storm_flashes >= 2, "за 1 ч грозы должно быть ≥2 вспышек (факт: %d)" % sm.storm_flashes)
+
 	# Неизвестные и битые состояния отбрасываются.
 	check(not SeasonManagerScript.is_valid_save_state({"current_season": "monsoon"}), "неизвестный сезон принят")
 	check(not SeasonManagerScript.is_valid_save_state({"day_in_season": 9}), "8+ день в сезоне принят")
@@ -221,7 +231,7 @@ func _run_world_tests() -> void:
 	Seasons.activate(Seasons.WINTER, 1)
 	hud.update_season_display()
 	check(hud.season_label.visible, "Строка сезона скрыта при включённых сезонах")
-	check("❄️" in hud.season_label.text and "день 1/7" in hud.season_label.text, "Нет подписи сезона в HUD: %s" % hud.season_label.text)
+	check("❄️" in hud.season_label.text and "зима" in hud.season_label.text and not ("день" in hud.season_label.text), "Нет подписи сезона в HUD: %s" % hud.season_label.text)
 	hud.update_time_display(1, 14, 0, "", "День")
 	var winter_temp: int = _extract_temp(hud.weather_label.text)
 	Seasons.activate(Seasons.SUMMER, 1)

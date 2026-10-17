@@ -57,8 +57,10 @@ var is_ripe: bool = false
 
 # Визуальные ссылки
 @export var visuals_root: Node3D
-@export var untilled_mesh: MeshInstance3D
-@export var tilled_mesh: MeshInstance3D
+## Почва — инстансы GLB-моделей (farm_plot_mounded/tilled), поэтому тип Node3D,
+## а не MeshInstance3D. Имена узлов UntilledBed/TilledBed сохранены.
+@export var untilled_mesh: Node3D
+@export var tilled_mesh: Node3D
 @export var crops_sprout: Node3D
 @export var crops_growing: Node3D
 @export var crops_mature: Node3D
@@ -465,9 +467,17 @@ func _update_soil_material() -> void:
 	if not tilled_mesh:
 		return
 	if moisture > 10.0:
-		tilled_mesh.material_override = _mat_tilled_wet
+		_apply_soil_material(tilled_mesh, _mat_tilled_wet)
 	else:
-		tilled_mesh.material_override = _mat_tilled_dry
+		_apply_soil_material(tilled_mesh, _mat_tilled_dry)
+
+## Индикация влаги: material_override вешается на все GeometryInstance3D
+## внутри инстанса почвы (у GLB-модели их может быть несколько).
+func _apply_soil_material(node: Node, mat: Material) -> void:
+	if node is GeometryInstance3D:
+		(node as GeometryInstance3D).material_override = mat
+	for child in node.get_children():
+		_apply_soil_material(child, mat)
 
 func _update_crop_visuals() -> void:
 	if not crops_sprout and not crops_growing and not crops_mature:

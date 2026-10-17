@@ -43,9 +43,6 @@ func _run_tests() -> void:
 	# Глава 2: фильтр стартует разрушенным — водоснабжение проверяем на живом.
 	water_filter.force_rebuilt()
 	
-	var water_reservoir = world.find_child("WaterReservoir", true, false)
-	if not water_reservoir: _fail("Резервуар воды (WaterReservoir) отсутствует в сцене")
-	
 	var water_well = world.find_child("WaterWell", true, false)
 	if not water_well:
 		water_well = world.find_child("Lake", true, false)
@@ -57,7 +54,7 @@ func _run_tests() -> void:
 	var station = world.find_child("DispatchStation", true, false)
 	if not station: _fail("Станция сбыта (DispatchStation) отсутствует в сцене")
 	
-	print("✅ Все ключевые узлы (WaterFilter, WaterReservoir, WaterWell, Player, HUD, Workbench, Station) найдены.")
+	print("✅ Все ключевые узлы (WaterFilter, WaterWell/Lake, Player, HUD, Workbench, Station) найдены.")
 	
 	var inv = player.inventory
 	if not inv: _fail("Инвентарь игрока недоступен")
@@ -91,13 +88,12 @@ func _run_tests() -> void:
 	if abs(player.thirst - 35.0) > 0.01: _fail("Жажда после сырой воды должна быть 35.0 (было 10 + 25), получено: %.1f" % player.thirst)
 	print("✅ Питье сырой воды из рюкзака: ресурс списан, утолено +25% жажды.")
 	
-	# 4. Проверка взаимодействия с резервуаром питьевой воды
-	var res_water_before = water_reservoir.current_water
-	if res_water_before <= 0: _fail("В резервуаре должна быть вода по умолчанию")
-	water_reservoir._on_interacted(player)
-	if water_reservoir.current_water != res_water_before - 1: _fail("Резервуар не убавил объем воды при питье")
-	if abs(player.thirst - 80.0) > 0.01: _fail("Жажда после резервуара должна быть 80.0 (35 + 45), получено: %.1f" % player.thirst)
-	print("✅ Резервуар воды: успешное прямое утоление жажды (+45%) во дворе базы.")
+	# 4. Резервуар питьевой воды удалён из игры — воду игрок производит сам (озеро → фильтр)
+	if world.find_child("WaterReservoir", true, false) != null:
+		_fail("Резервуар воды (WaterReservoir) должен отсутствовать: он удалён из игры")
+	if ResourceLoader.exists("res://scripts/buildings/water_reservoir.gd"):
+		_fail("Скрипт резервуара воды должен быть удалён")
+	print("✅ Резервуар удалён: водоснабжение идёт из озера через фильтр.")
 	
 	# 5. Проверка рецептов фильтрации воды
 	var filter_recipes = RecipeDB.get_recipes_for_machine("water_filter")
