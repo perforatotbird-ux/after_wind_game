@@ -172,7 +172,7 @@ func _ready() -> void:
 	_d_icon.custom_minimum_size = Vector2(96, 96)
 	_d_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_d_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_d_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_d_icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	details.add_child(_d_icon)
 	_d_name = UI.make_label("", 17, UI.COLOR_TITLE)
 	_d_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -271,6 +271,7 @@ func _build_belt() -> void:
 		var b := UI.make_button("", Vector2(60, 60), t == inventory.equipped_tool)
 		b.icon = ItemIcons.get_texture(t)
 		b.expand_icon = true
+		b.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var d: Dictionary = ItemDB.get_item(t)
 		var sharp_info: String = ""

@@ -257,6 +257,7 @@ func _ready() -> void:
 		for i in int(machine.fuel_slot_count if "fuel_slot_count" in machine else PM.FUEL_SLOTS):
 			var slot_btn := UI.make_button("", Vector2(56, 56))
 			slot_btn.expand_icon = true
+			slot_btn.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 			slot_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			slot_btn.pressed.connect(_on_fuel_slot_pressed.bind(i))
 			fuel_row.add_child(slot_btn)
@@ -369,7 +370,7 @@ func _build_recipe_grid() -> void:
 		icon.custom_minimum_size = Vector2(28, 28)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		top.add_child(icon)
 		var name_l := UI.make_label(str(r.get("name", r.get("id", ""))), 13, UI.COLOR_TITLE if not selected else UI.COLOR_BG)
@@ -600,6 +601,7 @@ func _make_line(item_id: String, text: String, color: Color) -> HBoxContainer:
 	icon.custom_minimum_size = Vector2(26, 26)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	row.add_child(icon)
 	var l := UI.make_label(text, 14, color)
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL

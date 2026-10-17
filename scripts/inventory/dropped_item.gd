@@ -142,7 +142,10 @@ func _build() -> void:
 	var sprite := Sprite3D.new()
 	sprite.texture = ItemIcons.get_texture(item_id)
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	sprite.pixel_size = 0.01
+	# Иконки бывают 48 px (нарисованные кодом) и 256 px (файловые): держим
+	# кучку одного размера (~0.48 м), а не в 5 раз больше для файловых.
+	sprite.pixel_size = 0.48 / float(maxi(sprite.texture.get_width(), sprite.texture.get_height()))
+	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	sprite.position = Vector3(0, 0.75, 0)
 	add_child(sprite)
 	

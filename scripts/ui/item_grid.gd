@@ -74,6 +74,7 @@ func _make_cell(index: int) -> Button:
 	icon.offset_bottom = -9
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(icon)
 	var lbl := Label.new()
@@ -156,6 +157,7 @@ func _get_cell_drag_data(_at: Vector2, index: int) -> Variant:
 	preview.texture = ItemIcons.get_texture(str(st["item_id"]))
 	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	preview.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	preview.size = cell_size * 0.9
 	preview.modulate = Color(1, 1, 1, 0.85)
 	var holder := Control.new()
