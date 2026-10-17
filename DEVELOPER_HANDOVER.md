@@ -336,3 +336,13 @@ Godot_v4.7.2-stable_win64.exe --headless --path . -s tests/test_stage12_classes_
 scripts/ui/item_icons.gd: в методе _load_file_icon добавлен приоритетный поиск в 
 es://assets/tools_nano_banana/%s_icon.png. При наличии файла в этой папке игра автоматически использует новую текстуру, сохраняя штатный фалбэк на ssets/tools/ для ещё не созданных инструментов. В scripts/inventory/item_db.gd оселку (whetstone) явно прописана текстура 
 es://assets/tools_nano_banana/whetstone_icon.png. Регрессия: 	est_inventory_capacity и 	est_inventory_grid_and_batches — 2/2 PASS.
+
+### Подключение иконок инструментов в HUD хотбар и замена ассетов tools
+
+1. **Замена в `assets/tools/`**: новые 512×512 RGBA-текстуры `axe_icon.png`, `pickaxe_icon.png` и `whetstone_icon.png` скопированы в базовую директорию `assets/tools/` с соответствующими `.import` файлами (`mipmaps/generate = true`, `process/fix_alpha_border = true`). Выполнен headless импорт Godot, гарантирующий, что любые прямые ссылки и устаревшие сцены получают новые качественные иконки.
+2. **Графика в хотбаре HUD (`hud.gd`, `hud.tscn`)**:
+   - Кнопки нижнего хотбара `Slot1`..`Slot5` переведены на графическое отображение: добавлены свойства `expand_icon = true`, `icon_alignment = HORIZONTAL_ALIGNMENT_LEFT`, фильтрация `TEXTURE_FILTER_LINEAR_WITH_MIPMAPS`.
+   - В `scripts/ui/hud.gd` реализован метод `_setup_hotbar_slots()`, назначающий `btn.icon = ItemIcons.get_texture(tool_id)` для всех 5 слотов хотбара, с отображением номера клавиши и компактного названия инструмента (с автоматическим распознаванием улучшений: «Жел. топор», «Жел. кирка» и т. д.).
+   - Полоски заточки (`SharpnessBar`) и расчет тултипов в `update_hotbar_sharpness()` сохранены в полном объеме.
+3. **Окно рюкзака HUD**: в строки списка предметов `_refresh_inventory_window()` добавлен узел `TextureRect` (24×24 с мипмапами), отображающий иконку предмета перед текстовым названием.
+4. **Тесты и верификация**: адресный прогон `test_tool_sharpness_system.gd`, `test_inventory_grid_and_batches.gd` и `test_inventory_capacity.gd` — 3/3 PASS.

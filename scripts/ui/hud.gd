@@ -10,6 +10,7 @@ const CookingProgress = preload("res://scripts/crafting/cooking_progress.gd")
 const Seasons = preload("res://scripts/core/seasons.gd")
 const UI = preload("res://scripts/ui/ui_style.gd")
 const SkillDB = preload("res://scripts/skills/skill_db.gd")
+const ItemIcons = preload("res://scripts/ui/item_icons.gd")
 
 ## Желаемые размеры окон HUD в логических пикселях (база растяжения 1600×900,
 ## см. project.godot). Если окно игры меньше, окно ужимается, а списки
@@ -203,6 +204,7 @@ func _ready() -> void:
 		var btn: Button = slot_buttons[i]
 		if btn:
 			btn.pressed.connect(_on_slot_button_pressed.bind(i))
+	_setup_hotbar_slots()
 	
 	if inv_close_button:
 		inv_close_button.pressed.connect(toggle_inventory)
@@ -512,6 +514,58 @@ func bind_player(player: Node) -> void:
 		update_hotbar_sharpness()
 		set_credits(inv.credits if "credits" in inv else 0)
 
+const DEFAULT_SLOT_TOOLS: Array[String] = ["axe", "pickaxe", "shovel", "bucket", "backpack"]
+
+func _setup_hotbar_slots() -> void:
+	var inv = _bound_player.inventory if (_bound_player and "inventory" in _bound_player) else null
+	for i in range(slot_buttons.size()):
+		var btn: Button = slot_buttons[i]
+		if not btn:
+			continue
+		var tool_id: String = DEFAULT_SLOT_TOOLS[i] if i < DEFAULT_SLOT_TOOLS.size() else ""
+		if inv and i < inv.tools.size():
+			tool_id = inv.tools[i]
+		
+		btn.expand_icon = true
+		btn.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+		btn.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		
+		var tex: Texture2D = ItemIcons.get_texture(tool_id) if not tool_id.is_empty() else null
+		btn.icon = tex
+		
+		var t_data: Dictionary = ItemDB.get_item(tool_id) if not tool_id.is_empty() else {}
+		var raw_name: String = t_data.get("name", tool_id)
+		var short_name: String = raw_name
+		if tool_id == "axe": short_name = "Топор"
+		elif tool_id == "iron_axe": short_name = "Жел. топор"
+		elif tool_id == "pickaxe": short_name = "Кирка"
+		elif tool_id == "iron_pickaxe": short_name = "Жел. кирка"
+		elif tool_id == "shovel": short_name = "Мотыга"
+		elif tool_id == "iron_shovel": short_name = "Жел. мотыга"
+		elif tool_id == "bucket": short_name = "Ведро"
+		elif tool_id == "reinforced_bucket": short_name = "Усил. ведро"
+		elif tool_id == "backpack": short_name = "Рюкзак"
+		elif tool_id == "large_backpack": short_name = "Больш. рюкзак"
+		
+		btn.text = " %d: %s" % [i + 1, short_name]
+		
+		if i == 3:
+			btn.tooltip_text = "%d: %s %s\n%s" % [
+				i + 1,
+				t_data.get("icon", "💧"),
+				raw_name,
+				t_data.get("description", "Используется для переноски чистой воды.")
+			]
+		elif i == 4:
+			var slots_info: String = "Слоты: %d" % inv.max_slots if inv else "12 слотов"
+			btn.tooltip_text = "%d: %s %s\n%s\nКлик — открыть/закрыть рюкзак" % [
+				i + 1,
+				t_data.get("icon", "🎒"),
+				raw_name,
+				slots_info
+			]
+
 func _setup_hotbar_sharpness_bars() -> void:
 	for i in [0, 1, 2]:
 		if i >= slot_buttons.size():
@@ -538,6 +592,7 @@ func _setup_hotbar_sharpness_bars() -> void:
 		btn.add_child(bar)
 
 func update_hotbar_sharpness() -> void:
+	_setup_hotbar_slots()
 	if not _bound_player or not ("inventory" in _bound_player):
 		return
 	var inv = _bound_player.inventory
@@ -885,9 +940,18 @@ func _refresh_inventory_window() -> void:
 			var weight: float = data.get("weight", 1.0) * count
 			
 			var row: HBoxContainer = HBoxContainer.new()
+			row.add_theme_constant_override("separation", 8)
+			
+			var tex_rect: TextureRect = TextureRect.new()
+			tex_rect.custom_minimum_size = Vector2(24, 24)
+			tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tex_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+			tex_rect.texture = ItemIcons.get_texture(item_id)
+			row.add_child(tex_rect)
 			
 			var lbl_name: Label = Label.new()
-			lbl_name.text = "%s %s" % [icon, item_name]
+			lbl_name.text = item_name
 			lbl_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			lbl_name.add_theme_font_size_override("font_size", 14)
 			row.add_child(lbl_name)
