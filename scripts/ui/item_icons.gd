@@ -135,6 +135,11 @@ static func clear_cache() -> void:
 	_cache.clear()
 
 static func _load_file_icon(item_id: String) -> Texture2D:
+	var nano_path: String = "res://assets/tools_nano_banana/%s_icon.png" % item_id
+	if ResourceLoader.exists(nano_path):
+		var res = load(nano_path)
+		if res is Texture2D:
+			return res
 	var data: Dictionary = ItemDB.get_item(item_id)
 	var candidates: Array[String] = []
 	for key in ["icon_texture", "texture", "icon_path", "sprite"]:

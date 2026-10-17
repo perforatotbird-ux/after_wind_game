@@ -328,3 +328,11 @@ Godot_v4.7.2-stable_win64.exe --headless --path . -s tests/test_stage12_classes_
 ### Генерация иконок инструментов через Nano Banana
 
 ssets/tools_nano_banana/ — отдельный каталог иконок инструментов, сгенерированных нейросетью Nano Banana (gemini-3.1-flash-image) по промптам из items_catalog.html. Сгенерированы первые ассеты: xe_icon.png, pickaxe_icon.png, whetstone_icon.png (512×512, RGBA с прозрачным фоном, центрированная изометрия с безопасным отступом 15–20% под слоты пояса 60×60 и сетку инвентаря 48×48). Исходный код и сцены проекта намеренно не изменялись.
+
+### Прозрачный фон axe_icon и подключение иконок Nano Banana в ItemIcons
+
+ssets/tools_nano_banana/axe_icon.png переведён на прозрачный RGBA-фон (512×512, сегментация с сохранением стального лезвия, кожаной обмотки и заклёпки рукояти). Все иконки в каталоге (xe_icon, pickaxe_icon, whetstone_icon) снабжены файлами .import с mipmaps/generate = true и process/fix_alpha_border = true для сглаженного уменьшения в ячейках 60×60 и 48×48 без артефактов и ряби.
+
+scripts/ui/item_icons.gd: в методе _load_file_icon добавлен приоритетный поиск в 
+es://assets/tools_nano_banana/%s_icon.png. При наличии файла в этой папке игра автоматически использует новую текстуру, сохраняя штатный фалбэк на ssets/tools/ для ещё не созданных инструментов. В scripts/inventory/item_db.gd оселку (whetstone) явно прописана текстура 
+es://assets/tools_nano_banana/whetstone_icon.png. Регрессия: 	est_inventory_capacity и 	est_inventory_grid_and_batches — 2/2 PASS.
