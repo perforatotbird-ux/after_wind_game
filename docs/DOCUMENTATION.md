@@ -1011,6 +1011,7 @@ Windows: `%APPDATA%\Godot\app_userdata\After The Storm\`. Автосохране
 | `assets/models/smelter/` | Запечённая модель плавильной печи (меши, материалы, текстуры в `.tres`) |
 | `assets/models/crusher/` | Запечённая модель дробилки: корпус и подвижные части, общий атлас, лампа |
 | `assets/icons/crafting/` | Файловые иконки материалов дробилки (угольный порошок, каменная пыль, опилки): PNG 256×256 с mipmaps, подключены через поле `icon_texture` в ItemDB |
+| `assets/tools_nano_banana/` | Иконки инструментов, сгенерированные нейросетью Nano Banana по промптам из `items_catalog.html` (512×512 PNG, альфа-канал) |
 | `tests/` | GDScript- и Python-тесты |
 
 `GameplayUIController` создаётся в `world.gd` (`_init_session`) и перехватывает сигналы, которые раньше открывали старые окна HUD (`inventory_toggle_requested`, слот 5, `machine_opened`). Старые методы HUD (`toggle_inventory`, `open_machine_window`) остались, но в игре не вызываются.
