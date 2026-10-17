@@ -27,6 +27,8 @@ const WINDOW_SIZES: Dictionary = {
 }
 const WINDOW_SCREEN_MARGIN: float = 24.0
 const HOTBAR_SLOT_SIZE: Vector2 = Vector2(118, 46)
+## Тост уведомлений должен рисоваться поверх окон рюкзака, станка и заказов.
+const NOTIFICATION_Z_INDEX: int = 200
 
 @onready var prompt_container: PanelContainer = $PromptContainer
 @onready var prompt_label: Label = $PromptContainer/MarginContainer/PromptLabel
@@ -1339,6 +1341,9 @@ func show_notification(text: String, duration: float = 3.5) -> void:
 	if notification_label:
 		notification_label.text = text
 	if notification_container:
+		# Панели рюкзака/станка/заказов добавляются в HUD последними и рисуются
+		# поверх тоста (уровни пассивных навыков растут как раз при работе с ними).
+		notification_container.z_index = NOTIFICATION_Z_INDEX
 		notification_container.visible = true
 	if notification_timer:
 		notification_timer.start(duration)
