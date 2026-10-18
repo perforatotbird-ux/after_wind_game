@@ -67,13 +67,13 @@ const RECIPES: Dictionary = {
 	},
 	"craft_whetstone": {
 		"id": "craft_whetstone",
-		"name": "Обработка: Точильный брусок (x1)",
+		"name": "Обработка: Точильный камень (x1)",
 		"machine": "workbench",
 		"inputs": {"stone": 2, "sand": 1},
 		"outputs": {"whetstone": 1},
 		"duration": 20.0,
 		"energy_cost": 2.0,
-		"description": "Шлифовка прочного точильного бруска для полевого обслуживания инструмента. Можно изготовить на верстаке или прямо в меню рюкзака (2 камня, 1 песок)."
+		"description": "Шлифовка плотного точильного камня для полевого обслуживания инструмента. Можно изготовить на верстаке или прямо в меню рюкзака (2 камня, 1 песок)."
 	},
 	"sharpen_axe": {
 		"id": "sharpen_axe",
@@ -177,23 +177,23 @@ const RECIPES: Dictionary = {
 	},
 	"filter_water": {
 		"id": "filter_water",
-		"name": "Песчаная фильтрация: Чистая вода (x2)",
+		"name": "Песчаная фильтрация: Очищенная вода (x2)",
 		"machine": "water_filter",
-		"inputs": {"water": 2, "sand": 1},
+		"inputs": {"water": 2, "sand": 1, "sawdust": 1, "stone_dust": 1},
 		"outputs": {"clean_water": 2},
 		"duration": 30.0,
 		"energy_cost": 1.5,
-		"description": "Очистка мутной сырой воды через слой кварцевого песка в чистую питьевую воду."
+		"description": "Мутная сырая вода проходит слои кварцевого песка, опилок и каменной пыли: осадок оседает, вода выходит чистой питьевой."
 	},
 	"mineral_filter_water": {
 		"id": "mineral_filter_water",
-		"name": "Глубокая фильтрация: Чистая вода (x4)",
+		"name": "Многослойная фильтрация: Вода высокой очистки (x2)",
 		"machine": "water_filter",
-		"inputs": {"water": 3, "sand": 1, "stone_dust": 1},
-		"outputs": {"clean_water": 4},
+		"inputs": {"water": 3, "coal_powder": 1, "sand": 1, "sawdust": 1, "stone_dust": 1},
+		"outputs": {"high_purity_water": 2},
 		"duration": 45.0,
 		"energy_cost": 2.0,
-		"description": "Многоступенчатая фильтрация песком и каменной пылью с повышенным выходом чистой воды."
+		"description": "Угольная пыль кладёт адсорбирующий слой поверх песка, опилок и каменной пыли: на выходе — вода высокой очистки, почти без примесей."
 	},
 	"bottle_water": {
 		"id": "bottle_water",

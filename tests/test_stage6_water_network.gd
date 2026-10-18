@@ -99,12 +99,14 @@ func _run_tests() -> void:
 	var filter_recipes = RecipeDB.get_recipes_for_machine("water_filter")
 	if filter_recipes.size() < 2: _fail("Ожидалось не менее 2 рецептов в фильтре, найдено: %d" % filter_recipes.size())
 	
-	# Добавляем сырье: 5 воды, 2 песка, 1 каменную пыль
+	# Добавляем сырье: 5 воды, 2 песка, 2 каменной пыли, 2 опилок, 1 угольной пыли
 	inv.add_item("water", 5)
 	inv.add_item("sand", 2)
-	inv.add_item("stone_dust", 1)
+	inv.add_item("stone_dust", 2)
+	inv.add_item("sawdust", 2)
+	inv.add_item("coal_powder", 1)
 	
-	# Запуск базовой песчаной фильтрации
+	# Запуск базовой песчаной фильтрации (вода + песок + опилки + каменная пыль)
 	var start_res = water_filter.start_recipe("filter_water", player)
 	if not start_res: _fail("Не удалось запустить рецепт filter_water в песчаном фильтре")
 	water_filter.process_timer = water_filter.process_duration
@@ -115,31 +117,42 @@ func _run_tests() -> void:
 	
 	if inv.get_item_count("clean_water") != 2:
 		_fail("После filter_water ожидалось 2 clean_water, получено: %d" % inv.get_item_count("clean_water"))
-	print("✅ Песчаный фильтр: 2 сырых воды + 1 песок -> 2 очищенных воды (успешно).")
+	print("✅ Песчаный фильтр: 2 сырых воды + песок + опилки + каменная пыль -> 2 очищенных воды (успешно).")
 	
-	# Запуск глубокой минеральной фильтрации
+	# Запуск глубокой многослойной фильтрации с углём: вода высокой очистки
 	start_res = water_filter.start_recipe("mineral_filter_water", player)
 	if not start_res: _fail("Не удалось запустить рецепт mineral_filter_water в фильтре")
 	water_filter.process_timer = water_filter.process_duration
 	water_filter._complete_process()
-	if water_filter.pending_outputs.get("clean_water", 0) != 4:
-		_fail("Дополнительная вода должна накопиться в фильтре")
+	if water_filter.pending_outputs.get("high_purity_water", 0) != 2:
+		_fail("Вода высокой очистки должна накопиться в фильтре")
 	water_filter.collect_outputs(player)
 	
-	if inv.get_item_count("clean_water") != 6:
-		_fail("После mineral_filter_water ожидалось 6 clean_water, получено: %d" % inv.get_item_count("clean_water"))
-	print("✅ Глубокая фильтрация: 3 воды + 1 песок + 1 пыль -> +4 очищенных воды (итого 6 шт).")
+	if inv.get_item_count("high_purity_water") != 2:
+		_fail("После mineral_filter_water ожидалось 2 high_purity_water, получено: %d" % inv.get_item_count("high_purity_water"))
+	print("✅ Многослойная фильтрация: 3 воды + угольная пыль + песок + опилки + каменная пыль -> 2 воды высокой очистки.")
 	
 	# 6. Питье чистой фильтрованной воды
 	player.thirst = 30.0
 	player.energy = 50.0
 	player.drink_from_inventory("clean_water")
-	if inv.get_item_count("clean_water") != 5: _fail("Clean_water не списалась при питье")
+	if inv.get_item_count("clean_water") != 1: _fail("Clean_water не списалась при питье")
 	if abs(player.thirst - 80.0) > 0.01: _fail("Очищенная вода должна дать +50% жажды (30 + 50 = 80), получено: %.1f" % player.thirst)
 	if player.energy <= 50.0: _fail("Очищенная вода должна давать бонус бодрости к энергии")
 	print("✅ Питье очищенной воды: +50% жажды и +8 бодрости к энергии.")
 	
+	# 6б. Питье воды высокой очистки (+70% жажды, +12 энергии)
+	player.thirst = 25.0
+	player.energy = 20.0
+	if inv.get_item_count("high_purity_water") != 2: _fail("Воды высокой очистки должна остаться в рюкзаке (2 шт)")
+	player.drink_from_inventory("high_purity_water")
+	if inv.get_item_count("high_purity_water") != 1: _fail("High_purity_water не списалась при питье")
+	if abs(player.thirst - 95.0) > 0.01: _fail("Вода высокой очистки должна дать +70% жажды (25 + 70 = 95), получено: %.1f" % player.thirst)
+	if player.energy <= 20.0: _fail("Вода высокой очистки должна давать +12 бодрости к энергии")
+	print("✅ Питье воды высокой очистки: +70% жажды и +12 бодрости к энергии.")
+	
 	# 7. Розлив воды в бутылки на верстаке (цепочка: Стекло + Бутылка + Чистая вода)
+	inv.add_item("clean_water", 2)
 	inv.add_item("glass", 2)
 	inv.add_item("glass_bottle", 1)
 	var bottle_recipe = RecipeDB.get_recipe("bottle_water")

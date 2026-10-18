@@ -72,7 +72,7 @@ const ITEMS: Dictionary = {
 	},
 	"whetstone": {
 		"id": "whetstone",
-		"name": "Точильный брусок",
+		"name": "Точильный камень",
 		"icon": "🪨",
 		"texture": "res://assets/tools_nano_banana/whetstone_icon.png",
 		"category": "tool",
@@ -80,7 +80,7 @@ const ITEMS: Dictionary = {
 		"max_stack": 10,
 		"sell_price": 18,
 		"uses": 5,
-		"description": "Мелкозернистый кремниевый оселок для правки затупившихся лезвий топора, кирки и мотыги в полевых условиях (+40% заточки). Одного бруска хватает на 5 заточек, висит на поясе."
+		"description": "Мелкозернистый точильный камень для правки затупившихся лезвий топора, кирки и мотыги в полевых условиях (+40% заточки). Одного камня хватает на 5 заточек, висит на поясе."
 	},
 
 	# --- Базовые ресурсы (Этап 1, разделы 16, 17) ---
@@ -355,6 +355,19 @@ const ITEMS: Dictionary = {
 		"thirst_recovery": 50.0,
 		"energy_bonus": 8.0,
 		"description": "Кристально чистая фильтрованная вода. Восстанавливает +50% жажды и бодрит (+8 энергии)."
+	},
+	"high_purity_water": {
+		"id": "high_purity_water",
+		"name": "Вода высокой очистки",
+		"icon": "🫧",
+		"category": "product",
+		"weight": 0.9,
+		"max_stack": 30,
+		"sell_price": 30,
+		"is_drinkable": true,
+		"thirst_recovery": 70.0,
+		"energy_bonus": 12.0,
+		"description": "Вода после многослойной фильтрации с углём: почти дистиллят (+70% жажды, +12 энергии). Для бытовой воды это роскошь, на сбыте ценится выше."
 	},
 	"bottled_water": {
 		"id": "bottled_water",

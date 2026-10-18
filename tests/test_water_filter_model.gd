@@ -94,7 +94,7 @@ func run_checks() -> void:
 	filter.set_powered(false)
 	check(filter.visual_node.visible, "Пауза без электричества не означает разрушение")
 	filter.set_powered(true)
-	inv.items["water"] = 2; inv.items["sand"] = 1; player.energy = 100
+	inv.items["water"] = 2; inv.items["sand"] = 1; inv.items["sawdust"] = 1; inv.items["stone_dust"] = 1; player.energy = 100
 	check(filter.start_recipe("filter_water", player), "Исправный очиститель фильтрует воду")
 	filter._process(filter.process_duration + 0.1)
 	check(inv.get_item_count("clean_water") == 2 or int(filter.pending_outputs.get("clean_water", 0)) == 2, "Выход воды не изменён")

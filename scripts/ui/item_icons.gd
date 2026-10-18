@@ -34,6 +34,7 @@ const STYLES: Dictionary = {
 	"metal_scrap": ["scrap", Color(0.5, 0.45, 0.42), Color(0.78, 0.55, 0.35)],
 	"iron_ingot": ["ingot", Color(0.6, 0.63, 0.68), Color(0.86, 0.89, 0.93)],
 	"clean_water": ["drop", Color(0.35, 0.75, 1.0), Color(0.88, 0.97, 1.0)],
+	"high_purity_water": ["bottle", Color(0.55, 0.85, 1.0), Color(0.98, 1.0, 1.0)],
 	"bottled_water": ["bottle", Color(0.45, 0.75, 0.95), Color(0.95, 0.95, 1.0)],
 	"seeds_carrot": ["seeds", Color(0.85, 0.55, 0.25), Color(1.0, 0.8, 0.5)],
 	"seeds_potato": ["seeds", Color(0.65, 0.5, 0.35), Color(0.86, 0.73, 0.56)],

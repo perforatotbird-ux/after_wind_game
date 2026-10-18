@@ -969,7 +969,7 @@ func drink_from_inventory(preferred_item_id: String = "") -> bool:
 	
 	var target_item: String = preferred_item_id
 	if target_item == "" or inventory.get_item_count(target_item) <= 0:
-		for it_id in ["beer", "berry_wine", "moonshine", "pure_spirit", "blueberry_tincture", "red_berry_tincture", "blackberry_tincture", "sea_buckthorn_tincture", "mushroom_tincture", "special_mushroom_tincture", "bottled_water", "clean_water", "water"]:
+		for it_id in ["beer", "berry_wine", "moonshine", "pure_spirit", "blueberry_tincture", "red_berry_tincture", "blackberry_tincture", "sea_buckthorn_tincture", "mushroom_tincture", "special_mushroom_tincture", "bottled_water", "high_purity_water", "clean_water", "water"]:
 			if inventory.get_item_count(it_id) > 0:
 				target_item = it_id
 				break
@@ -996,7 +996,7 @@ func drink_from_inventory(preferred_item_id: String = "") -> bool:
 	
 	var icon: String = item_data.get("icon", "🍺")
 	var item_name: String = item_data.get("name", target_item)
-	if target_item in ["bottled_water", "clean_water", "water"]:
+	if target_item in ["bottled_water", "high_purity_water", "clean_water", "water"]:
 		if is_clean:
 			notify("💧 Вы утолили жажду чистой водой! (+%d%% жажды, текущая: %d%%)" % [int(rec), int(thirst)])
 		else:

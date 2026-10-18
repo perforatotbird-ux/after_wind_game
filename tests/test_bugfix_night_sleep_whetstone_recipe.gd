@@ -2,7 +2,7 @@ extends SceneTree
 ## Тестирование исправления 4 багов:
 ## 1. Ночное освещение (00:13 темно, солнце 0.0, луна умеренная, амбиент приглушён).
 ## 2. Длительность сна (1 час не восстанавливает 100% энергии, не объявляет рассвет без смены дня; расчет до 6:00).
-## 3. Крафт оселка из рюкзака (2 камня + 1 песок -> 1 оселок).
+## 3. Крафт точильного камня из рюкзака (2 камня + 1 песок -> 1 камень).
 ## 4. Форматирование рецептов в станках без формулы 1x1=2.
 
 const WorldScene = preload("res://scenes/world/world.tscn")
@@ -81,8 +81,8 @@ func _run_tests() -> void:
 		player.notification_received.disconnect(notif_cb)
 		print("✅ Сон: 1 час восстанавливает силы частично без ложного рассвета, 8 часов — на 100%.")
 
-	# --- 3. Крафт оселка в рюкзаке ---
-	print("\n--- 3. Проверка крафта оселка в рюкзаке ---")
+	# --- 3. Крафт точильного камня в рюкзаке ---
+	print("\n--- 3. Проверка крафта точильного камня в рюкзаке ---")
 	if player and player.inventory:
 		var inv = player.inventory
 		inv.clear()
@@ -92,24 +92,24 @@ func _run_tests() -> void:
 		var inv_ui = InventoryPanel.new()
 		inv_ui.setup(player)
 		root.add_child(inv_ui)
-		check(is_instance_valid(inv_ui._whetstone_header_btn), "Кнопка крафта оселка в шапке рюкзака не найдена")
+		check(is_instance_valid(inv_ui._whetstone_header_btn), "Кнопка крафта точильного камня в шапке рюкзака не найдена")
 
-		# Крафтим оселок (теперь это задача на 6 секунд с прогресс-баром)
+		# Крафтим точильный камень (это задача на 6 секунд с прогресс-баром)
 		inv_ui._craft_whetstone_in_backpack()
-		check(inv_ui._task_kind == "craft_whetstone", "Крафт оселка должен запускать 6-секундную задачу")
+		check(inv_ui._task_kind == "craft_whetstone", "Крафт точильного камня должен запускать 6-секундную задачу")
 		inv_ui._process(6.1)
-		check(inv.get_item_count("whetstone") == 1, "Оселок не добавился в инвентарь (кол-во: %d)" % inv.get_item_count("whetstone"))
+		check(inv.get_item_count("whetstone") == 1, "Точильный камень не добавился в инвентарь (кол-во: %d)" % inv.get_item_count("whetstone"))
 		check(inv.get_item_count("stone") == 3, "Камень не списался корректно (осталось: %d, ожидалось 3)" % inv.get_item_count("stone"))
 		check(inv.get_item_count("sand") == 2, "Песок не списался корректно (осталось: %d, ожидалось 2)" % inv.get_item_count("sand"))
-		check(inv_ui._selected == "whetstone", "После крафта оселок должен автоматически выбираться в рюкзаке")
+		check(inv_ui._selected == "whetstone", "После крафта точильный камень должен автоматически выбираться в рюкзаке")
 
 		# Пробуем крафтить при недостатке ресурсов
 		inv.remove_item("stone", 3)
 		inv_ui._craft_whetstone_in_backpack()
-		check(inv.get_item_count("whetstone") == 1, "Оселок скрафтился без нужного количества камней!")
+		check(inv.get_item_count("whetstone") == 1, "Точильный камень скрафтился без нужного количества камней!")
 
 		inv_ui.queue_free()
-		print("✅ Крафт оселка в рюкзаке: работает списание 2 камней + 1 песка, проверка ресурсов и автовыбор.")
+		print("✅ Крафт точильного камня в рюкзаке: работает списание 2 камней + 1 песка, проверка ресурсов и автовыбор.")
 
 	# --- 4. Отображение рецептов без формулы ---
 	print("\n--- 4. Проверка отображения рецептов станков ---")

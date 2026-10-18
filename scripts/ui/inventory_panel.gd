@@ -14,10 +14,11 @@ const ItemDB = preload("res://scripts/inventory/item_db.gd")
 const ItemIcons = preload("res://scripts/ui/item_icons.gd")
 const ItemGrid = preload("res://scripts/ui/item_grid.gd")
 const QuantityDialog = preload("res://scripts/ui/quantity_dialog.gd")
+const SharpenDialog = preload("res://scripts/ui/sharpen_dialog.gd")
 const DroppedItem = preload("res://scripts/inventory/dropped_item.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
 
-const DRINK_ITEMS: Array[String] = ["clean_water", "bottled_water", "healing_water"]
+const DRINK_ITEMS: Array[String] = ["clean_water", "high_purity_water", "bottled_water", "healing_water"]
 
 var player: Node
 var inventory: Node
@@ -97,9 +98,9 @@ func _ready() -> void:
 	plot_btn.tooltip_text = "Поставить классическую грядку перед собой (модели mounded/tilled). Нужно: 4 дерева, 2 камня."
 	plot_btn.pressed.connect(func(): request_build("farmland_plot"))
 	header.add_child(plot_btn)
-	var whetstone_btn := UI.make_button("🪨 Оселок (крафт)", Vector2(150, 32))
+	var whetstone_btn := UI.make_button("🪨 Точильный камень", Vector2(150, 32))
 	whetstone_btn.name = "CraftWhetstoneButton"
-	whetstone_btn.tooltip_text = "Скрафтить точильный брусок (оселок) прямо из рюкзака. Требуется: 2 камня, 1 песок."
+	whetstone_btn.tooltip_text = "Скрафтить точильный камень прямо из рюкзака. Требуется: 2 камня, 1 песок."
 	whetstone_btn.pressed.connect(_craft_whetstone_in_backpack)
 	_whetstone_header_btn = whetstone_btn
 	header.add_child(whetstone_btn)
@@ -198,7 +199,7 @@ func _ready() -> void:
 	_drop_btn = UI.make_button("🫳 Выбросить…", Vector2(0, 36), false, true)
 	_drop_btn.pressed.connect(func(): _open_drop_dialog(_selected))
 	details.add_child(_drop_btn)
-	# Полоса прогресса длительных операций (крафт оселка 6 с, заточка 25 с).
+	# Полоса прогресса длительных операций (крафт точильного камня 6 с, заточка 25 с).
 	_task_box = VBoxContainer.new()
 	_task_box.add_theme_constant_override("separation", 4)
 	_task_box.visible = false
@@ -256,7 +257,7 @@ func _refresh() -> void:
 	if _whetstone_header_btn:
 		var stones: int = inventory.get_item_count("stone")
 		var sands: int = inventory.get_item_count("sand")
-		_whetstone_header_btn.tooltip_text = "Скрафтить точильный брусок (оселок) прямо из рюкзака. Нужно: 2 камня, 1 песок (6 с).\nВ наличии: %d камня, %d песка." % [stones, sands]
+		_whetstone_header_btn.tooltip_text = "Скрафтить точильный камень прямо из рюкзака. Нужно: 2 камня, 1 песок (6 с).\nВ наличии: %d камня, %d песка." % [stones, sands]
 	if inventory.has_method("ensure_belt_whetstone"):
 		inventory.ensure_belt_whetstone()
 	_build_belt()
@@ -310,7 +311,7 @@ func _build_belt() -> void:
 		if t == "whetstone" and inventory.has_method("get_whetstone_uses"):
 			var w_left: int = inventory.get_whetstone_uses()
 			var w_count: int = inventory.get_item_count("whetstone")
-			b.tooltip_text = "🪨 Оселок на поясе: %d шт., зарядов %d/5\nКлик — точить самый тупой инструмент (25 с, быстрее с навыком ремесла)" % [w_count, w_left]
+			b.tooltip_text = "🪨 Точильный камень на поясе: %d шт., зарядов %d/5\nКлик — точить самый тупой инструмент (25 с, быстрее с навыком ремесла)" % [w_count, w_left]
 			var w_lbl := UI.make_label("%d/5" % w_left, 13, UI.COLOR_ACCENT)
 			w_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			w_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -367,7 +368,12 @@ func _update_details() -> void:
 	elif _selected == "whetstone":
 		var w_left: int = inventory.get_whetstone_uses() if inventory.has_method("get_whetstone_uses") else 0
 		_d_desc.text = str(data.get("description", "")) + "\nЗарядов: %d/5. Висит на поясе, слоты рюкзака не занимает." % w_left
-		_use_btn.text = "🪨 Заточить оселком (+40%%, %.0f с)" % _sharpen_duration()
+		_use_btn.text = "🪨 Точильный камень: заточить (+40%%, %.0f с)" % _sharpen_duration()
+		_use_btn.visible = true
+	elif inventory.is_sharp_tool(_selected):
+		var s_now: float = inventory.get_tool_sharpness(_selected)
+		_d_desc.text = str(data.get("description", "")) + "\nЗаточка: %d%%. Двойной клик — меню «Заточить»." % int(round(s_now))
+		_use_btn.text = "🔨 Меню «Заточить» (%d%% заточки)" % int(round(s_now))
 		_use_btn.visible = true
 	else:
 		_use_btn.visible = false
@@ -375,7 +381,7 @@ func _update_details() -> void:
 	if _selected in ["stone", "sand"]:
 		var stones: int = inventory.get_item_count("stone")
 		var sands: int = inventory.get_item_count("sand")
-		_craft_btn.text = "🪨 Скрафтить оселок (2 камня, 1 песок) [%d/2, %d/1]" % [stones, sands]
+		_craft_btn.text = "🪨 Скрафтить точильный камень (2 камня, 1 песок) [%d/2, %d/1]" % [stones, sands]
 		_craft_btn.visible = true
 	else:
 		_craft_btn.visible = false
@@ -406,7 +412,7 @@ func _process(delta: float) -> void:
 func _task_text() -> String:
 	var pct: int = int(round((1.0 - (_task_left / maxf(0.01, _task_total))) * 100.0))
 	if _task_kind == "craft_whetstone":
-		return "🪨 Обтёсываю оселок… %d%% (осталось %.1f с)" % [pct, _task_left]
+		return "🪨 Готовлю точильный камень… %d%% (осталось %.1f с)" % [pct, _task_left]
 	if _task_kind == "sharpen":
 		var t_name: String = ItemDB.get_item_name(_task_target) if _task_target != "" else "инструмент"
 		return "🪨 Заточка: %s… %d%% (осталось %.1f с)" % [t_name, pct, _task_left]
@@ -426,7 +432,7 @@ func _craft_whetstone_in_backpack() -> void:
 	if stones < 2 or sands < 1:
 		AudioManager.play("ui_error")
 		if player and player.has_method("notify"):
-			player.notify("❌ Для создания оселка нужно: 2 камня, 1 песок (есть: %d камня, %d песка)" % [stones, sands])
+			player.notify("❌ Для создания точильного камня нужно: 2 камня, 1 песок (есть: %d камня, %d песка)" % [stones, sands])
 		return
 	if not inventory.remove_item("stone", 2) or not inventory.remove_item("sand", 1):
 		AudioManager.play("ui_error")
@@ -449,7 +455,7 @@ func _finish_whetstone_craft(done_consumed: Dictionary = {}) -> void:
 		for rid in done_consumed.keys():
 			inventory.add_item(str(rid), int(done_consumed[rid]))
 		if player and player.has_method("notify"):
-			player.notify("❌ Не удалось взять оселок — ресурсы возвращены.")
+			player.notify("❌ Не удалось взять точильный камень — ресурсы возвращены.")
 		_refresh()
 		return
 	if inventory.has_method("ensure_belt_whetstone"):
@@ -460,7 +466,7 @@ func _finish_whetstone_craft(done_consumed: Dictionary = {}) -> void:
 		skills.add_xp("crafting", 5)
 	if player and player.has_method("notify"):
 		var uses: int = int(inventory.get_whetstone_uses()) if inventory.has_method("get_whetstone_uses") else 5
-		player.notify("✨ Оселок готов! Зарядов: %d/5 — он на поясе." % uses)
+		player.notify("✨ Точильный камень готов! Зарядов: %d/5 — он на поясе." % uses)
 	_selected = "whetstone"
 	_refresh()
 
@@ -476,7 +482,10 @@ func _on_cell_moved(from_index: int, to_index: int) -> void:
 func _on_cell_activated(item_id: String, _count: int, _index: int) -> void:
 	_selected = item_id
 	var data: Dictionary = ItemDB.get_item(item_id)
-	if item_id in DRINK_ITEMS or str(data.get("category", "")) == "food" or item_id == "whetstone":
+	if inventory and inventory.is_sharp_tool(item_id):
+		_refresh()
+		_open_sharpen_dialog(item_id)
+	elif item_id in DRINK_ITEMS or str(data.get("category", "")) == "food" or item_id == "whetstone":
 		_on_use_pressed()
 	else:
 		_refresh()
@@ -508,6 +517,9 @@ func _on_use_pressed() -> void:
 	if _selected == "whetstone":
 		_sharpen_with_whetstone()
 		return
+	if inventory and inventory.is_sharp_tool(_selected):
+		_open_sharpen_dialog(_selected)
+		return
 	if str(ItemDB.get_item(_selected).get("category", "")) == "seeds":
 		if ItemDB.is_fruit_sapling(_selected):
 			request_build("fruit_tree:" + _selected)
@@ -523,12 +535,25 @@ func _on_use_pressed() -> void:
 		player.eat_food(_selected)
 	_refresh()
 
-func _sharpen_with_whetstone() -> void:
-	if inventory == null or _task_kind != "":
+## Меню «Заточить» для конкретного инструмента (клик/двойной клик по ячейке).
+## Без точильного камня кнопка в меню заблокирована с объяснением.
+func _open_sharpen_dialog(tool_id: String) -> void:
+	if tool_id == "" or inventory == null or (_modal and is_instance_valid(_modal)):
 		return
-	if inventory.get_item_count("whetstone") <= 0:
+	var d = SharpenDialog.new()
+	d.setup(tool_id, inventory)
+	d.confirmed.connect(func(t: String):
+		_start_sharpen_task(t)
+	)
+	_modal = d
+	add_child(d)
+
+func _sharpen_with_whetstone() -> void:
+	if inventory == null:
+		return
+	if _task_kind != "":
 		if player and player.has_method("notify"):
-			player.notify("❌ Нет оселка! Скрафтите его (2 камня, 1 песок).")
+			player.notify("🛠 Уже идёт другая операция — дождитесь её завершения.")
 		return
 	var target_tool: String = ""
 	if inventory.is_sharp_tool(inventory.equipped_tool) and inventory.get_tool_sharpness(inventory.equipped_tool) < 100.0:
@@ -540,14 +565,28 @@ func _sharpen_with_whetstone() -> void:
 			if s < lowest_s:
 				lowest_s = s
 				target_tool = t
+	_start_sharpen_task(target_tool)
 
-	if target_tool == "" or inventory.get_tool_sharpness(target_tool) >= 100.0:
-		if player and player.has_method("notify"):
-			player.notify("✨ Все инструменты уже идеально наточены!")
+## Общий запуск задачи заточки конкретного инструмента: из меню «Заточить»
+## (двойной клик по ячейке) или от клика по точильному камню. Без камня —
+## уведомление «Нужен Точильный камень» и отмена.
+func _start_sharpen_task(tool_id: String) -> void:
+	if inventory == null or tool_id == "":
 		return
-
+	if _task_kind != "":
+		if player and player.has_method("notify"):
+			player.notify("🛠 Уже идёт другая операция — дождитесь её завершения.")
+		return
+	if inventory.get_item_count("whetstone") <= 0:
+		if player and player.has_method("notify"):
+			player.notify("❌ Нужен Точильный камень! Скрафтите его (2 камня, 1 песок) через кнопку 🪨 в шапке рюкзака.")
+		return
+	if inventory.get_tool_sharpness(tool_id) >= 100.0:
+		if player and player.has_method("notify"):
+			player.notify("✨ Инструмент уже идеально наточен!")
+		return
 	_task_kind = "sharpen"
-	_task_target = target_tool
+	_task_target = tool_id
 	_task_total = _sharpen_duration()
 	_task_left = _task_total
 	if _task_box:
@@ -560,11 +599,11 @@ func _finish_sharpen(target_tool: String) -> void:
 		return
 	if inventory.get_item_count("whetstone") <= 0:
 		if player and player.has_method("notify"):
-			player.notify("❌ Оселок пропал — заточка отменена.")
+			player.notify("❌ Точильный камень пропал — заточка отменена.")
 		return
 	if inventory.get_tool_sharpness(target_tool) >= 100.0:
 		if player and player.has_method("notify"):
-			player.notify("✨ Инструмент уже наточен — оселок не потрачен.")
+			player.notify("✨ Инструмент уже наточен — камень не потрачен.")
 		return
 	var new_s: float = inventory.sharpen_tool(target_tool, 40.0)
 	if not inventory.consume_whetstone_use():
@@ -576,8 +615,8 @@ func _finish_sharpen(target_tool: String) -> void:
 	if player and player.has_method("notify"):
 		var t_name: String = ItemDB.get_item(target_tool).get("name", target_tool)
 		var left: int = inventory.get_whetstone_uses() if inventory.has_method("get_whetstone_uses") else 0
-		var left_txt: String = ("Осталось заточек: %d/5." % left) if int(inventory.get_item_count("whetstone")) > 0 else "Оселок стёрт — нужен новый."
-		player.notify("🪨 %s заточен оселком на +40%% (теперь %d%%)! %s" % [t_name, int(round(new_s)), left_txt])
+		var left_txt: String = ("Осталось заточек: %d/5." % left) if int(inventory.get_item_count("whetstone")) > 0 else "Точильный камень стёрся — нужен новый."
+		player.notify("🪨 %s заточен на +40%% (теперь %d%%)! %s" % [t_name, int(round(new_s)), left_txt])
 	_refresh()
 	_refresh()
 

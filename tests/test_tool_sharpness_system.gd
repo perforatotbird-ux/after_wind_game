@@ -119,7 +119,7 @@ func _test_sharpness_consumption_and_upgrade_discount() -> void:
 	# 90.0 - (10.0 * 0.6) = 84.0
 	check(is_equal_approx(s_after, 84.0), "Инструмент Lv.2 должен потерять 6%% вместо 10%%, получено %.1f" % s_after)
 	
-	# Заточка оселком на +40%
+	# Заточка точильным камнем на +40%
 	var s_sharpened: float = inv.sharpen_tool("pickaxe", 40.0)
 	# 84.0 + 40.0 = 124.0 -> clamp to 100.0
 	check(is_equal_approx(s_sharpened, 100.0), "Заточка должна ограничиваться максимумом 100%%, получено %.1f" % s_sharpened)
@@ -134,16 +134,16 @@ func _test_whetstone_item_and_crafting() -> void:
 	# Предмет в ItemDB
 	var item: Dictionary = ItemDB.get_item("whetstone")
 	check(not item.is_empty(), "Предмет 'whetstone' должен существовать в ItemDB")
-	check(item.get("name", "") == "Точильный брусок", "Название предмета должно быть 'Точильный брусок'")
-	check(float(item.get("weight", 0.0)) == 0.5, "Вес оселка должен быть 0.5 кг")
-	check(int(item.get("sell_price", 0)) == 18, "Цена продажи оселка должна быть 18")
+	check(item.get("name", "") == "Точильный камень", "Название предмета должно быть 'Точильный камень'")
+	check(float(item.get("weight", 0.0)) == 0.5, "Вес точильного камня должен быть 0.5 кг")
+	check(int(item.get("sell_price", 0)) == 18, "Цена продажи точильного камня должна быть 18")
 
-	# Крафт оселка на верстаке
+	# Крафт точильного камня на верстаке
 	var r_craft: Dictionary = RecipeDB.get_recipe("craft_whetstone")
 	check(not r_craft.is_empty(), "Рецепт 'craft_whetstone' должен существовать в RecipeDB")
-	check(r_craft.get("machine", "") == "workbench", "Крафт оселка должен происходить на верстаке")
-	check(int(r_craft.get("inputs", {}).get("stone", 0)) == 2, "Рецепт оселка требует 2 камня")
-	check(int(r_craft.get("inputs", {}).get("sand", 0)) == 1, "Рецепт оселка требует 1 песок")
+	check(r_craft.get("machine", "") == "workbench", "Крафт точильного камня должен происходить на верстаке")
+	check(int(r_craft.get("inputs", {}).get("stone", 0)) == 2, "Рецепт точильного камня требует 2 камня")
+	check(int(r_craft.get("inputs", {}).get("sand", 0)) == 1, "Рецепт точильного камня требует 1 песок")
 
 	# Рецепты заточки инструментов на верстаке
 	for t in ["axe", "pickaxe", "shovel"]:
