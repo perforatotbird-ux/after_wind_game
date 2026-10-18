@@ -76,6 +76,15 @@ func _run_tests() -> void:
 	check(absf(grid.current_stored - (50.0 + gen_low / 3.0)) < 0.01,
 		"Заряд за 1 с излишка %.2f кВт: +%.3f вместо +%.3f (КПД 1/3)" % [gen_low, grid.current_stored - 50.0, gen_low / 3.0])
 
+	# ---------- 1б. Штиль без нагрузки: батарея не тратится ----------
+	print("\n--- 1б. Простой сети: нет ветра и нет потребителей ---")
+	wind.set_wind_speed(2.0) # ниже порога затишья — генерация 0
+	var stored_idle: float = grid.current_stored
+	grid._update_grid(1.0) # день: фонари выключены, станки стоят — потребление 0
+	check(absf(grid.current_stored - stored_idle) < 0.001,
+		"Без ветра и без нагрузки заряд не тратится (%.1f → %.3f)" % [stored_idle, grid.current_stored])
+	wind.set_wind_speed(9.0) # вернуть слабый рабочий ветер для дальнейших секций
+
 	# ---------- 2. Режим «Ветряк»: слабая генерация не тянет дробилку ----------
 	print("\n--- 2. Источник «Ветряк» ---")
 	grid.source_mode = PowerGridScript.SourceMode.TURBINE

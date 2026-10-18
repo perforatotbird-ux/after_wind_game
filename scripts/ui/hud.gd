@@ -1479,6 +1479,11 @@ func _refresh_contract_window() -> void:
 		var n_name: String = _current_active_npc.npc_name if "npc_name" in _current_active_npc else "Степан (Снабженец)"
 		contract_title_label.text = "👨‍🌾 " + n_name
 		contract_dialogue_label.text = ContractDB.get_story_greeting() if _current_active_npc.get("is_trader") == true else _current_active_npc.greeting_text
+		# Квитанция первого контакта (например, выданные семена) — постоянная
+		# запись в окне, чтобы её не затирал тост уведомлений.
+		var meeting_note: Variant = _current_active_npc.get("first_meeting_note")
+		if meeting_note is String and str(meeting_note) != "":
+			contract_dialogue_label.text += "\n" + str(meeting_note)
 	else:
 		contract_title_label.text = "📜 Доска заказов и контрактов"
 		contract_dialogue_label.text = "Срочные поставки стройматериалов и снабжения для окрестных жителей. Оплата производится сразу при сдаче партии!"

@@ -19,6 +19,8 @@ var _rest_yaw: float = 0.0
 var is_trader: bool = true
 var is_npc: bool = true
 var starter_seeds_given: bool = false
+## Депозит о первом контакте: краткая квитанция о выданных семенах для окна диалога.
+var first_meeting_note: String = ""
 
 func _ready() -> void:
 	super._ready()
@@ -70,7 +72,6 @@ func get_prompt() -> String:
 
 func _on_interacted(player: Node) -> void:
 	begin_dialogue(player)
-	dialogue_opened.emit(self)
 	var inv = player.get("inventory") if player else null
 	if inv and not starter_seeds_given:
 		starter_seeds_given = true
@@ -79,9 +80,11 @@ func _on_interacted(player: Node) -> void:
 		DroppedItemScript.give_or_drop(player, "seeds_carrot", 3, drop_at, get_parent())
 		DroppedItemScript.give_or_drop(player, "seeds_potato", 2, drop_at, get_parent())
 		DroppedItemScript.give_or_drop(player, "seeds_wheat", 3, drop_at, get_parent())
+		# Квитанция о получении: тост + постоянная запись в окне диалога
+		# (HUD дописывает first_meeting_note к тексту приветствия).
+		first_meeting_note = "🎁 Получены семена от торговца: морковь ×3, картошка ×2, пшеница ×3."
 		if player.has_method("notify"):
 			player.notify("👨‍🌾 Степан: «Держи семена моркови, картошки и пшеницы! Вскопай грядку мотыгой и наладь урожай.»")
-			return
-	
-	if player.has_method("notify"):
+	elif player.has_method("notify"):
 		player.notify("👨‍🌾 Степан готов обсудить заказы и поставки материалов.")
+	dialogue_opened.emit(self)

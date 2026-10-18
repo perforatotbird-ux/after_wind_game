@@ -138,7 +138,10 @@ func _update_grid(delta: float) -> void:
 				# Сеть (авто): генерация питает потребителей, излишек — в батарею.
 				if net > 0.0:
 					current_stored = min(max_capacity, current_stored + net * delta * CHARGE_EFFICIENCY)
-				elif net < 0.0:
+				# Разряд — только под реальную нагрузку: когда ни один потребитель
+				# не берёт ток (днём фонари выключены, станки простаивают), батарея
+				# не теряет заряд даже при полном штиле.
+				elif net < 0.0 and current_consumption > 0.0:
 					current_stored = max(0.0, current_stored + net * delta * DISCHARGE_RATE)
 
 	# Питание потребителей — по выбранному источнику. Гистерезис: когда питание
