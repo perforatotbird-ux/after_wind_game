@@ -80,6 +80,10 @@ func _on_interacted(player: Node) -> void:
 		return
 	set_has_berries(false)
 	AudioManager.play("berry_pick")
+	if player and player.has_method("consume_hunger"):
+		player.consume_hunger(0.5)
+	if player and player.has_method("consume_thirst"):
+		player.consume_thirst(0.5)
 	if skills and skills.has_method("add_xp"):
 		skills.add_xp("foraging", 8)
 	var item: Dictionary = ItemDB.get_item(berry_item_id)

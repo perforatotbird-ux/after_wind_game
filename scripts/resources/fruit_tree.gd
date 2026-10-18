@@ -371,6 +371,10 @@ func chop(player: Node) -> bool:
 	
 	if player and player.has_method("consume_energy"):
 		player.consume_energy(energy_cost)
+	if player and player.has_method("consume_hunger"):
+		player.consume_hunger(0.5)
+	if player and player.has_method("consume_thirst"):
+		player.consume_thirst(0.5)
 
 	# Списание остроты топора
 	if inv and inv.has_method("consume_tool_sharpness"):

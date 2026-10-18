@@ -8,6 +8,8 @@ extends RefCounted
 const SAVE_DIR: String = "user://saves"
 const AUTOSAVE_ID: String = "autosave"
 const MANUAL_SLOT_COUNT: int = 3
+const BACKUP_COUNT: int = 3
+static var backup_dir: String = "user://saves/backups"
 
 ## Пути можно подменить в тестах, чтобы не трогать сохранения игрока.
 static var save_dir: String = SAVE_DIR
@@ -41,6 +43,50 @@ static func has_slot(slot_id: String) -> bool:
 	var path := get_slot_path(slot_id)
 	return path != "" and FileAccess.file_exists(path)
 
+static func get_backup_path(index: int) -> String:
+	if not DirAccess.dir_exists_absolute(backup_dir):
+		DirAccess.make_dir_recursive_absolute(backup_dir)
+	return backup_dir.path_join("autosave_%d.json" % index)
+
+static func has_backup(index: int) -> bool:
+	return index >= 1 and index <= BACKUP_COUNT and FileAccess.file_exists(get_backup_path(index))
+
+static func backup_autosave() -> void:
+	if not FileAccess.file_exists(autosave_path):
+		return
+	if not DirAccess.dir_exists_absolute(backup_dir):
+		DirAccess.make_dir_recursive_absolute(backup_dir)
+	var oldest: String = get_backup_path(BACKUP_COUNT)
+	if FileAccess.file_exists(oldest):
+		DirAccess.remove_absolute(oldest)
+	for i in range(BACKUP_COUNT, 1, -1):
+		var src: String = get_backup_path(i - 1)
+		var dst: String = get_backup_path(i)
+		if FileAccess.file_exists(src):
+			var f = FileAccess.open(src, FileAccess.READ)
+			var content: String = f.get_as_text() if f else ""
+			if f:
+				f.close()
+			var out = FileAccess.open(dst, FileAccess.WRITE)
+			if out:
+				out.store_string(content)
+				out.close()
+			DirAccess.remove_absolute(src)
+	var f2 = FileAccess.open(autosave_path, FileAccess.READ)
+	var content2: String = f2.get_as_text() if f2 else ""
+	if f2:
+		f2.close()
+	var out2 = FileAccess.open(get_backup_path(1), FileAccess.WRITE)
+	if out2:
+		out2.store_string(content2)
+		out2.close()
+
+static func load_backup(world: Node, index: int) -> bool:
+	var path: String = get_backup_path(index)
+	if not FileAccess.file_exists(path):
+		return false
+	return SaveManager.load_game(world, path)
+
 static func save_to_slot(world: Node, slot_id: String) -> bool:
 	var path := get_slot_path(slot_id)
 	if path == "":
@@ -48,6 +94,8 @@ static func save_to_slot(world: Node, slot_id: String) -> bool:
 	var base_dir := path.get_base_dir()
 	if not DirAccess.dir_exists_absolute(base_dir):
 		DirAccess.make_dir_recursive_absolute(base_dir)
+	if slot_id == AUTOSAVE_ID:
+		backup_autosave()
 	return SaveManager.save_game(world, path)
 
 static func load_from_slot(world: Node, slot_id: String) -> bool:

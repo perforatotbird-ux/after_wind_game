@@ -64,7 +64,10 @@ func _ready() -> void:
 	if power_grid and hud and hud.has_method("update_power_display"):
 		if not power_grid.grid_updated.is_connected(_on_grid_updated):
 			power_grid.grid_updated.connect(_on_grid_updated)
-		_on_grid_updated(power_grid.current_stored, power_grid.max_capacity, power_grid.current_generation, power_grid.current_consumption, power_grid.has_power)
+		call_deferred("_refresh_power_display")
+	var _ws = find_child("WindSystem", true, false)
+	if _ws and _ws.has_signal("wind_changed") and not _ws.wind_changed.is_connected(_on_wind_changed_refresh):
+		_ws.wind_changed.connect(_on_wind_changed_refresh)
 	
 	_connect_interactive_stations()
 	_init_session.call_deferred()
@@ -98,6 +101,12 @@ func _init_session() -> void:
 	if slot_id == "":
 		# Новая игра не наследует статический прогресс контрактов прошлой сессии.
 		ContractDB.reset_completed()
+		# Новая игра: батарея заряжена на 100%.
+		if power_grid:
+			power_grid.current_stored = power_grid.max_capacity
+		var _bat = find_child("BatteryBank", true, false)
+		if _bat:
+			_bat.stored_energy = _bat.capacity
 	if slot_id != "" and not SaveSlots.load_from_slot(self, slot_id):
 		if hud and hud.has_method("show_notification"):
 			hud.show_notification("⚠️ Не удалось загрузить %s — начата новая игра" % SaveSlots.get_slot_title(slot_id))
@@ -177,3 +186,10 @@ func _on_weather_changed(w_type: int, _w_name: String, _w_icon: String) -> void:
 	var intensity: float = 1.0 if w_type == 3 else 0.6
 	if AudioManager.instance:
 		AudioManager.instance.set_weather_rain(is_rain, intensity)
+
+func _refresh_power_display() -> void:
+	if power_grid and hud and hud.has_method("update_power_display"):
+		_on_grid_updated(power_grid.current_stored, power_grid.max_capacity, power_grid.current_generation, power_grid.current_consumption, power_grid.has_power)
+
+func _on_wind_changed_refresh(_speed: float, _gusting: bool) -> void:
+	_refresh_power_display()

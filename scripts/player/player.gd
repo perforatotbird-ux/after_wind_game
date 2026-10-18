@@ -282,8 +282,7 @@ func _physics_process(delta: float) -> void:
 	_handle_gravity(delta)
 	_handle_movement(delta)
 	_handle_energy_regen(delta)
-	_handle_thirst(delta)
-	_handle_hunger(delta)
+	# Сытость и жажда не убывают пассивно, пока персонаж бодрствует.
 	_handle_wetness(delta)
 	_handle_temperature(delta)
 	_handle_sleep_need(delta)
@@ -868,6 +867,14 @@ func _apply_collapse_penalty() -> void:
 			global_position + Vector3(0.0, 0.3, 0.0)
 		)
 		notify("💀 Потеряно: %s ×%d" % [item_id, to_drop[item_id]])
+
+func consume_hunger(amount: float) -> void:
+	hunger = max(0.0, hunger - amount)
+	hunger_changed.emit(hunger, max_hunger)
+
+func consume_thirst(amount: float) -> void:
+	thirst = max(0.0, thirst - amount)
+	thirst_changed.emit(thirst, max_thirst)
 
 func drink_water(amount: float = 40.0, is_clean: bool = true, energy_bonus: float = 0.0, health_bonus: float = 0.0, warmth_bonus: float = 0.0, hunger_bonus: float = 0.0) -> bool:
 	if thirst >= max_thirst and health_bonus <= 0.0 and energy_bonus <= 0.0 and warmth_bonus <= 0.0:

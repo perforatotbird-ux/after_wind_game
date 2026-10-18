@@ -173,6 +173,10 @@ func _get_season_manager() -> Node:
 
 ## Система ветра (сила ветра для ветряка) — по группе, чтобы HUD не зависел от пути узла.
 func _get_wind_system() -> Node:
+	if get_tree():
+		var ws = get_tree().get_first_node_in_group("wind_system")
+		if is_instance_valid(ws):
+			_cached_wind_sys = ws
 	if not is_instance_valid(_cached_wind_sys) and get_tree():
 		_cached_wind_sys = get_tree().get_first_node_in_group("wind_system")
 	return _cached_wind_sys

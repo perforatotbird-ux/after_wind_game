@@ -312,6 +312,11 @@ func _on_interacted(player: Node) -> void:
 	# Трата энергии
 	if player.has_method("consume_energy"):
 		player.consume_energy(final_energy_cost)
+	# Сбор ресурсов расходует сытость и жажду
+	if player.has_method("consume_hunger"):
+		player.consume_hunger(0.5)
+	if player.has_method("consume_thirst"):
+		player.consume_thirst(0.5)
 	
 	# Звук удара (Game Feel) — при критически затупленном лезвии звук глухой
 	var pitch: float = 0.65 if (float(sharpness_eff.get("power_mult", 1.0)) <= 0.5) else 1.0
