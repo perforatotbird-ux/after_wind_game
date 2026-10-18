@@ -282,7 +282,8 @@ func _physics_process(delta: float) -> void:
 	_handle_gravity(delta)
 	_handle_movement(delta)
 	_handle_energy_regen(delta)
-	# Сытость и жажда не убывают пассивно, пока персонаж бодрствует.
+	_handle_thirst(delta)
+	_handle_hunger(delta)
 	_handle_wetness(delta)
 	_handle_temperature(delta)
 	_handle_sleep_need(delta)
