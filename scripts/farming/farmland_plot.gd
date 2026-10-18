@@ -23,12 +23,12 @@ enum SoilState {
 
 @export var initial_state: SoilState = SoilState.UNTILLED
 @export var max_moisture: float = 100.0
-@export var moisture_decay_rate: float = 0.6
+@export var moisture_decay_rate: float = 0.4
 ## Запасное время роста (с) для культур без записи в CROP_GROWTH_TIME.
 @export var growth_time_total: float = 40.0
 ## Время созревания по культурам (реальные секунды, полив без удобрения; при
-## стандартной скорости 1 игровой час = 60 с это 2–3 игровых часа). Полного полива (100%) хватает
-## примерно на 165 с, поэтому пшеницу за рост нужно полить дважды (или дождь).
+## стандартной скорости 1 игровой час = 60 с это 2–3 игровых часа). Полного полива (100%)
+## хватает примерно на 250 с, поэтому пшеница дозревает за один полив (180 с).
 const CROP_GROWTH_TIME: Dictionary = {
 	"carrot": 120.0,
 	"potato": 150.0,
@@ -135,7 +135,7 @@ func _advance_time(seconds: float) -> void:
 	if crop_type != "" and not is_ripe:
 		var speed_mult: float = 1.0
 		if moisture <= 5.0:
-			speed_mult = 0.15 # без полива культура едва развивается
+			speed_mult = 0.35 # сухая земля тормозит рост втрое, но не останавливает
 		
 		if is_fertilized:
 			speed_mult *= 2.0 # удобрение ускоряет вегетацию вдвое
@@ -186,7 +186,8 @@ func get_prompt() -> String:
 		return "[E] Собрать урожай: %s (Созрело!)" % c_name
 	
 	var fert_txt: String = " (Удобрено)" if is_fertilized else ""
-	return "[E] %s: Рост %d%% | Влажность %d%%%s" % [c_name, int(growth_progress), int(moisture), fert_txt]
+	var dry_txt: String = " (Сухо! Полейте)" if moisture <= 5.0 else ""
+	return "[E] %s: Рост %d%% | Влажность %d%%%s%s" % [c_name, int(growth_progress), int(moisture), fert_txt, dry_txt]
 
 func _on_interacted(player: Node) -> void:
 	# 1. Если земля не вскопана — требуем мотыгу

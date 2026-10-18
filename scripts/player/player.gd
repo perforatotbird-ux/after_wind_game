@@ -827,13 +827,13 @@ func _handle_health(delta: float) -> void:
 	# 1. Урон от критических потребностей и истощения
 	var damage_rate: float = 0.0
 	if thirst <= 0.0:
-		damage_rate += 1.2 # Сильное обезвоживание
+		damage_rate += 0.25 # Сильное обезвоживание (умирание растянуто: ~6.5 мин с 100 HP)
 	if hunger <= 0.0:
-		damage_rate += 0.8 # Голод
+		damage_rate += 0.15 # Голод — медленный урон, есть время добежать до еды
 	if energy <= 0.0:
 		damage_rate += exhaustion_damage_rate # Истощение сил
 	if hours_without_sleep >= critical_sleep_threshold:
-		damage_rate += 0.4 # Критическое переутомление от бессонницы (> 36 часов)
+		damage_rate += 0.15 # Критическое переутомление от бессонницы (> 36 часов)
 
 	if damage_rate > 0.0:
 		if not _exhaustion_damage_warned:

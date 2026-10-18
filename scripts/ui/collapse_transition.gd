@@ -37,6 +37,9 @@ func setup(p_player: Node, p_day_cycle: Node, p_house_stage: int) -> void:
 
 
 func _ready() -> void:
+	# Overlay живёт под паузой (дерево ставится на паузу при обмороке),
+	# поэтому splash и кнопки меню должны работать при paused.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	if _headless:
 		_finish(false)
 		return
@@ -97,8 +100,8 @@ func _process(delta: float) -> void:
 		_finish(_phase == 0 and house_stage >= 2)
 
 
-## Применяет последствия обморока: восстанавливает статы, ставит на утро
-## (если есть дом и skip_to_morning) либо открывает окно поражения.
+## Применяет последствия обморока: показывает меню пробуждения с кнопкой
+## «Очнуться» (если есть дом и отскок к утру) либо окно поражения.
 func _finish(morning: bool) -> void:
 	if _finished:
 		return
@@ -108,13 +111,72 @@ func _finish(morning: bool) -> void:
 		player.notify("💀 Обморок: здоровье снижено, но выжив.")
 
 	if morning:
-		_apply_morning_recovery()
+		_show_wake_menu()
 	else:
 		_show_game_over()
 
 
+## Меню обморока (после splash): игра на паузе, решение принимает игрок.
+func _show_wake_menu() -> void:
+	var overlay := RestTransitionStyle.make_panel(RestTransitionStyle.COLOR_BG, RestTransitionStyle.COLOR_DANGER, 2)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var shade := ColorRect.new()
+	shade.color = Color(0.0, 0.0, 0.0, 0.75)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(shade)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(center)
+
+	var box := RestTransitionStyle.make_panel(RestTransitionStyle.COLOR_CARD, RestTransitionStyle.COLOR_DANGER, 2)
+	box.custom_minimum_size = Vector2(360, 0)
+	center.add_child(box)
+	var margin := RestTransitionStyle.make_margin(24)
+	box.add_child(margin)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 16)
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	margin.add_child(v)
+
+	var icon := RestTransitionStyle.make_label("💀", 40, RestTransitionStyle.COLOR_DANGER)
+	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(icon)
+
+	var title := RestTransitionStyle.make_label("Обморок", 22, RestTransitionStyle.COLOR_TITLE)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(title)
+
+	var msg := RestTransitionStyle.make_label(
+		"Сознание тает... Вспоминайте дорогу к дому. Нажмите «Очнуться», когда будете готовы.",
+		14, RestTransitionStyle.COLOR_TEXT
+	)
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v.add_child(msg)
+
+	var wake_btn := RestTransitionStyle.make_button("🌅 Очнуться", Vector2(180, 0), true)
+	wake_btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(wake_btn)
+
+	add_child(overlay)
+	wake_btn.grab_focus()
+
+	wake_btn.pressed.connect(func():
+		_apply_morning_recovery()
+	)
+
+	RestTransitionStyle.polish_text(overlay)
+
+
 ## Утренний отскок: время → 08:00, статы восстанавливаются частично.
 func _apply_morning_recovery() -> void:
+	# Восстановление происходит с уже распаузенным деревом, иначе игра
+	# останется замороженной после закрытия overlay.
+	if not _headless and get_tree():
+		get_tree().paused = false
 	if day_cycle and day_cycle.has_method("skip_to_morning"):
 		day_cycle.skip_to_morning(8.0)
 	if player:
@@ -134,6 +196,10 @@ func _apply_morning_recovery() -> void:
 
 ## Окно поражения: Game Over с выбором загрузить последний сейв или выйти в меню.
 func _show_game_over() -> void:
+	# Поражение блокирует весь геймплей: игра остаётся на паузе, пока игрок
+	# не выберет «Продолжить» или «В меню» (кнопки сами снимают паузу).
+	if not _headless and get_tree():
+		get_tree().paused = true
 	var overlay := RestTransitionStyle.make_panel(RestTransitionStyle.COLOR_BG, RestTransitionStyle.COLOR_DANGER, 2)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
