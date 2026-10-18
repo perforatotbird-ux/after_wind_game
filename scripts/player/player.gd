@@ -1,5 +1,7 @@
 extends CharacterBody3D
 
+const WeatherManagerScript = preload("res://scripts/world/weather_manager.gd")
+
 signal focused_interactable_changed(interactable: Area3D)
 signal notification_received(text: String)
 signal health_changed(current: float, max_val: float)
@@ -558,7 +560,12 @@ func _handle_thirst(delta: float) -> void:
 	var sprint_active: bool = Input.is_action_pressed("sprint") and can_sprint() and velocity.length_squared() > 1.0
 	if sprint_active:
 		drain_rate *= 1.6
-	
+
+	# Погодные условия усиливают жажду — в том числе когда персонаж бездействует.
+	var weather_mult: float = _get_weather_thirst_multiplier()
+	if weather_mult > 1.0:
+		drain_rate *= weather_mult
+
 	# В дневную жару (12:00-16:00) жажда нарастает интенсивнее
 	if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
 		_day_cycle = get_tree().root.find_child("DayNightCycle", true, false)
@@ -572,10 +579,10 @@ func _handle_thirst(delta: float) -> void:
 		var current_hour: float = float(_day_cycle.current_hour) if (_day_cycle and "current_hour" in _day_cycle) else 12.0
 		if current_hour >= 12.0 and current_hour <= 17.0:
 			drain_rate *= summer_heat_thirst_multiplier
-	
+
 	var old_thirst: float = thirst
 	thirst = max(0.0, thirst - drain_rate * delta)
-	if abs(old_thirst - thirst) > 0.01:
+	if abs(old_thirst - thirst) > 0.001:
 		thirst_changed.emit(thirst, max_thirst)
 
 func _handle_hunger(delta: float) -> void:
@@ -586,10 +593,61 @@ func _handle_hunger(delta: float) -> void:
 	if sprint_active:
 		drain_rate *= 1.4
 
+	# Погодные условия: в холод и непогоду организму нужно больше энергии.
+	var weather_mult: float = _get_weather_hunger_multiplier()
+	if weather_mult > 1.0:
+		drain_rate *= weather_mult
+
 	var old_hunger: float = hunger
 	hunger = max(0.0, hunger - drain_rate * delta)
-	if abs(old_hunger - hunger) > 0.01:
+	if abs(old_hunger - hunger) > 0.001:
 		hunger_changed.emit(hunger, max_hunger)
+
+## Погодный множитель жажды по текущей погоде. Возвращает 1.0, если
+## WeatherManager не найден или погода неизвестна.
+func _get_weather_thirst_multiplier() -> float:
+	var wm: Node = _weather_mgr
+	if not is_instance_valid(wm) and get_tree() and get_tree().root:
+		wm = get_tree().root.find_child("WeatherManager", true, false)
+		if is_instance_valid(wm):
+			_weather_mgr = wm
+	if not is_instance_valid(wm):
+		return 1.0
+	match int(wm.get("current_weather")):
+		WeatherManagerScript.WeatherType.SUNNY:
+			return 1.15
+		WeatherManagerScript.WeatherType.OVERCAST:
+			return 1.0
+		WeatherManagerScript.WeatherType.RAIN:
+			return 1.1
+		WeatherManagerScript.WeatherType.HEAVY_RAIN:
+			return 1.15
+		WeatherManagerScript.WeatherType.SNOW:
+			return 1.2
+		_:
+			return 1.0
+
+## Погодный множитель сытости: в холод и непогоду организм тратит больше еды.
+func _get_weather_hunger_multiplier() -> float:
+	var wm: Node = _weather_mgr
+	if not is_instance_valid(wm) and get_tree() and get_tree().root:
+		_weather_mgr = get_tree().root.find_child("WeatherManager", true, false)
+	wm = _weather_mgr
+	if not is_instance_valid(wm):
+		return 1.0
+	match int(wm.get("current_weather")):
+		WeatherManagerScript.WeatherType.SUNNY:
+			return 1.0
+		WeatherManagerScript.WeatherType.OVERCAST:
+			return 1.05
+		WeatherManagerScript.WeatherType.RAIN:
+			return 1.1
+		WeatherManagerScript.WeatherType.HEAVY_RAIN:
+			return 1.15
+		WeatherManagerScript.WeatherType.SNOW:
+			return 1.25
+		_:
+			return 1.0
 
 func _handle_wetness(delta: float) -> void:
 	if not is_instance_valid(_weather_mgr) and get_tree() and get_tree().root:
