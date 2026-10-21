@@ -68,6 +68,9 @@ const NOTIFICATION_Z_INDEX: int = 200
 @onready var victory_continue_button: Button = get_node_or_null("VictoryWindow/Margin/VBox/ContinueButton")
 
 var _victory_shown: bool = false
+## Как часто HUD проверяет условия финала главы (оценка обходит мир).
+const VICTORY_CHECK_INTERVAL: float = 3.0
+var _victory_check_timer: float = 0.0
 
 @onready var health_bar: ProgressBar = $TopLeftUI/Panel/Margin/VBox/HealthBar
 @onready var health_label: Label = $TopLeftUI/Panel/Margin/VBox/HealthBar/Label
@@ -181,9 +184,22 @@ func _get_wind_system() -> Node:
 		_cached_wind_sys = get_tree().get_first_node_in_group("wind_system")
 	return _cached_wind_sys
 
+## Полная очистка контейнера: узлы убираются из дерева сразу, иначе
+## queue_free() отложенный, и на кадр в списке оставались бы старые строки
+## вместе с новыми (список визуально «удваивался»).
+func _clear_children(container: Node) -> void:
+	if not is_instance_valid(container):
+		return
+	for child in container.get_children():
+		container.remove_child(child)
+		child.queue_free()
+
 func _get_world() -> Node:
 	if not is_instance_valid(_cached_world):
-		_cached_world = get_tree().current_scene if get_tree().current_scene else (get_tree().root.find_child("World", true, false) if get_tree() and get_tree().root else null)
+		var tree := get_tree()
+		if tree == null:
+			return null
+		_cached_world = tree.current_scene if tree.current_scene else (tree.root.find_child("World", true, false) if tree.root else null)
 	return _cached_world
 
 func _ready() -> void:
@@ -434,9 +450,15 @@ func is_gameplay_input_blocked() -> bool:
 			return true
 	return false
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if machine_window and machine_window.visible and _current_active_machine:
 		_update_machine_progress_ui()
+	# Финал главы «База восстановлена» проверяется раз в несколько секунд:
+	# оценка обходит мир, поэтому каждый кадр её считать слишком дорого.
+	_victory_check_timer += delta
+	if _victory_check_timer >= VICTORY_CHECK_INTERVAL:
+		_victory_check_timer = 0.0
+		check_and_show_victory_if_earned()
 
 func _init_styles() -> void:
 	if not style_slot_active:
@@ -460,57 +482,59 @@ func bind_player(player: Node) -> void:
 		return
 	_bound_player = player
 	
-	if player.has_signal("focused_interactable_changed"):
+	if player.has_signal("focused_interactable_changed") and not player.focused_interactable_changed.is_connected(_on_focused_interactable_changed):
 		player.focused_interactable_changed.connect(_on_focused_interactable_changed)
-	if player.has_signal("notification_received"):
+	if player.has_signal("notification_received") and not player.notification_received.is_connected(show_notification):
 		player.notification_received.connect(show_notification)
-	if player.has_signal("health_changed"):
+	if player.has_signal("health_changed") and not player.health_changed.is_connected(_on_health_changed):
 		player.health_changed.connect(_on_health_changed)
 	if "health" in player and "max_health" in player:
 		_on_health_changed(player.health, player.max_health)
-	if player.has_signal("energy_changed"):
+	if player.has_signal("energy_changed") and not player.energy_changed.is_connected(_on_energy_changed):
 		player.energy_changed.connect(_on_energy_changed)
 	if "energy" in player and "max_energy" in player:
 		_on_energy_changed(player.energy, player.max_energy)
-	if player.has_signal("inventory_toggle_requested"):
+	if player.has_signal("inventory_toggle_requested") and not player.inventory_toggle_requested.is_connected(toggle_inventory):
 		player.inventory_toggle_requested.connect(toggle_inventory)
-	if player.has_signal("thirst_changed"):
+	if player.has_signal("thirst_changed") and not player.thirst_changed.is_connected(_on_thirst_changed):
 		player.thirst_changed.connect(_on_thirst_changed)
 	if "thirst" in player and "max_thirst" in player:
 		_on_thirst_changed(player.thirst, player.max_thirst)
-	if player.has_signal("hunger_changed"):
+	if player.has_signal("hunger_changed") and not player.hunger_changed.is_connected(_on_hunger_changed):
 		player.hunger_changed.connect(_on_hunger_changed)
 	if "hunger" in player and "max_hunger" in player:
 		_on_hunger_changed(player.hunger, player.max_hunger)
-	if player.has_signal("wetness_changed"):
+	if player.has_signal("wetness_changed") and not player.wetness_changed.is_connected(_on_wetness_changed):
 		player.wetness_changed.connect(_on_wetness_changed)
 	if "wetness" in player and "max_wetness" in player:
 		_on_wetness_changed(player.wetness, player.max_wetness)
 	
-	if player.has_signal("class_select_toggle_requested"):
+	if player.has_signal("class_select_toggle_requested") and not player.class_select_toggle_requested.is_connected(toggle_class_window):
 		player.class_select_toggle_requested.connect(toggle_class_window)
-	if player.has_signal("character_class_changed"):
+	if player.has_signal("character_class_changed") and not player.character_class_changed.is_connected(_on_character_class_changed):
 		player.character_class_changed.connect(_on_character_class_changed)
 	if "character_class" in player:
 		_on_character_class_changed(player.character_class, CharacterClassDB.get_class_display_name(player.character_class))
 	
-	if player.has_signal("skills_toggle_requested"):
+	if player.has_signal("skills_toggle_requested") and not player.skills_toggle_requested.is_connected(toggle_skills_window):
 		player.skills_toggle_requested.connect(toggle_skills_window)
 	if "skills" in player and player.skills:
 		var p_skills = player.skills
-		if p_skills.has_signal("skills_updated"):
+		if p_skills.has_signal("skills_updated") and not p_skills.skills_updated.is_connected(_update_skills_button):
 			p_skills.skills_updated.connect(_update_skills_button)
-		if p_skills.has_signal("skill_leveled_up"):
+		if p_skills.has_signal("skill_leveled_up") and not p_skills.skill_leveled_up.is_connected(_on_skill_leveled_up):
 			p_skills.skill_leveled_up.connect(_on_skill_leveled_up)
 		_update_skills_button()
 	
 	if "inventory" in player and player.inventory:
 		var inv = player.inventory
-		inv.inventory_updated.connect(_on_inventory_updated)
-		inv.tool_changed.connect(_on_tool_changed)
-		if inv.has_signal("credits_changed"):
+		if not inv.inventory_updated.is_connected(_on_inventory_updated):
+			inv.inventory_updated.connect(_on_inventory_updated)
+		if not inv.tool_changed.is_connected(_on_tool_changed):
+			inv.tool_changed.connect(_on_tool_changed)
+		if inv.has_signal("credits_changed") and not inv.credits_changed.is_connected(set_credits):
 			inv.credits_changed.connect(set_credits)
-		if inv.has_signal("tool_sharpness_changed"):
+		if inv.has_signal("tool_sharpness_changed") and not inv.tool_sharpness_changed.is_connected(_on_tool_sharpness_changed):
 			inv.tool_sharpness_changed.connect(_on_tool_sharpness_changed)
 		_setup_hotbar_sharpness_bars()
 		_highlight_slot(0)
@@ -918,9 +942,13 @@ func toggle_inventory() -> void:
 		return
 	inventory_window.visible = not inventory_window.visible
 	if inventory_window.visible:
+		# Одновременно открытые окна перекрывают друг друга — закрываем их.
 		if machine_window: machine_window.visible = false
 		if sales_window: sales_window.visible = false
 		if repair_window: repair_window.visible = false
+		if contract_window: contract_window.visible = false
+		if class_window: class_window.visible = false
+		if skills_window: skills_window.visible = false
 		_refresh_inventory_window()
 
 func _refresh_inventory_window() -> void:
@@ -930,8 +958,7 @@ func _refresh_inventory_window() -> void:
 	if not inv or not items_list:
 		return
 	
-	for child in items_list.get_children():
-		child.queue_free()
+	_clear_children(items_list)
 	
 	var has_items: bool = false
 	for item_id in inv.items.keys():
@@ -1049,7 +1076,13 @@ func close_machine_window() -> void:
 	_current_active_machine = null
 
 func _update_machine_progress_ui() -> void:
-	if not _current_active_machine:
+	# Станок мог быть удалён (заменён развалинами, перезагружен мир) —
+	# освобождённый объект в GDScript не равен null, поэтому проверяем
+	# is_instance_valid.
+	if not is_instance_valid(_current_active_machine):
+		_current_active_machine = null
+		if machine_window:
+			machine_window.visible = false
 		return
 	var is_proc: bool = _current_active_machine.get("is_machine_running") if "is_machine_running" in _current_active_machine else false
 	if is_proc:
@@ -1065,8 +1098,7 @@ func _update_machine_progress_ui() -> void:
 func _populate_machine_recipes(machine: Node) -> void:
 	if not machine_recipe_list:
 		return
-	for child in machine_recipe_list.get_children():
-		child.queue_free()
+	_clear_children(machine_recipe_list)
 	
 	var m_type: String = machine.get("machine_type") if "machine_type" in machine else ""
 	var recipes: Array[Dictionary] = RecipeDB.get_recipes_for_machine(m_type)
@@ -1172,8 +1204,7 @@ func close_sales_window() -> void:
 func _refresh_sales_window() -> void:
 	if not sales_goods_list or not _bound_player:
 		return
-	for child in sales_goods_list.get_children():
-		child.queue_free()
+	_clear_children(sales_goods_list)
 	
 	var inv = _bound_player.get("inventory") if _bound_player else null
 	if not inv:
@@ -1301,8 +1332,7 @@ func _refresh_repair_window() -> void:
 	if repair_storage_button:
 		repair_storage_button.visible = _current_active_building.has_method("is_storage_ready") and _current_active_building.is_storage_ready()
 	# Очистка списка требований
-	for ch in repair_requirements_list.get_children():
-		ch.queue_free()
+	_clear_children(repair_requirements_list)
 	
 	if curr_stage >= max_st:
 		repair_next_title_label.text = "🎉 Здание полностью отремонтировано и модернизировано!"
@@ -1397,7 +1427,9 @@ func _on_building_sleep_pressed() -> void:
 
 func _on_sleep_confirmed(hours: float) -> void:
 	var building: Node = _current_active_building
-	if building == null or not _bound_player:
+	if building == null or not is_instance_valid(building) or not _bound_player:
+		if _bound_player and _bound_player.has_method("notify"):
+			_bound_player.notify("⚠️ Дом недоступен — сон отменён.")
 		return
 	if building.has_method("sleep"):
 		close_repair_window()
@@ -1488,9 +1520,7 @@ func _refresh_contract_window() -> void:
 		contract_title_label.text = "📜 Доска заказов и контрактов"
 		contract_dialogue_label.text = "Срочные поставки стройматериалов и снабжения для окрестных жителей. Оплата производится сразу при сдаче партии!"
 	
-	for child in contracts_list.get_children():
-		contracts_list.remove_child(child)
-		child.queue_free()
+	_clear_children(contracts_list)
 	
 	var inv = _bound_player.get("inventory") if _bound_player else null
 	var all_contracts = ContractDB.get_all_contracts()
@@ -1653,8 +1683,7 @@ func close_class_window() -> void:
 func _populate_class_cards() -> void:
 	if not classes_list:
 		return
-	for c in classes_list.get_children():
-		c.queue_free()
+	_clear_children(classes_list)
 	
 	var all_classes = CharacterClassDB.get_all_classes()
 	var current_class: String = _bound_player.character_class if (_bound_player and "character_class" in _bound_player) else "miner"
@@ -1763,8 +1792,7 @@ func close_skills_window() -> void:
 func _populate_skills_cards() -> void:
 	if not skills_list:
 		return
-	for c in skills_list.get_children():
-		c.queue_free()
+	_clear_children(skills_list)
 	
 	var p_skills: Node = null
 	if _bound_player and "skills" in _bound_player and _bound_player.skills:
@@ -1924,8 +1952,7 @@ func _refresh_pause_menu() -> void:
 		]
 	
 	if pause_tasks_list:
-		for c in pause_tasks_list.get_children():
-			c.queue_free()
+		_clear_children(pause_tasks_list)
 		for t in v_data.get("tasks", []):
 			pause_tasks_list.add_child(_make_task_label(t))
 		# Вехи Главы 2 идут после Главы 1 под отдельным заголовком.
@@ -1937,9 +1964,11 @@ func _refresh_pause_menu() -> void:
 			pause_tasks_list.add_child(_make_task_label(t))
 	
 	if sfx_slider and AudioManager.instance:
-		sfx_slider.value = AudioManager.instance.sfx_volume
+		# set_value_no_signal: иначе присваивание .value вызывает value_changed
+		# и при открытии паузы проигрывается лишний щелчок.
+		sfx_slider.set_value_no_signal(AudioManager.instance.sfx_volume)
 	if amb_slider and AudioManager.instance:
-		amb_slider.value = AudioManager.instance.ambient_volume
+		amb_slider.set_value_no_signal(AudioManager.instance.ambient_volume)
 	_polish(pause_window)
 
 func _make_task_label(task: Dictionary) -> Label:

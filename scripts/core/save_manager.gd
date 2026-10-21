@@ -28,6 +28,7 @@ const SeasonManagerScript = preload("res://scripts/world/season_manager.gd")
 const CookingProgress = preload("res://scripts/crafting/cooking_progress.gd")
 const MushroomSpawnerScript = preload("res://scripts/world/mushroom_spawner.gd")
 const CampfireScript = preload("res://scripts/crafting/campfire.gd")
+const MachineLevelScript = preload("res://scripts/crafting/machine_level.gd")
 
 static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 	if not world or not is_instance_valid(world):
@@ -465,7 +466,9 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		var weather_mgr = world.find_child("WeatherManager", true, false)
 		if weather_mgr and is_instance_valid(weather_mgr):
 			if w_data.has("current_weather") and weather_mgr.has_method("set_weather"):
-				weather_mgr.set_weather(int(w_data["current_weather"]))
+				# Без уведомления: погода не менялась, игрок не должен получать
+				# сообщение «Начался дождь» сразу после загрузки.
+				weather_mgr.set_weather(int(w_data["current_weather"]), false)
 			if w_data.has("timer") and "_timer" in weather_mgr:
 				weather_mgr._timer = float(w_data["timer"])
 			if w_data.has("cycle_index") and "_cycle_index" in weather_mgr:
@@ -606,16 +609,22 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		var grid = world.find_child("PowerGrid", true, false)
 		if running and grid and "has_power" in grid:
 			machine.power_ok = bool(grid.has_power)
-		# Уровень станка — до износа: max_condition зависит от уровня.
+		# Уровень станка и износ. Предел состояния (max_condition) зависит от
+		# уровня, поэтому износ переносится как доля: сначала читаем сохранённое
+		# состояние при его уровне, потом восстанавливаем уровень и пересчитываем
+		# износ под новый предел. Иначе станок Lv.2 загружался бы «свежим».
+		var saved_level: int = machine.level_state.level if machine.level_state else 1
+		if state.has("level"):
+			saved_level = int(state["level"])
+		var wear_ratio: float = 1.0
+		if machine.wear and state.has("wear"):
+			var saved_max: float = MachineLevelScript.max_condition_for_level(saved_level)
+			wear_ratio = clampf(float(state["wear"]) / maxf(1.0, saved_max), 0.0, 1.0)
 		if machine.level_state and state.has("level"):
 			machine.level_state.set_level(int(state["level"]))
-			if machine.wear:
-				var saved_ratio: float = machine.wear.get_ratio()
-				machine.wear.max_condition = machine.level_state.get_max_condition()
-				machine.wear.set_condition(saved_ratio * machine.wear.max_condition)
-		# Износ и топливо (поля необязательные: старые сохранения — defaults).
-		if machine.wear and state.has("wear"):
-			machine.wear.set_condition(float(state["wear"]))
+		if machine.wear:
+			machine.wear.max_condition = machine.level_state.get_max_condition() if machine.level_state else machine.wear.max_condition
+			machine.wear.set_condition(wear_ratio * machine.wear.max_condition)
 		if machine.has_fuel_slots and state.has("fuel_slots") and state["fuel_slots"] is Array:
 			var saved_fuel: Array = state["fuel_slots"]
 			machine.fuel_slots.clear()

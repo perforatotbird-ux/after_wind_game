@@ -11,6 +11,7 @@ extends "res://scripts/interaction/interactable.gd"
 const Seasons = preload("res://scripts/core/seasons.gd")
 const CookingProgress = preload("res://scripts/crafting/cooking_progress.gd")
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
+const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 const GROUP: String = "mushrooms"
 const FALLBACK_HOURS_PER_SECOND: float = 1.0 / 60.0
 
@@ -74,9 +75,21 @@ func _on_interacted(player: Node) -> void:
 	if skills and skills.has_method("roll_bonus_yield") and skills.roll_bonus_yield("foraging"):
 		count += 1
 	var inv = player.get("inventory") if player else null
-	if inv == null or not inv.add_item(mushroom_item_id, count):
+	if inv == null:
 		_notify(player, "🎒 Не хватает места в рюкзаке для грибов!")
 		return
+	# Не поместившиеся грибы падают кучкой у грибницы, а не пропадают.
+	var fit: int = int(inv.get_max_addable(mushroom_item_id, count)) if inv.has_method("get_max_addable") else 0
+	if fit <= 0:
+		_notify(player, "🎒 Не хватает места в рюкзаке для грибов!")
+		return
+	if fit < count:
+		DroppedItemScript.give_or_drop(player, mushroom_item_id, count - fit,
+			global_position + Vector3(0.0, 0.4, 0.0), get_parent())
+	if not inv.add_item(mushroom_item_id, fit):
+		_notify(player, "🎒 Не хватает места в рюкзаке для грибов!")
+		return
+	count = fit
 	set_has_mushroom(false)
 	CookingProgress.register_mushrooms(count)
 	AudioManager.play("berry_pick")

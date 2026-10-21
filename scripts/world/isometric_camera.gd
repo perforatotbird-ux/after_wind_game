@@ -110,9 +110,14 @@ func _process(delta: float) -> void:
 		
 	_update_auto_rotation(delta)
 		
-	yaw = lerp_angle(yaw, target_yaw, rotation_damping * delta)
-	pitch = lerpf(pitch, target_pitch, rotation_damping * delta)
-	current_distance = lerpf(current_distance, target_distance, zoom_speed * delta)
+	# Коэффициент сглаживания ограничиваем единицей: при большом delta
+	# lerp с t > 1 «перелетал» бы цель и камера oscillation'а вместо
+	# плавного приближения.
+	var rot_t: float = clampf(rotation_damping * delta, 0.0, 1.0)
+	var zoom_t: float = clampf(zoom_speed * delta, 0.0, 1.0)
+	yaw = lerp_angle(yaw, target_yaw, rot_t)
+	pitch = lerpf(pitch, target_pitch, rot_t)
+	current_distance = lerpf(current_distance, target_distance, zoom_t)
 	
 	_apply_camera_transform(false, delta)
 
@@ -185,6 +190,6 @@ func _apply_camera_transform(instant: bool = false, delta: float = 0.0) -> void:
 	if instant:
 		global_position = desired_pos
 	else:
-		global_position = global_position.lerp(desired_pos, follow_speed * delta)
+		global_position = global_position.lerp(desired_pos, clampf(follow_speed * delta, 0.0, 1.0))
 		
 	look_at(focus_point, Vector3.UP)

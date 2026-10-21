@@ -36,12 +36,29 @@ func setup(p_player: Node, p_day_cycle: Node, p_house_stage: int) -> void:
 	_headless = DisplayServer.get_name() == "headless"
 
 
+## Обморок именно от бессонницы (а не от истощения) — для текста сообщения.
+func _is_sleep_collapse() -> bool:
+	if player == null or not is_instance_valid(player):
+		return false
+	if player.has_method("is_sleep_deprived"):
+		return bool(player.is_sleep_deprived())
+	return false
+
+
+## Снимает блокировку повторного обморока у персонажа.
+func _clear_collapse_lock() -> void:
+	if player and is_instance_valid(player) and "_collapse_active" in player:
+		player._collapse_active = false
+
+
 func _ready() -> void:
 	# Overlay живёт под паузой (дерево ставится на паузу при обмороке),
 	# поэтому splash и кнопки меню должны работать при paused.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if _headless:
 		_finish(false)
+		# Оверлей в headless никто не закрывает — снимаем блокировку обморока.
+		_clear_collapse_lock()
 		return
 
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -76,8 +93,7 @@ func _ready() -> void:
 	v.add_child(title)
 
 	var msg := RestTransitionStyle.make_label(
-		"Язык покинул тело. Вы чувствуете, как сознание медленно..." if player == null or player.has_method("is_sleep_deprived")
-		else "💀 Вы потеряли сознание...",
+		"Язык покинул тело. Вы чувствуете, как сознание медленно..." if _is_sleep_collapse() else "💀 Вы потеряли сознание...",
 		14, RestTransitionStyle.COLOR_TEXT
 	)
 	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -181,6 +197,8 @@ func _apply_morning_recovery() -> void:
 		day_cycle.skip_to_morning(8.0)
 	if player:
 		player.hours_without_sleep = 0.0
+		if "_collapse_active" in player:
+			player._collapse_active = false
 		if "energy" in player:
 			player.energy = POST_COLLAPSE_ENERGY
 			if player.has_signal("energy_changed"):
@@ -250,12 +268,14 @@ func _show_game_over() -> void:
 
 	load_btn.pressed.connect(func():
 		get_tree().paused = false
+		_clear_collapse_lock()
 		queue_free()
 		if player and player.has_method("quick_load"):
 			player.quick_load()
 	)
 	menu_btn.pressed.connect(func():
 		get_tree().paused = false
+		_clear_collapse_lock()
 		queue_free()
 		# Возврат в стартовое меню: world.gd после перезагрузки покажет меню.
 		GameSession.request_main_menu(get_tree())

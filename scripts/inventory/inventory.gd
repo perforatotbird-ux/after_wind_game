@@ -103,6 +103,7 @@ var items: Dictionary = {
 	"iron_ingot": 0,
 	"clean_water": 0,
 	"bottled_water": 0,
+	"high_purity_water": 0,
 	"seeds_carrot": 0,
 	"seeds_potato": 0,
 	"seeds_wheat": 0,

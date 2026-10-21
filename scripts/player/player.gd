@@ -133,6 +133,9 @@ var _exhaustion_damage_warned: bool = false
 ## Предупреждения о холоде — по одному на эпизод промерзания.
 var _cold_warned: bool = false
 var _freezing_warned: bool = false
+## Пока показан экран обморока, новый обморок не создаётся: иначе штраф
+## (25 % ресурсов) и оверлей складывались бы каждый кадр.
+var _collapse_active: bool = false
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 var nearby_interactables: Array[Area3D] = []
 var current_interactable: Area3D = null
@@ -341,19 +344,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		var code: Key = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
 		match code:
 			KEY_1:
-				equip_slot(0)
+				if not _is_gameplay_blocked(): equip_slot(0)
 			KEY_2:
-				equip_slot(1)
+				if not _is_gameplay_blocked(): equip_slot(1)
 			KEY_3:
-				equip_slot(2)
+				if not _is_gameplay_blocked(): equip_slot(2)
 			KEY_4:
-				equip_slot(3)
+				if not _is_gameplay_blocked(): equip_slot(3)
 			KEY_5:
-				equip_slot(4)
+				if not _is_gameplay_blocked(): equip_slot(4)
 			KEY_U:
-				drink_from_inventory()
+				if not _is_gameplay_blocked(): drink_from_inventory()
 			KEY_Y:
-				eat_from_inventory()
+				if not _is_gameplay_blocked(): eat_from_inventory()
 			KEY_TAB, KEY_I:
 				inventory_toggle_requested.emit()
 			KEY_C:
@@ -775,7 +778,9 @@ func consume_energy(amount: float) -> void:
 		mult *= 1.35 # бессонница более суток
 	
 	energy = max(0.0, energy - amount * mult)
-	energy_changed.emit(energy, max_energy)
+	# Потолок — эффективный (с бонусом навыка и ограничением бессонницы),
+	# иначе шкала в HUD показывала бы неверный максимум.
+	energy_changed.emit(energy, get_effective_max_energy())
 
 func _handle_sleep_need(delta: float) -> void:
 	if not is_instance_valid(_day_cycle) and get_tree() and get_tree().root:
@@ -805,6 +810,9 @@ func _handle_sleep_need(delta: float) -> void:
 		_on_sleep_collapse()
 
 func _on_sleep_collapse() -> void:
+	if _collapse_active:
+		return
+	_collapse_active = true
 	notify("😵 Вы потеряли сознание от предельного переутомления (48 часов без сна)!")
 	if not is_instance_valid(_house) and get_tree() and get_tree().root:
 		_house = get_tree().root.find_child("RepairableHouse", true, false)
@@ -817,7 +825,11 @@ func _on_sleep_collapse() -> void:
 	get_tree().paused = true
 	energy = 30.0
 	health = max(20.0, health - 25.0)
-	energy_changed.emit(energy, max_energy)
+	# Счётчик бессонницы сбрасываем: иначе после выхода из обморока
+	# персонаж мгновенно «засыпал» бы снова (48 ч уже набрано).
+	hours_without_sleep = 0.0
+	_last_sleep_warning_hour = 0
+	energy_changed.emit(energy, get_effective_max_energy())
 	health_changed.emit(health, max_health)
 	_exhaustion_damage_warned = false
 
@@ -867,6 +879,10 @@ func heal(amount: float) -> void:
 	health_changed.emit(health, max_health)
 
 func _on_collapse(reason: String = "") -> void:
+	# Экран обморока уже показан — второй раз штраф и оверлей не создаём.
+	if _collapse_active:
+		return
+	_collapse_active = true
 	if reason == "exhaustion":
 		notify("💀 Вы упали без сил от истощения...")
 	else:
@@ -891,7 +907,7 @@ func _on_collapse(reason: String = "") -> void:
 	_exhaustion_damage_warned = false
 
 	health_changed.emit(health, max_health)
-	energy_changed.emit(energy, max_energy)
+	energy_changed.emit(energy, get_effective_max_energy())
 	thirst_changed.emit(thirst, max_thirst)
 	hunger_changed.emit(hunger, max_hunger)
 
@@ -1081,8 +1097,10 @@ func eat_from_inventory(preferred_item_id: String = "") -> bool:
 func rest_in_bed(new_day: int = -1) -> void:
 	hours_without_sleep = 0.0
 	_last_sleep_warning_hour = 0
-	energy = max_energy
-	energy_changed.emit(energy, max_energy)
+	# Сон восстанавливает силы до эффективного максимума (с бонусом навыка).
+	var e_max: float = get_effective_max_energy()
+	energy = e_max
+	energy_changed.emit(energy, e_max)
 	health = max_health
 	health_changed.emit(health, max_health)
 	if thirst < 35.0:
@@ -1304,9 +1322,13 @@ func _on_interaction_area_exited(area: Area3D) -> void:
 			_set_current_interactable(null)
 
 func _update_best_interactable() -> void:
+	# Из списка убираем только освобождённые/удалённые узлы. Истощённые
+	# ресурсы (is_interactable = false) остаются в списке: они возрождаются
+	# и должны снова стать доступными, даже если игрок всё это время стоял
+	# рядом (area_entered повторно не сработает).
 	for i in range(nearby_interactables.size() - 1, -1, -1):
 		var item = nearby_interactables[i]
-		if not is_instance_valid(item) or item.get("is_interactable") == false:
+		if not is_instance_valid(item):
 			nearby_interactables.remove_at(i)
 	
 	if nearby_interactables.is_empty():
@@ -1323,6 +1345,11 @@ func _update_best_interactable() -> void:
 		facing_dir = Vector3.FORWARD
 	
 	for item in nearby_interactables:
+		# Истощённый ресурс пропускаем при выборе, но из списка не выбрасываем:
+		# он возродится, и игрок не должен выходить из зоны, чтобы снова
+		# взаимодействовать с ним.
+		if item.get("is_interactable") == false:
+			continue
 		# Жилы (VoxelDeposit) выбирают блок под прицелом; без блока в досягаемости не участвуют.
 		if item.has_method("update_aim") and not item.update_aim(self):
 			continue
@@ -1432,6 +1459,9 @@ func trigger_tool_strike() -> void:
 		_strike_buffered = false
 		return
 	if is_digging or is_scooping or is_jumping or _air_elapsed > 0.12:
+		# Удар не состоялся — сбрасываем удержание, иначе ЛКМ «залипает»
+		# до следующего отпускания кнопки.
+		_strike_held = false
 		return
 	if is_mining:
 		# One queued click, only near recovery; never an unbounded click backlog.

@@ -221,7 +221,10 @@ func _on_reset_pressed() -> void:
 	GameSettings.reset_to_defaults(get_tree())
 	_sync_from_settings()
 
-func _unhandled_input(event: InputEvent) -> void:
+## _input, а не _unhandled_input: панель открыта поверх меню паузы, и HUD
+## перехватывал ESC раньше — игра снималась с паузы, а панель оставалась
+## на экране.
+func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 		close()
 		get_viewport().set_input_as_handled()

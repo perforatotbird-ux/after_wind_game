@@ -166,7 +166,10 @@ func _on_spin_changed(v: float) -> void:
 	if not _syncing:
 		_set_hours(v)
 
-func _unhandled_input(event: InputEvent) -> void:
+## Диалог перехватывает ESC/Enter раньше HUD: он добавлен как ребёнок HUD,
+## и _unhandled_input у HUD отработал бы первым и закрыл окно дома,
+## оставив диалог сна «осиротевшим» (сон не срабатывал бы).
+func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
 			_on_cancel()

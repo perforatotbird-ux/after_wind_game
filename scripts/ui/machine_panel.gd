@@ -69,6 +69,8 @@ func setup(p_machine: Node, p_player: Node) -> void:
 
 func _ready() -> void:
 	AudioManager.play("ui_open")
+	# Панель перехватывает игровой ввод — как storage_panel.
+	add_to_group("ui_input_blockers")
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(UI.make_overlay())
@@ -406,6 +408,8 @@ func _cycles() -> int:
 func _on_amount_changed(_v: float) -> void:
 	if _syncing:
 		return
+	if not is_inside_tree() or inventory == null:
+		return
 	_refresh_order()
 
 func _refresh() -> void:
@@ -549,7 +553,12 @@ func _fmt_time(sec: float) -> String:
 
 ## Состав заказа, подсветка сырья в рюкзаке и доступность «Старт».
 func _refresh_order() -> void:
+	if not is_inside_tree() or inventory == null:
+		return
 	for c in _inputs_box.get_children():
+		# Убираем из дерева сразу: queue_free() отложенный, и на кадр в
+		# списке оставались бы старые и новые строки.
+		_inputs_box.remove_child(c)
 		c.queue_free()
 	_grid.highlight_items = {}
 	if _selected_recipe.is_empty():

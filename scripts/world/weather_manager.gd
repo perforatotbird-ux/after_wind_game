@@ -39,6 +39,12 @@ const SNOW_RESERVOIR_FACTOR: float = 0.0 # DEPRECATED: резервуар уда
 @export var world_environment: WorldEnvironment
 
 var _timer: float = 0.0
+## Осадки применяются не каждый кадр, а несколько раз в секунду: обход групп
+## («farmland_plots», «farm_fields») каждый кадр — заметная лишняя работа.
+const RAINFALL_STEP: float = 0.25
+var _rainfall_timer: float = 0.0
+## Кэш группы суточного цикла (поиск каждый кадр не нужен).
+var _day_cycle: Node = null
 ## DEPRECATED: резервуар удалён, аккумулятор больше не накапливает воду.
 var _reservoir_accumulator: float = 0.0
 var _cycle_sequence: Array[WeatherType] = [
@@ -58,6 +64,8 @@ var _target_weather_light_multiplier: float = 1.0
 var _multiplier_lerp_speed: float = 0.5
 var _base_sun_energy: float = 1.2
 var _target_energy: float = 1.2
+## Погода была навязана событием сезона (гроза, метель, ураган).
+var _event_forced: bool = false
 
 func _ready() -> void:
 	add_to_group("weather_manager")
@@ -81,7 +89,7 @@ func _process(delta: float) -> void:
 		)
 	
 	# Автономный lerp для standalone тестов без DayNightCycle
-	if sun_light and is_instance_valid(sun_light) and not get_tree().get_first_node_in_group("day_night_cycle"):
+	if sun_light and is_instance_valid(sun_light) and not _has_day_cycle():
 		if abs(sun_light.light_energy - _target_energy) > 0.005:
 			sun_light.light_energy = move_toward(
 				sun_light.light_energy, _target_energy, 0.4 * delta
@@ -89,14 +97,26 @@ func _process(delta: float) -> void:
 
 	if auto_cycle:
 		_timer += delta
-		if _timer >= weather_change_interval:
+		if _timer >= maxf(1.0, weather_change_interval):
 			_timer = 0.0
 			_advance_weather_cycle()
 	
 	if is_precipitating():
-		var intensity: float = get_precipitation_intensity()
-		rain_tick.emit(intensity, delta)
-		_apply_rainfall_to_world(intensity, delta)
+		_rainfall_timer += delta
+		if _rainfall_timer >= RAINFALL_STEP:
+			var step: float = _rainfall_timer
+			_rainfall_timer = 0.0
+			var intensity: float = get_precipitation_intensity()
+			rain_tick.emit(intensity, step)
+			_apply_rainfall_to_world(intensity, step)
+
+## Есть ли в мире суточный цикл (кэшируем, чтобы не искать каждый кадр).
+func _has_day_cycle() -> bool:
+	if not is_instance_valid(_day_cycle):
+		_day_cycle = null
+		if get_tree():
+			_day_cycle = get_tree().get_first_node_in_group("day_night_cycle")
+	return is_instance_valid(_day_cycle)
 
 ## Следующая погода по циклу. Цикл сезонный: в засушливом сезоне дождей меньше,
 ## а зимой вместо дождя идёт снег. Событие (гроза/метель/ураган) важнее цикла.
@@ -137,6 +157,19 @@ func weather_type_for_event(event_weather: String) -> WeatherType:
 		"snow": return WeatherType.SNOW
 		"overcast": return WeatherType.OVERCAST
 		_: return WeatherType.SUNNY
+
+## Навязать погоду событием сезона (гроза, метель, ураган).
+func set_event_weather(weather_type: WeatherType) -> void:
+	_event_forced = true
+	set_weather(weather_type)
+
+## Снять погоду события: после грозы или метели небо должно проясниться,
+## иначе ливень/снег держался бы до следующей плановой смены погоды.
+func clear_event_weather() -> void:
+	if not _event_forced:
+		return
+	_event_forced = false
+	set_weather(WeatherType.OVERCAST, false)
 
 func set_weather(new_type: WeatherType, notify_player: bool = true) -> void:
 	current_weather = new_type
@@ -191,7 +224,7 @@ func _update_visuals() -> void:
 			_target_weather_light_multiplier = 0.58
 	
 	_target_energy = _base_sun_energy * _target_weather_light_multiplier
-	if sun_light and is_instance_valid(sun_light) and not get_tree().get_first_node_in_group("day_night_cycle"):
+	if sun_light and is_instance_valid(sun_light) and not _has_day_cycle():
 		sun_light.light_energy = _target_energy
 
 func get_weather_light_multiplier() -> float:

@@ -24,7 +24,7 @@ func _ready() -> void:
 		light_node.omni_range = 4.5
 		light_node.omni_attenuation = 1.6
 		light_node.shadow_enabled = false
-		light_node.visible = false
+		LightLodManager.set_desired_visible(light_node, false)
 		light_node.position = Vector3(0.0, 0.6, 0.4)
 		get_parent().add_child.call_deferred(light_node)
 	
@@ -51,10 +51,10 @@ func _process(delta: float) -> void:
 		if _current_energy > 0.01:
 			var flicker: float = 1.0 + sin(_time * flicker_speed) * flicker_amp + sin(_time * 13.0) * (flicker_amp * 0.5)
 			light_node.light_energy = _current_energy * flicker
-			light_node.visible = true
+			LightLodManager.set_desired_visible(light_node, true)
 		else:
 			light_node.light_energy = 0.0
-			light_node.visible = false
+			LightLodManager.set_desired_visible(light_node, false)
 
 func _on_running_changed(running: bool) -> void:
 	_running = running

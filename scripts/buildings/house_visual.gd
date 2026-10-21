@@ -44,7 +44,7 @@ func update_environment() -> void:
 	if window_material:
 		window_material.albedo_color = Color(0.93, 0.665, 0.35) if active_house else Color(0.26, 0.32, 0.37)
 		window_material.emission_energy_multiplier = (0.8 if night else 0.20) if active_house else 0.0
-	for light in window_lights: light.visible = active_house and night
+	for light in window_lights: LightLodManager.set_desired_visible(light, active_house and night)
 	if smoke: smoke.emitting = active_house
 
 func _create_effects() -> void:
@@ -88,7 +88,7 @@ func _create_effects() -> void:
 		light.light_color = Color(1, 0.49, 0.20)
 		light.light_energy = 0.42
 		light.omni_range = 2.8
-		light.visible = false
+		LightLodManager.set_desired_visible(light, false)
 		add_child(light)
 		light.add_to_group("dynamic_lights")
 		window_lights.append(light)

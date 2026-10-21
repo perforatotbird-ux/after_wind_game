@@ -14,6 +14,9 @@ func _play_hit_effect() -> void:
 func _set_depleted(depleted: bool) -> void:
 	is_depleted = depleted
 	_yield_pool = 0.0
+	# Остаток урона тоже сгорает: иначе озеро после каждого цикла
+	# «вычерпывания» теряло бы часть запаса прочности.
+	_damage_pool = 0.0
 	if not depleted:
 		_harvest_total = 0
 	

@@ -231,6 +231,8 @@ static func fulfill_contract(contract_id: String, player: Node) -> bool:
 	var contract: Dictionary = get_contract(contract_id)
 	if contract.is_empty() or is_completed(contract_id):
 		return false
+	if player == null or not is_instance_valid(player):
+		return false
 	
 	var inv = player.get("inventory") if "inventory" in player else null
 	if not inv or not can_fulfill(contract, inv):

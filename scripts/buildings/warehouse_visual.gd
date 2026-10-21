@@ -34,7 +34,7 @@ func update_environment() -> void:
 	if not is_instance_valid(_day_cycle): _day_cycle=get_tree().get_first_node_in_group(DayNightCycle.GROUP)
 	var night: bool=is_instance_valid(_day_cycle) and _day_cycle.has_method('is_night') and _day_cycle.is_night()
 	var lit:=is_visible_in_tree() and storage_stage>=2 and night
-	for light in lantern_lights: light.visible=lit
+	for light in lantern_lights: LightLodManager.set_desired_visible(light, lit)
 	if glow_material: glow_material.emission_energy_multiplier=.8 if lit else .08
 func _process(delta: float) -> void:
 	_timer+=delta

@@ -51,6 +51,20 @@ static func get_backup_path(index: int) -> String:
 static func has_backup(index: int) -> bool:
 	return index >= 1 and index <= BACKUP_COUNT and FileAccess.file_exists(get_backup_path(index))
 
+## Копирование файла в резервную копию. false — копия не удалась.
+static func _copy_file(src: String, dst: String) -> bool:
+	var f = FileAccess.open(src, FileAccess.READ)
+	if f == null:
+		return false
+	var content: String = f.get_as_text()
+	f.close()
+	var out = FileAccess.open(dst, FileAccess.WRITE)
+	if out == null:
+		return false
+	out.store_string(content)
+	out.close()
+	return true
+
 static func backup_autosave() -> void:
 	if not FileAccess.file_exists(autosave_path):
 		return
@@ -63,23 +77,11 @@ static func backup_autosave() -> void:
 		var src: String = get_backup_path(i - 1)
 		var dst: String = get_backup_path(i)
 		if FileAccess.file_exists(src):
-			var f = FileAccess.open(src, FileAccess.READ)
-			var content: String = f.get_as_text() if f else ""
-			if f:
-				f.close()
-			var out = FileAccess.open(dst, FileAccess.WRITE)
-			if out:
-				out.store_string(content)
-				out.close()
-			DirAccess.remove_absolute(src)
-	var f2 = FileAccess.open(autosave_path, FileAccess.READ)
-	var content2: String = f2.get_as_text() if f2 else ""
-	if f2:
-		f2.close()
-	var out2 = FileAccess.open(get_backup_path(1), FileAccess.WRITE)
-	if out2:
-		out2.store_string(content2)
-		out2.close()
+			# Удаляем предыдущую копию только если новая записалась:
+			# иначе цепочка резервных копий теряла бы поколение.
+			if _copy_file(src, dst):
+				DirAccess.remove_absolute(src)
+	_copy_file(autosave_path, get_backup_path(1))
 
 static func load_backup(world: Node, index: int) -> bool:
 	var path: String = get_backup_path(index)

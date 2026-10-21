@@ -39,9 +39,11 @@ var _last_emitted_gen: float = -1.0
 var _last_emitted_con: float = -1.0
 var _last_emitted_has_power: bool = false
 var _last_consumer_has_power: Variant = null
+## Состав потребителей изменился при последнем сканировании сети.
+var _consumers_changed: bool = false
 
 func _ready() -> void:
-	# Ветряк, батарея и фонари добавляются в группы в своих _ready, которые идут
+	# Ветряк, батарея и фонари добавляются в группы в свои _ready, которые идут
 	# после сети (она выше в сцене): сканируем, когда весь мир готов.
 	_scan_grid_devices()
 	_update_grid(0.0)
@@ -54,14 +56,17 @@ func _rescan_when_ready() -> void:
 func _process(delta: float) -> void:
 	_update_grid(delta)
 
-func _scan_grid_devices() -> void:
+## Пересобирает списки устройств сети. Возвращает true, если состав
+## потребителей изменился (появился/исчез станок) — тогда их нужно
+## переинформировать о текущем статусе питания.
+func _scan_grid_devices() -> bool:
 	var world = get_parent()
 	if not world:
-		return
+		return false
+	var old_consumers: Array[Node] = _consumers.duplicate()
 	_generators.clear()
 	_consumers.clear()
 	_batteries.clear()
-	_last_consumer_has_power = null
 	for child in world.find_children("*", "", true, false):
 		if child.is_in_group("power_generators") and not _generators.has(child):
 			_generators.append(child)
@@ -69,6 +74,9 @@ func _scan_grid_devices() -> void:
 			_consumers.append(child)
 		if child.is_in_group("power_batteries") and not _batteries.has(child):
 			_batteries.append(child)
+	_consumers_changed = old_consumers != _consumers
+	return _consumers_changed
+
 
 func register_generator(gen: Node) -> void:
 	if gen and not _generators.has(gen):
@@ -163,11 +171,13 @@ func _update_grid(delta: float) -> void:
 	# 5. Уведомление потребителей (только при изменении статуса питания).
 	# Алерт один и центральный — со списком вставших станков и цифрами дефицита,
 	# иначе сообщение терялось бы среди уведомлений добычи.
-	if _last_consumer_has_power != has_power:
+	var power_changed: bool = _last_consumer_has_power != has_power
+	if power_changed or _consumers_changed:
 		_last_consumer_has_power = has_power
 		for con in _consumers:
 			if is_instance_valid(con) and con.has_method("set_powered"):
 				con.set_powered(has_power)
+	if power_changed:
 		if has_power:
 			_notify_player("⚡ Мощности хватило — станки продолжают работу.")
 		else:

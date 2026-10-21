@@ -27,6 +27,10 @@ var player: Node
 
 var _panel: Control
 var _player_prev_mode: int = Node.PROCESS_MODE_INHERIT
+## Как часто перепроверяем подключения интерактивных объектов: станки и
+## постройки могут появиться в мире уже после старта (сохранение, постройка).
+const REWIRE_INTERVAL: float = 5.0
+var _rewire_timer: float = 0.0
 
 func setup(p_hud: Node, p_world: Node, p_player: Node) -> void:
 	hud = p_hud
@@ -35,6 +39,12 @@ func setup(p_hud: Node, p_world: Node, p_player: Node) -> void:
 
 func _ready() -> void:
 	_rewire()
+
+func _process(delta: float) -> void:
+	_rewire_timer += delta
+	if _rewire_timer >= REWIRE_INTERVAL:
+		_rewire_timer = 0.0
+		_rewire()
 
 func _rewire() -> void:
 	if player and player.has_signal("inventory_toggle_requested"):

@@ -51,7 +51,7 @@ func _initialize() -> void:
 	var lem: LightingEnvManager = LightingEnvManager.new()
 	lem._day_phase = "Ночь"
 	lem._season = "winter"
-	lem._weather_name = "SUNNY"
+	lem._weather_type = WeatherManager.WeatherType.SUNNY
 	var dummy_env := Environment.new()
 	var dummy_we := WorldEnvironment.new()
 	dummy_we.environment = dummy_env
@@ -160,6 +160,8 @@ func _process(_delta: float) -> bool:
 	if lod_mgr and dyn_lights.size() > 0:
 		var test_light: OmniLight3D = dyn_lights[0] as OmniLight3D
 		if test_light:
+			# Игровая логика хочет, чтобы свет горел.
+			LightLodManager.set_desired_visible(test_light, true)
 			test_light.visible = true
 			# Создаем фиктивную камеру далеко от источника
 			var cam := Camera3D.new()
@@ -177,6 +179,17 @@ func _process(_delta: float) -> bool:
 			lod_mgr._process(0.1)
 			check(test_light.visible == true, "Вблизи (< 24м) свет должен снова стать видимым")
 			check(not test_light.has_meta("_lod_hidden"), "Метка _lod_hidden должна быть снята")
+			
+			# Свет, который игровая логика держит выключенным, LOD включать не должен.
+			LightLodManager.set_desired_visible(test_light, false)
+			cam.global_position = test_light.global_position + Vector3(100.0, 0.0, 0.0)
+			lod_mgr._timer = lod_mgr.check_interval
+			lod_mgr._process(0.1)
+			check(test_light.visible == false, "На дистанции 100м свет должен быть скрыт LOD менеджером")
+			cam.global_position = test_light.global_position + Vector3(5.0, 0.0, 0.0)
+			lod_mgr._timer = lod_mgr.check_interval
+			lod_mgr._process(0.1)
+			check(test_light.visible == false, "LOD не должен включать свет, выключенный игровой логикой")
 			cam.queue_free()
 
 	if errors.is_empty():

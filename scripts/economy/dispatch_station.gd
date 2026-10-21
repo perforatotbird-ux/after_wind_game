@@ -19,6 +19,8 @@ func _on_interacted(_player: Node) -> void:
 	station_opened.emit(self)
 
 func sell_goods(items_to_sell: Dictionary, player: Node) -> int:
+	if player == null or not is_instance_valid(player):
+		return 0
 	var inv = player.get("inventory") if "inventory" in player else null
 	if not inv:
 		return 0
@@ -30,6 +32,9 @@ func sell_goods(items_to_sell: Dictionary, player: Node) -> int:
 		var actual_amount: int = min(amount, available)
 		if actual_amount > 0:
 			var price: int = ItemDB.get_sell_price(item_id)
+			if price <= 0:
+				# Предмет не принимают — не выбрасываем его из рюкзака.
+				continue
 			var revenue: int = price * actual_amount
 			inv.remove_item(item_id, actual_amount)
 			total_earned += revenue

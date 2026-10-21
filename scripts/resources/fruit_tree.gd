@@ -394,15 +394,19 @@ func chop(player: Node) -> bool:
 		skills.add_xp("woodcutting", 3)
 
 	# Древесина капает дробно (0.25 за удар): целая выдаётся каждую 4-ю.
+	# Молодое дерево (саженец/юное) древесины не даёт — иначе посаженный
+	# саженец можно было бы рубить и выращивать бесконечную древесину.
 	var drop_at: Vector3 = global_position + Vector3(0.0, 0.5, 0.0)
+	var yields_wood: bool = stage >= Stage.MATURE
 	var wood_gain: float = 0.25
-	if float(sharpness_eff.get("crit_bonus", 0.0)) > 0.0 and randf() < float(sharpness_eff.get("crit_bonus", 0.0)):
+	if yields_wood and float(sharpness_eff.get("crit_bonus", 0.0)) > 0.0 and randf() < float(sharpness_eff.get("crit_bonus", 0.0)):
 		wood_gain += 0.25
-	_wood_pool += wood_gain
-	var whole: int = int(floor(_wood_pool))
-	_wood_pool -= float(whole)
-	if whole > 0:
-		DroppedItemScript.give_or_drop(player, "wood", whole, drop_at, get_parent())
+	if yields_wood:
+		_wood_pool += wood_gain
+		var whole: int = int(floor(_wood_pool))
+		_wood_pool -= float(whole)
+		if whole > 0:
+			DroppedItemScript.give_or_drop(player, "wood", whole, drop_at, get_parent())
 
 	if current_hits <= 0:
 		if skills and skills.has_method("add_xp"):
@@ -410,11 +414,16 @@ func chop(player: Node) -> bool:
 		# Дерево срублено! Возвращаем древесину и саженец
 		var cfg: Dictionary = _get_config()
 		var sapling_id: String = cfg.get("sapling_id", "apple_sapling")
-		DroppedItemScript.give_or_drop(player, "wood", 2, drop_at, get_parent())
-		DroppedItemScript.give_or_drop(player, sapling_id, 1, drop_at, get_parent())
-		AudioManager.play("hit_wood")
-		if player and player.has_method("notify"):
-			player.notify("🪓 %s срублена! Получены древесина и %s." % [cfg.get("name", ""), ItemDB.get_item_name(sapling_id)])
+		if yields_wood:
+			DroppedItemScript.give_or_drop(player, "wood", 2, drop_at, get_parent())
+			DroppedItemScript.give_or_drop(player, sapling_id, 1, drop_at, get_parent())
+			AudioManager.play("hit_wood")
+			if player and player.has_method("notify"):
+				player.notify("🪓 %s срублена! Получены древесина и %s." % [cfg.get("name", ""), ItemDB.get_item_name(sapling_id)])
+		else:
+			AudioManager.play("hit_wood")
+			if player and player.has_method("notify"):
+				player.notify("🌱 Молодое %s убрано — древесины и саженца с него нет." % cfg.get("name", "дерево"))
 		queue_free()
 		return true
 

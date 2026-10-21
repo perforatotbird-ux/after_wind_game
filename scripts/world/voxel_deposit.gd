@@ -737,14 +737,35 @@ func get_save_state() -> Dictionary:
 		"size": voxels.size(),
 		"voxels": encode_voxels(voxels),
 		"discovered": discovered.duplicate(),
+		# Недобранные блоки и дробная добыча: без них блок приходилось бы
+		# копать заново после загрузки.
+		"damage": _encode_cell_map(damage),
+		"yield_pool": _encode_cell_map(yield_pool),
 	}
+
+## Ключ словаря Vector3i нельзя положить в JSON — кодируем строкой "x,y,z".
+static func _encode_cell_map(src: Dictionary) -> Array:
+	var out: Array = []
+	for cell in src.keys():
+		out.append(["%d,%d,%d" % [cell.x, cell.y, cell.z], float(src[cell])])
+	return out
+
+static func _decode_cell_map(data: Variant) -> Dictionary:
+	var out: Dictionary = {}
+	if data is Array:
+		for entry in data:
+			if entry is Array and entry.size() >= 2:
+				var parts: PackedStringArray = str(entry[0]).split(",")
+				if parts.size() == 3:
+					out[Vector3i(int(parts[0]), int(parts[1]), int(parts[2]))] = float(entry[1])
+	return out
 
 func apply_save_state(state: Dictionary) -> bool:
 	if not is_valid_save_state(state) or int(state["size"]) != size_cells * size_cells * depth_cells:
 		return false
 	voxels = decode_voxels(state)
-	damage.clear()
-	yield_pool.clear()
+	damage = _decode_cell_map(state.get("damage", []))
+	yield_pool = _decode_cell_map(state.get("yield_pool", []))
 	discovered.clear()
 	for item_id in state.get("discovered", []):
 		discovered.append(str(item_id))

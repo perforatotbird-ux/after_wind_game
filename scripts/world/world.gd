@@ -98,17 +98,19 @@ func _init_session() -> void:
 		_show_main_menu()
 		return
 	var slot_id: String = str(request.get("load_slot", ""))
-	if slot_id == "":
-		# Новая игра не наследует статический прогресс контрактов прошлой сессии.
+	var loaded: bool = false
+	if slot_id != "":
+		loaded = SaveSlots.load_from_slot(self, slot_id)
+	if not loaded:
+		# Новая игра (или слот не читается): статический прогресс контрактов
+		# прошлой сессии не наследуем, батарея заряжена на 100 %.
 		ContractDB.reset_completed()
-		# Новая игра: батарея заряжена на 100%.
 		if power_grid:
 			power_grid.current_stored = power_grid.max_capacity
 		var _bat = find_child("BatteryBank", true, false)
 		if _bat:
 			_bat.stored_energy = _bat.capacity
-	if slot_id != "" and not SaveSlots.load_from_slot(self, slot_id):
-		if hud and hud.has_method("show_notification"):
+		if slot_id != "" and hud and hud.has_method("show_notification"):
 			hud.show_notification("⚠️ Не удалось загрузить %s — начата новая игра" % SaveSlots.get_slot_title(slot_id))
 
 func _show_main_menu() -> void:

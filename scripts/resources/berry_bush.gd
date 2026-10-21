@@ -10,6 +10,7 @@ const Seasons = preload("res://scripts/core/seasons.gd")
 const GROUP: String = "berry_bushes"
 const FALLBACK_HOURS_PER_SECOND: float = 1.0 / 60.0
 const AudioManager = preload("res://scripts/audio/audio_manager.gd")
+const DroppedItemScript = preload("res://scripts/inventory/dropped_item.gd")
 
 ## Вид куста ("red" / "blue") — для сохранений, тестов и спавнера.
 @export var bush_type: String = "red"
@@ -75,9 +76,22 @@ func _on_interacted(player: Node) -> void:
 	if skills and skills.has_method("roll_bonus_yield") and skills.roll_bonus_yield("foraging"):
 		amount += 1
 	var inv = player.get("inventory") if player else null
-	if inv == null or not inv.add_item(berry_item_id, amount):
+	if inv == null:
 		_notify(player, "🎒 Не хватает места в рюкзаке для ягод!")
 		return
+	# Часть ягод, для которой в рюкзаке нет места, падает кучкой у куста —
+	# как у камней и деревьев, а не пропадает вместе с урожаем.
+	var fit: int = int(inv.get_max_addable(berry_item_id, amount)) if inv.has_method("get_max_addable") else 0
+	if fit <= 0:
+		_notify(player, "🎒 Не хватает места в рюкзаке для ягод!")
+		return
+	if fit < amount:
+		DroppedItemScript.give_or_drop(player, berry_item_id, amount - fit,
+			global_position + Vector3(0.0, 0.6, 0.0), get_parent())
+	if not inv.add_item(berry_item_id, fit):
+		_notify(player, "🎒 Не хватает места в рюкзаке для ягод!")
+		return
+	amount = fit
 	set_has_berries(false)
 	AudioManager.play("berry_pick")
 	if player and player.has_method("consume_hunger"):

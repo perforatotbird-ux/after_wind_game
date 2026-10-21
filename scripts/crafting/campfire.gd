@@ -106,7 +106,7 @@ func _update_light(delta: float = 0.0) -> void:
 	if _fire_model:
 		_fire_model.update_fire(delta, is_lit(), has_burned, _is_night())
 	elif fire_light:
-		fire_light.visible = is_lit()
+		LightLodManager.set_desired_visible(fire_light, is_lit())
 
 func _is_night() -> bool:
 	if not is_instance_valid(_day_cycle) and get_tree():

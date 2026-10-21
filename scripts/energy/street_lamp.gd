@@ -74,12 +74,12 @@ func set_powered(powered: bool) -> void:
 func _update_lamp_state() -> void:
 	var wants_on: bool = should_be_illuminated()
 	var new_is_on: bool = wants_on and _has_grid_power
-	if new_is_on == is_on and lamp_light and lamp_light.visible == is_on:
+	if new_is_on == is_on and lamp_light and LightLodManager.get_desired_visible(lamp_light) == is_on:
 		return
 	is_on = new_is_on
 	
 	if lamp_light:
-		lamp_light.visible = is_on
+		LightLodManager.set_desired_visible(lamp_light, is_on)
 	
 	if bulb_mesh and bulb_mesh.material_override:
 		var mat = bulb_mesh.material_override as StandardMaterial3D

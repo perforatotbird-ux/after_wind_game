@@ -124,6 +124,12 @@ func _deposit_with(id: String) -> Node:
 func _check_digging() -> void:
 	var inv = player.inventory
 	inv.equipped_tool = "shovel"
+	# Инструменты притупляем до «средней» остроты (35–75): у острого
+	# инструмента есть 10 % шанс крита с доп. выходом, из-за чего количество
+	# добычи (и сам тест) становилось случайным. 74 хватает на все удары
+	# теста с запасом и не даёт уйти в «тупую» зону (там power_mult 0.75).
+	inv.tool_sharpness["shovel"] = 74.0
+	inv.tool_sharpness["pickaxe"] = 74.0
 	var near: Node = world.get_node("Deposits/NearDeposit")
 	var soil := Vector3i(5, near.depth_cells - 1, 5)
 	var faces_before: int = near.get_node("TerrainBody/Shape").shape.get_faces().size()

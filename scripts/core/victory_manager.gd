@@ -73,7 +73,12 @@ static func evaluate_base_restored(world: Node) -> Dictionary:
 	})
 	
 	# 6. Восстановление фермерского хозяйства
-	var plots = world.find_children("", "FarmlandPlot", true, false)
+	# Группа «farmland_plots» — быстрый путь; полный обход мира только если
+	# группа пуста (оценка финала вызывается регулярно из HUD).
+	var plots: Array = []
+	var tree := world.get_tree() if world is Node else null
+	if tree:
+		plots = tree.get_nodes_in_group("farmland_plots")
 	if plots.is_empty():
 		for c in world.find_children("*", "", true, false):
 			if c.is_in_group("farmland_plots"):

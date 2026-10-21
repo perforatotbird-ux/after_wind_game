@@ -16,6 +16,13 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 # Godot can report script/import errors while returning exit code zero.
 ENGINE_ERROR = re.compile(r"(?:^|\n)\s*(?:SCRIPT ERROR|ERROR|FAIL):", re.MULTILINE)
+# Шум движка при выходе в headless: незакрытые RID/ресурсы. К проекту это
+# отношения не имеет и не должно помечать прогон как упавший.
+BENIGN_EXIT_NOISE = re.compile(
+    r"^(?:ERROR:\s*\d+ resources still in use at exit[^\n]*|"
+    r"ERROR:\s*\d+ RID allocations of type [^\n]*were leaked at exit[^\n]*)\n?",
+    re.MULTILINE,
+)
 
 
 def run_checked(command: list[str], env: dict[str, str], timeout: float) -> tuple[bool, str]:
@@ -32,7 +39,8 @@ def run_checked(command: list[str], env: dict[str, str], timeout: float) -> tupl
         return False, output + f"\nFAIL: timeout after {timeout:g}s\n"
     except OSError as exc:
         return False, f"FAIL: cannot run engine: {exc}\n"
-    return result.returncode == 0 and not ENGINE_ERROR.search(result.stdout), result.stdout
+    checked = BENIGN_EXIT_NOISE.sub("", result.stdout)
+    return result.returncode == 0 and not ENGINE_ERROR.search(checked), result.stdout
 
 
 def main() -> int:

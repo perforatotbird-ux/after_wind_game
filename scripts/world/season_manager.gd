@@ -342,9 +342,20 @@ func _apply_event_to_world() -> void:
 	var forced: String = get_forced_weather()
 	match forced:
 		"heavy_rain":
-			_weather_mgr.set_weather(WeatherManager.WeatherType.HEAVY_RAIN)
+			if _weather_mgr.has_method("set_event_weather"):
+				_weather_mgr.set_event_weather(WeatherManager.WeatherType.HEAVY_RAIN)
+			else:
+				_weather_mgr.set_weather(WeatherManager.WeatherType.HEAVY_RAIN)
 		"snow":
-			_weather_mgr.set_weather(WeatherManager.WeatherType.SNOW)
+			if _weather_mgr.has_method("set_event_weather"):
+				_weather_mgr.set_event_weather(WeatherManager.WeatherType.SNOW)
+			else:
+				_weather_mgr.set_weather(WeatherManager.WeatherType.SNOW)
+		_:
+			# Событие закончилось — снимаем навязанную погоду, иначе ливень
+			# или снег держался бы до следующей плановой смены.
+			if _weather_mgr.has_method("clear_event_weather"):
+				_weather_mgr.clear_event_weather()
 
 # --- Последствия событий --------------------------------------------------------
 

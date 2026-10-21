@@ -347,6 +347,10 @@ func _on_interacted(player: Node) -> void:
 		if skills and skills.has_method("add_xp"):
 			skills.add_xp(target_skill, 25)
 		gained += bonus_depleted_yield
+		# Бонус за полное истощение узла тоже в счётчик: сообщение должно
+		# показывать реально собранное количество.
+		_harvest_total += bonus_depleted_yield
+
 		if inv:
 			# Рюкзак полон — добыча падает кучкой у узла, а не пропадает.
 			DroppedItemScript.give_or_drop(player, resource_id, gained, global_position, get_parent())

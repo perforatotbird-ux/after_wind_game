@@ -206,8 +206,6 @@ func _tick_cell(d: Dictionary, h: float, farmer: bool) -> void:
 	var m: float = float(d["moisture"])
 	var mf: float = CropDB.moisture_factor(crop, m)
 	d["total"] = float(d["total"]) + h
-	if mf >= 1.0:
-		d["care"] = float(d["care"]) + h
 	if m <= 0.0:
 		d["drought"] = float(d["drought"]) + h
 		if float(d["drought"]) >= float(info["wither_hours"]):
@@ -224,6 +222,10 @@ func _tick_cell(d: Dictionary, h: float, farmer: bool) -> void:
 		speed = 0.0
 	# Сезон и погодное событие: весна ×1.3, зима ×0.4, метель — ещё медленнее.
 	speed *= get_growth_multiplier()
+	# Уход засчитывается только пока культура реально растёт: иначе посадка
+	# не в сезон давала бы «отличный» уход бесплатно (care == total).
+	if mf >= 1.0 and speed > 0.0:
+		d["care"] = float(d["care"]) + h
 	d["growth"] = minf(float(info["growth_hours"]), float(d["growth"]) + h * speed)
 	d["moisture"] = maxf(0.0, m - float(info["water_use"]) * evap * h)
 
@@ -708,7 +710,6 @@ func harvest(c: Vector2i, player: Node = null) -> Dictionary:
 	for n in zone_cells(c):
 		if not is_ripe(n):
 			continue
-		harvested_cells += 1
 		var d: Dictionary = get_cell(n)
 		var crop: String = d["crop"]
 		var q: int = get_quality(n)
@@ -729,6 +730,8 @@ func harvest(c: Vector2i, player: Node = null) -> Dictionary:
 					cell_center_global(n) + Vector3(0.0, 0.4, 0.0), get_parent())
 			else:
 				inv.add_item(seed_id, ys[1])
+		# Клетка действительно собрана — только за неё начисляется опыт.
+		harvested_cells += 1
 		var t: Array = totals.get(crop, [0, 0])
 		totals[crop] = [t[0] + ys[0], t[1] + ys[1]]
 		best_q = maxi(best_q, q)

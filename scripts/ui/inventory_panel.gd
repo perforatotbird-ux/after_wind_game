@@ -61,6 +61,8 @@ func setup(p_player: Node) -> void:
 
 func _ready() -> void:
 	AudioManager.play("ui_open")
+	# Панель перехватывает игровой ввод — как storage_panel.
+	add_to_group("ui_input_blockers")
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	# Затемнение вокруг окна: перетащить стек сюда (за окно) = выбросить на землю.
@@ -265,6 +267,7 @@ func _refresh() -> void:
 
 func _build_belt() -> void:
 	for c in _belt.get_children():
+		_belt.remove_child(c)
 		c.queue_free()
 	for i in range(inventory.tools.size()):
 		var t: String = inventory.tools[i]
@@ -434,7 +437,15 @@ func _craft_whetstone_in_backpack() -> void:
 		if player and player.has_method("notify"):
 			player.notify("❌ Для создания точильного камня нужно: 2 камня, 1 песок (есть: %d камня, %d песка)" % [stones, sands])
 		return
-	if not inventory.remove_item("stone", 2) or not inventory.remove_item("sand", 1):
+	# Списываем по очереди и при неудаче возвращаем уже снятое: иначе
+	# «камень забрали, песок не дали» — часть ресурса пропадала.
+	var took_stone: bool = inventory.remove_item("stone", 2)
+	var took_sand: bool = inventory.remove_item("sand", 1)
+	if not took_stone or not took_sand:
+		if took_stone:
+			inventory.add_item("stone", 2)
+		if took_sand:
+			inventory.add_item("sand", 1)
 		AudioManager.play("ui_error")
 		return
 	_task_consumed = {"stone": 2, "sand": 1}

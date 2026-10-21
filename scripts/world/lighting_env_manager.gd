@@ -5,6 +5,8 @@ extends Node
 ## Подписывается на сигналы DayNightCycle, WeatherManager и SeasonManager.
 ## Не трогает DirectionalLight3D (зона ответственности DayNightCycle).
 
+const Seasons = preload("res://scripts/core/seasons.gd")
+
 @export var world_environment: WorldEnvironment
 @export var enable_ssao: bool = true
 @export var enable_sdfgi: bool = false
@@ -24,18 +26,20 @@ const SEASON_AMBIENT: Dictionary = {
 	"":       Color(0.30, 0.30, 0.36),
 }
 
-# Погодные коэффициенты яркости рассеянного света
+# Погодные коэффициенты яркости рассеянного света (по типу погоды).
 const WEATHER_AMBIENT_MULT: Dictionary = {
-	"SUNNY":      1.0,
-	"OVERCAST":   0.75,
-	"RAIN":       0.60,
-	"HEAVY_RAIN": 0.45,
-	"SNOW":       0.85,
+	0: 1.0,   # SUNNY
+	1: 0.75,  # OVERCAST
+	2: 0.60,  # RAIN
+	3: 0.45,  # HEAVY_RAIN
+	4: 0.85,  # SNOW
 }
 
 var _season: String = ""
-var _weather_name: String = "SUNNY"
+var _weather_type: int = 0
 var _day_phase: String = "День"
+## Озеро ищется один раз: полный обход мира каждый кадр стоил слишком дорого.
+var _lake_lookup_done: bool = false
 
 func _ready() -> void:
 	add_to_group("lighting_env_manager")
@@ -68,16 +72,17 @@ func _bind_signals() -> void:
 		wm = get_tree().get_first_node_in_group("weather_manager")
 	if wm and wm.has_signal("weather_changed") and not wm.weather_changed.is_connected(_on_weather_changed):
 		wm.weather_changed.connect(_on_weather_changed)
-		if wm.has_method("get_weather_name"):
-			_weather_name = wm.get_weather_name()
+		if "current_weather" in wm:
+			_weather_type = int(wm.current_weather)
 	
 	var sm: Node = null
 	if get_parent():
 		sm = get_parent().get_node_or_null("SeasonManager")
 	if sm and sm.has_signal("season_changed") and not sm.season_changed.is_connected(_on_season_changed):
 		sm.season_changed.connect(_on_season_changed)
-		if "current_season" in sm:
-			_season = str(sm.current_season)
+	# Текущий сезон живёт в статическом календаре Seasons, а не в SeasonManager,
+	# поэтому берём его оттуда — иначе первый сезон остался бы нейтральным.
+	_season = Seasons.get_current_season()
 
 func _apply_environment_settings() -> void:
 	if not world_environment or not world_environment.environment:
@@ -125,8 +130,9 @@ func _on_time_changed(_day: int, _hour: int, _min: int, _fmt: String, phase: Str
 		_day_phase = phase
 		_update_ambient()
 
-func _on_weather_changed(_type, w_name: String, _icon: String) -> void:
-	_weather_name = w_name.to_upper().replace(" ", "_")
+func _on_weather_changed(w_type, _w_name: String, _icon: String) -> void:
+	# Ключ таблицы — тип погоды (WeatherType), а не название: названия русские.
+	_weather_type = int(w_type)
 	_update_ambient()
 
 func _on_season_changed(season: String, _season_name: String = "", _day_in_season: int = 1) -> void:
@@ -147,15 +153,16 @@ func _update_ambient() -> void:
 		_:
 			pass
 	
-	var mult: float = WEATHER_AMBIENT_MULT.get(_weather_name, 1.0)
+	var mult: float = WEATHER_AMBIENT_MULT.get(_weather_type, 1.0)
 	_target_ambient = Color(base.r * mult, base.g * mult, base.b * mult)
 	
 	var env: Environment = world_environment.environment
 	env.ambient_light_energy = 0.65 if _day_phase == "День" else (0.10 if _day_phase == "Ночь" else 0.50)
 
 func _update_water_tint() -> void:
-	if not lake_material:
-		# Попробуем найти материал озера, если не был передан в инспекторе
+	if not lake_material and not _lake_lookup_done:
+		# Озеро ищем один раз: обход мира каждый кадр стоил слишком дорого.
+		_lake_lookup_done = true
 		var lake: Node = get_tree().get_first_node_in_group("lakes") if get_tree() else null
 		if not lake and get_parent():
 			lake = get_parent().find_child("Lake", true, false)
@@ -163,6 +170,13 @@ func _update_water_tint() -> void:
 			var mesh_inst := lake.find_child("WaterMesh", true, false) as MeshInstance3D
 			if not mesh_inst:
 				mesh_inst = lake.find_child("LakeWater", true, false) as MeshInstance3D
+			if not mesh_inst:
+				# Надпись воды в модели озера: ищем любой узел с материалом-шейдером.
+				for cand in lake.find_children("*", "MeshInstance3D", true, false):
+					var mi := cand as MeshInstance3D
+					if mi and mi.material_override is ShaderMaterial:
+						mesh_inst = mi
+						break
 			if mesh_inst and mesh_inst.material_override is ShaderMaterial:
 				lake_material = mesh_inst.material_override
 			elif mesh_inst and mesh_inst.get_surface_override_material(0) is ShaderMaterial:

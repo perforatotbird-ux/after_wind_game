@@ -117,7 +117,9 @@ func set_seconds_per_game_hour(seconds: float) -> void:
 func _process(delta: float) -> void:
 	current_hour += get_hours_per_second() * delta
 	
-	if current_hour >= 24.0:
+	# За один кадр могут пройти сразу несколько суток (просадка FPS, длинный
+	# кадр, перемотка). Вычитаем все целые сутки, иначе часы «уезжают» за 24.
+	while current_hour >= 24.0:
 		current_hour -= 24.0
 		current_day += 1
 		day_passed.emit(current_day)
@@ -191,7 +193,8 @@ func get_season() -> String:
 
 func set_time(day: int, hour: float) -> void:
 	current_day = max(1, day)
-	current_hour = clamp(hour, 0.0, 24.0)
+	# Час строго меньше суток: 24.0 отображалось бы как «24:00».
+	current_hour = clamp(hour, 0.0, 23.999)
 	_last_reported_minute = -1
 	current_phase = get_current_phase()
 	_update_lighting_and_sky(true)

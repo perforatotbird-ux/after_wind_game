@@ -121,7 +121,15 @@ func cancel_fermentation(slot_idx: int, return_inv: Node = null) -> bool:
 	var inp_id: String = slot.get("input_item", "")
 	var inp_count: int = int(slot.get("count", 0))
 	if return_inv and inp_id != "" and inp_count > 0:
-		return_inv.add_item(inp_id, inp_count)
+		# Если в рюкзаке не хватает места, товар не пропадает: остаток
+		# возвращается на склад, а не выбрасывается вместе с бочкой.
+		var fit: int = int(return_inv.get_max_addable(inp_id, inp_count)) if return_inv.has_method("get_max_addable") else 0
+		if fit > 0 and not return_inv.add_item(inp_id, fit):
+			fit = 0
+		if fit < inp_count:
+			var storage := storage_inventory
+			if storage and storage.has_method("add_item"):
+				storage.add_item(inp_id, inp_count - fit)
 	
 	slot["status"] = "idle"
 	slot["input_item"] = ""
@@ -157,8 +165,11 @@ func _transfer(source: Inventory, dest: Inventory, id: String, amount: int) -> i
 	return n
 func _init_default_stages() -> void:
 	super._init_default_stages()
-	stages_config[0]['description']='Пробита деревянная кровля, ворота повреждены, припасы завалены обломками.'
-	stages_config[2]['perks']='📦 Отдельный инвентарь на 20 ячеек. 🍺 Бродильный цех (4 бочки). Бонус к весу рюкзака +20 кг.'
-	stages_config[3]['description']='Укреплённый амбар с освещением и фасадным подъёмником.'
-	stages_config[3]['perks']='📦 Отдельный инвентарь на 20 ячеек. 🍺 Бродильный цех (4 бочки). Бонус к весу рюкзака +35 кг.'
+	if stages_config.size() > 0:
+		stages_config[0]['description']='Пробита деревянная кровля, ворота повреждены, припасы завалены обломками.'
+	if stages_config.size() > 2:
+		stages_config[2]['perks']='📦 Отдельный инвентарь на 20 ячеек. 🍺 Бродильный цех (4 бочки). Бонус к весу рюкзака +20 кг.'
+	if stages_config.size() > 3:
+		stages_config[3]['description']='Укреплённый амбар с освещением и фасадным подъёмником.'
+		stages_config[3]['perks']='📦 Отдельный инвентарь на 20 ячеек. 🍺 Бродильный цех (4 бочки). Бонус к весу рюкзака +35 кг.'
 

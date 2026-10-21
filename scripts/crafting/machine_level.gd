@@ -40,6 +40,10 @@ func get_wear_mult() -> float:
 func get_max_condition() -> float:
 	return float(get_stats()["max_condition"])
 
+## Ресурс станка для указанного уровня (без создания объекта состояния).
+static func max_condition_for_level(value: int) -> float:
+	return float(LEVEL_STATS.get(clampi(value, 1, MAX_LEVEL), LEVEL_STATS[1])["max_condition"])
+
 ## Множитель потребления энергосети.
 func get_power_mult() -> float:
 	return float(get_stats()["power"])

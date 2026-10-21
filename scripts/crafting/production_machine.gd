@@ -652,7 +652,7 @@ func start_recipe(recipe_id: String, player: Node) -> bool:
 
 	var params: Dictionary = get_cycle_params(recipe, player)
 	# Топливо проверяется ДО списания сырья: при отказе ничего не теряется.
-	if not _require_fuel(params["duration"] * (wear.get_speed_mult() if wear else 1.0), player, 1):
+	if not _require_fuel(get_required_fuel_seconds(params["duration"], 1), player, 1):
 		return false
 
 	# Списание ресурсов
@@ -705,7 +705,7 @@ func start_batch(recipe_id: String, cycles: int, player: Node) -> bool:
 
 	var params: Dictionary = get_cycle_params(recipe, player)
 	# Топливо проверяется ДО списания сырья: при отказе ничего не теряется.
-	if not _require_fuel(params["duration"] * (wear.get_speed_mult() if wear else 1.0) * cycles, player, cycles):
+	if not _require_fuel(get_required_fuel_seconds(params["duration"], cycles), player, cycles):
 		return false
 
 	var inputs: Dictionary = recipe.get("inputs", {})
@@ -827,11 +827,13 @@ func _complete_process() -> void:
 	var cycles: int = batch_cycles_total
 	_finish_run()
 	if user_valid and _last_user.has_method("notify"):
-		var main_out: String = get_main_output(ItemDB.get_item("") if false else {"outputs": outputs})
+		var main_out: String = get_main_output({"outputs": outputs})
 		if main_out != "":
+			# Показываем выход именно этой партии (цикл × число циклов), а не
+			# весь запас станка.
 			_last_user.notify("✅ Готово: %s %s ×%d — заберите в «%s» [E]" % [
 				ItemDB.get_item_icon(main_out), ItemDB.get_item_name(main_out),
-				int(pending_outputs.get(main_out, 0)), object_name
+				int(outputs.get(main_out, 0)) * maxi(1, cycles), object_name
 			])
 		elif recipe_id.begins_with("sharpen_"):
 			var t_name: String = recipe_id.trim_prefix("sharpen_")
@@ -1105,6 +1107,19 @@ func get_fuel_time_total() -> float:
 			total += get_fuel_burn_time(str(slot["item_id"])) * int(slot["count"])
 	return total
 
+## Сколько секунд горения нужно на партию из cycles циклов.
+## process_duration — это время работы станка (рецепт × уровень станка × износ),
+## а топливо при лучшем КПД уровня тратится медленнее. Поэтому сравнивать
+## нужно «секунды горения» (get_fuel_time_total) с той же величиной,
+## иначе улучшенный станок Lv.2/Lv.3 отказывал бы запускать партию.
+func get_required_fuel_seconds(duration: float, cycles: int = 1) -> float:
+	var wall: float = maxf(0.0, duration) \
+		* (level_state.get_speed_mult() if level_state else 1.0) \
+		* (wear.get_speed_mult() if wear else 1.0) \
+		* float(maxi(1, cycles))
+	var efficiency: float = level_state.get_fuel_efficiency() if level_state else 1.0
+	return wall / maxf(0.01, efficiency)
+
 ## Проверка перед запуском: запаса горения должно хватить на всю партию.
 func _require_fuel(needed_seconds: float, player: Node, cycles: int) -> bool:
 	if not has_fuel_slots or get_fuel_time_total() >= needed_seconds:
@@ -1168,10 +1183,9 @@ func take_fuel_from_slot(slot_index: int, inv: Node) -> int:
 	if int(slot["count"]) <= 0:
 		slot["item_id"] = ""
 		if active_fuel_slot == slot_index:
-			# Горевшая единица была из этого слота — ищем следующее топливо.
+			# Горевшая единица была списана из слота при розжиге, поэтому её
+			# нельзя уничтожать: она догорает, а слот просто отпускаем.
 			active_fuel_slot = -1
-			fuel_burn_left = 0.0
-			_light_next_fuel()
 	return back
 
 ## Разжигает следующую единицу топлива (сначала слот, где горело, затем по порядку).

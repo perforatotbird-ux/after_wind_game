@@ -52,11 +52,13 @@ static func give_or_drop(player: Node, p_item_id: String, p_amount: int, pos: Ve
 	if p_amount <= 0:
 		return 0
 	var inv: Object = player.get("inventory") if player and "inventory" in player else null
-	var fit: int = p_amount
+	var fit: int = 0
 	if inv and inv.has_method("get_max_addable"):
 		fit = int(inv.get_max_addable(p_item_id, p_amount))
-	elif inv and inv.has_method("can_add_item") and not inv.can_add_item(p_item_id, p_amount):
-		fit = 0
+	elif inv and inv.has_method("can_add_item"):
+		fit = p_amount if inv.can_add_item(p_item_id, p_amount) else 0
+	# Без рюкзака (или без подходящих методов) предмет не пропадает:
+	# весь объём уходит на землю кучкой.
 	var rest: int = p_amount - maxi(0, fit)
 	if fit > 0 and inv and inv.has_method("add_item") and not inv.add_item(p_item_id, fit):
 		rest = p_amount
@@ -98,8 +100,11 @@ static func drop_from_player(player: Node, p_item_id: String, p_amount: int) -> 
 	var node: Node = spawn(player.get_parent(), p_item_id, p_amount, pos)
 	if node == null:
 		# Некуда положить — возвращаем в рюкзак, чтобы ничего не потерять.
-		inv.items[p_item_id] = int(inv.items.get(p_item_id, 0)) + p_amount
-		inv.inventory_updated.emit()
+		# Через add_item, а не прямой записью в items: так корректно
+		# пересчитывается состояние перегрузки.
+		if not inv.add_item(p_item_id, p_amount):
+			inv.items[p_item_id] = int(inv.items.get(p_item_id, 0)) + p_amount
+			inv.inventory_updated.emit()
 		return null
 	if player.has_method("notify"):
 		player.notify("🫳 Выброшено: %s %s ×%d (%.1f кг)" % [

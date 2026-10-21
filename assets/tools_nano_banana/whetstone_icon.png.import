@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://cwrl5k11eg3hs"
+path="res://.godot/imported/whetstone_icon.png-3a2ffa07b4f6e2e3de914383fe031e68.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/tools_nano_banana/whetstone_icon.png"
+dest_files=["res://.godot/imported/whetstone_icon.png-3a2ffa07b4f6e2e3de914383fe031e68.ctex"]
 
 [params]
 

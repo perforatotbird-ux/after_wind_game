@@ -75,6 +75,9 @@ func _refresh_fermentation() -> void:
 	if not is_instance_valid(fermentation_container) or not is_instance_valid(building):
 		return
 	for child in fermentation_container.get_children():
+		# Убираем из дерева сразу: queue_free() отложенный, и на кадр в
+		# контейнере оставались бы и старые, и новые строки.
+		fermentation_container.remove_child(child)
 		child.queue_free()
 	
 	if not "fermentation_slots" in building or not building.is_storage_ready():
@@ -176,7 +179,7 @@ func _on_pour_pressed(slot_idx: int) -> void:
 	
 	if fermentables.is_empty():
 		status.text = "⚠️ В рюкзаке нет сусла! Сварите охмелённое сусло на костре, сожмите ягоды или зерно на верстаке."
-		Audio.play("ui_deny")
+		Audio.play("ui_error")
 		return
 	
 	var chosen: String = fermentables[0]
@@ -193,7 +196,12 @@ func _process(_delta: float) -> void:
 	if not is_instance_valid(building): close();return
 	if not building.is_storage_ready():
 		if is_instance_valid(modal): modal.queue_free();modal=null
-		refresh()
+		# Полный пересбор панелей делаем не каждый кадр (это пересоздаёт
+		# сотни узлов), а по сигналам инвентаря и смены стадии.
+		if status:
+			var msg := 'Склад повреждён. Вещи сохранены; восстановите его до стадии 2.'
+			if status.text != msg:
+				status.text = msg
 		return
 	# Периодическое обновление прогресс-баров брожения раз в секунду
 	var sec = int(Time.get_ticks_msec() / 1000.0)

@@ -33,7 +33,7 @@ func _process(delta: float) -> void:
 func _update_fire_light() -> void:
 	if fire_light and is_instance_valid(fire_light):
 		var lit: bool = is_machine_running and fuel_burn_left > 0.0
-		fire_light.visible = lit
+		LightLodManager.set_desired_visible(fire_light, lit)
 		if lit:
 			# Мягкое мерцание топки перегонного куба
 			var t: float = Time.get_ticks_msec() / 1000.0

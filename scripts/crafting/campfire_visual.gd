@@ -48,7 +48,7 @@ func _ready() -> void:
 	fire_light = OmniLight3D.new(); fire_light.name = "FireLight"
 	fire_light.position.y = 0.6; fire_light.light_color = Color(1, 0.47, 0.16)
 	fire_light.omni_range = 5.0; fire_light.omni_attenuation = 1.35
-	fire_light.light_energy = 0.0; fire_light.visible = false; add_child(fire_light)
+	fire_light.light_energy = 0.0; LightLodManager.set_desired_visible(fire_light, false); add_child(fire_light)
 	fire_light.add_to_group("dynamic_lights")
 	sparks = _particles("Sparks", 18, 1.45, false)
 	smoke = _particles("Smoke", 14, 3.5, true)
@@ -117,4 +117,4 @@ func update_fire(delta: float, burning: bool, burned: bool, night: bool, snap: b
 	smoke.emitting = burning or _smoke_tail > 0.0
 	var flicker := 0.90 + sin(_time * 8.1) * 0.06 + sin(_time * 13.3 + 1.4) * 0.04
 	fire_light.light_energy = ((2.6 if night else 1.15) * flame_strength + ember_strength * 0.15) * flicker
-	fire_light.visible = fire_light.light_energy > 0.005
+	LightLodManager.set_desired_visible(fire_light, fire_light.light_energy > 0.005)
