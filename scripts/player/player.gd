@@ -144,6 +144,9 @@ var current_interactable: Area3D = null
 var anim_player: AnimationPlayer = null
 var equipped_pickaxe_mesh: Node3D = null
 var sun_hat_mesh: Node3D = null
+# Вид от первого лица (V): тело и каска скрыты, инструмент в руке остаётся видимым.
+var _first_person: bool = false
+var _body_mesh: Node3D = null
 # Динамическая экипировка: инструмент в руке соответствует экипированному слоту.
 # Ключи словаря — tool_type из ItemDB ("axe", "pickaxe", "shovel", "bucket").
 var tool_socket: BoneAttachment3D = null
@@ -173,14 +176,21 @@ const ShovelInHandScene = preload("res://scenes/tools/hoe_inhand.tscn")
 const HoeGripModifier = preload("res://scripts/player/hoe_grip_modifier.gd")
 const BucketInHandScene = preload("res://scenes/tools/bucket_inhand.tscn")
 const BucketFullInHandScene = preload("res://scenes/tools/bucket_full_inhand.tscn")
+## Единый наклон лезвийных инструментов к костяшкам: у кирки он запечён в
+## miner_package_model.tscn (rot_z -35°), топор получает тот же наклон кодом —
+## оба инструмента в руке выглядят и расположены одинаково.
+const TOOL_KNUCKLE_TILT_DEG: float = 35.0
 ## Хват in-hand моделей в сокете ToolSocket.R героя: начало сокета — центр кулака,
 ## +Y — от мизинца к указательному (к голове инструмента), +X — к костяшкам (лезвие).
-## Меш axe_inhand смоделирован топорищем вверх и головой вниз (-Y): в руке он был
-## перевёрнут. Поворот на 180° вокруг X ставит голову над кулаком, сохраняя направление
-## лезвия (+X), а сдвиг переносит хват к концу топорища (12 см от торца).
+## Топор и кирка: один общий вид — голова вверх, черенок наклонён к костяшкам
+## на TOOL_KNUCKLE_TILT_DEG. Меш axe_inhand смоделирован головой вниз (-Y):
+## разворот на 180° вокруг X ставит голову над кулаком, сохраняя лезвие (+X);
+## сдвиг переносит хват к концу топорища (вдоль наклонённого черенка).
 ## Мотыга: ось черенка +Y; обе кисти и положение лезвия задаёт HoeTwoHandGrip.
-const INHAND_GRIP: Dictionary = {
-	"axe": Transform3D(Basis(Vector3.RIGHT, PI), Vector3(0.0, 0.20, 0.0)),
+var INHAND_GRIP: Dictionary = {
+	"axe": Transform3D(
+		Basis(Vector3(0.0, 0.0, 1.0), -deg_to_rad(TOOL_KNUCKLE_TILT_DEG)) * Basis(Vector3.RIGHT, PI),
+		Basis(Vector3(0.0, 0.0, 1.0), -deg_to_rad(TOOL_KNUCKLE_TILT_DEG)) * Vector3(0.0, 0.20, 0.0)),
 }
 var current_anim: String = ""
 var is_mining: bool = false
@@ -237,6 +247,8 @@ func _ready() -> void:
 	if sun_hat_mesh == null:
 		# Шахтёр: каска с фонарём вынесена в отдельный меш при запекании модели.
 		sun_hat_mesh = find_child("Character_Helmet", true, false)
+	# Тело героя отдельным мешом: в виде от первого лица оно скрывается (камера у глаз).
+	_body_mesh = find_child("Miner_Body", true, false)
 	_setup_equipped_tool_socket()
 	_refresh_tool_visibility()
 	if anim_player:
@@ -339,6 +351,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("toggle_inventory") and not event.is_echo():
 		inventory_toggle_requested.emit()
+		return
+	if event.is_action_pressed("toggle_view") and not event.is_echo():
+		if not _is_gameplay_blocked():
+			_toggle_first_person()
+		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var code: Key = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
@@ -1303,9 +1320,15 @@ func _handle_movement(delta: float) -> void:
 	if move_direction.length_squared() > 0.001:
 		velocity.x = move_toward(velocity.x, move_direction.x * target_speed, acceleration * delta * target_speed)
 		velocity.z = move_toward(velocity.z, move_direction.z * target_speed, acceleration * delta * target_speed)
-		
+
 		if visual_root:
 			var target_rot_y: float = atan2(-move_direction.x, -move_direction.z)
+			if _first_person and cam:
+				# В FP корпус смотрит туда же, куда камера: стрейф не разворачивает тело.
+				var fp_forward: Vector3 = -cam.global_transform.basis.z
+				fp_forward.y = 0.0
+				if fp_forward.length_squared() > 0.001:
+					target_rot_y = atan2(-fp_forward.x, -fp_forward.z)
 			visual_root.rotation.y = lerp_angle(visual_root.rotation.y, target_rot_y, rotation_speed * delta)
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, acceleration * delta * target_speed)
@@ -1936,7 +1959,40 @@ func set_equipped_tool_visible(is_visible: bool) -> void:
 
 func set_hat_visible(is_visible: bool) -> void:
 	if sun_hat_mesh:
-		sun_hat_mesh.visible = is_visible
+		sun_hat_mesh.visible = is_visible and not _first_person
+
+## Переключение вида (V): изометрическая орбита <-> вид от первого лица.
+func _toggle_first_person() -> void:
+	var cam: IsometricCamera = _find_isometric_camera()
+	if cam == null:
+		return
+	cam.set_first_person(not cam.first_person)
+	var fp: bool = cam.first_person
+	_apply_first_person_visuals(fp)
+	if not is_instance_valid(_hud) and get_tree() and get_tree().root:
+		_hud = get_tree().root.find_child("HUD", true, false)
+	if is_instance_valid(_hud) and _hud.has_method("set_crosshair_visible"):
+		_hud.set_crosshair_visible(fp)
+	notify("👁 Вид от первого лица (V — изометрия)" if fp else "🎥 Изометрический вид")
+
+func _find_isometric_camera() -> IsometricCamera:
+	var vp: Viewport = get_viewport()
+	var cam: Camera3D = vp.get_camera_3d() if vp else null
+	if cam is IsometricCamera:
+		return cam
+	if get_tree() and get_tree().root:
+		var found: Node = get_tree().root.find_child("IsometricCamera", true, false)
+		if found is IsometricCamera:
+			return found
+	return null
+
+## В FP камера у глаз: тело и каска скрыты, а инструмент на ToolSocket.R остаётся
+## видимым и продолжает анимироваться ударами — как предмет в руке от первого лица.
+func _apply_first_person_visuals(fp: bool) -> void:
+	_first_person = fp
+	if _body_mesh:
+		_body_mesh.visible = not fp
+	set_hat_visible(not fp)
 
 func _play_interaction_swing() -> void:
 	is_mining = true

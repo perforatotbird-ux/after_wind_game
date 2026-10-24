@@ -1443,6 +1443,12 @@ func _on_focused_interactable_changed(interactable: Node) -> void:
 	else:
 		prompt_container.visible = false
 
+## Прицел в центре экрана для вида от первого лица (V); в изометрии скрыт.
+func set_crosshair_visible(is_visible: bool) -> void:
+	var crosshair: Control = get_node_or_null("Crosshair")
+	if crosshair:
+		crosshair.visible = is_visible
+
 func show_notification(text: String, duration: float = 3.5) -> void:
 	if not notification_label:
 		notification_label = get_node_or_null("NotificationContainer/MarginContainer/NotificationLabel")

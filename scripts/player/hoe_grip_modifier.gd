@@ -2,6 +2,13 @@ extends SkeletonModifier3D
 ## Двуручный хват: оба запястья решаются к двум точкам одного черенка.
 ## Модификатор работает после AnimationPlayer, поэтому ходьба и наклон корпуса сохраняются.
 var player: Node
+## Поза покоя (автор-метры; масштаб модели (-0.36, 0.36, -0.36) зеркалит X/Z):
+## правая кисть у правого бедра спереди (глобально ~(0.12, 1.12, 0.0)),
+## черенок вперёд-вниз-влево, голова мотыги у земли впереди (глобально ~(-0.87, 0.77, -0.94)).
+## Обе кисти в зоне досягаемости (плечи 1.21 м, рука ~0.47 м) — солвер не тянет позу.
+## Поза копания ниже не менялась — она выверена по кадрам удара.
+var idle_origin := Vector3(-.12, 1.12, 0.0)
+var idle_axis := Vector3(.70, -.25, .67).normalized()
 var _right_socket: Transform3D
 var _left_socket: Transform3D
 var _initialized := false
@@ -22,8 +29,8 @@ func _process_modification() -> void:
   _left_socket=_right_socket
   _left_socket.origin=Vector3(-_right_socket.origin.x,_right_socket.origin.y,_right_socket.origin.z)
   _initialized=true
- var origin:=Vector3(-.18,1.08,.28)
- var axis:=Vector3(.72,.66,.08).normalized()
+ var origin:=idle_origin
+ var axis:=idle_axis
  if player.is_digging or player.is_mining:
   var elapsed:float=player._dig_elapsed if player.is_digging else player._strike_elapsed
   var duration:float=player._dig_duration if player.is_digging else player._strike_duration

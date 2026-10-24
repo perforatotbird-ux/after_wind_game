@@ -32,6 +32,20 @@ extends Camera3D
 ## камера доворачивается за игроком. Защищает от вращения камеры при отступлении назад (S).
 @export var reverse_rotation_threshold: float = -0.3
 
+@export_group("First Person")
+## Высота глаз камеры от пола персонажа в режиме от первого лица.
+@export var fp_eye_height: float = 1.55
+## Поле зрения в режиме от первого лица (изометрический ракурс — 56).
+@export var fp_fov: float = 75.0
+## Границы наклона взгляда вверх/вниз в градусах.
+@export var fp_min_pitch_deg: float = -80.0
+@export var fp_max_pitch_deg: float = 80.0
+
+## Включён режим от первого лица (переключается игроком по V, action "toggle_view").
+signal first_person_changed(enabled: bool)
+
+var first_person: bool = false
+
 var yaw: float = 0.0
 var pitch: float = 0.832 # ~47.7 градусов (atan2(11, 10))
 var current_distance: float = 14.866 # sqrt(11^2 + 10^2)
@@ -45,6 +59,31 @@ var _manual_orbit_timer: float = 0.0
 var _last_target_pos: Vector3 = Vector3.ZERO
 var _last_target_node: Node3D = null
 
+# --- Вид от первого лица ------------------------------------------------------
+
+var _fp_pitch: float = 0.0 # >0 — взгляд вверх; ограничен fp_min/max_pitch_deg
+var _iso_fov_backup: float = 0.0
+var _hud_ref: Node = null
+
+## Переключение изометрия <-> вид от первого лица. Горизонтальное направление
+## взгляда сохраняется: орбитальная камера смотрит на цель с направления offset(yaw),
+## FP-камера с тем же yaw смотрит в ту же сторону горизонта.
+func set_first_person(enabled: bool) -> void:
+	if enabled == first_person:
+		return
+	first_person = enabled
+	if enabled:
+		_iso_fov_backup = fov
+		fov = fp_fov
+		_fp_pitch = 0.0
+		is_orbiting = false
+	else:
+		if _iso_fov_backup > 0.0:
+			fov = _iso_fov_backup
+		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	first_person_changed.emit(first_person)
+
 func _ready() -> void:
 	target_distance = current_distance
 	target_yaw = yaw
@@ -57,7 +96,7 @@ func _ready() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
-		if is_orbiting:
+		if is_orbiting or first_person:
 			is_orbiting = false
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			_manual_orbit_timer = auto_rotate_delay
@@ -77,6 +116,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not is_instance_valid(_player_ref) and get_tree() and get_tree().root:
 		_player_ref = get_tree().root.find_child("Player", true, false)
 	if _player_ref and _player_ref.get("is_resting"):
+		return
+	if first_person:
+		# В FP обзор всегда активен: движение мыши крутит взгляд без зажатых кнопок.
+		# ПКМ-орбита и Ctrl+колесо не действуют; колесо без Ctrl остаётся сменой инструмента.
+		if event is InputEventMouseMotion:
+			var fmm: InputEventMouseMotion = event as InputEventMouseMotion
+			target_yaw -= fmm.relative.x * mouse_sensitivity
+			_fp_pitch = clampf(_fp_pitch - fmm.relative.y * mouse_sensitivity, deg_to_rad(fp_min_pitch_deg), deg_to_rad(fp_max_pitch_deg))
 		return
 	if event is InputEventMouseButton:
 		var mb: InputEventMouseButton = event as InputEventMouseButton
@@ -102,9 +149,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		target_pitch = clampf(target_pitch - mm.relative.y * mouse_sensitivity, min_pitch, max_pitch)
 
 func _process(delta: float) -> void:
+	# Управление курсором живёт и под паузой (process_mode = ALWAYS у узла в мире):
+	# пока открыто меню паузы или любое окно, курсор должен быть виден.
+	_update_mouse_capture()
+	if get_tree().paused:
+		return
 	if not target_node:
 		return
-		
+
+	if first_person:
+		_apply_first_person_transform()
+		return
+
 	if _manual_orbit_timer > 0.0:
 		_manual_orbit_timer = maxf(0.0, _manual_orbit_timer - delta)
 		
@@ -173,6 +229,35 @@ func _update_auto_rotation(delta: float) -> void:
 		return
 		
 	target_yaw = lerp_angle(target_yaw, desired_yaw, auto_rotate_speed * delta)
+
+## В FP курсор захвачен, пока идёт игра без окон: пауза, любое окно HUD или режим
+## размещения (HUD.is_gameplay_input_blocked) и неактивная камера (главное меню)
+## делают курсор видимым, чтобы им можно было кликать.
+func _update_mouse_capture() -> void:
+	if not first_person or not is_inside_tree() or get_tree() == null:
+		return
+	var should_capture: bool = is_current() and not get_tree().paused
+	if should_capture and not is_instance_valid(_hud_ref) and get_tree().root:
+		_hud_ref = get_tree().root.find_child("HUD", true, false)
+	if should_capture and is_instance_valid(_hud_ref) and _hud_ref.has_method("is_gameplay_input_blocked"):
+		should_capture = not _hud_ref.is_gameplay_input_blocked()
+	var want_mode: Input.MouseMode = Input.MOUSE_MODE_CAPTURED if should_capture else Input.MOUSE_MODE_VISIBLE
+	if Input.mouse_mode != want_mode:
+		Input.mouse_mode = want_mode
+
+## Камера жёстко у глаз персонажа (без lerp), взгляд задаётся yaw (общий с орбитой)
+## и наклоном _fp_pitch: (-sin(yaw)·cos(p), sin(p), -cos(yaw)·cos(p)).
+func _apply_first_person_transform() -> void:
+	if not target_node:
+		return
+	# Без сглаживания: обзор в FP должен отвечать на мышь мгновенно. Держим yaw
+	# синхронным с target_yaw, чтобы возврат в изометрию не начинался со «старого» угла.
+	yaw = target_yaw
+	var eye: Vector3 = target_node.global_position + Vector3(0.0, fp_eye_height, 0.0)
+	var cp: float = cos(_fp_pitch)
+	var look_dir: Vector3 = Vector3(-sin(yaw) * cp, sin(_fp_pitch), -cos(yaw) * cp)
+	global_position = eye
+	look_at(eye + look_dir, Vector3.UP)
 
 func _apply_camera_transform(instant: bool = false, delta: float = 0.0) -> void:
 	if not target_node:

@@ -310,6 +310,10 @@ func _pick_by_mouse(player: Node3D) -> Vector3i:
 	if cam == null:
 		return NO_CELL
 	var mouse: Vector2 = vp.get_mouse_position()
+	# При захваченном курсоре (вид от первого лица, ПКМ-орбита) позиция мыши
+	# «застывает» в точке захвата — прицел берём из центра экрана, по крестику.
+	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		mouse = vp.get_visible_rect().size * 0.5
 	if not vp.get_visible_rect().has_point(mouse):
 		return NO_CELL
 	var origin: Vector3 = to_local(cam.project_ray_origin(mouse))
