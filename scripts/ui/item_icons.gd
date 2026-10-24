@@ -141,11 +141,6 @@ static func _load_file_icon(item_id: String) -> Texture2D:
 		var res = load(nano_path)
 		if res is Texture2D:
 			return res
-	var mat_path: String = "res://assets/materials_nano_banana/%s_icon.png" % item_id
-	if ResourceLoader.exists(mat_path):
-		var res = load(mat_path)
-		if res is Texture2D:
-			return res
 	var data: Dictionary = ItemDB.get_item(item_id)
 	var candidates: Array[String] = []
 	for key in ["icon_texture", "texture", "icon_path", "sprite"]:
