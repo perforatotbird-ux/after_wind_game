@@ -410,3 +410,34 @@ es://assets/tools_nano_banana/whetstone_icon.png. Регрессия: 	est_inven
 
 **Документация.** `docs/DOCUMENTATION.md`: новый раздел «Аудит проекта: что было исправлено» — сводка по подсистемам и правила, которых стоит придерживаться (LOD не трогает `visible` напрямую, модалы перехватывают ESC через `_input`, проверка топлива в «секундах горения», список инвентаря и список предметов ItemDB должны совпадать).
 
+### Генерация сета иконок материалов и строительного сырья через Nano Banana
+
+- **Мастер-лист и нарезка**:
+  - `assets/materials_nano_banana/materials_sheet_256.png` и `assets/icons/materials_sheet_256.png` — единый мастер-лист 1280×1024 (сетка 5×4, 20 ячеек по 256×256 px) со всеми 20 предметами категории «Материалы и строительное сырьё» в изометрии на прозрачном RGBA-фоне.
+  - Нарезаны все 20 индивидуальных текстур в `assets/materials_nano_banana/<item_id>_icon.png` (256×256 px, прозрачный фон, отступы под интерфейс):
+    1. `stone_dust_icon.png` (Каменная пыль)
+    2. `sawdust_icon.png` (Опилки)
+    3. `coal_powder_icon.png` (Угольный порошок)
+    4. `mortar_icon.png` (Строительный раствор)
+    5. `poor_brick_icon.png` (Говённый кирпич / сырец)
+    6. `fuel_briquette_icon.png` (Топливный брикет)
+    7. `fired_brick_icon.png` (Обожжённый кирпич)
+    8. `glass_icon.png` (Листовое стекло)
+    9. `glass_bottle_icon.png` (Стеклянная бутылка)
+    10. `clay_pot_icon.png` (Глиняный горшок)
+    11. `glassware_set_icon.png` (Комплект стеклянной посуды)
+    12. `steel_plate_icon.png` (Стальная пластина)
+    13. `precision_gear_icon.png` (Точная шестерня)
+    14. `steel_ingot_icon.png` (Стальной слиток)
+    15. `iron_ingot_icon.png` (Железный слиток)
+    16. `fertilizer_icon.png` (Био-удобрение)
+    17. `wooden_handle_icon.png` (Деревянная ручка)
+    18. `bolt_icon.png` (Металлический болт)
+    19. `fabric_icon.png` (Плотная ткань)
+    20. `leather_strap_icon.png` (Усиленный ремень)
+  - Все иконки снабжены файлами `.import` (`mipmaps/generate = true`, `process/fix_alpha_border = true`).
+- **Интеграция в игру и каталог**:
+  - `scripts/ui/item_icons.gd`: в методе `_load_file_icon` добавлен поиск по пути `res://assets/materials_nano_banana/%s_icon.png`. Игра автоматически подхватывает новые текстуры в слотах инвентаря, рецептах и на станках.
+  - `items_catalog.html`: для всех 20 материалов обновлены ссылки на текстуры `res://assets/materials_nano_banana/<id>_icon.png`.
+
+
