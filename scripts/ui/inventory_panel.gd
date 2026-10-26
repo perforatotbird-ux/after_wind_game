@@ -1,12 +1,17 @@
 extends Control
 
-## Окно рюкзака (TAB / I / слот 5): клеточная сетка стеков, вес и слоты, пояс
-## инструментов, карточка выбранного предмета и выбрасывание на землю.
-## ЛКМ — выбрать, ПКМ — сразу «Выбросить…», ESC / TAB / I — закрыть.
-## Создаётся и уничтожается GameplayUIController.
+## Окно рюкзака (TAB / I / слот 5) в индустриальном стиле:
+## - Тёмный графитовый UI с лаконичными бронзово-янтарными акцентами
+## - Компактное модальное окно с адаптивными размерами
+## - Верхняя панель: статус, кредиты, быстрые действия и закрытие
+## - Тонкий индикатор загрузки с состояниями норма/перегруз/критично
+## - Панель быстрого доступа (пояс инструментов с горячими клавишами [1]-[5])
+## - Сетка ячеек инвентаря с перетаскиванием (drag-and-drop)
+## - Правая панель характеристик, описания и контекстных действий
+## - Нижняя информационная строка управления
 
 signal closed
-## Кнопка постройки (сейчас — «Делянка»): контроллер закрывает рюкзак и включает размещение.
+## Кнопка постройки («Делянка» / «Грядка»): контроллер закрывает рюкзак и включает размещение.
 signal build_requested(kind: String)
 
 const UI = preload("res://scripts/ui/ui_style.gd")
@@ -27,18 +32,27 @@ var _grid: GridContainer
 var _weight_bar: ProgressBar
 var _weight_fill: StyleBoxFlat
 var _weight_label: Label
+var _weight_status: Label
 var _slots_label: Label
 var _credits_label: Label
 var _belt: HBoxContainer
+
+# Панель деталей
+var _empty_details_box: VBoxContainer
+var _active_details_box: VBoxContainer
 var _d_icon: TextureRect
 var _d_name: Label
+var _d_category_badge: PanelContainer
+var _d_category_label: Label
 var _d_desc: Label
 var _d_count: Label
 var _d_weight: Label
+var _d_extra_meta: Label
 var _use_btn: Button
 var _craft_btn: Button
 var _whetstone_header_btn: Button
 var _drop_btn: Button
+
 var _selected: String = ""
 var _modal: Control
 var _closing: bool = false
@@ -61,173 +75,321 @@ func setup(p_player: Node) -> void:
 
 func _ready() -> void:
 	AudioManager.play("ui_open")
-	# Панель перехватывает игровой ввод — как storage_panel.
 	add_to_group("ui_input_blockers")
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	# Затемнение вокруг окна: перетащить стек сюда (за окно) = выбросить на землю.
+
+	# Затемнение вокруг окна: перетащить стек за пределы окна = выбросить на землю
 	var overlay := UI.make_overlay()
 	overlay.set_drag_forwarding(Callable(), _can_drop_outside, _drop_outside)
 	add_child(overlay)
+
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
-	var panel := UI.make_panel(UI.COLOR_BG, UI.COLOR_ACCENT, 2)
-	panel.custom_minimum_size = Vector2(940, 0)
+
+	# Главное модальное окно: компактное (880×560 px), адаптивное
+	var panel := UI.make_panel(UI.COLOR_BG, UI.COLOR_BORDER, 1, 6)
+	panel.custom_minimum_size = Vector2(880, 560)
 	center.add_child(panel)
-	var margin := UI.make_margin(18)
+
+	var margin := UI.make_margin(16)
 	panel.add_child(margin)
+
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 10)
 	margin.add_child(root)
-	
-	# Заголовок
+
+	# --- 1. ВЕРХНЯЯ ПАНЕЛЬ (Header) ---
 	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 8)
 	root.add_child(header)
-	header.add_child(UI.make_label("🎒 Рюкзак", 20, UI.COLOR_TITLE))
-	var sp := Control.new()
-	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(sp)
-	_credits_label = UI.make_label("", 15, UI.COLOR_ACCENT)
-	header.add_child(_credits_label)
-	var farm_btn := UI.make_button("🌾 Делянка", Vector2(120, 32), true)
+
+	var title_box := VBoxContainer.new()
+	title_box.add_theme_constant_override("separation", 0)
+	var title_lbl := UI.make_label("РЮКЗАК", 18, UI.COLOR_TITLE)
+	var subtitle_lbl := UI.make_label("СНАРЯЖЕНИЕ ВЫЖИВШЕГО", 9, UI.COLOR_DIM)
+	title_box.add_child(title_lbl)
+	title_box.add_child(subtitle_lbl)
+	header.add_child(title_box)
+
+	var header_spacer := Control.new()
+	header_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(header_spacer)
+
+	# Бейдж баланса кредитов
+	var credits_box := UI.make_badge("💰 0 кр.", 12, UI.COLOR_ACCENT, UI.COLOR_GRAPHITE_INSET, UI.COLOR_BORDER_SUBTLE)
+	_credits_label = credits_box.get_child(0) as Label
+	header.add_child(credits_box)
+
+	var sort_btn := UI.make_button("⇅ Сортировка", Vector2(110, 30), false, false, 12)
+	sort_btn.tooltip_text = "Упорядочить рюкзак по категориям и названиям"
+	sort_btn.pressed.connect(_on_sort_pressed)
+	header.add_child(sort_btn)
+
+	var farm_btn := UI.make_button("🌾 Делянка", Vector2(100, 30), true, false, 12)
 	farm_btn.name = "BuildFarmFieldButton"
-	farm_btn.tooltip_text = "Разметить фермерскую делянку мышкой (до 128 клеток). Материалы: древесина по периметру, камень и опилки по площади. Стройка — 1 игровой день."
+	farm_btn.tooltip_text = "Разметить фермерскую делянку мышкой (до 128 клеток). Материалы: дерево, камень, опилки."
 	farm_btn.pressed.connect(func(): request_build("farm_field"))
 	header.add_child(farm_btn)
-	var plot_btn := UI.make_button("🌱 Грядка", Vector2(110, 32), true)
+
+	var plot_btn := UI.make_button("🌱 Грядка", Vector2(95, 30), true, false, 12)
 	plot_btn.name = "BuildFarmlandPlotButton"
-	plot_btn.tooltip_text = "Поставить классическую грядку перед собой (модели mounded/tilled). Нужно: 4 дерева, 2 камня."
+	plot_btn.tooltip_text = "Поставить классическую грядку (4 дерева, 2 камня)."
 	plot_btn.pressed.connect(func(): request_build("farmland_plot"))
 	header.add_child(plot_btn)
-	var whetstone_btn := UI.make_button("🪨 Точильный камень", Vector2(150, 32))
+
+	var whetstone_btn := UI.make_button("🪨 Точильный камень", Vector2(145, 30), false, false, 12)
 	whetstone_btn.name = "CraftWhetstoneButton"
-	whetstone_btn.tooltip_text = "Скрафтить точильный камень прямо из рюкзака. Требуется: 2 камня, 1 песок."
+	whetstone_btn.tooltip_text = "Скрафтить точильный камень прямо из рюкзака. Нужно: 2 камня, 1 песок (6 с)."
 	whetstone_btn.pressed.connect(_craft_whetstone_in_backpack)
 	_whetstone_header_btn = whetstone_btn
 	header.add_child(whetstone_btn)
-	var sort_btn := UI.make_button("⇅ Сортировать", Vector2(130, 32))
-	sort_btn.tooltip_text = "Упорядочить рюкзак по типу и названию"
-	sort_btn.pressed.connect(_on_sort_pressed)
-	header.add_child(sort_btn)
-	var close_btn := UI.make_button("✕", Vector2(40, 32))
-	close_btn.tooltip_text = "Закрыть (ESC)"
+
+	var close_btn := UI.make_button("✕", Vector2(34, 30), false, false, 13)
+	close_btn.tooltip_text = "Закрыть (ESC / TAB / I)"
 	close_btn.pressed.connect(close)
 	header.add_child(close_btn)
-	
-	# Вес и слоты
+
+	# --- 2. ИНДИКАТОР ВЕСА И СЛОТОВ ---
+	var load_box := VBoxContainer.new()
+	load_box.add_theme_constant_override("separation", 3)
+	root.add_child(load_box)
+
 	var load_row := HBoxContainer.new()
-	load_row.add_theme_constant_override("separation", 12)
-	root.add_child(load_row)
-	_weight_label = UI.make_label("", 14)
-	_weight_label.custom_minimum_size = Vector2(230, 0)
+	load_row.add_theme_constant_override("separation", 8)
+	load_box.add_child(load_row)
+
+	_weight_label = UI.make_label("⚖ ЗАГРУЗКА: 0.0 / 0.0 кг", 12, UI.COLOR_TEXT)
 	load_row.add_child(_weight_label)
+
+	_weight_status = UI.make_label("— норма", 12, UI.COLOR_OK)
+	load_row.add_child(_weight_status)
+
+	var load_spacer := Control.new()
+	load_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	load_row.add_child(load_spacer)
+
+	_slots_label = UI.make_label("СЛОТЫ: 0 / 0", 12, UI.COLOR_MUTED)
+	load_row.add_child(_slots_label)
+
 	_weight_bar = ProgressBar.new()
 	_weight_bar.show_percentage = false
-	_weight_bar.custom_minimum_size = Vector2(0, 14)
+	_weight_bar.custom_minimum_size = Vector2(0, 6)
 	_weight_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_weight_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_weight_bar.add_theme_stylebox_override("background", UI.make_stylebox(UI.COLOR_CARD_EMPTY, UI.COLOR_BORDER, 1, 4))
-	_weight_fill = UI.make_stylebox(UI.COLOR_OK, Color(0, 0, 0, 0), 0, 4)
+	_weight_bar.add_theme_stylebox_override("background", UI.make_stylebox(UI.COLOR_GRAPHITE_INSET, Color(0, 0, 0, 0), 0, 3))
+	_weight_fill = UI.make_stylebox(UI.COLOR_OK, Color(0, 0, 0, 0), 0, 3)
 	_weight_bar.add_theme_stylebox_override("fill", _weight_fill)
-	load_row.add_child(_weight_bar)
-	_slots_label = UI.make_label("", 14, UI.COLOR_MUTED)
-	load_row.add_child(_slots_label)
-	
-	# Пояс инструментов
-	var belt_header := UI.make_section_header("🛠 Пояс — клик берёт инструмент в руки (колесо мыши в игре делает то же)")
-	belt_header.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	root.add_child(belt_header)
+	load_box.add_child(_weight_bar)
+
+	# --- 3. ПАНЕЛЬ БЫСТРОГО ДОСТУПА (ПОЯС ИНСТРУМЕНТОВ) ---
+	var belt_section := VBoxContainer.new()
+	belt_section.add_theme_constant_override("separation", 4)
+	root.add_child(belt_section)
+
+	var belt_title_row := HBoxContainer.new()
+	belt_title_row.add_theme_constant_override("separation", 6)
+	belt_section.add_child(belt_title_row)
+
+	var belt_lbl := UI.make_label("БЫСТРЫЙ ДОСТУП", 11, UI.COLOR_TITLE)
+	belt_title_row.add_child(belt_lbl)
+	var belt_tip := UI.make_label("— клавиши [1]–[5] или клик для выбора активного инструмента", 11, UI.COLOR_DIM)
+	belt_title_row.add_child(belt_tip)
+
 	_belt = HBoxContainer.new()
 	_belt.add_theme_constant_override("separation", 6)
-	root.add_child(_belt)
-	
-	# Сетка + карточка предмета
+	belt_section.add_child(_belt)
+
+	# --- 4. ОСНОВНАЯ ОБЛАСТЬ: СЕТКА ИНВЕНТАРЯ + ПРАВАЯ ПАНЕЛЬ ДЕТАЛЕЙ ---
 	var body := HBoxContainer.new()
-	body.add_theme_constant_override("separation", 14)
+	body.add_theme_constant_override("separation", 12)
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(body)
+
+	# Левая колонка: сетка предметов
 	var left := VBoxContainer.new()
+	left.add_theme_constant_override("separation", 4)
 	body.add_child(left)
-	left.add_child(UI.make_section_header("📦 Предметы"))
+
+	var grid_title_row := HBoxContainer.new()
+	grid_title_row.add_theme_constant_override("separation", 6)
+	left.add_child(grid_title_row)
+	grid_title_row.add_child(UI.make_label("ОТДЕЛЕНИЕ РЮКЗАКА", 11, UI.COLOR_TITLE))
+	grid_title_row.add_child(UI.make_label("— 6 колонок · перетаскивание ячеек", 11, UI.COLOR_DIM))
+
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(6 * 70 + 16, 360)
+	scroll.custom_minimum_size = Vector2(420, 276)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	left.add_child(scroll)
+
 	_grid = ItemGrid.new()
 	_grid.columns = 6
-	scroll.add_child(_grid)
 	_grid.drag_enabled = true
 	_grid.cell_pressed.connect(_on_cell_pressed)
 	_grid.cell_right_clicked.connect(_on_cell_right_clicked)
 	_grid.cell_moved.connect(_on_cell_moved)
 	_grid.cell_activated.connect(_on_cell_activated)
-	
-	var card := UI.make_panel(UI.COLOR_CARD, UI.COLOR_BORDER, 1)
-	card.custom_minimum_size = Vector2(300, 0)
-	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_child(card)
-	var cm := UI.make_margin(14)
-	card.add_child(cm)
-	var details := VBoxContainer.new()
-	details.add_theme_constant_override("separation", 8)
-	cm.add_child(details)
+	scroll.add_child(_grid)
+
+	# Правая колонка: панель деталей выбранного предмета
+	var right_panel := UI.make_panel(UI.COLOR_GRAPHITE_PANEL, UI.COLOR_BORDER_SUBTLE, 1, 4)
+	right_panel.custom_minimum_size = Vector2(320, 0)
+	right_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_child(right_panel)
+
+	var details_margin := UI.make_margin(12)
+	right_panel.add_child(details_margin)
+
+	var details_stack := Control.new()
+	details_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	details_stack.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	details_margin.add_child(details_stack)
+
+	# А. Нейтральное состояние (предмет не выбран)
+	_empty_details_box = VBoxContainer.new()
+	_empty_details_box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_empty_details_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	_empty_details_box.add_theme_constant_override("separation", 8)
+	details_stack.add_child(_empty_details_box)
+
+	var empty_icon_frame := UI.make_panel(UI.COLOR_GRAPHITE_INSET, UI.COLOR_BORDER_SUBTLE, 1, 4)
+	empty_icon_frame.custom_minimum_size = Vector2(48, 48)
+	empty_icon_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var empty_icon_margin := UI.make_margin(8)
+	empty_icon_frame.add_child(empty_icon_margin)
+	var empty_icon_lbl := UI.make_label("🎒", 20)
+	empty_icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	empty_icon_margin.add_child(empty_icon_lbl)
+	_empty_details_box.add_child(empty_icon_frame)
+
+	var empty_title := UI.make_label("ПРЕДМЕТ НЕ ВЫБРАН", 13, UI.COLOR_MUTED)
+	empty_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_empty_details_box.add_child(empty_title)
+
+	var empty_sub := UI.make_label("Выберите ячейку в рюкзаке для просмотра параметров, описания и доступных действий.", 11, UI.COLOR_DIM)
+	empty_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	empty_sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_empty_details_box.add_child(empty_sub)
+
+	# Б. Активное состояние (предмет выбран)
+	_active_details_box = VBoxContainer.new()
+	_active_details_box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_active_details_box.add_theme_constant_override("separation", 6)
+	_active_details_box.visible = false
+	details_stack.add_child(_active_details_box)
+
+	# Верх карточки: иконка + имя + категория
+	var item_head := HBoxContainer.new()
+	item_head.add_theme_constant_override("separation", 10)
+	_active_details_box.add_child(item_head)
+
+	var icon_frame := UI.make_panel(UI.COLOR_GRAPHITE_INSET, UI.COLOR_BORDER_SUBTLE, 1, 4)
+	icon_frame.custom_minimum_size = Vector2(58, 58)
+	item_head.add_child(icon_frame)
+
+	var icon_margin := UI.make_margin(4)
+	icon_frame.add_child(icon_margin)
+
 	_d_icon = TextureRect.new()
-	_d_icon.custom_minimum_size = Vector2(96, 96)
+	_d_icon.custom_minimum_size = Vector2(50, 50)
 	_d_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_d_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_d_icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	details.add_child(_d_icon)
-	_d_name = UI.make_label("", 17, UI.COLOR_TITLE)
+	icon_margin.add_child(_d_icon)
+
+	var name_box := VBoxContainer.new()
+	name_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_box.add_theme_constant_override("separation", 2)
+	item_head.add_child(name_box)
+
+	_d_name = UI.make_label("", 15, UI.COLOR_TITLE)
 	_d_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	details.add_child(_d_name)
-	_d_desc = UI.make_label("", 14, UI.COLOR_MUTED)
+	name_box.add_child(_d_name)
+
+	_d_category_badge = UI.make_badge("ПРЕДМЕТ", 10, UI.COLOR_MUTED, UI.COLOR_GRAPHITE_SURFACE, UI.COLOR_BORDER_SUBTLE)
+	_d_category_label = _d_category_badge.get_child(0) as Label
+	name_box.add_child(_d_category_badge)
+
+	_active_details_box.add_child(UI.make_divider())
+
+	# Метаданные (вес, количество, стек)
+	var meta_box := VBoxContainer.new()
+	meta_box.add_theme_constant_override("separation", 3)
+	_active_details_box.add_child(meta_box)
+
+	_d_count = UI.make_label("", 12, UI.COLOR_TEXT)
+	meta_box.add_child(_d_count)
+
+	_d_weight = UI.make_label("", 12, UI.COLOR_TEXT)
+	meta_box.add_child(_d_weight)
+
+	_d_extra_meta = UI.make_label("", 12, UI.COLOR_ACCENT)
+	meta_box.add_child(_d_extra_meta)
+
+	_active_details_box.add_child(UI.make_divider())
+
+	# Описание
+	_d_desc = UI.make_label("", 12, UI.COLOR_MUTED)
 	_d_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_d_desc.custom_minimum_size = Vector2(270, 0)
-	details.add_child(_d_desc)
-	_d_count = UI.make_label("", 14)
-	details.add_child(_d_count)
-	_d_weight = UI.make_label("", 14)
-	details.add_child(_d_weight)
-	var fill := Control.new()
-	fill.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	details.add_child(fill)
-	_use_btn = UI.make_button("", Vector2(0, 36), true)
+	_active_details_box.add_child(_d_desc)
+
+	var details_spacer := Control.new()
+	details_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_active_details_box.add_child(details_spacer)
+
+	# Контекстные действия
+	var actions_box := VBoxContainer.new()
+	actions_box.add_theme_constant_override("separation", 4)
+	_active_details_box.add_child(actions_box)
+
+	_use_btn = UI.make_button("", Vector2(0, 32), true, false, 12)
 	_use_btn.pressed.connect(_on_use_pressed)
-	details.add_child(_use_btn)
-	_craft_btn = UI.make_button("", Vector2(0, 36), true)
+	actions_box.add_child(_use_btn)
+
+	_craft_btn = UI.make_button("", Vector2(0, 30), false, false, 12)
 	_craft_btn.visible = false
 	_craft_btn.pressed.connect(_craft_whetstone_in_backpack)
-	details.add_child(_craft_btn)
-	_drop_btn = UI.make_button("🫳 Выбросить…", Vector2(0, 36), false, true)
+	actions_box.add_child(_craft_btn)
+
+	_drop_btn = UI.make_button("🫳 Выбросить на землю…", Vector2(0, 30), false, true, 12)
 	_drop_btn.pressed.connect(func(): _open_drop_dialog(_selected))
-	details.add_child(_drop_btn)
-	# Полоса прогресса длительных операций (крафт точильного камня 6 с, заточка 25 с).
+	actions_box.add_child(_drop_btn)
+
+	# Полоса прогресса длительных операций
 	_task_box = VBoxContainer.new()
-	_task_box.add_theme_constant_override("separation", 4)
+	_task_box.add_theme_constant_override("separation", 3)
 	_task_box.visible = false
-	details.add_child(_task_box)
-	_task_label = UI.make_label("", 14, UI.COLOR_ACCENT)
+	actions_box.add_child(_task_box)
+
+	_task_label = UI.make_label("", 12, UI.COLOR_ACCENT)
 	_task_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_task_box.add_child(_task_label)
+
 	_task_bar = ProgressBar.new()
 	_task_bar.show_percentage = false
-	_task_bar.custom_minimum_size = Vector2(0, 12)
+	_task_bar.custom_minimum_size = Vector2(0, 8)
 	_task_bar.max_value = 1.0
 	_task_bar.value = 0.0
-	_task_bar.add_theme_stylebox_override("background", UI.make_stylebox(UI.COLOR_CARD_EMPTY, UI.COLOR_BORDER, 1, 4))
+	_task_bar.add_theme_stylebox_override("background", UI.make_stylebox(UI.COLOR_GRAPHITE_INSET, UI.COLOR_BORDER_SUBTLE, 1, 4))
 	_task_bar.add_theme_stylebox_override("fill", UI.make_stylebox(UI.COLOR_ACCENT, Color(0, 0, 0, 0), 0, 4))
 	_task_box.add_child(_task_bar)
-	
-	var footer := UI.make_label("ЛКМ — выбрать · перетащить — переложить · двойной клик — съесть/выпить · ПКМ или перетащить за окно — выбросить · ESC / TAB / I — закрыть", 13, UI.COLOR_DIM)
+
+	# --- 5. НИЖНЯЯ СТРОКА ПОДСКАЗОК УПРАВЛЕНИЯ ---
+	root.add_child(UI.make_divider())
+
+	var footer := UI.make_label("[ЛКМ] Выбрать · [2×ЛКМ] Использовать · [ПКМ / Drag за окно] Выбросить · [Drag] Переложить · [ESC / TAB] Закрыть", 11, UI.COLOR_DIM)
 	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	root.add_child(footer)
-	
+
 	if inventory:
 		inventory.inventory_updated.connect(_refresh)
 		inventory.tool_changed.connect(_on_tool_changed)
 		inventory.credits_changed.connect(_on_credits_changed)
 		if inventory.has_signal("tool_sharpness_changed"):
 			inventory.tool_sharpness_changed.connect(func(_t, _s): _refresh())
+
 	_refresh()
 
 func _on_tool_changed(_id: String, _name: String) -> void:
@@ -241,27 +403,41 @@ func _refresh() -> void:
 		return
 	if _selected != "" and inventory.get_item_count(_selected) <= 0:
 		_selected = ""
+
 	_grid.selected_item = _selected
 	_grid.set_stacks(inventory.get_slot_cells(), inventory.max_slots)
+
 	var total: float = inventory.get_total_weight()
 	var limit: float = inventory.max_weight
-	_weight_label.text = "⚖️ Вес: %.1f / %.0f кг" % [total, limit]
+	_weight_label.text = "⚖ ЗАГРУЗКА: %.1f / %.0f кг" % [total, limit]
 	_weight_bar.max_value = maxf(1.0, limit * inventory.OVERLOAD_CRITICAL_RATIO)
 	_weight_bar.value = minf(total, _weight_bar.max_value)
+
 	var state: int = inventory.get_load_state()
-	_weight_fill.bg_color = UI.COLOR_OK if state == 0 else (UI.COLOR_ACCENT if state == 1 else UI.COLOR_DANGER)
-	if state == 1:
-		_weight_label.text += "  — перегруз"
-	elif state == 2:
-		_weight_label.text += "  — не могу идти!"
-	_slots_label.text = "Слоты: %d / %d" % [inventory.get_used_slots(), inventory.max_slots]
-	_credits_label.text = "💰 %d кр.   " % int(inventory.credits)
+	if state == 0:
+		_weight_fill.bg_color = UI.COLOR_OK
+		_weight_status.text = "— норма"
+		_weight_status.add_theme_color_override("font_color", UI.COLOR_OK)
+	elif state == 1:
+		_weight_fill.bg_color = UI.COLOR_ACCENT
+		_weight_status.text = "— ПЕРЕГРУЗ (-30% скор.)"
+		_weight_status.add_theme_color_override("font_color", UI.COLOR_ACCENT)
+	else:
+		_weight_fill.bg_color = UI.COLOR_DANGER
+		_weight_status.text = "— КРИТИЧЕСКИЙ ПЕРЕГРУЗ (нет хода)"
+		_weight_status.add_theme_color_override("font_color", UI.COLOR_DANGER)
+
+	_slots_label.text = "СЛОТЫ: %d / %d" % [inventory.get_used_slots(), inventory.max_slots]
+	_credits_label.text = "💰 %d кр." % int(inventory.credits)
+
 	if _whetstone_header_btn:
 		var stones: int = inventory.get_item_count("stone")
 		var sands: int = inventory.get_item_count("sand")
 		_whetstone_header_btn.tooltip_text = "Скрафтить точильный камень прямо из рюкзака. Нужно: 2 камня, 1 песок (6 с).\nВ наличии: %d камня, %d песка." % [stones, sands]
+
 	if inventory.has_method("ensure_belt_whetstone"):
 		inventory.ensure_belt_whetstone()
+
 	_build_belt()
 	_update_details()
 
@@ -269,21 +445,63 @@ func _build_belt() -> void:
 	for c in _belt.get_children():
 		_belt.remove_child(c)
 		c.queue_free()
+
 	for i in range(inventory.tools.size()):
 		var t: String = inventory.tools[i]
 		var is_pack: bool = t == "backpack" or ItemDB.get_item(t).get("tool_type", "") == "backpack"
-		var b := UI.make_button("", Vector2(60, 60), t == inventory.equipped_tool)
-		b.icon = ItemIcons.get_texture(t)
-		b.expand_icon = true
-		b.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var is_equipped: bool = t == inventory.equipped_tool
+
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(62, 58)
+		b.focus_mode = Control.FOCUS_NONE
+		b.clip_contents = true
+
+		var bg_color: Color = UI.COLOR_GRAPHITE_CARD
+		var border_color: Color = UI.COLOR_BORDER_SUBTLE
+		var border_width: int = 1
+		if is_equipped:
+			bg_color = Color(0.18, 0.22, 0.28, 0.98)
+			border_color = UI.COLOR_ACCENT
+			border_width = 2
+		b.add_theme_stylebox_override("normal", UI.make_stylebox(bg_color, border_color, border_width, 4))
+		b.add_theme_stylebox_override("hover", UI.make_stylebox(bg_color.lightened(0.12), UI.COLOR_ACCENT, maxi(border_width, 1), 4))
+		b.add_theme_stylebox_override("pressed", UI.make_stylebox(bg_color.lightened(0.20), UI.COLOR_ACCENT, 2, 4))
+
+		# Иконка инструмента
+		var icon_rect := TextureRect.new()
+		icon_rect.texture = ItemIcons.get_texture(t)
+		icon_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		icon_rect.offset_left = 8
+		icon_rect.offset_top = 6
+		icon_rect.offset_right = -8
+		icon_rect.offset_bottom = -10
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(icon_rect)
+
+		# Шильдик клавиши [1]-[5] в верхнем левом углу
+		var hotkey_lbl := Label.new()
+		hotkey_lbl.text = "[%d]" % (i + 1)
+		hotkey_lbl.add_theme_font_size_override("font_size", 10)
+		hotkey_lbl.add_theme_color_override("font_color", UI.COLOR_ACCENT if is_equipped else UI.COLOR_MUTED)
+		hotkey_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		hotkey_lbl.add_theme_constant_override("outline_size", 2)
+		hotkey_lbl.offset_left = 4
+		hotkey_lbl.offset_top = 2
+		hotkey_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(hotkey_lbl)
+
 		var d: Dictionary = ItemDB.get_item(t)
 		var sharp_info: String = ""
+
+		# Индикатор заточки/прочности
 		if inventory.has_method("is_sharp_tool") and inventory.is_sharp_tool(t):
 			var s: float = inventory.get_tool_sharpness(t)
 			var eff: Dictionary = inventory.get_sharpness_efficiency(t)
 			sharp_info = "\nЗаточка: %d%% [%s]" % [int(round(s)), eff.get("status_name", "")]
-			
+
 			var bar := ProgressBar.new()
 			bar.show_percentage = false
 			bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -291,37 +509,41 @@ func _build_belt() -> void:
 			bar.offset_left = 4
 			bar.offset_right = -4
 			bar.offset_bottom = -3
-			bar.offset_top = -8
+			bar.offset_top = -7
+			bar.max_value = 100.0
 			bar.value = s
-			var col: Color = Color(0.2, 0.85, 0.3)
+
+			var col: Color = UI.COLOR_OK
 			if s < 10.0:
-				col = Color(0.95, 0.2, 0.2)
+				col = UI.COLOR_DANGER
 			elif s < 35.0:
-				col = Color(0.95, 0.55, 0.15)
+				col = Color(0.92, 0.52, 0.22)
 			elif s < 75.0:
-				col = Color(0.85, 0.85, 0.2)
+				col = UI.COLOR_ACCENT
 			bar.add_theme_stylebox_override("fill", UI.make_stylebox(col, Color(0, 0, 0, 0), 0, 2))
-			bar.add_theme_stylebox_override("background", UI.make_stylebox(Color(0.1, 0.1, 0.12, 0.85), Color(0, 0, 0, 0), 0, 2))
+			bar.add_theme_stylebox_override("background", UI.make_stylebox(Color(0.08, 0.09, 0.11, 0.9), Color(0, 0, 0, 0), 0, 2))
 			b.add_child(bar)
-			
+
 		b.tooltip_text = "[%d] %s (ур. %d)%s%s" % [
 			i + 1,
 			ItemDB.get_item_name(t),
 			int(d.get("level", 1)),
 			sharp_info,
-			"\nСлоты: %d" % inventory.max_slots if is_pack else ("\nВ руках" if t == inventory.equipped_tool else "")
+			"\nСлоты: %d" % inventory.max_slots if is_pack else ("\nВ руках" if is_equipped else "")
 		]
+
 		if t == "whetstone" and inventory.has_method("get_whetstone_uses"):
 			var w_left: int = inventory.get_whetstone_uses()
 			var w_count: int = inventory.get_item_count("whetstone")
-			b.tooltip_text = "🪨 Точильный камень на поясе: %d шт., зарядов %d/5\nКлик — точить самый тупой инструмент (25 с, быстрее с навыком ремесла)" % [w_count, w_left]
-			var w_lbl := UI.make_label("%d/5" % w_left, 13, UI.COLOR_ACCENT)
+			b.tooltip_text = "🪨 Точильный камень на поясе: %d шт., зарядов %d/5\nКлик — точить самый тупой инструмент (25 с)" % [w_count, w_left]
+			var w_lbl := UI.make_label("%d/5" % w_left, 11, UI.COLOR_ACCENT)
 			w_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			w_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 			w_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			w_lbl.offset_top = -16
-			w_lbl.offset_bottom = -2
+			w_lbl.offset_top = -14
+			w_lbl.offset_bottom = -1
 			b.add_child(w_lbl)
+
 		if not is_pack:
 			b.pressed.connect(_on_belt_pressed.bind(t))
 		_belt.add_child(b)
@@ -334,26 +556,70 @@ func _on_belt_pressed(tool_id: String) -> void:
 	AudioManager.play("ui_click")
 	inventory.equip_tool(tool_id)
 
+func _get_category_info(cat: String, item_id: String) -> Dictionary:
+	if item_id in DRINK_ITEMS or cat == "water":
+		return {"title": "ВОДА / НАПИТОК", "color": Color(0.38, 0.75, 0.98)}
+	if cat == "food":
+		return {"title": "ЕДА / ПРИПАСЫ", "color": Color(0.92, 0.68, 0.30)}
+	if cat == "seeds":
+		return {"title": "СЕМЕНА / САЖЕНЦЫ", "color": Color(0.48, 0.82, 0.48)}
+	if cat == "tool":
+		return {"title": "ИНСТРУМЕНТ", "color": Color(0.60, 0.78, 0.95)}
+	if cat == "fuel":
+		return {"title": "ТОПЛИВО", "color": Color(0.92, 0.52, 0.25)}
+	if cat == "refined_materials" or cat == "material":
+		return {"title": "МАТЕРИАЛ", "color": Color(0.85, 0.72, 0.45)}
+	if cat == "raw_materials" or cat == "resource":
+		return {"title": "СЫРЬЁ / РЕСУРС", "color": Color(0.72, 0.76, 0.82)}
+	if cat == "building" or cat == "construction":
+		return {"title": "СТРОИТЕЛЬСТВО", "color": Color(0.82, 0.62, 0.48)}
+	return {"title": "ПРЕДМЕТ", "color": UI.COLOR_MUTED}
+
 func _update_details() -> void:
 	if _selected == "":
-		_d_icon.texture = null
-		_d_name.text = "Выберите предмет"
-		_d_desc.text = "Нажмите на клетку, чтобы увидеть описание, количество и вес."
-		_d_count.text = ""
-		_d_weight.text = ""
+		_empty_details_box.visible = true
+		_active_details_box.visible = false
 		_use_btn.visible = false
 		_craft_btn.visible = false
 		_drop_btn.visible = false
 		return
+
+	_empty_details_box.visible = false
+	_active_details_box.visible = true
+
 	var data: Dictionary = ItemDB.get_item(_selected)
 	var count: int = inventory.get_item_count(_selected)
 	var w: float = inventory.get_item_weight(_selected)
+	var max_st: int = inventory.get_max_stack(_selected)
+	var slots_used: int = inventory.get_slots_for(_selected, count)
+
 	_d_icon.texture = ItemIcons.get_texture(_selected)
 	_d_name.text = "%s %s" % [ItemDB.get_item_icon(_selected), ItemDB.get_item_name(_selected)]
+
+	var cat_info: Dictionary = _get_category_info(str(data.get("category", "")), _selected)
+	_d_category_label.text = str(cat_info.get("title", "ПРЕДМЕТ"))
+	_d_category_label.add_theme_color_override("font_color", cat_info.get("color", UI.COLOR_MUTED))
+
+	_d_count.text = "📦 Количество: %d шт. (стек до %d, слотов: %d)" % [count, max_st, slots_used]
+	_d_weight.text = "⚖ Вес: %.1f кг (%.2f кг/шт.)" % [w * count, w]
 	_d_desc.text = str(data.get("description", ""))
-	_d_count.text = "Количество: %d  (стек до %d, слотов: %d)" % [count, inventory.get_max_stack(_selected), inventory.get_slots_for(_selected, count)]
-	_d_weight.text = "Вес: %.1f кг  (%.2f кг/шт.)" % [w * count, w]
+
+	# Дополнительные специфические метаданные
+	if _selected == "whetstone":
+		var w_left: int = inventory.get_whetstone_uses() if inventory.has_method("get_whetstone_uses") else 0
+		_d_extra_meta.text = "🪨 Зарядов заточки: %d/5 (поясной инструмент)" % w_left
+		_d_extra_meta.visible = true
+	elif inventory.is_sharp_tool(_selected):
+		var s_now: float = inventory.get_tool_sharpness(_selected)
+		var eff: Dictionary = inventory.get_sharpness_efficiency(_selected)
+		_d_extra_meta.text = "🔨 Заточка: %d%% [%s]" % [int(round(s_now)), eff.get("status_name", "")]
+		_d_extra_meta.visible = true
+	else:
+		_d_extra_meta.visible = false
+
 	_drop_btn.visible = true
+
+	# Контекстные действия
 	if _selected in DRINK_ITEMS:
 		_use_btn.text = "💧 Выпить (U)"
 		_use_btn.visible = true
@@ -369,22 +635,20 @@ func _update_details() -> void:
 			_use_btn.text = "🌱 Выбрано для посадки" if chosen else "🌱 Сажать эти семена"
 			_use_btn.visible = true
 	elif _selected == "whetstone":
-		var w_left: int = inventory.get_whetstone_uses() if inventory.has_method("get_whetstone_uses") else 0
-		_d_desc.text = str(data.get("description", "")) + "\nЗарядов: %d/5. Висит на поясе, слоты рюкзака не занимает." % w_left
-		_use_btn.text = "🪨 Точильный камень: заточить (+40%%, %.0f с)" % _sharpen_duration()
+		_use_btn.text = "🪨 Заточить инструмент (+40%%, %.0f с)" % _sharpen_duration()
 		_use_btn.visible = true
 	elif inventory.is_sharp_tool(_selected):
 		var s_now: float = inventory.get_tool_sharpness(_selected)
-		_d_desc.text = str(data.get("description", "")) + "\nЗаточка: %d%%. Двойной клик — меню «Заточить»." % int(round(s_now))
-		_use_btn.text = "🔨 Меню «Заточить» (%d%% заточки)" % int(round(s_now))
+		_use_btn.text = "🔨 Меню «Заточить» (%d%%)" % int(round(s_now))
 		_use_btn.visible = true
 	else:
 		_use_btn.visible = false
 
+	# Кнопка быстрого крафта точильного камня
 	if _selected in ["stone", "sand"]:
 		var stones: int = inventory.get_item_count("stone")
 		var sands: int = inventory.get_item_count("sand")
-		_craft_btn.text = "🪨 Скрафтить точильный камень (2 камня, 1 песок) [%d/2, %d/1]" % [stones, sands]
+		_craft_btn.text = "🪨 Скрафтить точильный камень [%d/2 к., %d/1 п.]" % [stones, sands]
 		_craft_btn.visible = true
 	else:
 		_craft_btn.visible = false
@@ -437,8 +701,7 @@ func _craft_whetstone_in_backpack() -> void:
 		if player and player.has_method("notify"):
 			player.notify("❌ Для создания точильного камня нужно: 2 камня, 1 песок (есть: %d камня, %d песка)" % [stones, sands])
 		return
-	# Списываем по очереди и при неудаче возвращаем уже снятое: иначе
-	# «камень забрали, песок не дали» — часть ресурса пропадала.
+
 	var took_stone: bool = inventory.remove_item("stone", 2)
 	var took_sand: bool = inventory.remove_item("sand", 1)
 	if not took_stone or not took_sand:
@@ -448,6 +711,7 @@ func _craft_whetstone_in_backpack() -> void:
 			inventory.add_item("sand", 1)
 		AudioManager.play("ui_error")
 		return
+
 	_task_consumed = {"stone": 2, "sand": 1}
 	_task_kind = "craft_whetstone"
 	_task_total = WHETSTONE_CRAFT_TIME
@@ -462,7 +726,6 @@ func _finish_whetstone_craft(done_consumed: Dictionary = {}) -> void:
 	if inventory == null:
 		return
 	if not inventory.add_item("whetstone", 1):
-		# Нет места даже на поясе — возвращаем ресурсы.
 		for rid in done_consumed.keys():
 			inventory.add_item(str(rid), int(done_consumed[rid]))
 		if player and player.has_method("notify"):
@@ -520,8 +783,6 @@ func _on_cell_right_clicked(item_id: String, _count: int, _index: int) -> void:
 	_refresh()
 	_open_drop_dialog(item_id)
 
-## Еда и вода расходуются по id выбранного предмета (карточка справа), а не
-## по общему приоритету клавиш U / Y: выбрана синяя ягода — съедается она.
 func _on_use_pressed() -> void:
 	if player == null or _selected == "":
 		return
@@ -546,8 +807,6 @@ func _on_use_pressed() -> void:
 		player.eat_food(_selected)
 	_refresh()
 
-## Меню «Заточить» для конкретного инструмента (клик/двойной клик по ячейке).
-## Без точильного камня кнопка в меню заблокирована с объяснением.
 func _open_sharpen_dialog(tool_id: String) -> void:
 	if tool_id == "" or inventory == null or (_modal and is_instance_valid(_modal)):
 		return
@@ -578,9 +837,6 @@ func _sharpen_with_whetstone() -> void:
 				target_tool = t
 	_start_sharpen_task(target_tool)
 
-## Общий запуск задачи заточки конкретного инструмента: из меню «Заточить»
-## (двойной клик по ячейке) или от клика по точильному камню. Без камня —
-## уведомление «Нужен Точильный камень» и отмена.
 func _start_sharpen_task(tool_id: String) -> void:
 	if inventory == null or tool_id == "":
 		return
@@ -629,7 +885,6 @@ func _finish_sharpen(target_tool: String) -> void:
 		var left_txt: String = ("Осталось заточек: %d/5." % left) if int(inventory.get_item_count("whetstone")) > 0 else "Точильный камень стёрся — нужен новый."
 		player.notify("🪨 %s заточен на +40%% (теперь %d%%)! %s" % [t_name, int(round(new_s)), left_txt])
 	_refresh()
-	_refresh()
 
 func _open_drop_dialog(item_id: String) -> void:
 	if item_id == "" or inventory == null or (_modal and is_instance_valid(_modal)):
@@ -667,7 +922,6 @@ func close() -> void:
 	if _closing:
 		return
 	if _task_kind == "craft_whetstone" and not _task_consumed.is_empty() and inventory:
-		# Возвращаем ресурсы за незавершённый крафт.
 		for rid in _task_consumed.keys():
 			inventory.add_item(str(rid), int(_task_consumed[rid]))
 		_task_consumed = {}
