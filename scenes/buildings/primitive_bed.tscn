@@ -1,0 +1,30 @@
+[gd_scene load_steps=5 format=3 uid="uid://dp912kx48n52b"]
+
+[ext_resource type="Script" path="res://scripts/buildings/primitive_bed.gd" id="1_bed"]
+[ext_resource type="PackedScene" path="res://assets/models/primitivebed/primitivebed.glb" id="2_model"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
+size = Vector3(2.2, 1.5, 2.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_solid"]
+size = Vector3(1.1, 0.5, 1.9)
+
+[node name="PrimitiveBed" type="Area3D"]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_bed")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+shape = SubResource("BoxShape3D_interact")
+
+[node name="BedModel" parent="." instance=ExtResource("2_model")]
+transform = Transform3D(1.8, 0, 0, 0, 1.8, 0, 0, 0, 1.8, 0, 0, 0)
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+shape = SubResource("BoxShape3D_solid")

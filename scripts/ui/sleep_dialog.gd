@@ -23,6 +23,7 @@ const FULL_SLEEP_HOURS: float = 6.0
 
 var _building: Node
 var _player: Node
+var custom_title: String = ""
 var _slider: HSlider
 var _spin: SpinBox
 var _info: Label
@@ -31,9 +32,11 @@ var selected_hours: float = FULL_SLEEP_HOURS
 var _quick_buttons: Array[Button] = []
 var _quick_values: Array[float] = [1.0, 4.0, 6.0, 8.0, 12.0]
 
-func setup(building: Node, player: Node) -> void:
+func setup(building: Node, player: Node, p_title: String = "") -> void:
 	_building = building
 	_player = player
+	if not p_title.is_empty():
+		custom_title = p_title
 
 func get_hours() -> float:
 	return selected_hours
@@ -57,7 +60,8 @@ func _ready() -> void:
 	vbox.add_theme_constant_override("separation", 12)
 	margin.add_child(vbox)
 
-	var title := UI.make_label("😴 Сон в доме", 20, UI.COLOR_TITLE)
+	var title_text: String = custom_title if not custom_title.is_empty() else ("😴 Сон в доме" if (_building and _building.get("building_id") == "house") else "😴 Отдых на лежанке")
+	var title := UI.make_label(title_text, 20, UI.COLOR_TITLE)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 

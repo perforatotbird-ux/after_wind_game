@@ -215,16 +215,6 @@ const RECIPES: Dictionary = {
 		"energy_cost": 3.0,
 		"description": "Тонкая шлифовка и комплектование набора посуды из листового стекла и бутылки."
 	},
-	"craft_coal_briquette": {
-		"id": "craft_coal_briquette",
-		"name": "Прессование: Угольные брикеты (x3)",
-		"machine": "workbench",
-		"inputs": {"coal_powder": 2, "clay": 1},
-		"outputs": {"fuel_briquette": 3},
-		"duration": 28.0,
-		"energy_cost": 2.5,
-		"description": "Прессование тонкого угольного порошка с глиной-связкой в плотные высококалорийные брикеты."
-	},
 	"craft_fertilizer": {
 		"id": "craft_fertilizer",
 		"name": "Смешивание: Био-удобрение (x2)",

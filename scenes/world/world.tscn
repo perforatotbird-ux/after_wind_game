@@ -43,6 +43,7 @@
 [ext_resource type="PackedScene" uid="uid://b2d8s7m4laq1a" path="res://scenes/machines/distiller.tscn" id="45_distiller"]
 [ext_resource type="Script" path="res://scripts/world/wind_system.gd" id="46_wind"]
 [ext_resource type="PackedScene" uid="uid://c7m90xq5y4v2a" path="res://scenes/energy/solid_generator.tscn" id="47_solid_generator"]
+[ext_resource type="PackedScene" uid="uid://dp912kx48n52b" path="res://scenes/buildings/primitive_bed.tscn" id="48_primitive_bed"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.36, 0.54, 0.75, 1)
@@ -178,6 +179,9 @@ rebuild_credits = 80
 
 [node name="Campfire" parent="Props" unique_id=1893391706 instance=ExtResource("40_campfire")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.98592687, 0, 2.092072)
+
+[node name="PrimitiveBed" parent="Props" unique_id=1498112345 instance=ExtResource("48_primitive_bed")]
+transform = Transform3D(0.9659258, 0, 0.25881904, 0, 1, 0, -0.25881904, 0, 0.9659258, -1.6, 0, 2.1)
 
 [node name="KitchenStove" parent="Props" unique_id=1395561381 instance=ExtResource("41_kitchen")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.043267, 0.06584787, -3.4156961)
