@@ -1,0 +1,37 @@
+[gd_scene load_steps=5 format=3 uid="uid://c7m90xq5y4v2a"]
+
+[ext_resource type="Script" path="res://scripts/energy/solid_generator.gd" id="1_generator"]
+[ext_resource type="PackedScene" path="res://assets/models/generator/generator.glb" id="2_model"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_interact"]
+height = 2.5
+radius = 2.4
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_solid"]
+size = Vector3(1.4, 0.9, 1.1)
+
+[node name="SolidGenerator" type="Area3D"]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_generator")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+shape = SubResource("CylinderShape3D_interact")
+
+[node name="GeneratorModel" parent="." instance=ExtResource("2_model")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 0.07, 0.42, 0.44)
+
+[node name="StatusLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+light_color = Color(1, 0.55, 0.18, 1)
+light_energy = 1.2
+omni_range = 3.5
+
+[node name="SolidBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("BoxShape3D_solid")

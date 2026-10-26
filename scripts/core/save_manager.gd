@@ -153,6 +153,9 @@ static func save_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		var turbine_save = world.find_child("WindTurbine", true, false)
 		if turbine_save and turbine_save.has_method("get_save_state"):
 			save_data["energy"]["turbine"] = turbine_save.get_save_state()
+		var solid_gen = world.find_child("SolidGenerator", true, false)
+		if solid_gen and solid_gen.has_method("get_save_state"):
+			save_data["energy"]["solid_generator"] = solid_gen.get_save_state()
 	
 	# 8. Водоснабжение: WaterReservoir удалён из игры (октябрь 2026).
 	# Вода производится игроком: озеро → фильтр/костёр. Секция "water"
@@ -536,6 +539,9 @@ static func load_game(world: Node, file_path: String = SAVE_FILE_NAME) -> bool:
 		var turbine_save = world.find_child("WindTurbine", true, false)
 		if turbine_save and turbine_save.has_method("apply_save_state") and en_data.has("turbine"):
 			turbine_save.apply_save_state(en_data["turbine"])
+		var solid_gen = world.find_child("SolidGenerator", true, false)
+		if solid_gen and solid_gen.has_method("apply_save_state") and en_data.has("solid_generator"):
+			solid_gen.apply_save_state(en_data["solid_generator"])
 	
 	# 6. Резервуар воды: удалён из игры. Старые сейвы с секцией "water"
 	# загружаются как есть — секция игнорируется.
@@ -917,6 +923,8 @@ static func _validate_save_data(data: Dictionary) -> bool:
 	if energy.has("stored_energy") and not _is_number(energy["stored_energy"], 0.0):
 		return false
 	if energy.has("source_mode") and not _is_integer(energy["source_mode"], 0.0, 2.0):
+		return false
+	if energy.has("solid_generator") and not energy["solid_generator"] is Dictionary:
 		return false
 	var water: Dictionary = data.get("water", {})
 	if water.has("current_water") and not _is_integer(water["current_water"]):

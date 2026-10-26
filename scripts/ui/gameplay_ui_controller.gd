@@ -9,6 +9,7 @@ extends Node
 const StoragePanel = preload("res://scripts/ui/storage_panel.gd")
 const InventoryPanel = preload("res://scripts/ui/inventory_panel.gd")
 const MachinePanel = preload("res://scripts/ui/machine_panel.gd")
+const GeneratorPanel = preload("res://scripts/ui/generator_panel.gd")
 const FarmFieldPlacer = preload("res://scripts/farming/farm_field_placer.gd")
 const FruitTreePlacer = preload("res://scripts/farming/fruit_tree_placer.gd")
 const FarmlandPlotScene = preload("res://scenes/farming/farmland_plot.tscn")
@@ -67,6 +68,10 @@ func _rewire() -> void:
 				_disconnect_from(node.machine_opened, hud)
 				if not node.machine_opened.is_connected(open_machine_panel):
 					node.machine_opened.connect(open_machine_panel)
+			if node.has_signal("generator_opened"):
+				_disconnect_from(node.generator_opened, hud)
+				if not node.generator_opened.is_connected(open_generator_panel):
+					node.generator_opened.connect(open_generator_panel)
 
 ## Отключает от сигнала все обработчики объекта target (старые окна HUD).
 static func _disconnect_from(sig: Signal, target: Object) -> void:
@@ -203,6 +208,12 @@ func is_placing() -> bool:
 func open_machine_panel(machine: Node) -> Control:
 	var p = MachinePanel.new()
 	p.setup(machine, player)
+	_open(p)
+	return p
+
+func open_generator_panel(gen: Node) -> Control:
+	var p = GeneratorPanel.new()
+	p.setup(gen, player)
 	_open(p)
 	return p
 
