@@ -295,6 +295,8 @@ func _process(delta: float) -> void:
 			_refresh_tool_visibility()
 
 func _physics_process(delta: float) -> void:
+	if is_resting:
+		return
 	_update_jump_input(delta)
 	_handle_gravity(delta)
 	_handle_movement(delta)
@@ -900,6 +902,13 @@ func _on_collapse(reason: String = "") -> void:
 	if _collapse_active:
 		return
 	_collapse_active = true
+	if is_resting:
+		is_resting = false
+		visible = true
+		if get_tree() and get_tree().root:
+			var r_layer = get_tree().root.find_child("RestTransitionLayer", true, false)
+			if r_layer and is_instance_valid(r_layer):
+				r_layer.queue_free()
 	if reason == "exhaustion":
 		notify("💀 Вы упали без сил от истощения...")
 	else:
@@ -1118,20 +1127,15 @@ func rest_in_bed(new_day: int = -1) -> void:
 	var e_max: float = get_effective_max_energy()
 	energy = e_max
 	energy_changed.emit(energy, e_max)
-	health = max_health
-	health_changed.emit(health, max_health)
-	if thirst < 35.0:
-		thirst = 35.0
-		thirst_changed.emit(thirst, max_thirst)
-	if hunger < 35.0:
-		hunger = 35.0
-		hunger_changed.emit(hunger, max_hunger)
+	if hunger >= 25.0 and thirst >= 25.0:
+		health = max_health
+		health_changed.emit(health, max_health)
 	wetness = 0.0
 	wetness_changed.emit(wetness, max_wetness)
 	if new_day > 0:
-		notify("💤 Вы отлично выспались в тепле! Наступил День %d. Здоровье и энергия 100%%." % new_day)
+		notify("💤 Вы отлично выспались в тепле! Наступил День %d. Энергия 100%%." % new_day)
 	else:
-		notify("💤 Вы отлично выспались и полностью восстановили силы! Здоровье и энергия 100%.")
+		notify("💤 Вы отлично выспались и восстановили силы! Энергия 100%.")
 
 # ---------------------------------------------------------------------------
 # Отдых и сон (переход с ускорением времени, RestTransition)
@@ -1161,6 +1165,7 @@ func start_rest(hours: float, is_sleep: bool = false) -> void:
 	visible = false
 	# Переход рисуется поверх HUD (CanvasLayer выше слоя интерфейса).
 	var layer := CanvasLayer.new()
+	layer.name = "RestTransitionLayer"
 	layer.layer = 128
 	get_tree().root.add_child(layer)
 	var overlay: Node = preload("res://scripts/ui/rest_transition.gd").new()
@@ -1181,41 +1186,78 @@ func _apply_rest_step(hours: float, total: float, elapsed: float, is_sleep: bool
 	if hours <= 0.0:
 		return
 	var frac: float = clampf(elapsed / maxf(0.01, total), 0.0, 1.0)
+	var dc: Node = _find_day_cycle()
+	var sec_per_hour: float = 60.0
+	if dc and dc.has_method("get_seconds_per_game_hour"):
+		sec_per_hour = float(dc.get_seconds_per_game_hour())
+	var step_seconds: float = sec_per_hour * hours
+
+	# 1. Сон и усталость
 	if is_sleep:
-		var eff_max: float = get_effective_max_energy()
-		var sleep_ratio: float = clampf(total / 6.0, 0.0, 1.0)
-		var target_energy: float = lerpf(_rest_start_energy, eff_max, sleep_ratio)
-		energy = clampf(lerpf(_rest_start_energy, target_energy, frac), 0.0, eff_max)
-		energy_changed.emit(energy, max_energy)
-		if hunger >= 25.0 and thirst >= 25.0:
-			var target_health: float = lerpf(_rest_start_health, max_health, sleep_ratio)
-			health = clampf(lerpf(_rest_start_health, target_health, frac), 0.0, max_health)
-			health_changed.emit(health, max_health)
 		if total >= 4.0:
 			hours_without_sleep = 0.0
 		else:
 			hours_without_sleep = maxf(0.0, hours_without_sleep - hours * 2.0)
 		_last_sleep_warning_hour = 0
-	else:
-		# Короткий отдых восстанавливает силы слабее полноценного сна.
-		energy = minf(get_effective_max_energy(), energy + 6.0 * hours)
+
+	# 2. Восстановление энергии
+	var eff_max: float = get_effective_max_energy()
+	if is_sleep:
+		var sleep_ratio: float = clampf(total / 6.0, 0.0, 1.0)
+		var target_energy: float = lerpf(_rest_start_energy, eff_max, sleep_ratio)
+		energy = clampf(lerpf(_rest_start_energy, target_energy, frac), 0.0, eff_max)
 		energy_changed.emit(energy, max_energy)
-	# Расход сил переводим из игровых часов в реальные секунды по текущей
-	# скорости суток (было захардкожено 60 с/ч): при изменённой длине часа
-	# статы должны съедать столько же, сколько при обычной игре.
-	var dc: Node = _find_day_cycle()
-	var sec_per_hour: float = 60.0
-	if dc and dc.has_method("get_seconds_per_game_hour"):
-		sec_per_hour = float(dc.get_seconds_per_game_hour())
-	# Во сне метаболизм замедляется: иначе за ночь сытость и жажда падали
-	# в ноль, а после сна подпрыгивали до 35% — статус персонажа «баговал».
-	var metabolism: float = 0.35 if is_sleep else 0.6
-	thirst = maxf(0.0, thirst - thirst_decay_rate * sec_per_hour * hours * metabolism)
-	thirst_changed.emit(thirst, max_thirst)
-	hunger = maxf(0.0, hunger - hunger_decay_rate * sec_per_hour * hours * metabolism)
-	hunger_changed.emit(hunger, max_hunger)
-	wetness = maxf(0.0, wetness - dry_rate_sheltered * sec_per_hour * hours)
+	else:
+		energy = minf(eff_max, energy + 6.0 * hours)
+		energy_changed.emit(energy, max_energy)
+
+	# 3. Сушка одежды
+	wetness = maxf(0.0, wetness - dry_rate_sheltered * step_seconds)
 	wetness_changed.emit(wetness, max_wetness)
+
+	# 4. Расход сытости и жажды с замедлением метаболизма во сне
+	var metabolism: float = 0.35 if is_sleep else 0.6
+	var c_data: Dictionary = CharacterClassDB.get_class_data(character_class)
+	var hunger_mult: float = float(c_data.get("hunger_decay_mult", 1.0))
+	var t_rate: float = thirst_decay_rate * metabolism
+	var h_rate: float = hunger_decay_rate * hunger_mult * metabolism
+
+	var t_drain: float = t_rate * step_seconds
+	var h_drain: float = h_rate * step_seconds
+
+	var zero_thirst_time: float = 0.0
+	if thirst <= 0.0:
+		zero_thirst_time = step_seconds
+	elif thirst < t_drain and t_rate > 0.0:
+		var time_to_zero: float = thirst / t_rate
+		zero_thirst_time = maxf(0.0, step_seconds - time_to_zero)
+	thirst = maxf(0.0, thirst - t_drain)
+	thirst_changed.emit(thirst, max_thirst)
+
+	var zero_hunger_time: float = 0.0
+	if hunger <= 0.0:
+		zero_hunger_time = step_seconds
+	elif hunger < h_drain and h_rate > 0.0:
+		var time_to_zero: float = hunger / h_rate
+		zero_hunger_time = maxf(0.0, step_seconds - time_to_zero)
+	hunger = maxf(0.0, hunger - h_drain)
+	hunger_changed.emit(hunger, max_hunger)
+
+	# 5. Здоровье: урон от критического истощения (обезвоживание 0.25 HP/с, голод 0.15 HP/с)
+	#    ЛИБО восстановление во сне при достаточной сытости и гидратации (>= 25%)
+	if zero_thirst_time > 0.0 or zero_hunger_time > 0.0:
+		var damage: float = 0.25 * zero_thirst_time + 0.15 * zero_hunger_time
+		health = maxf(0.0, health - damage)
+		health_changed.emit(health, max_health)
+		if health <= 0.0:
+			_on_collapse("exhaustion")
+			return
+	elif is_sleep:
+		if hunger >= 25.0 and thirst >= 25.0:
+			var sleep_ratio: float = clampf(total / 6.0, 0.0, 1.0)
+			var target_health: float = lerpf(_rest_start_health, max_health, sleep_ratio)
+			health = clampf(lerpf(_rest_start_health, target_health, frac), 0.0, max_health)
+			health_changed.emit(health, max_health)
 
 ## Завершение отдыха: итоговое сообщение и автосохранение после сна.
 func _finish_rest(actual_hours: float, is_sleep: bool) -> void:
@@ -1224,14 +1266,6 @@ func _finish_rest(actual_hours: float, is_sleep: bool) -> void:
 	visible = true
 	var hours_int: int = maxi(1, int(round(actual_hours)))
 	if is_sleep:
-		# Просыпаться полностью обессиленным нельзя: нижняя граница сытости
-		# и жажды после сна — 20% (без прежнего прыжка «в ноль и сразу 35%»).
-		if thirst < 20.0:
-			thirst = 20.0
-			thirst_changed.emit(thirst, max_thirst)
-		if hunger < 20.0:
-			hunger = 20.0
-			hunger_changed.emit(hunger, max_hunger)
 		var new_day: int = 0
 		var dc: Node = _find_day_cycle()
 		if dc and "current_day" in dc:
@@ -1239,6 +1273,8 @@ func _finish_rest(actual_hours: float, is_sleep: bool) -> void:
 		notify("💤 Вы отдыхали %d ч. Энергия: %d%%, здоровье: %d%%." % [hours_int, int(energy), int(health)])
 		if new_day > _rest_start_day:
 			notify("🌅 Наступил День %d." % new_day)
+		if thirst <= 0.0 or hunger <= 0.0:
+			notify("⚠️ Вы проснулись от сильного истощения! Срочно нужны вода и еда.")
 		quick_save()
 	else:
 		notify("🛌 Вы отдыхали %d ч. Энергия: %d%%." % [hours_int, int(energy)])

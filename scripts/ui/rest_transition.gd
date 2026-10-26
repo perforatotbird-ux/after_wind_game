@@ -89,6 +89,10 @@ func _process(delta: float) -> void:
 			day_cycle.advance_hours(hours_step)
 		if player and player.has_method("_apply_rest_step"):
 			player._apply_rest_step(hours_step, total_hours, float(_steps_done) * hours_step, is_sleep)
+		if not is_instance_valid(player) or player.get("is_resting") == false:
+			_finished = true
+			queue_free()
+			return
 	_clock.queue_redraw()
 	if day_cycle and day_cycle.has_method("get_time_string"):
 		_time_label.text = "⏳ %d ч · %s" % [int(round(total_hours)), str(day_cycle.get_time_string())]
@@ -99,7 +103,7 @@ func _finish() -> void:
 	if _finished:
 		return
 	_finished = true
-	if player and player.has_method("_finish_rest"):
+	if player and is_instance_valid(player) and player.get("is_resting") == true and player.has_method("_finish_rest"):
 		player._finish_rest(total_hours, is_sleep)
 	queue_free()
 
