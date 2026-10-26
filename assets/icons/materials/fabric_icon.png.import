@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://bijxfe1lgxrl3"
+path="res://.godot/imported/fabric_icon.png-268933ec5023d9ee57fca5c5fb07bcc9.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/fabric_icon.png"
+dest_files=["res://.godot/imported/fabric_icon.png-268933ec5023d9ee57fca5c5fb07bcc9.ctex"]
 
 [params]
 

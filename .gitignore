@@ -54,3 +54,5 @@ campfire_build/
 
 # Сырые исходники моделей (локальные, дубликаты уже в assets/models/)
 modeli/
+Исходник/
+.zcode/

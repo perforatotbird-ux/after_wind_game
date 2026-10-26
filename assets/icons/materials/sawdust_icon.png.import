@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://bcc0yj5gafhsx"
+path="res://.godot/imported/sawdust_icon.png-4c88aa53723c7dd3c8938e91a36dde3a.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/sawdust_icon.png"
+dest_files=["res://.godot/imported/sawdust_icon.png-4c88aa53723c7dd3c8938e91a36dde3a.ctex"]
 
 [params]
 

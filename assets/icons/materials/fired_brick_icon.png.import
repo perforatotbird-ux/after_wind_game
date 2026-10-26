@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://by1hge3b4776x"
+path="res://.godot/imported/fired_brick_icon.png-11f71c82d7e15a8c062012f1ed3075a3.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/fired_brick_icon.png"
+dest_files=["res://.godot/imported/fired_brick_icon.png-11f71c82d7e15a8c062012f1ed3075a3.ctex"]
 
 [params]
 

@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://b7n2040vvujfj"
+path="res://.godot/imported/materials.png-aef169095515f887fd4ad55820b64324.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/materials.png"
+dest_files=["res://.godot/imported/materials.png-aef169095515f887fd4ad55820b64324.ctex"]
 
 [params]
 

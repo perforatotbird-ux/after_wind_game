@@ -551,3 +551,21 @@ res://assets/tools_nano_banana/whetstone_icon.png. Регрессия: test_inve
   3. Проверяет восстановление энергии до максимума и сброс бессонницы `hours_without_sleep` до 0.0 после сна.
   4. Проверяет кастомный заголовок в диалоге сна `SleepDialog`.
 - Прогоны тестов: `test_primitive_bed.gd` (PASS), `test_progression_balance.gd` (PASS), `test_house_models.gd` (PASS).
+
+### Исправление бинарного импорта GLB-моделей генератора и примитивной лежанки
+
+**Проблема.** При запуске игры физические модели твердотопливного генератора (`assets/models/generator/generator.glb`) и примитивной лежанки (`assets/models/primitivebed/primitivebed.glb`) не появлялись в игровом мире, хотя узлы присутствовали в дереве сцены. В логе Godot фиксировались ошибки:
+`ERROR: Failed loading resource: res://assets/models/generator/generator.glb.`
+`ERROR: res://scenes/energy/solid_generator.tscn:22 - Parse Error: [ext_resource] referenced non-existent resource`
+`WARNING: Node './GeneratorModel' was modified from inside an instance, but it has vanished.`
+`WARNING: Node './BedModel' was modified from inside an instance, but it has vanished.`
+
+**Причина.** В Godot 4 ресурсы `.glb`, импортируемые как `PackedScene`, требуют скомпилированного бинарного представления `.scn` в каталоге `.godot/imported/<имя_файла>.glb-<хеш>.scn`, а файл `.glb.import` должен содержать поля `uid`, `path` и секцию `dest_files` со ссылкой на скомпилированный бинарник. Ручные файлы импорта не содержали скомпилированных `.scn`, из-за чего движок признавал ресурс повреждённым/отсутствующим и удалял (`vanished`) вложенные меш-узлы при инстанцировании сцены.
+
+**Исправление.**
+1. Удалены повреждённые файлы импорта и запущен полный прогон редактора Godot в headless-режиме (`& "K:\Godot_v4.7.2-stable_win64.exe" --headless --editor --path "K:\After Wind" --import`).
+2. Сгенерированы валидные `.import`-файлы, скомпилированы бинарные `.scn` в `.godot/imported/` и извлечены PBR-текстуры нормалей, металличности и шероховатости (`generator_texture_pbr_*.png`, `primitivebed_texture_pbr_*.png`).
+3. В сценах `scenes/energy/solid_generator.tscn` и `scenes/buildings/primitive_bed.tscn` внешние ресурсы явно привязаны к каноническим UID (`uid://rp5m1uuerigb` и `uid://bsuoxuuf72nvl`).
+4. Написан тест `tests/test_models_instantiation.gd`, проверяющий загрузку сцен `solid_generator.tscn`, `primitive_bed.tscn` и `world.tscn`, подтверждающий сохранение мешей (`child_count > 0`, отсутствие `vanished`) и корректные координаты узлов `Props/SolidGenerator` и `Props/PrimitiveBed`.
+5. Проведён 10-кадровый проверочный запуск реальной сцены мира `world.tscn` в Godot headless: 0 ошибок в логе (`ERRORS: []`).
+6. Тесты: `test_models_instantiation.gd` (PASS), `test_solid_fuel_generator.gd` (PASS), `test_primitive_bed.gd` (PASS).

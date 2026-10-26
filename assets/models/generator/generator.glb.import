@@ -3,11 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-source_file="res://assets/models/generator/generator.glb"
+uid="uid://rp5m1uuerigb"
+path="res://.godot/imported/generator.glb-07bbe707d567a0224f574348ec374fdc.scn"
 
 [deps]
 
 source_file="res://assets/models/generator/generator.glb"
+dest_files=["res://.godot/imported/generator.glb-07bbe707d567a0224f574348ec374fdc.scn"]
 
 [params]
 

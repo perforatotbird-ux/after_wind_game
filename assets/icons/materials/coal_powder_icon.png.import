@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://cth861lxht3sc"
+path="res://.godot/imported/coal_powder_icon.png-a9be9b999ec22444a87feb3786d0f658.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/coal_powder_icon.png"
+dest_files=["res://.godot/imported/coal_powder_icon.png-a9be9b999ec22444a87feb3786d0f658.ctex"]
 
 [params]
 

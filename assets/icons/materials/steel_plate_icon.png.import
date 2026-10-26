@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://dulqvq74pjvm5"
+path="res://.godot/imported/steel_plate_icon.png-388cdb31afc27605edffa95d4d884d10.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/steel_plate_icon.png"
+dest_files=["res://.godot/imported/steel_plate_icon.png-388cdb31afc27605edffa95d4d884d10.ctex"]
 
 [params]
 

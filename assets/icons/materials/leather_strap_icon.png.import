@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://2kafilg0anpc"
+path="res://.godot/imported/leather_strap_icon.png-ac3899cba2194d66f3b3ab7be52c1ccf.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/leather_strap_icon.png"
+dest_files=["res://.godot/imported/leather_strap_icon.png-ac3899cba2194d66f3b3ab7be52c1ccf.ctex"]
 
 [params]
 

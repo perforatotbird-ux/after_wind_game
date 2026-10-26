@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://c202br8qybsla"
+path="res://.godot/imported/stone_dust_icon.png-406ef255e15ab33b936bc1a7bb3da852.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/stone_dust_icon.png"
+dest_files=["res://.godot/imported/stone_dust_icon.png-406ef255e15ab33b936bc1a7bb3da852.ctex"]
 
 [params]
 

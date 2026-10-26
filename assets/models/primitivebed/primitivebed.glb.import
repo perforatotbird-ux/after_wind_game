@@ -3,11 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-source_file="res://assets/models/primitivebed/primitivebed.glb"
+uid="uid://bsuoxuuf72nvl"
+path="res://.godot/imported/primitivebed.glb-1f642e44fdf00f2c562c54f77e7fd2f3.scn"
 
 [deps]
 
 source_file="res://assets/models/primitivebed/primitivebed.glb"
+dest_files=["res://.godot/imported/primitivebed.glb-1f642e44fdf00f2c562c54f77e7fd2f3.scn"]
 
 [params]
 

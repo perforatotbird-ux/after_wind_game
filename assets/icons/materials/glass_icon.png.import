@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://dfmkvfp2uh221"
+path="res://.godot/imported/glass_icon.png-924aa303f77ff2f7fb6fe1b683302ed5.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/glass_icon.png"
+dest_files=["res://.godot/imported/glass_icon.png-924aa303f77ff2f7fb6fe1b683302ed5.ctex"]
 
 [params]
 

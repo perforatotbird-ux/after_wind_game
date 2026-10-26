@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://dp912kx48n52b"]
 
 [ext_resource type="Script" path="res://scripts/buildings/primitive_bed.gd" id="1_bed"]
-[ext_resource type="PackedScene" path="res://assets/models/primitivebed/primitivebed.glb" id="2_model"]
+[ext_resource type="PackedScene" uid="uid://bsuoxuuf72nvl" path="res://assets/models/primitivebed/primitivebed.glb" id="2_model"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
 size = Vector3(2.2, 1.5, 2.6)

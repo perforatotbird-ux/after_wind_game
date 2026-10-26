@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://c05pjo2878qwa"
+path="res://.godot/imported/iron_ingot_icon.png-38786a2c4d65176c9b755d1130f75c18.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/iron_ingot_icon.png"
+dest_files=["res://.godot/imported/iron_ingot_icon.png-38786a2c4d65176c9b755d1130f75c18.ctex"]
 
 [params]
 

@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://csb3c31oxsp5g"
+path="res://.godot/imported/bolt_icon.png-d94748036e2db0c6ff284c856aa47f8f.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/bolt_icon.png"
+dest_files=["res://.godot/imported/bolt_icon.png-d94748036e2db0c6ff284c856aa47f8f.ctex"]
 
 [params]
 

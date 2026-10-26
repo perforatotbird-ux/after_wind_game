@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://ckrwa02ncnqur"
+path="res://.godot/imported/precision_gear_icon.png-dd15d6a66222483e51c77140b663395d.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/precision_gear_icon.png"
+dest_files=["res://.godot/imported/precision_gear_icon.png-dd15d6a66222483e51c77140b663395d.ctex"]
 
 [params]
 

@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://hyn0ctitkbmk"
+path="res://.godot/imported/fertilizer_icon.png-09036055a4901232b104ebe19ffa43a0.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/fertilizer_icon.png"
+dest_files=["res://.godot/imported/fertilizer_icon.png-09036055a4901232b104ebe19ffa43a0.ctex"]
 
 [params]
 

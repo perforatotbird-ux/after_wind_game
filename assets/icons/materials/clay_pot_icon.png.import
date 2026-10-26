@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://snpeenfqdkun"
+path="res://.godot/imported/clay_pot_icon.png-3e0eaf4bf6cf478afeaae7da24e66bb0.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/clay_pot_icon.png"
+dest_files=["res://.godot/imported/clay_pot_icon.png-3e0eaf4bf6cf478afeaae7da24e66bb0.ctex"]
 
 [params]
 

@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://ogvsktcuc5yq"
+path="res://.godot/imported/mortar_icon.png-1e0de6bc9902942e89902c849207ea77.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/mortar_icon.png"
+dest_files=["res://.godot/imported/mortar_icon.png-1e0de6bc9902942e89902c849207ea77.ctex"]
 
 [params]
 

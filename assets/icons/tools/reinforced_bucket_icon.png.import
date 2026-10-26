@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://rmiub3cp7fk1"
+path="res://.godot/imported/reinforced_bucket_icon.png-9b5acb0f2370ef6f393999c7c3618f6d.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/tools/reinforced_bucket_icon.png"
+dest_files=["res://.godot/imported/reinforced_bucket_icon.png-9b5acb0f2370ef6f393999c7c3618f6d.ctex"]
 
 [params]
 

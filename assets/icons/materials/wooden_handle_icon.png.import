@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://b11newymq3b7m"
+path="res://.godot/imported/wooden_handle_icon.png-70c85c3f76a6fe327383be1293f6252b.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/wooden_handle_icon.png"
+dest_files=["res://.godot/imported/wooden_handle_icon.png-70c85c3f76a6fe327383be1293f6252b.ctex"]
 
 [params]
 

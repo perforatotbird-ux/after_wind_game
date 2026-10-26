@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://x1bdsmiksvxo"
+path="res://.godot/imported/poor_brick_icon.png-cf0806e7fd64cd930adfea91b26e262f.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/poor_brick_icon.png"
+dest_files=["res://.godot/imported/poor_brick_icon.png-cf0806e7fd64cd930adfea91b26e262f.ctex"]
 
 [params]
 

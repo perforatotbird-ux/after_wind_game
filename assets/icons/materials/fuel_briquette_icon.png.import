@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://pwjbvk4exykd"
+path="res://.godot/imported/fuel_briquette_icon.png-5acfdb7b0619c46cea6ccf8011a51bd1.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/materials/fuel_briquette_icon.png"
+dest_files=["res://.godot/imported/fuel_briquette_icon.png-5acfdb7b0619c46cea6ccf8011a51bd1.ctex"]
 
 [params]
 

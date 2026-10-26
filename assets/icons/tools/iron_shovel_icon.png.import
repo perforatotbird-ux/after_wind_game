@@ -2,10 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://1q56aj8ot1yi"
+path="res://.godot/imported/iron_shovel_icon.png-700656881568bef0b3d4f24211b293e9.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icons/tools/iron_shovel_icon.png"
+dest_files=["res://.godot/imported/iron_shovel_icon.png-700656881568bef0b3d4f24211b293e9.ctex"]
 
 [params]
 
