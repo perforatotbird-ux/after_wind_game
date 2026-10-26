@@ -281,8 +281,8 @@ func _apply_flicker(delta: float) -> void:
 	if not status_light:
 		return
 	_flicker_timer += delta * 12.0
-	var base_energy: float = 1.3 + sin(_flicker_timer) * 0.2 + sin(_flicker_timer * 2.3) * 0.1
-	status_light.light_energy = maxf(0.5, base_energy)
+	var base_energy: float = 2.0 + sin(_flicker_timer) * 0.3 + sin(_flicker_timer * 2.3) * 0.15
+	status_light.light_energy = maxf(0.8, base_energy)
 
 func _update_visuals() -> void:
 	if not status_light:
@@ -291,10 +291,10 @@ func _update_visuals() -> void:
 		status_light.light_color = Color(1.0, 0.55, 0.18, 1.0) # Огонь топки
 	elif _has_any_fuel():
 		status_light.light_color = Color(0.3, 0.9, 0.35, 1.0) # Готов к запуску
-		status_light.light_energy = 0.8
+		status_light.light_energy = 1.2
 	else:
 		status_light.light_color = Color(0.85, 0.2, 0.2, 1.0) # Нет топлива
-		status_light.light_energy = 0.5
+		status_light.light_energy = 0.8
 
 func get_prompt() -> String:
 	var status_text: String

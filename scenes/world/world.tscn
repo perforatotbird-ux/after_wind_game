@@ -223,7 +223,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.668631, -0.057896793, 0.6
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.147238, -0.02938366, -13.372063)
 
 [node name="SolidGenerator" parent="Props" unique_id=1089201147 instance=ExtResource("47_solid_generator")]
-transform = Transform3D(0.9659258, 0, 0.25881904, 0, 1, 0, -0.25881904, 0, 0.9659258, -5.2, 0, -3.3)
+transform = Transform3D(0.9659258, 0, 0.25881904, 0, 1, 0, -0.25881904, 0, 0.9659258, -7, 0, -3.5)
 
 [node name="BatteryBank" parent="Props" unique_id=1251654109 instance=ExtResource("27_battery")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.8, -0.0011754036, -15.713167)
