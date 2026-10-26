@@ -5,10 +5,10 @@
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_interact"]
 height = 2.5
-radius = 2.4
+radius = 2.6
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_solid"]
-size = Vector3(1.4, 0.9, 1.1)
+size = Vector3(1.5, 1.0, 1.0)
 
 [node name="SolidGenerator" type="Area3D"]
 collision_layer = 8
@@ -20,7 +20,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
 shape = SubResource("CylinderShape3D_interact")
 
 [node name="GeneratorModel" parent="." instance=ExtResource("2_model")]
-transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 0.07, 0.42, 0.44)
+transform = Transform3D(1.6, 0, 0, 0, 1.6, 0, 0, 0, 1.6, 0.08, 0, 0)
 
 [node name="StatusLight" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
@@ -33,5 +33,5 @@ collision_layer = 1
 collision_mask = 0
 
 [node name="SolidShape" type="CollisionShape3D" parent="SolidBody"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("BoxShape3D_solid")
