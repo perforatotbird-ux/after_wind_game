@@ -23,6 +23,7 @@ const UI_SCALE_PRESETS: Array = [0.75, 0.9, 1.0, 1.1, 1.25, 1.5]
 var _game_hour: OptionButton = null
 var _ui_scale: OptionButton = null
 var _lighting: OptionButton = null
+var _icons_toggle: CheckButton = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -85,6 +86,7 @@ func _ready() -> void:
 		scale_labels.append("%d%%%s" % [int(round(float(k) * 100.0)), " (по умолчанию)" if is_equal_approx(float(k), 1.0) else ""])
 	_ui_scale = _add_option(vbox, "Масштаб интерфейса", scale_labels, _on_ui_scale_selected)
 	_lighting = _add_option(vbox, "Качество графики и теней", GameSettings.get_lighting_labels(), _on_lighting_selected)
+	_icons_toggle = _add_toggle(vbox, "3D-иконки предметов (Nano Banana)", "use_generated_icons")
 	vbox.add_child(HSeparator.new())
 
 	vbox.add_child(UI.make_section_header("🖱 Камера"))

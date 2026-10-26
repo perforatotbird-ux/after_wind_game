@@ -2,16 +2,10 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d022o1sndwqgr"
-path="res://.godot/imported/axe_icon.png-743e1be2416082e63a2c5271d6ecec69.ctex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
-source_file="res://assets/tools_nano_banana/axe_icon.png"
-dest_files=["res://.godot/imported/axe_icon.png-743e1be2416082e63a2c5271d6ecec69.ctex"]
+source_file="res://assets/icons/materials/fabric_icon.png"
 
 [params]
 

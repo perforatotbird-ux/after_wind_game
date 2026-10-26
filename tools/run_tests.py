@@ -74,7 +74,7 @@ def main() -> int:
             # XDG variables do not affect Godot on Windows/macOS. Use a temporary
             # project with a unique application name instead of touching saves.
             project = Path(temp) / "project"
-            shutil.copytree(ROOT, project, ignore=shutil.ignore_patterns(".git", "outputs", "__pycache__"))
+            shutil.copytree(ROOT, project, ignore=shutil.ignore_patterns(".git", "outputs", "__pycache__", "backups", "Исходник", "*.zip"))
         base = [engine, "--headless", "--path", str(project)]
         ok, output = run_checked(
             base + ["--editor", "--import"],

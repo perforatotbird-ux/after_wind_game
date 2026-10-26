@@ -455,3 +455,24 @@ res://assets/tools_nano_banana/whetstone_icon.png. Регрессия: test_inve
 **Результат и импорт.** `assets/icons/`: `tools` 7, `resources` 9, `food` 20, `seeds` 17, `harvest` 20, `tech` 5, `alcohol` 15; `assets/icons/materials/` создана пустой (`.gitkeep`) как место под будущий лист. Все 93 PNG — RGBA 256×256. Выполнен `godot --headless --editor --import`, затем в 93 `.import`-файлах исправлено `mipmaps/generate` на `true` (как у остальных сгенерированных иконок) и выполнен повторный импорт. Проверено: у каждой PNG есть `.import`, все текстуры 256×256 RGBA, мипмапы включены.
 
 **Не сделано намеренно.** Набор не добавлен в `ItemIcons.GENERATED_FOLDERS`: игра продолжает брать иконки из `assets/<Русская категория>/` и `assets/tools_nano_banana/`. Чтобы новые иконки заменили старые, достаточно добавить `res://assets/icons/<группа>` в начало `GENERATED_FOLDERS` (для всех групп) или прописать пути в `ItemDB`.
+### Подключение полного набора иконок assets/icons, нарезка листа материалов и удаление старых папок
+
+**Задача.** Проанализировать нарезные иконки в `assets/icons/`, проверить корректность их именования и соответствие предметам игры, нарезать мастер-лист материалов (`assets/icons/materials/materials.png`), подключить все иконки в игру вместо старых русских каталогов и `tools_nano_banana`, а старые каталоги удалить.
+
+**Анализ именования и состава.**
+- Все 93 ранее нарезанные иконки проверены: формат RGBA 256×256, имена соответствуют канону `<item_id>_icon.png`, каждый ID строго совпадает с базой `ItemDB` и каталогом `items_catalog.html`.
+- В `assets/icons/materials/materials.png` находился мастер-лист 2048×2048 RGBA (прозрачный фон, сетка 4×4, 16 предметов группы `materials`). Сетка нарезана с отступом 10 px и масштабированием (LANCZOS) в холст 256×256: `stone_dust`, `sawdust`, `coal_powder`, `mortar`, `poor_brick`, `fuel_briquette`, `fired_brick`, `glass`, `glass_bottle`, `clay_pot`, `glassware_set`, `steel_plate`, `precision_gear`, `steel_ingot`, `iron_ingot`, `fertilizer`.
+- Иконки `stone_dust`, `sawdust`, `coal_powder` также обновлены в `assets/icons/crafting/`.
+- Недостающие 4 компонента (`wooden_handle`, `bolt`, `fabric`, `leather_strap`) перенесены в `assets/icons/materials/` (итого 20 предметов + мастер-лист).
+- Улучшенные инструменты (`iron_axe`, `iron_pickaxe`, `iron_shovel`, `reinforced_bucket`) перенесены в `assets/icons/tools/` (итого 11 инструментов).
+- Для всех новых иконок сгенерированы `.import`-файлы с `mipmaps/generate = true` и `process/fix_alpha_border = true`, выполнен `godot --headless --editor --import`.
+
+**Подключение в код и удаление устаревших каталогов.**
+- `scripts/ui/item_icons.gd`: список `GENERATED_FOLDERS` полностью переведён на `res://assets/icons/<категория>` (`tools`, `resources`, `materials`, `food`, `seeds`, `harvest`, `tech`, `alcohol`, `crafting`).
+- `scripts/inventory/item_db.gd`: путь текстуры `whetstone` обновлён на `res://assets/icons/tools/whetstone_icon.png`.
+- Удалены все устаревшие каталоги с русскими именами (`assets/Материалы`, `assets/Ресурсы`, `assets/Урожай`, `assets/Семена`, `assets/Кулинария`, `assets/Алкоголь`, `assets/Инструменты` и их корневые дубли), а также папка `assets/tools_nano_banana/`.
+- Механизм отката (`use_generated_icons = false` в настройках) сохранён и работает: игра мгновенно переключается между 3D-иконками и оригинальными/процедурными.
+
+**Тестирование.**
+- Написан новый автотест `tests/test_item_icons_load.gd`: проверяет 119 предметов `ItemDB`, подтверждает загрузку 117 качественных 256×256 3D-иконок (и 2 процедурных: `high_purity_water` и `sea_buckthorn`), проверяет структуру каталогов и работу переключения `use_generated_icons` со сбросом кэша.
+- Прогоны: `test_item_icons_load.gd` (PASS), `inventory` (4 теста PASS), `test_equipped_tools.gd` (PASS), `test_tool_sharpness_system.gd` (PASS).

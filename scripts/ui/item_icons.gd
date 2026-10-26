@@ -132,15 +132,39 @@ static func get_texture(item_id: String) -> Texture2D:
 static func get_color(item_id: String) -> Color:
 	return _style_for(item_id)[1]
 
+## Флаг использования новых 3D-иконок Nano Banana (при false используются оригинальные иконки).
+static var use_generated_icons: bool = true
+
+## Список директорий с новыми сгенерированными 3D-иконками.
+const GENERATED_FOLDERS: Array[String] = [
+	"res://assets/icons/tools",
+	"res://assets/icons/resources",
+	"res://assets/icons/materials",
+	"res://assets/icons/food",
+	"res://assets/icons/seeds",
+	"res://assets/icons/harvest",
+	"res://assets/icons/tech",
+	"res://assets/icons/alcohol",
+	"res://assets/icons/crafting",
+]
+
+## Переключает использование новых 3D-иконок и сбрасывает кэш для мгновенного обновления в игре.
+static func set_use_generated_icons(enabled: bool) -> void:
+	if use_generated_icons != enabled:
+		use_generated_icons = enabled
+		clear_cache()
+
 static func clear_cache() -> void:
 	_cache.clear()
 
 static func _load_file_icon(item_id: String) -> Texture2D:
-	var nano_path: String = "res://assets/tools_nano_banana/%s_icon.png" % item_id
-	if ResourceLoader.exists(nano_path):
-		var res = load(nano_path)
-		if res is Texture2D:
-			return res
+	if use_generated_icons:
+		for folder in GENERATED_FOLDERS:
+			var path: String = "%s/%s_icon.png" % [folder, item_id]
+			if ResourceLoader.exists(path):
+				var res = load(path)
+				if res is Texture2D:
+					return res
 	var data: Dictionary = ItemDB.get_item(item_id)
 	var candidates: Array[String] = []
 	for key in ["icon_texture", "texture", "icon_path", "sprite"]:

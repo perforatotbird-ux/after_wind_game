@@ -69,6 +69,7 @@ const DEFAULTS: Dictionary = {
 	"seconds_per_game_hour": 60.0,
 	"ui_scale": 1.0,
 	"lighting_quality": "high",
+	"use_generated_icons": true,
 }
 
 ## Путь можно подменить в тестах.
@@ -165,6 +166,7 @@ static func apply(tree: SceneTree = null) -> void:
 	apply_camera(tree)
 	apply_time(tree)
 	apply_lighting(tree)
+	apply_icons()
 
 static func apply_key(key: String, tree: SceneTree = null) -> void:
 	match key:
@@ -180,6 +182,9 @@ static func apply_key(key: String, tree: SceneTree = null) -> void:
 			apply_ui_scale(tree)
 		"lighting_quality":
 			apply_lighting(tree)
+		"use_generated_icons":
+			apply_icons()
+	apply_icons()
 
 ## Длительность игрового часа -> DayNightCycle (группа "day_night_cycle").
 static func apply_time(tree: SceneTree = null) -> void:
@@ -245,6 +250,13 @@ static func apply_lighting(tree: SceneTree = null) -> void:
 	var shadow_size: int = int(preset["shadow_size"])
 	RenderingServer.directional_shadow_atlas_set_size(shadow_size, true)
 
+static func apply_icons() -> void:
+	var enabled: bool = bool(get_value("use_generated_icons"))
+	if ResourceLoader.exists("res://scripts/ui/item_icons.gd"):
+		var ItemIcons = load("res://scripts/ui/item_icons.gd")
+		if ItemIcons and ItemIcons.has_method("set_use_generated_icons"):
+			ItemIcons.set_use_generated_icons(enabled)
+
 # --- Вспомогательное ---
 
 static func _ensure_loaded() -> void:
@@ -268,7 +280,7 @@ static func _sanitize(key: String, value: Variant) -> Variant:
 		"ui_scale":
 			if _is_number(value):
 				return clampf(float(value), UI_SCALE_MIN, UI_SCALE_MAX)
-		"fullscreen", "vsync":
+		"fullscreen", "vsync", "use_generated_icons":
 			if typeof(value) == TYPE_BOOL:
 				return value
 		"resolution_index":

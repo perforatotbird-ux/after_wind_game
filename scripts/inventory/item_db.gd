@@ -74,7 +74,7 @@ const ITEMS: Dictionary = {
 		"id": "whetstone",
 		"name": "Точильный камень",
 		"icon": "🪨",
-		"texture": "res://assets/tools_nano_banana/whetstone_icon.png",
+		"texture": "res://assets/icons/tools/whetstone_icon.png",
 		"category": "tool",
 		"weight": 0.5,
 		"max_stack": 10,

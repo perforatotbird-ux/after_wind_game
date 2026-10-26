@@ -2,16 +2,10 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dw4dmkc2sowtq"
-path="res://.godot/imported/pickaxe_icon.png-75ae7506b9711c7f5cd06d3e1fbf7deb.ctex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
-source_file="res://assets/tools_nano_banana/pickaxe_icon.png"
-dest_files=["res://.godot/imported/pickaxe_icon.png-75ae7506b9711c7f5cd06d3e1fbf7deb.ctex"]
+source_file="res://assets/icons/materials/glass_icon.png"
 
 [params]
 
