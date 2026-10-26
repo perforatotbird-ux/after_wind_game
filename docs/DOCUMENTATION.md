@@ -1034,7 +1034,7 @@ Windows: `%APPDATA%\Godot\app_userdata\After The Storm\`. Автосохране
 | `scenes/resources/berry_bush_black.tscn`, `berry_bush_sea.tscn` (+ модели `berry_bush/black|sea[_empty]_model.tscn`, материалы ягод) | Кусты ежевики и облепихи (меши общие с красным кустом, ягоды перекрашены) |
 | `scripts/world/mushroom_spawner.gd` | Раскладка лесных грибов в тени (у деревьев и валунов), детерминированная зерном и сохраняемая |
 | `scenes/machines/campfire.tscn`, `kitchen_stove.tscn`, `machine_rubble.tscn` | Костёр, печь-кухня и общий инстанс завалов для ещё не восстановленных станков |
-| `tools/` | `run_tests.py`, генераторы камней/деревьев, ретаргет анимаций, модели печи и дробилки для Blender (`create_smelter_model.py`, `create_crusher_model.py`, референс — `draw_crusher_reference.py`) и их импорт (`import_smelter_model.gd`, `import_crusher_model.gd`) |
+| `tools/` | `run_tests.py`, `build_graphify.py` (сборка графа знаний graphify: 2872 узла, 3677 связей, HTML-визуализация `graphify-out/graph.html`), генераторы камней/деревьев, ретаргет анимаций, модели печи и дробилки для Blender (`create_smelter_model.py`, `create_crusher_model.py`, референс — `draw_crusher_reference.py`) и их импорт (`import_smelter_model.gd`, `import_crusher_model.gd`) |
 | `assets/models/campfire/` | Модель костра по референсу, дерево/камни/земля/угли, текстуры и шейдеры пламени/обугливания |
 | `assets/models/water_filter/` | Исправный и разрушенный очиститель из присланного GLB: меши, общий PBR-атлас, две сцены |
 | `assets/models/smelter/` | Запечённая модель плавильной печи (меши, материалы, текстуры в `.tres`) |

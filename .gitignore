@@ -56,3 +56,7 @@ campfire_build/
 modeli/
 Исходник/
 .zcode/
+
+
+# Graphify knowledge graph outputs
+graphify-out/

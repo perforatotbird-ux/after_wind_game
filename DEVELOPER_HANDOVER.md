@@ -659,3 +659,22 @@ res://assets/tools_nano_banana/whetstone_icon.png. Регрессия: test_inve
   - `tests/test_farm_fields.gd` (PASS)
   - `tests/test_inventory_capacity.gd` (PASS)
   - `tests/test_inventory_grid_and_batches.gd` (PASS)
+
+
+### Построение графа знаний проекта через graphify
+
+**Задача.** Построить полный граф знаний кодовой базы проекта (GDScript, Python, Markdown, Godot-сцены) с использованием инструментария `graphify`, кластеризацией по алгоритму Louvain, выявлением ключевых узлов-хабов (God Nodes) и интерактивной HTML-визуализацией.
+
+**Реализация (`tools/build_graphify.py`).**
+- Написан специализированный сборщик графа знаний для движка Godot и архитектуры проекта:
+  - Извлечение AST для GDScript (`scripts/**/*.gd`, `tests/**/*.gd` — 160 файлов): парсинг классов (`class_name`), наследования (`extends`), сигналов (`signal`), функций (`func`) и зависимостей (`preload`, `load`).
+  - Извлечение Python-модулей (`tools/*.py` — 44 файла) через `extract_python`.
+  - Извлечение документации (`docs/*.md`, `DEVELOPER_HANDOVER.md`, `AGENTS.md`, `README.md`) через `extract_markdown`.
+  - Извлечение структуры Godot-сцен (`scenes/**/*.tscn` — 65 файлов) со связями `references` к скриптам и подресурсам.
+- Сборка NetworkX-графа, алгоритм сообществ Louvain (`graphify.cluster`), расчёт сцепленности (cohesion), узлов-хабов и неожиданных мостов.
+- Экспорт артефактов в каталог `graphify-out/`:
+  - `graph.html`: интерактивная визуализация Vis.js с поиском, легендой сообществ и навигацией по соседям.
+  - `graph.json`: сериализованные данные графа (совместимо с GraphRAG).
+  - `GRAPH_REPORT.md`: подробный архитектурный аудит-отчёт с метриками и сообществами.
+- Итоговые метрики графа: **2872 узла, 3677 связей, 178 сообществ**.
+- Папка `graphify-out/` добавлена в `.gitignore`.
